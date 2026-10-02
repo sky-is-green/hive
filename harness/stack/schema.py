@@ -48,8 +48,29 @@ _TIER_FIELDS: tuple[str, ...] = (
 )
 _TIER_OPTIONAL: tuple[str, ...] = (
     "spec", "mmproj", "pin", "ts", "engine_args", "endpoint", "caps",
+    "launch",
 )
 _STACK_FIELDS: tuple[str, ...] = ("name", "version", "tiers", "routing")
+
+#: ``launch.kind`` values this build knows.  ``strata`` starts Strata's
+#: ``serve/server.py`` from a generated copy of the tier's config.
+LAUNCH_KINDS: tuple[str, ...] = ("strata",)
+
+#: Fields a tier's ``launch`` object round-trips.
+_LAUNCH_FIELDS: tuple[str, ...] = (
+    "kind", "repo", "config", "python", "engine_args", "options", "timeout_s",
+)
+
+#: Flags the managed launch owns; a ``launch.engine_args`` entry carrying one
+#: (in ``--flag`` or ``--flag=value`` form) is refused.
+LAUNCH_ARGS_DENIED: tuple[str, ...] = (
+    "--engine", "--config", "--host", "--port", "--api-key", "--open",
+    "--script", "--mcp-config", "--lazy",
+)
+
+#: Config keys an ``launch.options`` object may not override: the launcher
+#: generates them (port/args/log/cwd/exe) or they are the base config itself.
+LAUNCH_OPTIONS_DENIED: tuple[str, ...] = ("args", "exe", "cwd", "port", "log")
 
 #: llama-server flags a tier's ``engine_args`` list may carry.  Curated on
 #: purpose: the AMD knobs the ``load_options`` seam cannot express (device
@@ -112,6 +133,90 @@ def validate_engine_args(value: Any, *, where: str = "tier engine_args") -> list
                     f"{where}[{position}]: {token!r} is not an allowed engine "
                     f"flag; allowed: {', '.join(ENGINE_ARGS_ALLOWED)}")
         out.append(token)
+    return out
+
+
+def validate_launch_args(value: Any, *, where: str = "tier launch.engine_args") -> list[str]:
+    """``launch.engine_args`` — the Strata engine argv fragment.
+
+    Strata's engine has far more flags than the curated llama.cpp set, so this
+    validator is a deny-list instead of an allow-list: non-blank strings only,
+    and the flags the managed launch owns (``--engine``/``--config``/
+    ``--host``/``--port``/...) are refused.  ``--flag=value`` and separate
+    value tokens are both accepted.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, (list, tuple)):
+        raise ValueError(
+            f"{where} must be a list of strings, got {type(value).__name__}")
+    out: list[str] = []
+    for position, item in enumerate(value, start=1):
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(
+                f"{where}[{position}] must be a non-blank string, got {item!r}")
+        token = item.strip()
+        flag = token.split("=", 1)[0] if token.startswith("-") else token
+        if flag in LAUNCH_ARGS_DENIED:
+            raise ValueError(
+                f"{where}[{position}]: {flag!r} is owned by the managed launch "
+                f"and cannot be set per tier")
+        out.append(token)
+    return out
+
+
+def validate_launch(value: Any, *, where: str = "tier launch") -> dict[str, Any]:
+    """A tier's optional ``launch`` block (managed endpoint lifecycle).
+
+    Shape only: ``kind`` (one of :data:`LAUNCH_KINDS`), ``repo`` and
+    ``config`` (strings), optional ``python`` (default ``.venv/bin/python``,
+    resolved at start), optional ``engine_args`` (deny-list validated),
+    optional ``options`` object merged into the generated server config, and
+    optional positive ``timeout_s`` for startup.  Paths are resolved when the
+    launcher starts, not here.
+    """
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{where} must be an object, got {type(value).__name__}")
+    _reject_unknown(value, _LAUNCH_FIELDS, where)
+
+    if value.get("kind") is None:
+        raise ValueError(f"{where} is missing required field: kind")
+    kind = _as_text(value["kind"], f"{where} kind")
+    if kind not in LAUNCH_KINDS:
+        raise ValueError(
+            f"{where} kind {kind!r} is not one of {', '.join(LAUNCH_KINDS)}")
+
+    if value.get("repo") is None:
+        raise ValueError(f"{where} is missing required field: repo")
+    if value.get("config") is None:
+        raise ValueError(f"{where} is missing required field: config")
+
+    out: dict[str, Any] = {
+        "kind": kind,
+        "repo": _as_text(value["repo"], f"{where} repo"),
+        "config": _as_text(value["config"], f"{where} config"),
+    }
+    python = _as_optional_text(value.get("python"), f"{where} python")
+    if python is not None:
+        out["python"] = python
+    if value.get("engine_args") is not None:
+        out["engine_args"] = validate_launch_args(value.get("engine_args"))
+    options = _as_optional_object(value.get("options"), f"{where} options")
+    if options is not None:
+        owned = [key for key in options if key in LAUNCH_OPTIONS_DENIED]
+        if owned:
+            raise ValueError(
+                f"{where} options may not override launcher-owned key(s): "
+                f"{', '.join(sorted(owned))}")
+        out["options"] = options
+    timeout = value.get("timeout_s")
+    if timeout is not None:
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+            raise ValueError(
+                f"{where} timeout_s must be a number, got {type(timeout).__name__}")
+        if timeout <= 0:
+            raise ValueError(f"{where} timeout_s must be > 0, got {timeout}")
+        out["timeout_s"] = timeout
     return out
 
 
@@ -196,6 +301,9 @@ class Tier:
     health-checks it and registers it (the Strata serving model).  ``caps`` is
     an optional free-form object with the tier's *measured* serving facts
     (decode/prefill t/s, MTP acceptance, ...), carried into stack status.
+    ``launch`` adds the managed lifecycle: when the endpoint is down, apply
+    starts its server from a generated copy of ``launch.config`` and stops it
+    again on unload; when it is up, the tier is adopted and never killed.
     """
 
     role: str
@@ -213,6 +321,7 @@ class Tier:
     engine_args: Optional[list[str]] = None
     endpoint: Optional[str] = None
     caps: Optional[dict[str, Any]] = None
+    launch: Optional[dict[str, Any]] = None
 
     def to_dict(self) -> dict[str, Any]:
         """The tier as it appears in a ``stacks/<name>.json`` file."""
@@ -240,6 +349,8 @@ class Tier:
             out["endpoint"] = self.endpoint
         if self.caps is not None:
             out["caps"] = dict(self.caps)
+        if self.launch is not None:
+            out["launch"] = dict(self.launch)
         return out
 
     @classmethod
@@ -275,6 +386,8 @@ class Tier:
                          if data.get("engine_args") is not None else None),
             endpoint=_as_endpoint(data.get("endpoint"), "tier endpoint"),
             caps=_as_optional_object(data.get("caps"), "tier caps"),
+            launch=(validate_launch(data.get("launch"))
+                    if data.get("launch") is not None else None),
         )
 
 
@@ -512,5 +625,16 @@ def validate_shape(stack: Stack) -> list[str]:
         ctx = getattr(tier, "ctx", None)
         if isinstance(ctx, bool) or not isinstance(ctx, int) or ctx <= 0:
             errors.append(f"{label}: ctx must be a positive integer, got {ctx!r}")
+
+        launch = getattr(tier, "launch", None)
+        if launch is not None:
+            if not isinstance(launch, Mapping):
+                errors.append(
+                    f"{label}: launch must be an object, got "
+                    f"{type(launch).__name__}")
+            elif not str(getattr(tier, "endpoint", "") or "").strip():
+                errors.append(
+                    f"{label}: launch requires an endpoint (the contract it "
+                    f"brings up)")
 
     return errors
