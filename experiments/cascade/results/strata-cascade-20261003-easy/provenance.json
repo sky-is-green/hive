@@ -1,0 +1,99 @@
+{
+ "created": "2026-10-03 00:11:44",
+ "kind": "cascade-pilot",
+ "run": "strata-cascade-20261003-easy",
+ "tasks": "experiments/cascade/tasks.json",
+ "harness": {
+  "repo": "/home/penis/Desktop/work/hivebench",
+  "branch": "hive_cascade",
+  "commit": "9d1cbc96636e7a378bdbd1c0d0a6dc0f583251bc",
+  "dirty": true
+ },
+ "strata": {
+  "repo": "/home/penis/Desktop/work/strata",
+  "commit": "db4f91a1171d697928b0d2e1f50ef95e25559d4c",
+  "dirty": false,
+  "config": "strata-q2_0-coexist.json",
+  "health": {
+   "status": "ok",
+   "max_context": 4096,
+   "model": "qwen3.8-flash-next-q2_0",
+   "images": false,
+   "api_key": false,
+   "loaded": true,
+   "service": "strata"
+  }
+ },
+ "model": {
+  "path": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720"
+ },
+ "stack": {
+  "file": "stacks/strata-125b.json",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "caps": {
+   "measured": "2026-10-02",
+   "artifact": "experiments/cascade/results/strata-feasibility-20261002/",
+   "engine_commit": "db4f91a1171d",
+   "decode_tok_s": [
+    56.8,
+    57.3
+   ],
+   "prefill_tok_s": [
+    407,
+    523
+   ],
+   "mtp_acceptance": 0.77,
+   "ram_available_min_gb": 26.9,
+   "vram_peak_gb": [
+    18.5,
+    19.2
+   ],
+   "coexistence": {
+    "vram_reserve_mib": 3072,
+    "prefill": 512
+   }
+  }
+ },
+ "generator_base": "http://127.0.0.1:8080/v1",
+ "api_model": "flash",
+ "resources": {
+  "samples": 59,
+  "mem_available_min_gb": 22.82,
+  "vram_peak_gb": [
+   17.684452056884766,
+   19.07910919189453
+  ]
+ },
+ "gateway": {
+  "url": "http://127.0.0.1:4000",
+  "model_group": "flash"
+ },
+ "usage": {
+  "answer": {
+   "calls": 13,
+   "input": 790.0,
+   "output": 392.0,
+   "cost_usd": 0.000354
+  },
+  "router": {
+   "calls": 13,
+   "input": 1739.0,
+   "output": 351.0,
+   "cost_usd": 0.000471
+  },
+  "verifier": {
+   "calls": 13,
+   "input": 1615.0,
+   "output": 421.0,
+   "cost_usd": 0.000495
+  },
+  "total_cost_usd": 0.00132
+ },
+ "caveats": [
+  "single sample per task; no held-out split",
+  "frontier router + frontier verifier (DeepSeek via LiteLLM); local decision models not co-resident with Strata",
+  "Strata adaptive expert cache + MTP speculation: greedy output is not byte-identical run to run",
+  "measure mode: every task gets a local Strata answer and an API answer for comparison"
+ ]
+}
