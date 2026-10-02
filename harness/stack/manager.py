@@ -1,12 +1,20 @@
 """Stack lifecycle manager — apply / status / unload (HIVE-PLAN §B3).
 
-Each tier is spawned as one ``ServerInstance`` through
+Each locally launched tier is spawned as one ``ServerInstance`` through
 ``harness.models.LlamaServerManager.load``.  The launch config is expressed as
 an ``EngineProfile.load_options`` dict (ADR-L4) so there is no parallel config
 format; the few llama-server flags that ``load_options`` cannot carry
 (``--split-mode layer --tensor-split``, ``--spec-type draft-mtp``) travel as extra args /
 env.  ``apply`` runs the T36 residency plan first and refuses an over-budget
 stack before spawning anything (ADR-L5).
+
+A tier with an ``endpoint`` (Strata's ``serve/server.py``, or any
+OpenAI-compatible server launched outside the harness) is **not spawned**:
+``apply`` health-checks it through :func:`probe_endpoint` and registers it,
+and ``unload`` deregisters without killing the process.  That keeps process,
+config and port ownership with the engine's own run script while the cascade
+and the DSH runtime still see the generator contract (endpoint + caps +
+residency).
 
 Frozen at T34 (ADR-L8).  T37 implements it; T38 (api) and T44 (wiring) consume
 it.  ``status`` is the shape the Stack-tab residency strip renders.
@@ -17,11 +25,96 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
+from urllib.parse import urlsplit
+
+import requests
 
 from harness.models import launch_extra_args
 from harness.stack.residency import plan_residency
 from harness.stack.schema import ROLE_FACE, Stack, Tier
+
+#: API-base suffix Strata serves under the server root (``…/v1``).
+_API_SUFFIX = "/v1"
+
+
+def endpoint_base(endpoint: str) -> str:
+    """The endpoint's server root: ``http://host:8080/v1`` → ``http://host:8080``.
+
+    Both Strata and llama-server serve ``/health`` at the root while the
+    OpenAI surface lives under ``/v1``; a declared endpoint may name either.
+    """
+    base = str(endpoint).strip().rstrip("/")
+    if base.endswith(_API_SUFFIX):
+        base = base[: -len(_API_SUFFIX)].rstrip("/")
+    return base
+
+
+def endpoint_port(endpoint: str) -> int:
+    """TCP port of an endpoint URL (80/443 when the URL omits it; 0 when unusable)."""
+    try:
+        parts = urlsplit(str(endpoint).strip())
+        return int(parts.port or (443 if parts.scheme == "https" else 80))
+    except (TypeError, ValueError):
+        return 0
+
+
+def probe_endpoint(endpoint: str, timeout: float = 5.0) -> dict[str, Any]:
+    """Health-check an endpoint-backed tier and return the facts to register.
+
+    ``GET <root>/health`` first (Strata reports ``status``/``loaded``/
+    ``max_context``; llama-server reports ``status``), falling back to
+    ``GET <root>/v1/models`` for servers without a health route.  Raises
+    ``RuntimeError`` with every failure when the endpoint is unreachable,
+    unhealthy, or reports itself unloaded — an apply that registers a dead
+    tier is worse than a failed apply.
+    """
+    root = endpoint_base(endpoint)
+    errors: list[str] = []
+    for url, kind in ((f"{root}/health", "health"), (f"{root}/v1/models", "models")):
+        try:
+            resp = requests.get(url, timeout=timeout)
+        except requests.RequestException as exc:
+            errors.append(f"{url}: {exc}")
+            continue
+        if resp.status_code != 200:
+            errors.append(f"{url}: HTTP {resp.status_code}")
+            continue
+        try:
+            data = resp.json() if resp.content else {}
+        except ValueError:
+            data = {}
+        if not isinstance(data, Mapping):
+            data = {}
+        if kind == "health":
+            status = data.get("status")
+            if status is not None and str(status).strip().lower() != "ok":
+                errors.append(f"{url}: status={status!r}")
+                continue
+            if data.get("loaded") is False:
+                raise RuntimeError(
+                    f"endpoint {endpoint} is up but its model is not loaded "
+                    f"(/health says loaded=false); load it (POST {root}/load) "
+                    f"and apply again")
+        model = str(data.get("model") or "")
+        ids = [
+            str(entry.get("id") or "")
+            for entry in (data.get("data") or [])
+            if isinstance(entry, Mapping)
+        ]
+        ids = [value for value in ids if value]
+        return {
+            "endpoint": endpoint,
+            "base_url": endpoint.rstrip("/"),
+            "health_url": url,
+            "model": model or (ids[0] if ids else ""),
+            "loaded": bool(data.get("loaded", True)),
+            "max_context": data.get("max_context"),
+            "service": data.get("service") or "",
+        }
+    raise RuntimeError(
+        f"endpoint {endpoint} is not healthy: " + ("; ".join(errors) or "no response")
+    )
 
 
 @dataclass
@@ -31,10 +124,13 @@ class TierRuntime:
     ``to_dict`` is a row of ``GET /v1/stacks/status``::
 
         {"role", "key", "port", "ctx", "model", "backend", "resident",
-         "vram_gb", "tok_s", "per_card": [...]}
+         "vram_gb", "tok_s", "base_url", "caps", "per_card": [...]}
 
     ``vram_gb`` / ``tok_s`` are live measurements (``None`` when unavailable);
-    ``per_card`` is the planned residency from ``residency.plan_residency``.
+    ``base_url`` is set for endpoint-backed tiers (the OpenAI base the stack
+    file declares) and consumed by ``harness.stack_runtime``; ``caps`` carries
+    the tier's declared measured serving facts; ``per_card`` is the planned
+    residency from ``residency.plan_residency``.
     """
 
     role: str
@@ -46,6 +142,8 @@ class TierRuntime:
     resident: bool = True
     vram_gb: Optional[float] = None
     tok_s: Optional[float] = None
+    base_url: Optional[str] = None
+    caps: Optional[dict[str, Any]] = None
     per_card: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -59,6 +157,8 @@ class TierRuntime:
             "resident": self.resident,
             "vram_gb": self.vram_gb,
             "tok_s": self.tok_s,
+            "base_url": self.base_url,
+            "caps": dict(self.caps) if self.caps else None,
             "per_card": list(self.per_card),
         }
 
@@ -162,6 +262,9 @@ class StackManager:
     ``models_manager`` is the shared ``LlamaServerManager``.  ``apply``,
     ``status`` and ``unload`` are the frozen §B3 surface; the manager holds at
     most one applied stack (spawn discipline: unload before switching).
+    A tier carrying ``endpoint`` is **not spawned**: apply health-checks the
+    endpoint, registers it, and never kills it on unload (Strata's own server
+    owns the process; the harness owns the contract, not the launch).
     """
 
     def __init__(
@@ -170,10 +273,12 @@ class StackManager:
         *,
         stacks_root: Any = None,
         hardware: Any = None,
+        endpoint_prober: Optional[Callable[[str], dict[str, Any]]] = None,
     ) -> None:
         self.models_manager = models_manager
         self.stacks_root = stacks_root
         self.hardware = hardware
+        self.endpoint_prober = endpoint_prober or probe_endpoint
         self._applied: Optional[Stack] = None
         self._plan: Any = None
         self._runtimes: dict[str, TierRuntime] = {}
@@ -189,6 +294,12 @@ class StackManager:
         face = [t for t in tiers if getattr(t, "role", None) == ROLE_FACE]
         rest = [t for t in tiers if getattr(t, "role", None) != ROLE_FACE]
         return face + rest
+
+    @staticmethod
+    def _endpoint(tier: Any) -> str:
+        """The tier's endpoint URL, or ``""`` when it is locally launched."""
+        value = _tier_field(tier, "endpoint", None)
+        return str(value).strip() if value else ""
 
     def _ordered_roles(self) -> list[str]:
         order = [ROLE_FACE] + [role for role in self._runtimes
@@ -227,8 +338,10 @@ class StackManager:
         """Load every tier, face first.
 
         Returns ``{"ok": bool, "tiers": [{"role", "port", "key"}, ...]}``.
-        On any failure the tiers already spawned are rolled back and the error
-        is raised as ``RuntimeError`` with the offending role attached.
+        A tier with ``endpoint`` is health-checked and registered rather than
+        spawned; on any failure the tiers already spawned are rolled back and
+        the error is raised as ``RuntimeError`` with the offending role
+        attached.
         """
         plan = plan_residency(stack, models_manager=self.models_manager,
                               hardware=self.hardware)
@@ -246,12 +359,39 @@ class StackManager:
         per_card = [_card_dict(card) for card in plan.per_card]
         runtimes: dict[str, TierRuntime] = {}
         keys: dict[str, str] = {}
+        # Managed launches must not be handed a port an endpoint tier already
+        # owns in this stack: endpoint ports live outside the model manager.
         busy = self._busy_ports()
+        busy.update(
+            port for port in (endpoint_port(self._endpoint(t))
+                              for t in stack.tiers) if port > 0
+        )
         base = self._base_port()
         offset = 0
         tier: Any = None
         try:
             for tier in self._ordered_tiers(stack):
+                endpoint = self._endpoint(tier)
+                if endpoint:
+                    health = self.endpoint_prober(endpoint)
+                    if not isinstance(health, Mapping):
+                        health = {}
+                    reported_ctx = health.get("max_context")
+                    runtimes[tier.role] = TierRuntime(
+                        role=tier.role,
+                        key=f"{stack.name}-{tier.role}",
+                        port=endpoint_port(endpoint),
+                        ctx=int(reported_ctx or _tier_field(tier, "ctx", 8192)),
+                        model=str(health.get("model")
+                                  or Path(_tier_field(tier, "file", "")).stem),
+                        backend=str(_tier_field(tier, "backend", "") or "endpoint"),
+                        resident=bool(health.get("loaded", True)),
+                        base_url=str(health.get("base_url")
+                                     or endpoint.rstrip("/")),
+                        caps=dict(_tier_field(tier, "caps", {}) or {}),
+                        per_card=[dict(card) for card in per_card],
+                    )
+                    continue
                 while base + offset in busy:
                     offset += 1
                 port = base + offset
@@ -324,10 +464,12 @@ class StackManager:
         }
 
     def unload(self, stack: Optional[Stack | str] = None) -> dict[str, Any]:
-        """Stop every tier of the applied (or named) stack.
+        """Stop every launched tier of the applied (or named) stack.
 
-        Returns ``{"ok": bool, "unloaded": [role, ...]}``; unknown/unapplied
-        names are a no-op with ``ok`` True.
+        Endpoint-backed tiers are deregistered, never killed: the process
+        belongs to whoever launched it (Strata's own server).  Returns
+        ``{"ok": bool, "unloaded": [role, ...]}``; unknown/unapplied names are
+        a no-op with ``ok`` True.
         """
         if self._applied is None:
             return {"ok": True, "unloaded": []}
@@ -340,7 +482,9 @@ class StackManager:
 
         unloaded: list[str] = []
         for role in self._ordered_roles():
-            self._safe_unload(self._keys[role])
+            key = self._keys.get(role)
+            if key is not None:
+                self._safe_unload(key)
             unloaded.append(role)
         self._applied = None
         self._plan = None

@@ -1,0 +1,43 @@
+{
+  "name": "strata-125b",
+  "version": 1,
+  "tiers": [
+    {
+      "role": "face",
+      "repo": "Qwen/Qwen3.8-Flash-Next",
+      "file": "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+      "ctx": 4096,
+      "ngl": 99,
+      "backend": "strata",
+      "cache_k": "q8_0",
+      "cache_v": "q8_0",
+      "endpoint": "http://127.0.0.1:8080/v1",
+      "caps": {
+        "measured": "2026-10-02",
+        "artifact": "experiments/cascade/results/strata-feasibility-20261002/",
+        "engine_commit": "db4f91a1171d",
+        "decode_tok_s": [
+          56.8,
+          57.3
+        ],
+        "prefill_tok_s": [
+          407,
+          523
+        ],
+        "mtp_acceptance": 0.77,
+        "ram_available_min_gb": 26.9,
+        "vram_peak_gb": [
+          18.5,
+          19.2
+        ],
+        "coexistence": {
+          "vram_reserve_mib": 3072,
+          "prefill": 512
+        }
+      }
+    }
+  ],
+  "routing": {
+    "workers_as": "subagent"
+  }
+}

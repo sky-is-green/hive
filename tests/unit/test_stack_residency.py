@@ -571,6 +571,38 @@ def test_invisible_cards_are_left_out_of_the_plan(library):
     assert plan.per_card[0].weights > 20.0
 
 
+def test_an_all_endpoint_stack_plans_nothing_and_needs_no_hardware():
+    """A Strata-only stack validates without a local GGUF or a GPU probe."""
+    def boom():
+        raise RuntimeError("no hardware probe")
+
+    stack = Stack(name="strata-125b", tiers=[Tier(
+        role="face", repo="Qwen/Qwen3.8-Flash-Next",
+        file="Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+        ctx=4096, backend="strata", endpoint="http://127.0.0.1:8080/v1")])
+
+    plan = plan_residency(stack, models_manager=None, hardware=boom)
+
+    assert plan.ok is True
+    assert plan.per_card == []
+    assert any("endpoint-backed" in w for w in plan.warnings)
+
+
+def test_a_mixed_stack_plans_only_the_locally_launched_tier(library):
+    """The endpoint-backed face is external; the worker is still budgeted."""
+    stack = _two_tier()
+    stack.tiers[0].endpoint = "http://127.0.0.1:8080/v1"
+
+    plan = _plan(stack, library, _box(display=None))
+
+    assert plan.ok is True
+    assert any("endpoint-backed" in w for w in plan.warnings)
+    card0 = [c for c in plan.per_card if c.card == 0][0]
+    card1 = [c for c in plan.per_card if c.card == 1][0]
+    assert card0.total == 0.0
+    assert card1.weights == pytest.approx(3.32, abs=1e-6)
+
+
 def test_a_model_missing_from_the_library_is_refused_not_ignored(library):
     """An undownloaded GGUF has no size; the stack is not 'fine', it is unknown."""
     stack = Stack(name="probe", tiers=[Tier(

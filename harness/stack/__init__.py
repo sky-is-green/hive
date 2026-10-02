@@ -16,6 +16,7 @@ from harness.stack.api import PREFIX, create_router
 from harness.stack.manager import (
     StackManager,
     TierRuntime,
+    probe_endpoint,
     tier_env,
     tier_extra_args,
     tier_load_options,
@@ -67,6 +68,7 @@ __all__ = [
     # manager
     "StackManager",
     "TierRuntime",
+    "probe_endpoint",
     "tier_env",
     "tier_extra_args",
     "tier_load_options",

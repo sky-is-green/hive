@@ -244,7 +244,7 @@ ROLES: tuple[Role, ...] = (
         "E4", "agentic / reasoning", Kind.GENERATE, "prompt", "text",
         (Device.DGPU1,), (15.0, 30.0),
         latency_unit="token", context_cap=131072, kv=GEN_KV,
-        candidates=("qwen3.5-27b", "flash-next", "scion-35b-a3b"),
+        candidates=("qwen3.5-27b", "flash-next", "flash-next-strata", "scion-35b-a3b"),
     ),
     _role(
         "E5", "transform (summarize/rewrite)", Kind.TRANSFORM, "text", "text",

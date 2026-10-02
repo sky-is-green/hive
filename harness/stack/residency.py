@@ -134,6 +134,19 @@ def plan_residency(
     implementations when ``None``.
     """
     warnings: list[str] = []
+
+    # An endpoint-backed tier is already running somewhere else (Strata's
+    # serve/server.py): its process and its VRAM/RAM are not ours to plan, and
+    # it must not need a local GGUF to validate.  A stack made only of such
+    # tiers validates without touching the hardware probe at all.
+    local_tiers = [tier for tier in stack.tiers if not _endpoint(tier)]
+    if stack.tiers and not local_tiers:
+        for tier in stack.tiers:
+            warnings.append(
+                f"tier {tier.role}: endpoint-backed ({_endpoint(tier)}); "
+                f"residency is external, not planned")
+        return ResidencyPlan(ok=True, per_card=[], warnings=warnings)
+
     devices = _visible_devices(_hardware_summary(hardware), warnings)
     if not devices:
         return ResidencyPlan(ok=False, per_card=[], warnings=warnings + [
@@ -301,6 +314,13 @@ def _budget(card: dict[str, Any], tier_weights: list[float],
 def _charge_tier(tier, *, manager, devices, by_index, weights, kv, resident,
                  warnings) -> bool:
     """Charge one tier's weights and KV onto its cards; False when unresolvable."""
+    endpoint = _endpoint(tier)
+    if endpoint:
+        warnings.append(
+            f"tier {tier.role}: endpoint-backed ({endpoint}); "
+            f"residency is external, not planned")
+        return True
+
     path = _resolve(tier, manager, warnings)
     if path is None:
         return False
@@ -471,6 +491,12 @@ def _file_size_gib(path) -> Optional[float]:
         return Path(path).stat().st_size / GIB
     except OSError:
         return None
+
+
+def _endpoint(tier) -> str:
+    """The tier's endpoint URL, or ``""`` when it is locally launched."""
+    value = getattr(tier, "endpoint", None)
+    return str(value).strip() if value else ""
 
 
 def _ctx(tier, warnings) -> int:
