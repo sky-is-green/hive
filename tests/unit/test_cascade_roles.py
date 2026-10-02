@@ -82,6 +82,15 @@ def test_default_catalog_roles_exist_and_ids_unique():
     assert len(registry) == len(DEFAULT_CANDIDATES)
 
 
+def test_strata_flash_next_candidate_is_registered():
+    """The measured Strata deployment is a first-class E4 candidate."""
+    candidate = default_registry().get("flash-next-strata")
+    assert candidate.roles == ("E4",)
+    assert candidate.precision == "Q2_0" and candidate.bytes_gb == 66.0
+    assert "56.8-57.3" in candidate.notes
+    assert "strata-125b.json" in candidate.notes
+
+
 def test_registry_rejects_duplicate_ids():
     registry = CandidateRegistry()
     registry.register(Candidate(id="m", label="m", repo="r/x"))

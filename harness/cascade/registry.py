@@ -211,6 +211,20 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         notes="GSQ-RCO Q2_0 (ISTA-DASLab); expert offload via the prism slot cache; ~40 GB active",
     ),
     Candidate(
+        id="flash-next-strata", label="Qwen3.8-Flash-Next (Strata)",
+        repo="Qwen/Qwen3.8-Flash-Next",
+        file="Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+        params_b=177.0, precision="Q2_0", bytes_gb=66.0,
+        devices=(Device.DGPU0, Device.DGPU1),
+        roles=("E4",),
+        notes=(
+            "endpoint-backed tier (stacks/strata-125b.json, "
+            "http://127.0.0.1:8080/v1); measured 2026-10-02 on 2x RX 7900 XT: "
+            "56.8-57.3 t/s decode, 407-523 t/s prefill, ~77% MTP acceptance; "
+            "coexists with the desktop via --vram-reserve-mib 3072"
+        ),
+    ),
+    Candidate(
         id="scion-35b-a3b", label="Scion-35B-A3B",
         repo="SkyIsNotGreen/Scion-35B-A3B",
         params_b=35.0, precision="PQ2_0", bytes_gb=11.3,

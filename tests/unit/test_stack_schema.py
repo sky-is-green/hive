@@ -49,7 +49,7 @@ def _tier(role, **over):
 # --- the authored default stacks -------------------------------------------
 
 
-@pytest.mark.parametrize("name", ["peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b"])
+@pytest.mark.parametrize("name", ["peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b", "strata-125b"])
 def test_authored_stacks_validate(name):
     """Both default stacks are on disk, parse, and pass shape validation."""
     assert (STACKS / f"{name}.json").is_file(), f"stacks/{name}.json is missing"
@@ -98,9 +98,30 @@ def test_prism_lowvram_uses_the_slot_cache():
     assert "-ncmoe" in ENGINE_ARGS_ALLOWED and "-cmoe" in ENGINE_ARGS_ALLOWED
 
 
+def test_strata_125b_is_an_endpoint_stack():
+    """The Strata tier is verified at apply time, not launched: endpoint+caps."""
+    stack = load_stack("strata-125b")
+    assert validate_shape(stack) == []
+    (face,) = stack.tiers
+    assert face.role == ROLE_FACE
+    assert face.file == "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf"
+    assert (face.ctx, face.ngl) == (4096, 99)
+    assert face.backend == "strata"
+    assert face.endpoint == "http://127.0.0.1:8080/v1"
+    # the measured caps travel with the tier (feasibility run 2026-10-02)
+    caps = face.caps or {}
+    assert caps["decode_tok_s"] == [56.8, 57.3]
+    assert caps["prefill_tok_s"] == [407, 523]
+    assert caps["mtp_acceptance"] == pytest.approx(0.77)
+    assert caps["coexistence"]["vram_reserve_mib"] == 3072
+    # nothing here is a llama.cpp launch knob: no engine args, no pin/split
+    assert face.engine_args is None
+    assert face.pin is None and face.ts is None
+
+
 def test_authored_stacks_round_trip_through_the_data_model():
     """to_dict is byte-faithful: reloading a re-serialised stack is identical."""
-    for name in ("peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b"):
+    for name in ("peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b", "strata-125b"):
         raw = json.loads((STACKS / f"{name}.json").read_text(encoding="utf-8"))
         assert Stack.from_dict(raw).to_dict() == raw, f"{name} is not canonical"
 
@@ -139,7 +160,7 @@ def test_peer_3tier_is_face_plus_agency_plus_mechanics():
 
 def test_saving_the_authored_stacks_reproduces_the_files(tmp_path):
     """save(load(authored)) == authored, so the files stay hand-editable."""
-    for name in ("peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b"):
+    for name in ("peer-2tier", "peer-3tier", "prism-125b", "prism-125b-lowvram", "prism-35b", "strata-125b"):
         original = (STACKS / f"{name}.json").read_text(encoding="utf-8")
         path = save_stack(load_stack(name), root=tmp_path)
         assert path == tmp_path / "stacks" / f"{name}.json"
@@ -294,6 +315,45 @@ def test_tier_engine_args_accept_auto_value():
         "engine_args": ["-ncmoe", "36", "-msc", "auto"],
     })
     assert tier.engine_args == ["-ncmoe", "36", "-msc", "auto"]
+
+
+def test_endpoint_tier_round_trips_with_caps():
+    """An endpoint-backed tier survives file -> model -> file with its caps."""
+    raw = {
+        "role": "face", "repo": "Qwen/Qwen3.8-Flash-Next", "file": "m.gguf",
+        "endpoint": "http://127.0.0.1:8080/v1",
+        "caps": {"decode_tok_s": [56.8, 57.3], "mtp_acceptance": 0.77},
+    }
+    tier = Tier.from_dict(raw)
+    assert tier.endpoint == "http://127.0.0.1:8080/v1"
+    assert tier.caps == {"decode_tok_s": [56.8, 57.3], "mtp_acceptance": 0.77}
+    canonical = tier.to_dict()
+    assert canonical["endpoint"] == "http://127.0.0.1:8080/v1"
+    assert canonical["caps"] == {"decode_tok_s": [56.8, 57.3], "mtp_acceptance": 0.77}
+    assert Tier.from_dict(canonical).to_dict() == canonical
+    # absent by default and omitted from the document
+    plain = Tier.from_dict({"role": "face", "repo": "a/b", "file": "b.gguf"})
+    assert (plain.endpoint, plain.caps) == (None, None)
+    assert "endpoint" not in plain.to_dict() and "caps" not in plain.to_dict()
+
+
+@pytest.mark.parametrize("value", [
+    "127.0.0.1:8080/v1",       # no scheme
+    "ftp://127.0.0.1:8080/v1",  # not http(s)
+    "http://",                  # no host
+    "just-a-name",              # not a URL at all
+])
+def test_tier_endpoint_rejects_non_http_urls(value):
+    with pytest.raises(ValueError, match="must be an http"):
+        Tier.from_dict({"role": "face", "repo": "a/b", "file": "b.gguf",
+                        "endpoint": value})
+
+
+@pytest.mark.parametrize("value", ["caps", [], 5])
+def test_tier_caps_must_be_an_object(value):
+    with pytest.raises(ValueError, match="caps must be an object"):
+        Tier.from_dict({"role": "face", "repo": "a/b", "file": "b.gguf",
+                        "caps": value})
 
 
 @pytest.mark.parametrize("tier_data, match", [

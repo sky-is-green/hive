@@ -19,6 +19,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Optional
+from urllib.parse import urlsplit
 
 # Tier roles (LOCAL-STACKS.md §2) — ADR-L1: roles, not sizes.  ``face`` is the
 # model the human talks to; every other role is a subordinate tier.
@@ -45,7 +46,9 @@ _TIER_REQUIRED: tuple[str, ...] = ("role", "repo", "file")
 _TIER_FIELDS: tuple[str, ...] = (
     "role", "repo", "file", "ctx", "ngl", "backend", "cache_k", "cache_v",
 )
-_TIER_OPTIONAL: tuple[str, ...] = ("spec", "mmproj", "pin", "ts", "engine_args")
+_TIER_OPTIONAL: tuple[str, ...] = (
+    "spec", "mmproj", "pin", "ts", "engine_args", "endpoint", "caps",
+)
 _STACK_FIELDS: tuple[str, ...] = ("name", "version", "tiers", "routing")
 
 #: llama-server flags a tier's ``engine_args`` list may carry.  Curated on
@@ -129,6 +132,33 @@ def _as_optional_text(value: Any, field_name: str) -> Optional[str]:
     return _as_text(value, field_name)
 
 
+def _as_endpoint(value: Any, field_name: str) -> Optional[str]:
+    """An optional ``http(s)://host[:port][/path]`` endpoint URL.
+
+    Endpoint-backed tiers hand the launch to an already-running server instead
+    of spawning a llama-server (Strata's ``serve/server.py`` on this box), so
+    the URL gets its own shape check: a scheme and a host, nothing else.
+    """
+    text = _as_optional_text(value, field_name)
+    if text is None:
+        return None
+    parts = urlsplit(text)
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        raise ValueError(
+            f"{field_name} must be an http(s) URL with a host, got {value!r}")
+    return text
+
+
+def _as_optional_object(value: Any, field_name: str) -> Optional[dict[str, Any]]:
+    """An optional JSON object (used for per-tier measured ``caps``)."""
+    if value is None or value == "":
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError(
+            f"{field_name} must be an object, got {type(value).__name__}")
+    return dict(value)
+
+
 def _as_int(value: Any, field_name: str, minimum: int) -> int:
     """An ``int`` (a digit string is coerced, matching ``load``'s ``ngl``)."""
     if isinstance(value, bool):
@@ -160,6 +190,12 @@ class Tier:
     ``HIP_VISIBLE_DEVICES`` string; ``ts`` is the llama.cpp tensor split
     (e.g. ``"1,1"``); ``spec`` is the speculative-decoding block
     (``{"type": "draft-mtp", "n_max": 3}``).
+
+    An **endpoint-backed** tier (``endpoint`` set, e.g.
+    ``http://127.0.0.1:8080/v1``) is not launched by the manager: ``apply``
+    health-checks it and registers it (the Strata serving model).  ``caps`` is
+    an optional free-form object with the tier's *measured* serving facts
+    (decode/prefill t/s, MTP acceptance, ...), carried into stack status.
     """
 
     role: str
@@ -175,6 +211,8 @@ class Tier:
     pin: Optional[str] = None
     ts: Optional[str] = None
     engine_args: Optional[list[str]] = None
+    endpoint: Optional[str] = None
+    caps: Optional[dict[str, Any]] = None
 
     def to_dict(self) -> dict[str, Any]:
         """The tier as it appears in a ``stacks/<name>.json`` file."""
@@ -198,6 +236,10 @@ class Tier:
             out["ts"] = self.ts
         if self.engine_args is not None:
             out["engine_args"] = list(self.engine_args)
+        if self.endpoint is not None:
+            out["endpoint"] = self.endpoint
+        if self.caps is not None:
+            out["caps"] = dict(self.caps)
         return out
 
     @classmethod
@@ -231,6 +273,8 @@ class Tier:
             ts=_as_optional_text(data.get("ts"), "tier ts"),
             engine_args=(validate_engine_args(data.get("engine_args"))
                          if data.get("engine_args") is not None else None),
+            endpoint=_as_endpoint(data.get("endpoint"), "tier endpoint"),
+            caps=_as_optional_object(data.get("caps"), "tier caps"),
         )
 
 
