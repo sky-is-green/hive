@@ -179,8 +179,43 @@ sequence as the E4 baseline (Strata generated 170 tokens per decode — EOS, no
 | VRAM peak c0/c1 | 20.5/19.8 GB | 18.5/19.2 GB |
 
 Memory is released on close (VRAM back to desktop baseline, MemAvailable back
-above the pre-run level). The prism engine stays the 35B / experimental lane;
-the adoption decision for the Flash-Next tier is with the human.
+above the pre-run level).
+
+### Dual-engine direction — what we gain, what we lose, the porting path (2026-10-02)
+
+Strata is **deliberately single-architecture**. The guard in
+`include/strata/artifact/gguf_reader.hpp` (`check_architecture`) refuses
+anything but `qwen4exp`: *"The engine is specialised to ONE model; anything
+else must be refused with a precise error rather than silently mis-run"*, and
+36 source references bind the loader, layer, kernels (PLE streaming, QSA
+indexer, hyper-connections) and MTP to that architecture. That focus is the
+speed.
+
+**Direction: run both engines behind the generator contract** — Strata for the
+Flash-Next tier, prism/llama.cpp for Scion-35B, the ternary pipeline and the
+decision models — until a port is justified.
+
+| | gain | lose / cost |
+|---|---|---|
+| Strata as the Flash-Next tier | 2.2x decode (57 vs 26 t/s), MTP (~77% acceptance), CPU co-execution of misses, 8K prefill chunks, KV streaming/k8v4, `/metrics`, per-box calibration, coexistence reserve | single-arch lock-in; ternary/35B need a fork port; a second engine to pin and upgrade; greedy output is not byte-identical (adaptive cache + speculation); the prism lane stalls unless kept alive for 35B |
+| prism/llama.cpp as the general engine | every GGUF we own (Scion-35B PQ2_0, Bonsai, decision models), the ternary pipeline, upstream rebase, byte-identical greedy | slower on Flash-Next; its open list (CPU co-execution, MTP draft path, prefill chunking, telemetry) |
+
+**If ternary-on-Strata is wanted later**, the work order from the source:
+
+1. **architecture seam**: add a `qwen35moe` implementation behind a dispatch.
+   `check_architecture` is the single choke point; `layer.cpp` is
+   Flash-Next-specific and needs a sibling, not a rewrite of the whole engine.
+2. **packer**: `tools/strata_pack.py` already keys off standard
+   `blk.N.ffn_{gate,up,down}_exps.weight` names, so a 35B pack is mostly
+   parameterization (experts.bin layout + native_experts.txt).
+3. **quant kernels**: add PQ2_0 dequant + GEMV/MMQ beside the existing
+   `dequant_s2` / `s2_gemv*` and `iq_kernels` families (AVX-512 + HIP).
+4. **MTP**: Scion's drafter is the fork's sidecar, not the Flash-Next MTP —
+   skip or port separately.
+
+That is a fork-scale project (weeks), which is exactly why the dual-engine
+contract is the cheap path: the cascade only sees endpoint + caps + measured
+latency, so either engine can sit behind a tier.
 
 ### MTP speculation: what it actually takes (2026-10-02)
 
