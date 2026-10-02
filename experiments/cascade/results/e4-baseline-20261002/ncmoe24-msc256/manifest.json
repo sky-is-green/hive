@@ -1,0 +1,245 @@
+{
+ "arm": "ncmoe24-msc256",
+ "label": "-ncmoe 24 -msc 256",
+ "args": [
+  "-ngl",
+  "99",
+  "-c",
+  "4096",
+  "-np",
+  "1",
+  "-t",
+  "8",
+  "-ts",
+  "0.522,0.478",
+  "--split-mode",
+  "layer",
+  "-lm",
+  "mmap",
+  "--lazy-mode",
+  "on",
+  "-fa",
+  "auto",
+  "-ncmoe",
+  "24",
+  "-msc",
+  "256"
+ ],
+ "started": "2026-10-02 22:46:53",
+ "requests": {
+  "cold1k": {
+   "ok": true,
+   "wall_s": 8.08,
+   "prompt_n": 925,
+   "prompt_ms": 8014.9,
+   "prefill_tps": 115.4,
+   "predicted_n": 1,
+   "predicted_ms": 0.0,
+   "decode_tps": 0.0,
+   "content_sha16": "e3b0c44298fc1c14",
+   "content_head": "",
+   "proc_read_mb": 3802.9,
+   "proc_write_mb": 0.0,
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0
+  },
+  "cold4k": {
+   "ok": true,
+   "wall_s": 13.1,
+   "prompt_n": 3084,
+   "prompt_ms": 13061.2,
+   "prefill_tps": 236.1,
+   "predicted_n": 1,
+   "predicted_ms": 0.0,
+   "decode_tps": 0.0,
+   "content_sha16": "e3b0c44298fc1c14",
+   "content_head": "",
+   "proc_read_mb": 169.5,
+   "proc_write_mb": 0.0,
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0
+  },
+  "warm1k": {
+   "ok": true,
+   "wall_s": 2.82,
+   "prompt_n": 925,
+   "prompt_ms": 2643.9,
+   "prefill_tps": 349.9,
+   "predicted_n": 1,
+   "predicted_ms": 0.0,
+   "decode_tps": 0.0,
+   "content_sha16": "e3b0c44298fc1c14",
+   "content_head": "",
+   "proc_read_mb": 0.0,
+   "proc_write_mb": 0.0,
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0
+  },
+  "decode1": {
+   "ok": true,
+   "wall_s": 12.3,
+   "prompt_n": 167,
+   "prompt_ms": 932.7,
+   "prefill_tps": 179.0,
+   "predicted_n": 256,
+   "predicted_ms": 11204.4,
+   "decode_tps": 22.85,
+   "content_sha16": "3bc0dba4136197fc",
+   "content_head": " the Young Vic Theatre in London . He was directed by James MacDonald and starre",
+   "proc_read_mb": 14.3,
+   "proc_write_mb": 0.0,
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0
+  },
+  "decode2": {
+   "ok": true,
+   "wall_s": 12.64,
+   "prompt_n": 167,
+   "prompt_ms": 1047.0,
+   "prefill_tps": 159.5,
+   "predicted_n": 256,
+   "predicted_ms": 11268.3,
+   "decode_tps": 22.72,
+   "content_sha16": "1a20558e0c816a99",
+   "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+   "proc_read_mb": 13.0,
+   "proc_write_mb": 0.0,
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0
+  }
+ },
+ "skipped_phases": [
+  "cached"
+ ],
+ "load": {
+  "ok": true,
+  "load_s": 28.5
+ },
+ "vmhwm_kb": 27457884,
+ "vmsize_kb": 89141104,
+ "stop": {
+  "exited": true,
+  "signal": "SIGINT",
+  "rc": 0
+ },
+ "slot_stats": {
+  "slots_per_layer": 256,
+  "layers": 24,
+  "vram_mib": 8100.0,
+  "promoted_note": "",
+  "hits": 118739,
+  "fetches": 11341,
+  "hit_rate_pct": 91.3,
+  "stats_layers": 24,
+  "stats_slots": 256
+ },
+ "aborted": null,
+ "ended": "2026-10-02 22:48:13",
+ "phases": {
+  "load": {
+   "samples": 283,
+   "mem_available_min_kb": 26744696,
+   "server_rss_peak_kb": 27440480,
+   "vram_peak_kb": {
+    "card0": 12062160,
+    "card1": 19355048,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 5.3,
+    "card1": 15.4
+   }
+  },
+  "cold1k": {
+   "samples": 80,
+   "mem_available_min_kb": 27004476,
+   "server_rss_peak_kb": 14843640,
+   "vram_peak_kb": {
+    "card0": 12342420,
+    "card1": 19617192,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 33.8,
+    "card1": 17.9
+   }
+  },
+  "cold4k": {
+   "samples": 130,
+   "mem_available_min_kb": 26809048,
+   "server_rss_peak_kb": 17627176,
+   "vram_peak_kb": {
+    "card0": 12354512,
+    "card1": 19651584,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 50.3,
+    "card1": 21.3
+   }
+  },
+  "warm1k": {
+   "samples": 28,
+   "mem_available_min_kb": 26384008,
+   "server_rss_peak_kb": 18061368,
+   "vram_peak_kb": {
+    "card0": 12354716,
+    "card1": 19647284,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 75.5,
+    "card1": 27.4
+   }
+  },
+  "decode1": {
+   "samples": 122,
+   "mem_available_min_kb": 25854600,
+   "server_rss_peak_kb": 18467472,
+   "vram_peak_kb": {
+    "card0": 12354832,
+    "card1": 19682552,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 57.6,
+    "card1": 43.3
+   }
+  },
+  "decode2": {
+   "samples": 125,
+   "mem_available_min_kb": 25558428,
+   "server_rss_peak_kb": 18994128,
+   "vram_peak_kb": {
+    "card0": 12359740,
+    "card1": 19682652,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 55.0,
+    "card1": 43.0
+   }
+  },
+  "cached": {},
+  "shutdown": {
+   "samples": 22,
+   "mem_available_min_kb": 25589320,
+   "server_rss_peak_kb": 18935484,
+   "vram_peak_kb": {
+    "card0": 12261456,
+    "card1": 19305532,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 18.4,
+    "card1": 24.8
+   }
+  }
+ },
+ "mem_available_min_kb": 25558428,
+ "vram_peak_kb": {
+  "card0": 12359740,
+  "card1": 19682652,
+  "card2": 0
+ }
+}

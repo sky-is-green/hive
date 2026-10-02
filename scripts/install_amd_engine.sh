@@ -80,9 +80,9 @@ echo "[amd-engine] ok: $("$DEST/llama-server" --version 2>/dev/null | head -1)"
 cat <<EOF
 
 [amd-engine] next:
-  - apply a stack with "backend": "rocm"  (see stacks/ember.json)
+  - apply a stack with "backend": "rocm"  (see stacks/prism-125b.json)
   - or point the harness at it directly:
       scripts/install_amd_engine.sh && \\
       HARNESS_LLAMA_SERVER=$DEST/llama-server python -m harness
-  - engine docs: docs/EMBER.md
+  - engine docs: docs/ENGINE.md
 EOF

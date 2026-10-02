@@ -1,0 +1,41 @@
+{
+ "exe": "/home/penis/Desktop/work/strata/engine/strata",
+ "args": [
+  "--pack",
+  "/home/penis/Desktop/work/strata-data/packs/q2_0",
+  "--native",
+  "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf",
+  "--expert-profile",
+  "/home/penis/Desktop/work/strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/home/penis/Desktop/work/strata-data/mtp/rt",
+  "--max-context",
+  "4096",
+  "--mmap-experts"
+ ],
+ "cwd": "/home/penis/Desktop/work/strata",
+ "tokenizer": "/home/penis/Desktop/work/strata-data/packs/q2_0/tokenizer",
+ "model_name": "qwen3.8-flash-next-q2_0",
+ "log": "/home/penis/Desktop/work/strata/strata-q2_0.log",
+ "lib_dirs": [
+  "/opt/rocm/lib"
+ ],
+ "port": 8080,
+ "backend": "hip",
+ "gpu": [
+  0,
+  1
+ ],
+ "gpus_asked": true,
+ "layer_split": "auto"
+}

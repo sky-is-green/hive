@@ -1,28 +1,28 @@
-# Ember — AMD MoE expert residency for Hivebench
+# Engine lane — prism ROCm expert residency (hive_cascade)
 
-**Project codename: Ember.** Our own work on serving MoE models whose expert
-working set does not fit VRAM on consumer AMD (2× RX 7900 XT 20 GB, ROCm), by
-keeping a hot-expert slot band in VRAM and fetching the routed experts on
-demand. Ember is an **independent implementation** in the prism ROCm engine and
-the Hivebench harness; it is *inspired by* [FlashML
+Our own work on serving MoE models whose expert working set does not fit VRAM
+on consumer AMD (2× RX 7900 XT 20 GB, ROCm), by keeping a hot-expert slot band
+in VRAM and fetching the routed experts on demand. The slot cache is an
+**independent implementation** in the prism ROCm engine and the Hivebench
+harness; it is *inspired by* [FlashML
 FreeToken](https://github.com/FlashML-org/FreeToken)'s published design (LRU
 expert caching, bandwidth-adaptive co-execution) but shares no code with it and
 targets a different runtime (llama.cpp/ggml, not their Python/Triton engine).
-Formerly tracked as "AMD FreeToken".
+Formerly tracked as "AMD FreeToken" / project Ember.
 
-> **Consolidated 2026-10-02:** Ember is a lane of the **hive_cascade** program.
-> The standalone `ember` branch is retired (tip `4d07d81`, fully contained in
-> `hive_cascade`); the engine branch **`engine/ember`** in the prism repo keeps
-> its name. Anything Ember-marked lives on `hive_cascade` now.
+> **Consolidated 2026-10-02:** the engine lane is part of the **hive_cascade**
+> program (formerly project Ember). The standalone `ember` branch is retired
+> (tip `4d07d81`, fully contained in `hive_cascade`). The prism engine branch
+> is renamed `engine/ember` → `engine/prism`; stacks are `prism-*`.
 
-## Status (2026-09-28, shelved)
+## Status (2026-09-28; unshelved 2026-10-02 — baseline below)
 
 - **Engine end-to-end through Hivebench** — the 125B Qwen3.8-Flash-Next MoE
   (Q2_0, 512 experts top-10, 48 layers) applies via the stack API on the prism
   ROCm binary; `backend: "rocm"` per tier; chat completions round-trip.
 - **Engine A/B vs a stock build**: prism `engine/amd-rig` vs `origin/master` on
   the 35B MoE — +33–37% prefill, +11% decode, byte-identical greedy output.
-- **Ember slot cache** (`--moe-slot-cache N` / `-msc auto`): host-resident
+- **Slot cache** (`--moe-slot-cache N` / `-msc auto`): host-resident
   expert banks keep a hot-expert slot band in VRAM; decode fetches misses over
   PCIe and runs every routed expert on the GPU; fully-covered banks are
   promoted once at load (identity slots, no per-step overhead, graph capture
@@ -41,12 +41,15 @@ Formerly tracked as "AMD FreeToken".
 
   35B-A3B one card: 37.8 → **60.0 t/s** from 2.5 GiB of slots (75.9% hits);
   full coverage = all-GPU **108.9 t/s** (identity promotion, token-identical).
-  Harness stack `stacks/ember-125b-lowvram.json` (`-ncmoe 12 -msc auto`) picks
+  Harness stack `stacks/prism-125b-lowvram.json` (`-ncmoe 12 -msc auto`) picks
   its own size (449 slots / 7.1 GiB at apply time) and serves warm
   268–307 t/s prefill / 20.6–27.4 t/s decode.
 - **Shelved with these open items** (see "Next steps" below): kernel-count
   reduction, telemetry, prefill streaming for cached layers, device-side
   ensure.
+
+The 2026-10-02 baseline re-measured the 125B arms through
+`experiments/cascade/bench_e4_baseline.py`; see "E4 baseline results" below.
 
 ## Why it works (measured diagnosis)
 
@@ -69,17 +72,17 @@ Formerly tracked as "AMD FreeToken".
 
 ## The engine
 
-Repo: `sky-is-green/prism-ml-llama.cpp`, **branch `engine/ember`** (based on
-`engine/amd-rig`; local checkout `~/Desktop/work/prism-ml-llama.cpp`, built in
-`build-hip`).
+Repo: `sky-is-green/prism-ml-llama.cpp`, **branch `engine/prism`** (renamed
+from `engine/ember`; based on `engine/amd-rig`; local checkout
+`~/Desktop/work/prism-ml-llama.cpp`, built in `build-hip`).
 
 - upstream llama.cpp master (has `qwen4exp` / Qwen3.8-Flash-Next and
   `--lazy-mode` PLE streaming) + the HSA upload fix (`set_tensor` staging;
-  prevents the ROCm dual-GPU load hang) + `LLAMA_GRAPH_DUMP` + Ember.
-- Ember pieces: `GGML_OP_MOE_CACHE_MAP` (+ `ggml/include/ggml-moe-cache.h`),
+  prevents the ROCm dual-GPU load hang) + `LLAMA_GRAPH_DUMP` + the slot cache.
+- Slot-cache pieces: `GGML_OP_MOE_CACHE_MAP` (+ `ggml/include/ggml-moe-cache.h`),
   `src/llama-moe-slot-cache.{h,cpp}`, the `build_moe_ffn` hook,
   `--moe-slot-cache N|auto`, `LLAMA_MOE_SLOT_STATS=1` hit/fetch counters.
-- Research record: `tools/engine-rig/notes/EMBER-20260928.md` (design,
+- Research record: `tools/engine-rig/notes/SLOT-CACHE-20260928.md` (design,
   measurements, FreeToken alignment); budget notes and rig under
   `tools/engine-rig/`.
 
@@ -88,7 +91,7 @@ Hivebench integrates it through the per-backend binary convention
 
 ```
 tools/backends/rocm/llama-server      # the prism build (scripts/install_amd_engine.sh)
-stacks/ember*.json                    # "backend": "rocm" tiers
+stacks/prism*.json                    # "backend": "rocm" tiers
 ```
 
 ## Install / use
@@ -100,22 +103,22 @@ tools/backends/rocm/llama-server --version
 
 # serve the 125B FreeToken-shape stack
 .venv/bin/python -m harness --no-open --no-auto-start &      # sidecar on :8765
-curl -sX POST localhost:8765/v1/stacks/ember-125b/validate
-curl -sX POST localhost:8765/v1/stacks/ember-125b/apply
+curl -sX POST localhost:8765/v1/stacks/prism-125b/validate
+curl -sX POST localhost:8765/v1/stacks/prism-125b/apply
 curl -s localhost:8765/v1/stacks/status
 
 # the offload+cache variant (12 layers' experts host-side, cache auto-sized)
-curl -sX POST localhost:8765/v1/stacks/ember-125b-lowvram/apply
+curl -sX POST localhost:8765/v1/stacks/prism-125b-lowvram/apply
 ```
 
 Stacks in this branch:
 
 | stack | what | status |
 |---|---|---|
-| `ember-125b` | 125B MoE all-resident (headless-first split) | works |
-| `ember-125b-lowvram` | same + `-ncmoe 12 -msc auto` | works |
-| `ember-35b` | 35B-A3B single-card smoke / A/B model | works |
-| `ember` | Bonsai-2 27B/1.7B (PQ2_0) | **cannot load** on `engine/amd-rig`: fork-private tensor type 142 lives only on the legacy `moe-corr-runtime` line; keep for a future forward-port |
+| `prism-125b` | 125B MoE all-resident (headless-first split) | works |
+| `prism-125b-lowvram` | same + `-ncmoe 12 -msc auto` | works |
+| `prism-35b` | 35B-A3B single-card smoke / A/B model | works |
+| Bonsai-2 27B/1.7B (PQ2_0) | fork-private tensor type 142 | stack deleted (cannot load on `engine/amd-rig`; recover from git history for a future forward-port) |
 
 Model library: the GGUFs are symlinked into `~/.lmstudio/models` (the harness's
 default `models_dir` on this box): the 125B in
@@ -149,9 +152,35 @@ low-RAM modes, and a full OpenAI + Anthropic serving surface with per-tier
 Published Q2_0 numbers on a 12 GB RTX 5070 / 64 GB PC: 87.3 t/s at 1K context,
 73.7 at 128K, 60.3 at 262K. Our all-resident 125B measurement is 26.9 t/s; the
 gap is speculation (1.6-1.8x alone), CPU co-execution, prefill chunking, and
-the dispatch floor noted below. Their design validates Ember's thesis; the
+the dispatch floor noted below. Their design validates the slot-cache thesis; the
 unshelve decision is open. Full comparison and borrow list:
 `docs/CASCADE-PILOT.md` ("Strata — the local Flash-Next engine").
+
+### Strata on this box — feasibility measured (2026-10-02)
+
+Built Strata `db4f91a1…` from source for gfx1100 (system ROCm 7.2.4) with the
+Q2_0 pack made from our canonical GGUF (`--gguf-dir`), and its MTP runtime from
+the pinned BF16 `mtp.*` tensors. It runs on 2× 7900 XT + 30 GB RAM in
+`--mmap-experts` mode **with the desktop apps running**: the first attempt
+aborted on VRAM exhaustion on the display card
+(`experiments/cascade/results/strata-feasibility-20261002/INCIDENT.md`), fixed
+by the coexistence profile `strata-q2_0-coexist.json`
+(`--vram-reserve-mib 3072 --prefill 512`; load in 30 s, stable). Same prompt
+sequence as the E4 baseline (Strata generated 170 tokens per decode — EOS, no
+`ignore_eos`):
+
+| metric | prism best (baseline) | Strata |
+|---|---:|---:|
+| cold pp 4K | 312 | 407 |
+| warm pp 1K | 434 | 523 |
+| decode | 25.9 | **56.8–57.3** |
+| MTP draft acceptance | – | **~77%** (114–115 of 148–150) |
+| RAM available min | 24.8 GB | 26.9 GB |
+| VRAM peak c0/c1 | 20.5/19.8 GB | 18.5/19.2 GB |
+
+Memory is released on close (VRAM back to desktop baseline, MemAvailable back
+above the pre-run level). The prism engine stays the 35B / experimental lane;
+the adoption decision for the Flash-Next tier is with the human.
 
 ### MTP speculation: what it actually takes (2026-10-02)
 
@@ -171,13 +200,51 @@ Model count: HF GGUF metadata reports **~176.9B tensor elements** (so the
 handoff's ~180B is right; Strata's "125B" is not the count to use). Corrected
 in the cascade registry (`flash-next`: 177B, Q2_0, 66 GB).
 
-## E4 baseline protocol (ready to run — box free 2026-10-02)
+## E4 baseline results (2026-10-02)
 
-Goal: Flash-Next on AMD at Strata-level performance, measured before any
-cascade changes. Ask the human first (one heavy track at a time; 30 GB RAM).
+Runner: `experiments/cascade/bench_e4_baseline.py` (the protocol below, one
+sample per prompt, 10 Hz RAM/VRAM sampling). Artifacts:
+`experiments/cascade/results/e4-baseline-20261002/` (`SUMMARY.md`, per-arm
+`manifest.json`/`samples.csv`, `index.json` rows). Provenance: model sha256
+`69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720` (matches
+the HF `lfs_sha256`), engine `engine/ember @ 6bfd7640c7ae`, binary sha256
+`62f422b8f4b97ec7…`, ROCm 7.2.4, kernel 6.18.52.
 
-Preconditions: no other heavy job; ≥26 GB RAM free; driver state clean.
-Apply through the stack API (`ember-125b-lowvram`) or directly:
+Common flags: `-ngl 99 -c 4096 -np 1 -t 8 -ts 0.522,0.478 --split-mode layer
+-lm mmap --lazy-mode on -fa auto`, `HIP_VISIBLE_DEVICES=1,0`,
+`LLAMA_MOE_SLOT_STATS=1`.
+
+| arm | slots | hit rate | cold pp 1K | cold pp 4K | warm pp 1K | decode1 | decode2 | cached | disk/gen | RAM min | VRAM pk c0/c1 | load |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
+| `-ncmoe 0` | – | – | 214 | 312 | 361 | 25.5 | 25.9 | 28.4 | 11 MB | 24.8 GB | 20.5/19.8 GB | 50 s |
+| `-ncmoe 12 -msc auto` (448 slots, 7.1 GiB) | 448 | 95.2% | 142 | 285 | 434 | 23.9 | 25.3 | 26.3 | 10 MB | 26.0 GB | 19.6/19.0 GB | 35 s |
+| `-ncmoe 24 -msc 256` (8.1 GiB) | 256 | 91.3% | 115 | 236 | 350 | 22.9 | 22.7 | – | 13 MB | 25.6 GB | 12.4/19.7 GB | 29 s |
+
+Prefill speeds are t/s (actual prompt 925 / 3,084 / 167 tokens for the 1K / 4K /
+185-char slices of `ternary-serve/wiki.test.raw`); decode is 256 tokens with
+`ignore_eos`. Against the 2026-09-28 record: all-resident 25.9 vs 26.9 t/s
+(run-to-run spread), `-ncmoe 12` decode 25.3 vs 24.5, hit rate 95.2% vs 87.9%
+(auto-sized 448 slots vs 256), disk/gen 10 MB vs 46 MiB. Page cache was cold
+for each arm's first request; cold prefill reflects that.
+
+Incidents (both recorded under the run dir):
+
+- **First `-ncmoe 0` attempt aborted by a driver reset** (`ncmoe0/INCIDENT.md`):
+  the unused Raphael iGPU's SMU hung during the all-resident load; the two
+  7900 XTs logged no ring timeouts. The iGPU has been disabled; the retry
+  completed normally.
+- **Slot cache + prompt cache crash** (`ncmoe24-msc256/CRASH.md`): a request
+  with `cache_prompt=true` under `-msc 256` aborts the server with `Memory
+  access fault ... Page not present` (rc -6). The arm was re-run with the
+  `cached` phase skipped and completed cleanly (91.3% hits, decode2 22.7 t/s);
+  the 18.4 t/s decode2 seen in the crashed run was a one-off stall. Open
+  engine bug in the slot-cache/prompt-cache/graph-replay interaction.
+
+Still open from the protocol: the **Strata reference run** (item 3) — bounded
+feasibility test on this box next.
+
+<details>
+<summary>Protocol (as run)</summary>
 
 ```sh
 LLAMA_MOE_SLOT_STATS=1 tools/backends/rocm/llama-server \
@@ -186,29 +253,24 @@ LLAMA_MOE_SLOT_STATS=1 tools/backends/rocm/llama-server \
   -ts 0.522,0.478 --split-mode layer -lm mmap --lazy-mode on -fa auto
 ```
 
-Runs, in order (record every one under `experiments/cascade/results/` with
-model sha + engine commit + flags):
+Per arm: cold prefill (1K/4K), warm prefill, 256-token decode (x2) + cached
+decode; record hit rates, host-RAM peak, VRAM peak, disk MB per generation.
+Abort criteria: free RAM < 4 GB during load, OOM, driver reset.
 
-1. all-resident baseline (`-ncmoe 0`), then `-ncmoe 12 -msc auto`, then
-   `-ncmoe 24 -msc 256`;
-2. per run: cold prefill (1K/4K prompt) and warm prefill, 256-token decode,
-   `expert tiers` hit rates, host-RAM peak, VRAM peak, disk MB per generation;
-3. optional reference: Strata's AMD/HIP build on the same box, same prompts —
-   this is the "as well as Strata" comparison;
-4. abort criteria: free RAM < 4 GB during load, OOM, driver reset.
+</details>
 
 Then the gap-closing ladder, in value order: MTP layer (fetch/pack, then
 `--model-draft`/`--spec-draft-max` through the engine-args seam), CPU
 co-execution of misses, prefill chunking + layer-ahead prefetch, KV
 streaming/k8v4, dispatch-floor reduction, telemetry/calibration.
 
-## Next steps (in value order, when unshelved)
+## Next steps (in value order; baseline measured 2026-10-02, Strata reference next)
 
 1. **Kernel-count reduction / fusion** (all configs, biggest headroom). The
    budget note's candidates are still unfused; targets the ~5,000
    kernels/step dispatch floor. Expected to lift the 27 t/s all-resident and
    the 23–24 t/s cached arms together.
-2. **Telemetry + tuning seam**: expose Ember hit/fetch rate and per-tier
+2. **Telemetry + tuning seam**: expose the slot cache hit/fetch rate and per-tier
    `tok_s`/`vram_gb` through `/metrics` and Hivebench `/v1/stacks/status`
    (currently `null`), so `-msc auto` and offload choices are validated by the
    harness instead of by hand.

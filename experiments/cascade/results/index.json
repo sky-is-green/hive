@@ -1,0 +1,62 @@
+[
+ {
+  "run": "e4-baseline-20261002/ncmoe0",
+  "kind": "e4-baseline",
+  "created": "2026-10-02 22:46:53",
+  "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+  "engine_commit": "6bfd7640c7ae25e479d1b58e85471d035e43faac",
+  "metrics": {
+   "cold_pp_1k_tps": 214.3,
+   "cold_pp_4k_tps": 311.5,
+   "warm_pp_1k_tps": 361.0,
+   "decode2_tps": 25.94,
+   "hit_rate_pct": null,
+   "disk_mb_per_gen": 11.0,
+   "vram_peak_gb": {
+    "card0": 20.53,
+    "card1": 19.77,
+    "card2": 0.0
+   }
+  }
+ },
+ {
+  "run": "e4-baseline-20261002/ncmoe12-mscauto",
+  "kind": "e4-baseline",
+  "created": "2026-10-02 22:46:53",
+  "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+  "engine_commit": "6bfd7640c7ae25e479d1b58e85471d035e43faac",
+  "metrics": {
+   "cold_pp_1k_tps": 141.5,
+   "cold_pp_4k_tps": 284.6,
+   "warm_pp_1k_tps": 434.4,
+   "decode2_tps": 25.34,
+   "hit_rate_pct": 95.2,
+   "disk_mb_per_gen": 10.4,
+   "vram_peak_gb": {
+    "card0": 19.59,
+    "card1": 19.0,
+    "card2": 0.02
+   }
+  }
+ },
+ {
+  "run": "e4-baseline-20261002/ncmoe24-msc256",
+  "kind": "e4-baseline",
+  "created": "2026-10-02 22:46:53",
+  "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+  "engine_commit": "6bfd7640c7ae25e479d1b58e85471d035e43faac",
+  "metrics": {
+   "cold_pp_1k_tps": 115.4,
+   "cold_pp_4k_tps": 236.1,
+   "warm_pp_1k_tps": 349.9,
+   "decode2_tps": 22.72,
+   "hit_rate_pct": 91.3,
+   "disk_mb_per_gen": 13.0,
+   "vram_peak_gb": {
+    "card0": 12.36,
+    "card1": 19.68,
+    "card2": 0.0
+   }
+  }
+ }
+]

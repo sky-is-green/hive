@@ -1,0 +1,344 @@
+{
+ "run": "strata-feasibility-20261002",
+ "kind": "strata-feasibility",
+ "started": "2026-10-02 23:15:14",
+ "base": "http://127.0.0.1:8080",
+ "model": "strata",
+ "engine_log": "/home/penis/Desktop/work/strata/strata-q2_0.log",
+ "requests": {
+  "cold1k": {
+   "ok": true,
+   "wall_s": 8.12,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 935,
+    "completion_tokens": 16,
+    "total_tokens": 951,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of Robert Boulter's career",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 935.0,
+    "reused": 0.0,
+    "fresh": 935.0,
+    "prefill_ms": 7503.0,
+    "prefill_tps": 124.6,
+    "generated": 16.0,
+    "decode_ms": 583.0,
+    "decode_tps": 27.4
+   },
+   "metrics_totals": {
+    "requests": 1,
+    "drafts_offered": 12,
+    "drafts_accepted": 12
+   },
+   "metrics_last": {
+    "prompt_tokens": 935,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 12,
+    "drafts_accepted": 12
+   }
+  },
+  "cold4k": {
+   "ok": true,
+   "wall_s": 7.98,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 3094,
+    "completion_tokens": 16,
+    "total_tokens": 3110,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of the information regarding **Rob",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 3094.0,
+    "reused": 0.0,
+    "fresh": 3094.0,
+    "prefill_ms": 7608.0,
+    "prefill_tps": 406.7,
+    "generated": 16.0,
+    "decode_ms": 334.0,
+    "decode_tps": 47.9
+   },
+   "metrics_totals": {
+    "requests": 2,
+    "drafts_offered": 25,
+    "drafts_accepted": 22
+   },
+   "metrics_last": {
+    "prompt_tokens": 3094,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 13,
+    "drafts_accepted": 10
+   }
+  },
+  "warm1k": {
+   "ok": true,
+   "wall_s": 2.06,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 935,
+    "completion_tokens": 16,
+    "total_tokens": 951,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of Robert Boulter's career",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 935.0,
+    "reused": 0.0,
+    "fresh": 935.0,
+    "prefill_ms": 1786.0,
+    "prefill_tps": 523.5,
+    "generated": 16.0,
+    "decode_ms": 252.0,
+    "decode_tps": 63.4
+   },
+   "metrics_totals": {
+    "requests": 3,
+    "drafts_offered": 37,
+    "drafts_accepted": 34
+   },
+   "metrics_last": {
+    "prompt_tokens": 935,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 12,
+    "drafts_accepted": 12
+   }
+  },
+  "decode1": {
+   "ok": true,
+   "wall_s": 5.24,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 170,
+    "total_tokens": 348,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of Robert Boulter's early career h",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 0.0,
+    "fresh": 178.0,
+    "prefill_ms": 707.0,
+    "prefill_tps": 251.7,
+    "generated": 170.0,
+    "decode_ms": 4526.0,
+    "decode_tps": 37.6
+   },
+   "metrics_totals": {
+    "requests": 4,
+    "drafts_offered": 185,
+    "drafts_accepted": 148
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 148,
+    "drafts_accepted": 114
+   }
+  },
+  "decode2": {
+   "ok": true,
+   "wall_s": 3.06,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 170,
+    "total_tokens": 348,
+    "prompt_tokens_details": {
+     "cached_tokens": 171
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of Robert Boulter's early career h",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 171.0,
+    "fresh": 7.0,
+    "prefill_ms": 65.0,
+    "prefill_tps": 108.4,
+    "generated": 170.0,
+    "decode_ms": 2991.0,
+    "decode_tps": 56.8
+   },
+   "metrics_totals": {
+    "requests": 5,
+    "drafts_offered": 333,
+    "drafts_accepted": 263
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 148,
+    "drafts_accepted": 115
+   }
+  },
+  "cached": {
+   "ok": true,
+   "wall_s": 3.04,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 170,
+    "total_tokens": 348,
+    "prompt_tokens_details": {
+     "cached_tokens": 171
+    }
+   },
+   "content_head": "Based on the text provided, here is a summary of Robert Boulter's early career h",
+   "sys_read_mb": 0.0,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 171.0,
+    "fresh": 7.0,
+    "prefill_ms": 73.0,
+    "prefill_tps": 96.5,
+    "generated": 170.0,
+    "decode_ms": 2966.0,
+    "decode_tps": 57.3
+   },
+   "metrics_totals": {
+    "requests": 6,
+    "drafts_offered": 483,
+    "drafts_accepted": 378
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 150,
+    "drafts_accepted": 115
+   }
+  }
+ },
+ "skipped_phases": [],
+ "mem_available_min_kb": 26875388,
+ "vram_peak_kb": {
+  "card0": 18539024,
+  "card1": 19183588,
+  "card2": 0
+ },
+ "phases": {
+  "idle": {
+   "samples": 10,
+   "mem_available_min_kb": 27043436,
+   "vram_peak_kb": {
+    "card0": 18539024,
+    "card1": 19183588,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 7.1,
+    "card1": 19.4
+   }
+  },
+  "cold1k": {
+   "samples": 81,
+   "mem_available_min_kb": 26875388,
+   "vram_peak_kb": {
+    "card0": 18537044,
+    "card1": 19177244,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 11.9,
+    "card1": 45.5
+   }
+  },
+  "cold4k": {
+   "samples": 79,
+   "mem_available_min_kb": 26965776,
+   "vram_peak_kb": {
+    "card0": 18537376,
+    "card1": 19176732,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 38.3,
+    "card1": 65.5
+   }
+  },
+  "warm1k": {
+   "samples": 21,
+   "mem_available_min_kb": 26985836,
+   "vram_peak_kb": {
+    "card0": 18537776,
+    "card1": 19171456,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 47.6,
+    "card1": 69.0
+   }
+  },
+  "decode1": {
+   "samples": 51,
+   "mem_available_min_kb": 26959956,
+   "vram_peak_kb": {
+    "card0": 18538964,
+    "card1": 19177516,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 33.2,
+    "card1": 68.5
+   }
+  },
+  "decode2": {
+   "samples": 31,
+   "mem_available_min_kb": 26995416,
+   "vram_peak_kb": {
+    "card0": 18539004,
+    "card1": 19182228,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 43.7,
+    "card1": 61.6
+   }
+  },
+  "cached": {
+   "samples": 30,
+   "mem_available_min_kb": 26969968,
+   "vram_peak_kb": {
+    "card0": 18539024,
+    "card1": 19183584,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 50.4,
+    "card1": 54.2
+   }
+  }
+ }
+}

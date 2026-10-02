@@ -418,33 +418,33 @@ against their 64 GB recommendation; the mapped low-RAM mode with both 20 GB
 cards is the untested path, and it is the same model the flash-next research
 track is exercising.
 
-This is the same problem as **project Ember** (`docs/EMBER.md`): our own
-HIP/ROCm expert-residency engine (`--moe-slot-cache`,
+This is the same problem as the **prism engine lane** (`docs/ENGINE.md`): our
+own HIP/ROCm expert-residency engine (`--moe-slot-cache`,
 `GGML_OP_MOE_CACHE_MAP`) already runs the same 125B Q2_0 pack through the
 stack API and measures the same regime on this box (all-resident 26.9 t/s;
 8.1 GiB off-VRAM + 4.1 GiB slots → 24.5 t/s, +27%, ~88% hits; 24.3 GiB
-off-VRAM + slots → 11.5-15.4 t/s). Strata adds what Ember's open list is
-missing: CPU co-execution of misses instead of a PCIe gather, MTP and
+off-VRAM + slots → 11.5-15.4 t/s). Strata adds what the prism engine's open
+list is missing: CPU co-execution of misses instead of a PCIe gather, MTP and
 prompt-lookup speculation, 8K prefill chunks with layer-ahead prefetch, KV
 streaming and k8v4, adaptive per-conversation caches, and the serving/product
-surface. Ember's advantage: it is ours, HIP-native, measured on this exact
-box, and already wired through `stacks/ember-*.json`.
+surface. The prism engine's advantage: it is ours, HIP-native, measured on
+this exact box, and wired through `stacks/prism-*.json`.
 
-## Program direction — Ember absorbed, Flash-Next as E4 (2026-10-02)
+## Program direction — engine lane absorbed, Flash-Next as E4 (2026-10-02)
 
-Ember (`docs/EMBER.md`) is part of this program: the prism ROCm engine
-(`engine/ember`, expert slot cache) plus `stacks/ember-*.json` become the E4
-tier, and the target generator is **Qwen3.8-Flash-Next Q2_0** (62 GB local
-pack). The cascade is planned around the space E4 leaves: budget its VRAM/RAM
-first, then place the decision models that fit (Tiny-Jev 1.7B router;
-Intern-0.8B/2B judge; JEV-9B only in 35B configs; the iGPU duty desk is a
-BIOS-level user call). The generator becomes a **swappable contract**
-(endpoint + model + caps + measured per-device latency) so the same cascade can
-map the box's ceiling across sizes (35B ↔ 125B ↔ others). **AMD-first: reach
-Strata-level Flash-Next performance before chasing cascade gains** — MTP
-speculation, CPU co-execution of misses, prefill chunking + layer-ahead
-prefetch, KV streaming/k8v4, dispatch-floor reduction, telemetry and per-box
-calibration.
+The engine lane (`docs/ENGINE.md`, formerly project Ember) is part of this
+program: the prism ROCm engine plus `stacks/prism-*.json` are the experimental
+E4 tier, and the target generator is **Qwen3.8-Flash-Next Q2_0** (66 GB /
+62 GiB local pack). The cascade is planned around the space E4 leaves: budget
+its VRAM/RAM first, then place the decision models that fit (Tiny-Jev 1.7B
+router; Intern-0.8B/2B judge; JEV-9B only in 35B configs). The generator
+becomes a **swappable contract** (endpoint + model + caps + measured
+per-device latency) so the same cascade can map the box's ceiling across sizes
+(35B ↔ 125B ↔ others). **AMD-first: reach Strata-level Flash-Next performance
+before chasing cascade gains** — and the 2026-10-02 feasibility run did:
+Strata serves Q2_0 on this box at 56.8–57.3 t/s decode / 407–523 t/s prefill
+alongside the desktop (`experiments/cascade/results/strata-feasibility-20261002/`);
+the adoption decision for the tier is with the human.
 
 ## Priority plan after the literature pass
 

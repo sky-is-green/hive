@@ -105,6 +105,7 @@ artifacts/ternary/
 experiments/cascade/results/*/streams.json
 experiments/cascade/results/*/capture.json
 experiments/cascade/results/.model-sha-cache.json
+experiments/cascade/results/.engine-sha-cache.json
 
 # HF cache (CI sets HF_HOME to $GITHUB_WORKSPACE/.hf-cache)
 .hf-cache/

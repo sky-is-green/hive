@@ -1,0 +1,784 @@
+{
+ "run": "e4-baseline-20261002",
+ "created": "2026-10-02 22:46:53",
+ "engine_commit": "6bfd7640c7ae25e479d1b58e85471d035e43faac",
+ "model_path": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+ "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+ "arms": [
+  {
+   "arm": "ncmoe0",
+   "label": "all-resident",
+   "args": [
+    "-ngl",
+    "99",
+    "-c",
+    "4096",
+    "-np",
+    "1",
+    "-t",
+    "8",
+    "-ts",
+    "0.522,0.478",
+    "--split-mode",
+    "layer",
+    "-lm",
+    "mmap",
+    "--lazy-mode",
+    "on",
+    "-fa",
+    "auto",
+    "-ncmoe",
+    "0"
+   ],
+   "started": "2026-10-02 22:32:39",
+   "requests": {
+    "cold1k": {
+     "ok": true,
+     "wall_s": 4.38,
+     "prompt_n": 925,
+     "prompt_ms": 4316.9,
+     "prefill_tps": 214.3,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 245.1,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "cold4k": {
+     "ok": true,
+     "wall_s": 9.93,
+     "prompt_n": 3084,
+     "prompt_ms": 9900.8,
+     "prefill_tps": 311.5,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 176.6,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "warm1k": {
+     "ok": true,
+     "wall_s": 2.74,
+     "prompt_n": 925,
+     "prompt_ms": 2562.5,
+     "prefill_tps": 361.0,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 39.3,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "decode1": {
+     "ok": true,
+     "wall_s": 10.52,
+     "prompt_n": 167,
+     "prompt_ms": 330.4,
+     "prefill_tps": 505.5,
+     "predicted_n": 256,
+     "predicted_ms": 10048.9,
+     "decode_tps": 25.48,
+     "content_sha16": "3bc0dba4136197fc",
+     "content_head": " the Young Vic Theatre in London . He was directed by James MacDonald and starre",
+     "proc_read_mb": 12.1,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "decode2": {
+     "ok": true,
+     "wall_s": 10.31,
+     "prompt_n": 167,
+     "prompt_ms": 343.1,
+     "prefill_tps": 486.7,
+     "predicted_n": 256,
+     "predicted_ms": 9869.6,
+     "decode_tps": 25.94,
+     "content_sha16": "1a20558e0c816a99",
+     "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+     "proc_read_mb": 11.0,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "cached": {
+     "ok": true,
+     "wall_s": 9.25,
+     "prompt_n": 4,
+     "prompt_ms": 133.8,
+     "prefill_tps": 29.9,
+     "predicted_n": 256,
+     "predicted_ms": 9030.4,
+     "decode_tps": 28.35,
+     "content_sha16": "1a20558e0c816a99",
+     "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+     "proc_read_mb": 0.0,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    }
+   },
+   "load": {
+    "ok": true,
+    "load_s": 50.0
+   },
+   "vmhwm_kb": 28100492,
+   "vmsize_kb": 79924304,
+   "stop": {
+    "exited": true,
+    "signal": "SIGINT",
+    "rc": 0
+   },
+   "slot_stats": {},
+   "aborted": null,
+   "ended": "2026-10-02 22:34:18",
+   "phases": {
+    "load": {
+     "samples": 496,
+     "mem_available_min_kb": 26694520,
+     "server_rss_peak_kb": 28065664,
+     "vram_peak_kb": {
+      "card0": 20268132,
+      "card1": 19356288,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 4.5,
+      "card1": 14.7
+     }
+    },
+    "cold1k": {
+     "samples": 43,
+     "mem_available_min_kb": 26972076,
+     "server_rss_peak_kb": 1436860,
+     "vram_peak_kb": {
+      "card0": 20522360,
+      "card1": 19556720,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 12.3,
+      "card1": 15.6
+     }
+    },
+    "cold4k": {
+     "samples": 99,
+     "mem_available_min_kb": 25275852,
+     "server_rss_peak_kb": 1454624,
+     "vram_peak_kb": {
+      "card0": 20524636,
+      "card1": 19644728,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 16.9,
+      "card1": 17.8
+     }
+    },
+    "warm1k": {
+     "samples": 27,
+     "mem_available_min_kb": 25278244,
+     "server_rss_peak_kb": 1918328,
+     "vram_peak_kb": {
+      "card0": 20524840,
+      "card1": 19610372,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 19.6,
+      "card1": 22.7
+     }
+    },
+    "decode1": {
+     "samples": 105,
+     "mem_available_min_kb": 25356464,
+     "server_rss_peak_kb": 2289388,
+     "vram_peak_kb": {
+      "card0": 20524956,
+      "card1": 19609900,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 47.4,
+      "card1": 42.8
+     }
+    },
+    "decode2": {
+     "samples": 102,
+     "mem_available_min_kb": 25122980,
+     "server_rss_peak_kb": 2453460,
+     "vram_peak_kb": {
+      "card0": 20528532,
+      "card1": 19765592,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 48.5,
+      "card1": 44.4
+     }
+    },
+    "cached": {
+     "samples": 92,
+     "mem_available_min_kb": 24782792,
+     "server_rss_peak_kb": 2695656,
+     "vram_peak_kb": {
+      "card0": 20529812,
+      "card1": 19753296,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 52.8,
+      "card1": 49.4
+     }
+    },
+    "shutdown": {
+     "samples": 16,
+     "mem_available_min_kb": 24944948,
+     "server_rss_peak_kb": 2577512,
+     "vram_peak_kb": {
+      "card0": 20027776,
+      "card1": 19064512,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 17.4,
+      "card1": 21.6
+     }
+    }
+   },
+   "mem_available_min_kb": 24782792,
+   "vram_peak_kb": {
+    "card0": 20529812,
+    "card1": 19765592,
+    "card2": 0
+   }
+  },
+  {
+   "arm": "ncmoe12-mscauto",
+   "label": "-ncmoe 12 -msc auto",
+   "args": [
+    "-ngl",
+    "99",
+    "-c",
+    "4096",
+    "-np",
+    "1",
+    "-t",
+    "8",
+    "-ts",
+    "0.522,0.478",
+    "--split-mode",
+    "layer",
+    "-lm",
+    "mmap",
+    "--lazy-mode",
+    "on",
+    "-fa",
+    "auto",
+    "-ncmoe",
+    "12",
+    "-msc",
+    "auto"
+   ],
+   "started": "2026-10-02 21:59:56",
+   "requests": {
+    "cold1k": {
+     "ok": true,
+     "wall_s": 6.6,
+     "prompt_n": 925,
+     "prompt_ms": 6534.9,
+     "prefill_tps": 141.5,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 1897.3,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 2008.1,
+     "sys_write_mb": 0.2
+    },
+    "cold4k": {
+     "ok": true,
+     "wall_s": 10.87,
+     "prompt_n": 3084,
+     "prompt_ms": 10835.5,
+     "prefill_tps": 284.6,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 179.3,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 187.8,
+     "sys_write_mb": 0.8
+    },
+    "warm1k": {
+     "ok": true,
+     "wall_s": 2.47,
+     "prompt_n": 925,
+     "prompt_ms": 2129.3,
+     "prefill_tps": 434.4,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 9.0,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 500.8,
+     "sys_write_mb": 0.1
+    },
+    "decode1": {
+     "ok": true,
+     "wall_s": 11.84,
+     "prompt_n": 167,
+     "prompt_ms": 803.2,
+     "prefill_tps": 207.9,
+     "predicted_n": 256,
+     "predicted_ms": 10716.9,
+     "decode_tps": 23.89,
+     "content_sha16": "3bc0dba4136197fc",
+     "content_head": " the Young Vic Theatre in London . He was directed by James MacDonald and starre",
+     "proc_read_mb": 12.7,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 678.6,
+     "sys_write_mb": 2.6
+    },
+    "decode2": {
+     "ok": true,
+     "wall_s": 11.68,
+     "prompt_n": 167,
+     "prompt_ms": 794.8,
+     "prefill_tps": 210.1,
+     "predicted_n": 256,
+     "predicted_ms": 10101.9,
+     "decode_tps": 25.34,
+     "content_sha16": "1a20558e0c816a99",
+     "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+     "proc_read_mb": 10.4,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 900.6,
+     "sys_write_mb": 0.8
+    },
+    "cached": {
+     "ok": true,
+     "wall_s": 11.08,
+     "prompt_n": 4,
+     "prompt_ms": 246.5,
+     "prefill_tps": 16.2,
+     "predicted_n": 256,
+     "predicted_ms": 9749.2,
+     "decode_tps": 26.26,
+     "content_sha16": "1a20558e0c816a99",
+     "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+     "proc_read_mb": 58.8,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 1216.7,
+     "sys_write_mb": 0.1
+    }
+   },
+   "load": {
+    "ok": true,
+    "load_s": 35.0
+   },
+   "vmhwm_kb": 27408540,
+   "vmsize_kb": 88776468,
+   "stop": {
+    "exited": true,
+    "signal": "SIGINT",
+    "rc": 0
+   },
+   "slot_stats": {
+    "slots_per_layer": 448,
+    "layers": 12,
+    "vram_mib": 7087.5,
+    "promoted_note": "",
+    "hits": 91537,
+    "fetches": 4583,
+    "hit_rate_pct": 95.2,
+    "stats_layers": 12,
+    "stats_slots": 448
+   },
+   "aborted": null,
+   "ended": "2026-10-02 22:01:28",
+   "phases": {
+    "load": {
+     "samples": 347,
+     "mem_available_min_kb": 26222120,
+     "server_rss_peak_kb": 27401508,
+     "vram_peak_kb": {
+      "card0": 19318232,
+      "card1": 18742176,
+      "card2": 16520
+     },
+     "gpu_busy_mean": {
+      "card0": 3.8,
+      "card1": 15.1
+     }
+    },
+    "cold1k": {
+     "samples": 65,
+     "mem_available_min_kb": 27365424,
+     "server_rss_peak_kb": 8473368,
+     "vram_peak_kb": {
+      "card0": 19586892,
+      "card1": 18993704,
+      "card2": 16648
+     },
+     "gpu_busy_mean": {
+      "card0": 25.6,
+      "card1": 18.3
+     }
+    },
+    "cold4k": {
+     "samples": 108,
+     "mem_available_min_kb": 27253296,
+     "server_rss_peak_kb": 9709648,
+     "vram_peak_kb": {
+      "card0": 19592772,
+      "card1": 19002504,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 39.0,
+      "card1": 22.3
+     }
+    },
+    "warm1k": {
+     "samples": 25,
+     "mem_available_min_kb": 26782772,
+     "server_rss_peak_kb": 10128420,
+     "vram_peak_kb": {
+      "card0": 19592964,
+      "card1": 19002964,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 62.0,
+      "card1": 27.0
+     }
+    },
+    "decode1": {
+     "samples": 117,
+     "mem_available_min_kb": 26312328,
+     "server_rss_peak_kb": 10459984,
+     "vram_peak_kb": {
+      "card0": 19593096,
+      "card1": 18999376,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 54.3,
+      "card1": 40.2
+     }
+    },
+    "decode2": {
+     "samples": 116,
+     "mem_available_min_kb": 26186388,
+     "server_rss_peak_kb": 10813032,
+     "vram_peak_kb": {
+      "card0": 19593100,
+      "card1": 18996392,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 51.3,
+      "card1": 42.2
+     }
+    },
+    "cached": {
+     "samples": 110,
+     "mem_available_min_kb": 25964816,
+     "server_rss_peak_kb": 10945240,
+     "vram_peak_kb": {
+      "card0": 19590916,
+      "card1": 18996392,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 54.3,
+      "card1": 41.8
+     }
+    },
+    "shutdown": {
+     "samples": 19,
+     "mem_available_min_kb": 25994304,
+     "server_rss_peak_kb": 10906436,
+     "vram_peak_kb": {
+      "card0": 19502852,
+      "card1": 18936136,
+      "card2": 16664
+     },
+     "gpu_busy_mean": {
+      "card0": 16.7,
+      "card1": 21.6
+     }
+    }
+   },
+   "mem_available_min_kb": 25964816,
+   "vram_peak_kb": {
+    "card0": 19593100,
+    "card1": 19002964,
+    "card2": 16664
+   }
+  },
+  {
+   "arm": "ncmoe24-msc256",
+   "label": "-ncmoe 24 -msc 256",
+   "args": [
+    "-ngl",
+    "99",
+    "-c",
+    "4096",
+    "-np",
+    "1",
+    "-t",
+    "8",
+    "-ts",
+    "0.522,0.478",
+    "--split-mode",
+    "layer",
+    "-lm",
+    "mmap",
+    "--lazy-mode",
+    "on",
+    "-fa",
+    "auto",
+    "-ncmoe",
+    "24",
+    "-msc",
+    "256"
+   ],
+   "started": "2026-10-02 22:46:53",
+   "requests": {
+    "cold1k": {
+     "ok": true,
+     "wall_s": 8.08,
+     "prompt_n": 925,
+     "prompt_ms": 8014.9,
+     "prefill_tps": 115.4,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 3802.9,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "cold4k": {
+     "ok": true,
+     "wall_s": 13.1,
+     "prompt_n": 3084,
+     "prompt_ms": 13061.2,
+     "prefill_tps": 236.1,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 169.5,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "warm1k": {
+     "ok": true,
+     "wall_s": 2.82,
+     "prompt_n": 925,
+     "prompt_ms": 2643.9,
+     "prefill_tps": 349.9,
+     "predicted_n": 1,
+     "predicted_ms": 0.0,
+     "decode_tps": 0.0,
+     "content_sha16": "e3b0c44298fc1c14",
+     "content_head": "",
+     "proc_read_mb": 0.0,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "decode1": {
+     "ok": true,
+     "wall_s": 12.3,
+     "prompt_n": 167,
+     "prompt_ms": 932.7,
+     "prefill_tps": 179.0,
+     "predicted_n": 256,
+     "predicted_ms": 11204.4,
+     "decode_tps": 22.85,
+     "content_sha16": "3bc0dba4136197fc",
+     "content_head": " the Young Vic Theatre in London . He was directed by James MacDonald and starre",
+     "proc_read_mb": 14.3,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    },
+    "decode2": {
+     "ok": true,
+     "wall_s": 12.64,
+     "prompt_n": 167,
+     "prompt_ms": 1047.0,
+     "prefill_tps": 159.5,
+     "predicted_n": 256,
+     "predicted_ms": 11268.3,
+     "decode_tps": 22.72,
+     "content_sha16": "1a20558e0c816a99",
+     "content_head": " the William Morris Theatre in London . He starred in the film Purity in 2009 , ",
+     "proc_read_mb": 13.0,
+     "proc_write_mb": 0.0,
+     "sys_read_mb": 0.0,
+     "sys_write_mb": 0.0
+    }
+   },
+   "skipped_phases": [
+    "cached"
+   ],
+   "load": {
+    "ok": true,
+    "load_s": 28.5
+   },
+   "vmhwm_kb": 27457884,
+   "vmsize_kb": 89141104,
+   "stop": {
+    "exited": true,
+    "signal": "SIGINT",
+    "rc": 0
+   },
+   "slot_stats": {
+    "slots_per_layer": 256,
+    "layers": 24,
+    "vram_mib": 8100.0,
+    "promoted_note": "",
+    "hits": 118739,
+    "fetches": 11341,
+    "hit_rate_pct": 91.3,
+    "stats_layers": 24,
+    "stats_slots": 256
+   },
+   "aborted": null,
+   "ended": "2026-10-02 22:48:13",
+   "phases": {
+    "load": {
+     "samples": 283,
+     "mem_available_min_kb": 26744696,
+     "server_rss_peak_kb": 27440480,
+     "vram_peak_kb": {
+      "card0": 12062160,
+      "card1": 19355048,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 5.3,
+      "card1": 15.4
+     }
+    },
+    "cold1k": {
+     "samples": 80,
+     "mem_available_min_kb": 27004476,
+     "server_rss_peak_kb": 14843640,
+     "vram_peak_kb": {
+      "card0": 12342420,
+      "card1": 19617192,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 33.8,
+      "card1": 17.9
+     }
+    },
+    "cold4k": {
+     "samples": 130,
+     "mem_available_min_kb": 26809048,
+     "server_rss_peak_kb": 17627176,
+     "vram_peak_kb": {
+      "card0": 12354512,
+      "card1": 19651584,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 50.3,
+      "card1": 21.3
+     }
+    },
+    "warm1k": {
+     "samples": 28,
+     "mem_available_min_kb": 26384008,
+     "server_rss_peak_kb": 18061368,
+     "vram_peak_kb": {
+      "card0": 12354716,
+      "card1": 19647284,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 75.5,
+      "card1": 27.4
+     }
+    },
+    "decode1": {
+     "samples": 122,
+     "mem_available_min_kb": 25854600,
+     "server_rss_peak_kb": 18467472,
+     "vram_peak_kb": {
+      "card0": 12354832,
+      "card1": 19682552,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 57.6,
+      "card1": 43.3
+     }
+    },
+    "decode2": {
+     "samples": 125,
+     "mem_available_min_kb": 25558428,
+     "server_rss_peak_kb": 18994128,
+     "vram_peak_kb": {
+      "card0": 12359740,
+      "card1": 19682652,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 55.0,
+      "card1": 43.0
+     }
+    },
+    "cached": {},
+    "shutdown": {
+     "samples": 22,
+     "mem_available_min_kb": 25589320,
+     "server_rss_peak_kb": 18935484,
+     "vram_peak_kb": {
+      "card0": 12261456,
+      "card1": 19305532,
+      "card2": 0
+     },
+     "gpu_busy_mean": {
+      "card0": 18.4,
+      "card1": 24.8
+     }
+    }
+   },
+   "mem_available_min_kb": 25558428,
+   "vram_peak_kb": {
+    "card0": 12359740,
+    "card1": 19682652,
+    "card2": 0
+   }
+  }
+ ]
+}

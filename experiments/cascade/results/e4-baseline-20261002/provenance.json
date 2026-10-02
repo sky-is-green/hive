@@ -1,0 +1,165 @@
+{
+ "run_kind": "e4-baseline",
+ "created": "2026-10-02 22:46:53",
+ "hivebench": {
+  "branch": "hive_cascade",
+  "commit": "360f93baa8d30f25437f96e1e0b894259207182d",
+  "dirty_files": 9
+ },
+ "engine": {
+  "repo": "/home/penis/Desktop/work/prism-ml-llama.cpp",
+  "binary": "/home/penis/Desktop/work/hivebench/tools/backends/rocm/llama-server",
+  "binary_sha256": "62f422b8f4b97ec7fa047c145a1e2e66d69463afcf2fa1f985a48e24f381f584",
+  "version": "version: 0.5.0-dev (build 11244, commit 9cd9e3f57)",
+  "branch": "engine/ember",
+  "commit": "6bfd7640c7ae25e479d1b58e85471d035e43faac",
+  "dirty_files": 0
+ },
+ "model": {
+  "path": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "size_bytes": 37623740192,
+  "mtime": 1790524129,
+  "shards": [
+   {
+    "name": "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+    "size_bytes": 37623740192,
+    "mtime": 1790524129
+   },
+   {
+    "name": "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf",
+    "size_bytes": 28800138432,
+    "mtime": 1790523904
+   }
+  ],
+  "upstream_lfs_sha256": {
+   "Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+   "Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  "local_sha256": {
+   "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+   "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  "sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720"
+ },
+ "box": {
+  "hostname": "Penis-machine",
+  "kernel": "6.18.52-1-cachyos-lts",
+  "cpu": "AMD Ryzen 7 7800X3D 8-Core Processor",
+  "mem_total_kb": 32453296,
+  "rocm": "7.2.4",
+  "rocminfo": "\u001b[37mROCk module is loaded\u001b[0m\n=====================    \nHSA System Attributes    \n=====================    \nRuntime Version:         1.18\nRuntime Ext Version:     1.15\nSystem Timestamp Freq.:  1000.000000MHz\nSig. Max Wait Duration:  18446744073709551615 (0xFFFFFFFFFFFFFFFF) (timestamp count)\nMachine Model:           LARGE                              \nSystem Endianness:       LITTLE                             \nMwaitx:                  DISABLED\nXNACK enabled:           NO\nDMAbuf Support:          YES\nVMM Support:             YES\n\n==========               \nHSA Agents               \n==========               \n*******                  \nAgent 1                  \n*******                  \n  Name:                    AMD Ryzen 7 7800X3D 8-Core Processor\n  Uuid:                    CPU-XX                             \n  Marketing Name:          AMD Ryzen 7 7800X3D 8-Core Processor\n  Vendor Name:             CPU                                \n  Feature:                 None specified                     \n  Profile:                 FULL_PROFILE                       \n  Float Round Mode:        NEAR                               \n  Max Queue Number:        0(0x0)                             \n  Queue Min Size:          0(0x0)                             \n  Queue Max Size:          0(0x0)                             \n  Queue Type:              MULTI                              \n  Node:                    0                                  \n  Device Type:             CPU                                \n  Cache Info:              \n    L1:                      32768(0x8000) KB                   \n  Chip ID:                 0(0x0)                             \n  ASIC Revision:           0(0x0)                             \n  Cacheline Size:          64(0x40)                           \n  Max Clock Freq. (MHz):   5053                               \n  BDFID:                   0                                  \n  Internal Node ID:        0                                  \n  Compute Unit:            16                                 \n  SIMDs per CU:            0                                  \n  Shader Engines:          0                                  \n  Shader Arrs. per Eng.:   0                                  \n  WatchPts on Addr. Ranges:1                                  \n  Memory Properties:       \n  Features:                None\n  Pool Info:               \n    Pool 1                   \n      Segment:                 GLOBAL; FLAGS: FINE GRAINED        \n      Size:                    32453296(0x1ef32b0) KB             \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 2                   \n      Segment:                 GLOBAL; FLAGS: EXTENDED FINE GRAINED\n      Size:                    32453296(0x1ef32b0) KB             \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 3                   \n      Segment:                 GLOBAL; FLAGS: KERNARG, FINE GRAINED\n      Size:                    32453296(0x1ef32b0) KB             \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 4                   \n      Segment:                 GLOBAL; FLAGS: COARSE GRAINED      \n      Size:  ",
+  "vram_used_kb_before": {
+   "card0": 27336,
+   "card1": 1672744,
+   "card2": 0
+  },
+  "meminfo_before": {
+   "MemTotal": 32453296,
+   "MemFree": 1652460,
+   "MemAvailable": 26952920,
+   "Buffers": 1844,
+   "Cached": 25661796,
+   "SwapCached": 15204,
+   "Active": 3948848,
+   "Inactive": 23781024,
+   "Active(anon)": 1829144,
+   "Inactive(anon)": 379452,
+   "Active(file)": 2119704,
+   "Inactive(file)": 23401572,
+   "Unevictable": 436,
+   "Mlocked": 436,
+   "SwapTotal": 32452604,
+   "SwapFree": 30292004,
+   "Zswap": 0,
+   "Zswapped": 0,
+   "Dirty": 2168,
+   "Writeback": 0,
+   "AnonPages": 2045104,
+   "Mapped": 866240,
+   "Shmem": 142388,
+   "KReclaimable": 245260,
+   "Slab": 490664,
+   "SReclaimable": 245260,
+   "SUnreclaim": 245404,
+   "KernelStack": 24192,
+   "PageTables": 58464,
+   "SecPageTables": 4568,
+   "NFS_Unstable": 0,
+   "Bounce": 0,
+   "WritebackTmp": 0,
+   "CommitLimit": 48679252,
+   "Committed_AS": 18341984,
+   "VmallocTotal": 34359738367,
+   "VmallocUsed": 363648,
+   "VmallocChunk": 0,
+   "Percpu": 18816,
+   "HardwareCorrupted": 0,
+   "AnonHugePages": 163840,
+   "ShmemHugePages": 0,
+   "ShmemPmdMapped": 0,
+   "FileHugePages": 90112,
+   "FilePmdMapped": 63488,
+   "CmaTotal": 0,
+   "CmaFree": 0,
+   "Unaccepted": 0,
+   "Balloon": 0,
+   "HugePages_Total": 0,
+   "HugePages_Free": 0,
+   "HugePages_Rsvd": 0,
+   "HugePages_Surp": 0,
+   "Hugepagesize": 2048,
+   "Hugetlb": 0,
+   "DirectMap4k": 1114244,
+   "DirectMap2M": 28891136,
+   "DirectMap1G": 4194304
+  }
+ },
+ "prompts": {
+  "source": "/home/penis/Desktop/work/ternary-serve/wiki.test.raw",
+  "source_sha256": "696cca6b65a171b0a358a4be6732cdfdf2dd6164a32e20fd70e3c13fc4dfae83",
+  "source_bytes": 1296370,
+  "slices": {
+   "cold1k": 3800,
+   "cold4k": 13500,
+   "warm1k": 3800,
+   "decode1": 700,
+   "decode2": 700,
+   "cached": 700
+  }
+ },
+ "protocol": "docs/EMBER.md E4 baseline protocol (2026-10-02)",
+ "flags": {
+  "common": [
+   "-ngl",
+   "99",
+   "-c",
+   "4096",
+   "-np",
+   "1",
+   "-t",
+   "8",
+   "-ts",
+   "0.522,0.478",
+   "--split-mode",
+   "layer",
+   "-lm",
+   "mmap",
+   "--lazy-mode",
+   "on",
+   "-fa",
+   "auto"
+  ],
+  "env": {
+   "HIP_VISIBLE_DEVICES": "1,0",
+   "LLAMA_MOE_SLOT_STATS": "1"
+  }
+ },
+ "caveats": [
+  "single sample per prompt; decode noise ~+-1 t/s on this box",
+  "VRAM/RAM peaks are sampled at 10 Hz, not instantaneous",
+  "disk MB via /proc/<pid>/io read_bytes (includes mmap readahead); sys_read_mb is the whole-NVMe cross-check",
+  "-msc auto picks the slot count from free VRAM at load time",
+  "page-cache state differs across arms; cold prefill is first-request",
+  "desktop session (Xwayland on card1) active during the run"
+ ]
+}
