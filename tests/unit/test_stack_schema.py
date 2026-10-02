@@ -117,6 +117,13 @@ def test_strata_125b_is_an_endpoint_stack():
     # nothing here is a llama.cpp launch knob: no engine args, no pin/split
     assert face.engine_args is None
     assert face.pin is None and face.ts is None
+    # the managed lifecycle travels with the tier (hybrid: adopt or start)
+    launch = face.launch or {}
+    assert launch["kind"] == "strata"
+    assert launch["repo"].startswith("~")
+    assert launch["config"] == "strata-q2_0-coexist.json"
+    assert launch["engine_args"] == ["--vram-reserve-mib", "3072",
+                                     "--prefill", "512"]
 
 
 def test_authored_stacks_round_trip_through_the_data_model():
@@ -251,7 +258,7 @@ def test_tier_to_dict_omits_unset_optional_fields():
     out = _tier("worker").to_dict()
     assert set(out) == {
         "role", "repo", "file", "ctx", "ngl", "backend", "cache_k", "cache_v"}
-    for key in ("spec", "mmproj", "pin", "ts", "engine_args"):
+    for key in ("spec", "mmproj", "pin", "ts", "engine_args", "launch"):
         assert key not in out
 
 
@@ -354,6 +361,57 @@ def test_tier_caps_must_be_an_object(value):
     with pytest.raises(ValueError, match="caps must be an object"):
         Tier.from_dict({"role": "face", "repo": "a/b", "file": "b.gguf",
                         "caps": value})
+
+
+def test_launch_block_round_trips_without_injecting_defaults():
+    raw = {
+        "role": "face", "repo": "a/b", "file": "m.gguf",
+        "endpoint": "http://127.0.0.1:8080/v1",
+        "launch": {
+            "kind": "strata", "repo": "~/strata", "config": "cfg.json",
+            "engine_args": ["--prefill", "512"],
+            "options": {"idle_unload_s": 600}, "timeout_s": 600,
+        },
+    }
+    tier = Tier.from_dict(raw)
+    assert tier.launch == raw["launch"]  # no python default is written in
+    canonical = tier.to_dict()
+    assert canonical["launch"] == raw["launch"]
+    assert Tier.from_dict(canonical).to_dict() == canonical
+
+
+@pytest.mark.parametrize("launch, match", [
+    ("strata", "must be an object"),
+    ({"repo": "x", "config": "c"}, "missing required field: kind"),
+    ({"kind": "llama", "repo": "x", "config": "c"}, "not one of"),
+    ({"kind": "strata", "config": "c"}, "missing required field: repo"),
+    ({"kind": "strata", "repo": "x"}, "missing required field: config"),
+    ({"kind": "strata", "repo": "x", "config": "c",
+      "engine_args": ["--port", "1"]}, "owned by the managed launch"),
+    ({"kind": "strata", "repo": "x", "config": "c",
+      "engine_args": "--prefill"}, "must be a list"),
+    ({"kind": "strata", "repo": "x", "config": "c",
+      "options": {"args": []}}, "may not override"),
+    ({"kind": "strata", "repo": "x", "config": "c", "timeout_s": 0}, "must be > 0"),
+    ({"kind": "strata", "repo": "x", "config": "c", "extra": 1}, "unknown field"),
+])
+def test_launch_rejects_malformed_blocks(launch, match):
+    with pytest.raises(ValueError, match=match):
+        Tier.from_dict({"role": "face", "repo": "a/b", "file": "m.gguf",
+                        "endpoint": "http://127.0.0.1:8080/v1",
+                        "launch": launch})
+
+
+def test_launch_requires_an_endpoint():
+    stack = Stack(name="bad", tiers=[_tier(
+        "face", launch={"kind": "strata", "repo": "x", "config": "c"})])
+    errors = validate_shape(stack)
+    assert any("launch requires an endpoint" in err for err in errors)
+
+    stack = Stack(name="bad", tiers=[_tier("face", endpoint="http://h/v1",
+                                           launch=[])])
+    errors = validate_shape(stack)
+    assert any("launch must be an object" in err for err in errors)
 
 
 @pytest.mark.parametrize("tier_data, match", [

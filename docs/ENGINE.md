@@ -181,78 +181,94 @@ sequence as the E4 baseline (Strata generated 170 tokens per decode — EOS, no
 Memory is released on close (VRAM back to desktop baseline, MemAvailable back
 above the pre-run level).
 
-### Integration in hivebench — endpoint-backed tier (2026-10-02)
+### Integration in hivebench — endpoint tier + managed launch (2026-10-02/03)
 
-**Decision: an endpoint-backed tier now** — a stack tier may carry
-``endpoint``; ``apply`` verifies it and registers it, ``unload`` deregisters it
-and never kills it. A full launcher is deferred to the model port track.
+**Decision: the hybrid** — a stack tier may carry `endpoint` (the contract)
+and an optional `launch` block (the managed lifecycle). `apply` adopts a
+running server that answers `/health`; when the endpoint is down and `launch`
+is present, the harness starts Strata from a generated copy of its config and
+owns that process until `unload`. An adopted endpoint is never killed.
 
 | option | what it means | verdict |
 |---|---|---|
-| **(a) endpoint-backed tier** | stack tier carries `endpoint`; apply GETs `/health` and registers role/port/ctx/caps; no launch, no kill | **chosen** — process, config, port and coexistence flags stay with Strata's own run script, and the cascade only needs the contract |
-| (b) full launcher | the harness spawns `serve/server.py` with a generated config, own port/log management | deferred — `models.py::load` is llama-server-shaped (`-m/--host/--port/-ngl/-c`, and it adopts a listener only when the process name contains "llama"); a Strata launch needs its own argv/config builder, a new backend kind, and duplicates the run script + data-dir state |
-| (c) hybrid | schema carries both; apply uses the endpoint when present, else launches | not now — the endpoint field is forward-compatible (a `launch` block can land beside it later without changing the tier contract); the launcher half is exactly (b)'s cost |
+| (a) endpoint-backed tier | tier carries `endpoint`; apply verifies and registers role/port/ctx/caps | shipped (2026-10-02): the base layer, and still the contract for external servers |
+| (b) full launcher | harness spawns `serve/server.py` with a generated config, own port/log management | shipped as the optional `launch` block (`StrataLauncher`), deliberately *not* through `models.py::load`: Strata's argv/config/state do not fit the llama-server seam |
+| (c) hybrid | both; adopt when up, start when down | **chosen** — the endpoint stays the contract, the launcher is opt-in per tier and never touches a process it did not start |
 
-Evidence for (a):
+Why the launcher lives beside `LlamaServerManager` rather than inside it:
+`_binary_for_backend` maps a backend to `tools/backends/<backend>/llama-server`
+and `load()` hardcodes the llama-server argv (and adopts a listener only when
+the process name contains "llama"). A Strata launch is `python
+serve/server.py --engine strata --config <generated> --port N` from the Strata
+checkout; it belongs in `harness/stack/strata.py`, which generates the config,
+writes logs where llama-server logs live, and tracks only the processes it
+started.
 
+Why the endpoint layer stays:
 - Strata's serving surface already covers every cascade need: `/health`,
   `/v1/models`, `/v1/chat/completions`, `/props`, `/metrics`, `/unload`,
   `/load`, and the idle-unload / min-free-VRAM / before-load triad. The dsh
   runtime seam (`stack_runtime.tier_routes`) already prefers an explicit
   `base_url` on a status row, so a registered endpoint flows to subagent
   routing with no new code.
-- Its launch cannot be expressed through the existing seam: `_binary_for_backend`
-  maps a backend to `tools/backends/<backend>/llama-server`, and `load()`
-  hardcodes the llama-server argv. Driving Strata from the harness would mean a
-  second lifecycle implementation with its own config schema, pack paths, data
-  dir, Python venv and coexistence profile — the config the human already runs.
-- One heavy track at a time: Strata owns its process; closing it releases
-  VRAM/RAM (measured). The harness should not be the thing that holds 27 GB of
-  expert pages after an experiment.
+- One heavy track at a time: an adopted Strata is the human's process; closing
+  it releases VRAM/RAM (measured). A managed launch is stopped by `unload`, so
+  the harness never holds 27 GB of expert pages after an experiment.
 - Residency: the endpoint tier's footprint is external, so it is skipped by
   `plan_residency` (a warning, not a charge); a stack made only of endpoint
   tiers validates without a local GGUF or even a GPU probe.
 - The port track is unaffected: when our models are ported to Strata, the same
-  endpoint tier serves them; adding a launcher later is additive.
+  endpoint + launch pair serves them.
 
 Implemented (hivebench, branch `hive_cascade`):
 
-- `harness/stack/schema.py`: optional `endpoint` (http(s) URL) and `caps`
-  (free-form measured serving facts) per tier, round-tripped through the file
-  model.
-- `harness/stack/manager.py`: `probe_endpoint()` — `GET <root>/health` first
+- `harness/stack/schema.py`: optional `endpoint` (http(s) URL), `caps`
+  (free-form measured serving facts), and `launch` (`kind: strata`, `repo`,
+  `config`, optional `python`, `engine_args`, `options`, `timeout_s`) per
+  tier, all round-tripped through the file model. A `launch` block requires an
+  endpoint; launcher-owned flags (`--port`/`--config`/...) and options
+  (`args`/`exe`/...) are refused.
+- `harness/stack/endpoint.py`: `probe_endpoint()` — `GET <root>/health` first
   (refuses a reachable-but-`loaded:false` model with an actionable message),
-  `GET <root>/v1/models` as a fallback. Endpoint tiers become `TierRuntime`
-  rows with `base_url`/`caps` and no `ServerInstance`; managed launches skip the
-  endpoint's port.
+  `GET <root>/v1/models` as a fallback — plus `endpoint_base`/`endpoint_port`.
+- `harness/stack/manager.py`: endpoint tiers become `TierRuntime` rows with
+  `base_url`/`caps`/`managed`/`pid` and no `ServerInstance`; a `launch` tier
+  is adopted when healthy and started through `StrataLauncher` when not;
+  managed llama-server ports skip the endpoint's port; unload and rollback
+  stop exactly the processes the harness started.
+- `harness/stack/strata.py`: `StrataLauncher` — generated config (base + port
+  + `--max-context <tier.ctx>` + `engine_args` merged in place + `options` +
+  engine log under `logs/`), command `python serve/server.py --engine strata
+  --config <generated> --port N` from the checkout, startup wait
+  (`timeout_s`, default 600 s), graceful stop. Generated configs under
+  `harness_state/strata/`, server output under `logs/strata_<port>.log`.
 - `harness/stack/residency.py`: endpoint tiers are external (warning, not
   charged); an all-endpoint stack short-circuits the hardware probe.
 - `stacks/strata-125b.json`: endpoint `http://127.0.0.1:8080/v1`, ctx 4096,
-  backend `strata`, and the measured caps (56.8–57.3 t/s decode, 407–523 t/s
+  backend `strata`, the measured caps (56.8–57.3 t/s decode, 407–523 t/s
   prefill, ~77% MTP acceptance, RAM available min 26.9 GB, VRAM peaks
   18.5/19.2 GB, coexistence `--vram-reserve-mib 3072`, artifact
-  `experiments/cascade/results/strata-feasibility-20261002/`).
+  `experiments/cascade/results/strata-feasibility-20261002/`), and the
+  `launch` block (`~/Desktop/work/strata`, `strata-q2_0-coexist.json`).
 - `harness/cascade/registry.py`: the `flash-next-strata` E4 candidate carrying
   the measured serving facts (177B, Q2_0, 66 GB, Strata endpoint).
 
 ```sh
-# Strata runs from its own checkout (the coexistence config measured above):
-cd ~/Desktop/work/strata
-nohup .venv/bin/python serve/server.py --engine strata \
-  --config strata-q2_0-coexist.json --port 8080 > /tmp/opencode/strata-serve.out 2>&1 &
+# apply adopts a running Strata, or starts one when it is down:
 curl -s localhost:8765/v1/stacks/strata-125b/validate
 curl -sX POST localhost:8765/v1/stacks/strata-125b/apply
-curl -s localhost:8765/v1/stacks/status | jq '.tiers[0] | {role, base_url, caps, resident}'
-# unload deregisters the tier; it does not stop Strata
+curl -s localhost:8765/v1/stacks/status | jq '.tiers[0] | {base_url, caps, managed, pid}'
+# unload stops only a process the harness started; an adopted one keeps running
 curl -sX POST localhost:8765/v1/stacks/strata-125b/unload
 ```
 
-Tests: `pytest tests/unit/test_stack_schema.py tests/unit/test_stack_residency.py
-tests/integration/test_stack_manager.py tests/integration/test_stacks_api.py
-tests/unit/test_cascade_roles.py tests/unit/test_cascade_api.py -q` — schema
-round-trip (including `stacks/strata-125b.json`), health-probe semantics,
-verify-and-register apply, unload-without-kill, mixed managed/endpoint stacks,
-and endpoint-port avoidance.
+Tests: `pytest tests/unit/test_stack_schema.py tests/unit/test_stack_strata_launcher.py
+tests/unit/test_stack_residency.py tests/integration/test_stack_manager.py
+tests/integration/test_stacks_api.py tests/unit/test_cascade_roles.py
+tests/unit/test_cascade_api.py -q` — schema round-trip (including the
+`stacks/strata-125b.json` caps and launch), argv merge and generated config,
+resolve safety, start health wait/timeout/exit, adopt-vs-start apply,
+unload/rollback ownership, health-probe semantics, and port avoidance.
 
 **Pilot result (2026-10-03):** with E4=Strata the cascade scored **27/27**
 (14/14 hard, 13/13 easy; Scion was 22/27, 9/14 hard) with **zero

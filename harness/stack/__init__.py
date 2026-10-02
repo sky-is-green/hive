@@ -13,10 +13,10 @@ Modules: :mod:`schema` (data model + file I/O + shape validation),
 """
 
 from harness.stack.api import PREFIX, create_router
+from harness.stack.endpoint import endpoint_base, endpoint_port, probe_endpoint
 from harness.stack.manager import (
     StackManager,
     TierRuntime,
-    probe_endpoint,
     tier_env,
     tier_extra_args,
     tier_load_options,
@@ -24,6 +24,8 @@ from harness.stack.manager import (
 from harness.stack.residency import CardPlan, ResidencyPlan, plan_residency
 from harness.stack.schema import (
     DEFAULT_ROUTING,
+    LAUNCH_ARGS_DENIED,
+    LAUNCH_KINDS,
     ROLE_AGENCY,
     ROLE_FACE,
     ROLE_MECHANICS,
@@ -39,12 +41,16 @@ from harness.stack.schema import (
     save_stack,
     stack_path,
     stacks_dir,
+    validate_launch,
     validate_shape,
 )
+from harness.stack.strata import StrataLauncher, merge_engine_args
 
 __all__ = [
     # schema
     "DEFAULT_ROUTING",
+    "LAUNCH_ARGS_DENIED",
+    "LAUNCH_KINDS",
     "ROLE_AGENCY",
     "ROLE_FACE",
     "ROLE_MECHANICS",
@@ -60,18 +66,24 @@ __all__ = [
     "save_stack",
     "stack_path",
     "stacks_dir",
+    "validate_launch",
     "validate_shape",
     # residency
     "CardPlan",
     "ResidencyPlan",
     "plan_residency",
-    # manager
+    # manager / endpoint helper
     "StackManager",
     "TierRuntime",
+    "endpoint_base",
+    "endpoint_port",
     "probe_endpoint",
     "tier_env",
     "tier_extra_args",
     "tier_load_options",
+    # strata launcher
+    "StrataLauncher",
+    "merge_engine_args",
     # api
     "PREFIX",
     "create_router",

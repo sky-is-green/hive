@@ -16,6 +16,7 @@ from __future__ import annotations
 import pytest
 
 import harness.models as models_mod
+import harness.stack.endpoint as endpoint_mod
 import harness.stack.manager as manager_mod
 from harness.models import LlamaServerManager
 from harness.stack.manager import (
@@ -272,6 +273,35 @@ def _endpoint_tier(role: str = "face", **overrides) -> Tier:
     return Tier(**data)
 
 
+def _launch_tier(role: str = "face", **overrides) -> Tier:
+    """An endpoint tier with the managed Strata lifecycle attached."""
+    tier = _endpoint_tier(role=role, **overrides)
+    tier.launch = {"kind": "strata", "repo": "/tmp/strata",
+                   "config": "strata-q2_0-coexist.json"}
+    return tier
+
+
+class _FakeLauncher:
+    """Records managed start/stop without spawning anything."""
+
+    def __init__(self) -> None:
+        self.started: list[tuple[str, str]] = []
+        self.stopped: list[str] = []
+
+    def start(self, *, stack_name, role, tier, endpoint):
+        self.started.append((stack_name, role))
+        return {
+            "pid": 5150, "config": f"/state/{role}.json",
+            "log": "/logs/strata_8080.log", "engine_log": "/logs/engine.log",
+            "cmd": [],
+            "health": dict(_STRATA_HEALTH, endpoint=endpoint, base_url=endpoint),
+        }
+
+    def stop(self, role):
+        self.stopped.append(role)
+        return True
+
+
 class _FakeResponse:
     """The ``requests.Response`` surface ``probe_endpoint`` reads."""
 
@@ -397,8 +427,8 @@ def test_probe_endpoint_reads_strata_health(monkeypatch):
             "status": "ok", "loaded": True, "model": "strata",
             "max_context": 4096, "service": "strata"})
 
-    monkeypatch.setattr(manager_mod.requests, "get", fake_get)
-    info = manager_mod.probe_endpoint("http://127.0.0.1:8080/v1")
+    monkeypatch.setattr(endpoint_mod.requests, "get", fake_get)
+    info = endpoint_mod.probe_endpoint("http://127.0.0.1:8080/v1")
 
     assert calls == ["http://127.0.0.1:8080/health"]
     assert info["model"] == "strata"
@@ -409,10 +439,10 @@ def test_probe_endpoint_reads_strata_health(monkeypatch):
 
 def test_probe_endpoint_refuses_an_unloaded_model(monkeypatch):
     monkeypatch.setattr(
-        manager_mod.requests, "get",
+        endpoint_mod.requests, "get",
         lambda url, timeout: _FakeResponse(200, {"status": "ok", "loaded": False}))
     with pytest.raises(RuntimeError, match="not loaded"):
-        manager_mod.probe_endpoint("http://127.0.0.1:8080/v1")
+        endpoint_mod.probe_endpoint("http://127.0.0.1:8080/v1")
 
 
 def test_probe_endpoint_falls_back_to_models(monkeypatch):
@@ -421,8 +451,8 @@ def test_probe_endpoint_falls_back_to_models(monkeypatch):
             return _FakeResponse(404, {})
         return _FakeResponse(200, {"data": [{"id": "llama-35b"}]})
 
-    monkeypatch.setattr(manager_mod.requests, "get", fake_get)
-    info = manager_mod.probe_endpoint("http://127.0.0.1:9000")
+    monkeypatch.setattr(endpoint_mod.requests, "get", fake_get)
+    info = endpoint_mod.probe_endpoint("http://127.0.0.1:9000")
 
     assert info["model"] == "llama-35b"
     assert info["base_url"] == "http://127.0.0.1:9000"
@@ -430,11 +460,78 @@ def test_probe_endpoint_falls_back_to_models(monkeypatch):
 
 def test_probe_endpoint_reports_every_failure(monkeypatch):
     def fake_get(url: str, timeout: float):
-        raise manager_mod.requests.ConnectionError("connection refused")
+        raise endpoint_mod.requests.ConnectionError("connection refused")
 
-    monkeypatch.setattr(manager_mod.requests, "get", fake_get)
+    monkeypatch.setattr(endpoint_mod.requests, "get", fake_get)
     with pytest.raises(RuntimeError, match="is not healthy"):
-        manager_mod.probe_endpoint("http://127.0.0.1:8080/v1")
+        endpoint_mod.probe_endpoint("http://127.0.0.1:8080/v1")
+
+
+# --------------------------------------------------------------------------
+# managed lifecycle (`launch`): adopt when up, start when down, stop own
+# --------------------------------------------------------------------------
+
+def test_apply_starts_a_launch_tier_when_the_endpoint_is_down(tmp_path, monkeypatch):
+    manager, spawner = _make_manager(tmp_path, monkeypatch)
+    _install_plan(monkeypatch, _Plan())
+    launcher = _FakeLauncher()
+
+    def prober(endpoint: str) -> dict:
+        raise RuntimeError(f"endpoint {endpoint} is not healthy: refused")
+
+    stack_api = StackManager(manager, endpoint_prober=prober,
+                             strata_launcher=launcher)
+    result = stack_api.apply(Stack(name="strata-125b", tiers=[_launch_tier()]))
+
+    assert result["ok"] is True
+    assert launcher.started == [("strata-125b", "face")]
+    row = stack_api.status()["tiers"][0]
+    assert row["managed"] is True and row["pid"] == 5150
+    assert row["resident"] is True
+    assert row["model"] == "qwen3.8-flash-next-q2_0"
+
+    assert stack_api.unload() == {"ok": True, "unloaded": ["face"]}
+    assert launcher.stopped == ["face"]
+    assert spawner.cmds == []  # never a llama-server spawn
+
+
+def test_apply_adopts_a_running_launch_tier_without_owning_it(tmp_path, monkeypatch):
+    manager, _spawner = _make_manager(tmp_path, monkeypatch)
+    _install_plan(monkeypatch, _Plan())
+    launcher = _FakeLauncher()
+    stack_api = StackManager(
+        manager, endpoint_prober=lambda ep: dict(_STRATA_HEALTH),
+        strata_launcher=launcher,
+    )
+    stack_api.apply(Stack(name="strata-125b", tiers=[_launch_tier()]))
+
+    assert launcher.started == []
+    row = stack_api.status()["tiers"][0]
+    assert row["managed"] is False and row["pid"] is None
+    assert stack_api.unload() == {"ok": True, "unloaded": ["face"]}
+    assert launcher.stopped == []  # adopted: the process is not ours
+
+
+def test_launch_rollback_stops_the_process_it_started(tmp_path, monkeypatch):
+    manager, _spawner = _make_manager(tmp_path, monkeypatch)
+    _install_plan(monkeypatch, _Plan())
+    launcher = _FakeLauncher()
+
+    def prober(endpoint: str) -> dict:
+        raise RuntimeError("down")
+
+    def flaky(*args, **kwargs):
+        raise RuntimeError("no VRAM for the worker")
+
+    monkeypatch.setattr(manager, "load", flaky)
+    stack_api = StackManager(manager, endpoint_prober=prober,
+                             strata_launcher=launcher)
+    with pytest.raises(RuntimeError, match="tier 'worker'"):
+        stack_api.apply(Stack(name="mixed", tiers=[_launch_tier(), _tier("worker")]))
+
+    assert launcher.started == [("mixed", "face")]
+    assert launcher.stopped == ["face"]
+    assert stack_api.status()["tiers"] == []
 
 
 # --------------------------------------------------------------------------
@@ -535,5 +632,6 @@ def test_tier_runtime_to_dict_is_the_status_row():
     assert runtime.to_dict() == {
         "role": "face", "key": "k", "port": 1234, "ctx": 8192, "model": "m",
         "backend": "vulkan", "resident": True, "vram_gb": None, "tok_s": None,
-        "base_url": None, "caps": None, "per_card": [_CARD],
+        "base_url": None, "caps": None, "managed": False, "pid": None,
+        "per_card": [_CARD],
     }

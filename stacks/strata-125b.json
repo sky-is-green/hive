@@ -34,6 +34,18 @@
           "vram_reserve_mib": 3072,
           "prefill": 512
         }
+      },
+      "launch": {
+        "kind": "strata",
+        "repo": "~/Desktop/work/strata",
+        "config": "strata-q2_0-coexist.json",
+        "engine_args": [
+          "--vram-reserve-mib",
+          "3072",
+          "--prefill",
+          "512"
+        ],
+        "timeout_s": 600
       }
     }
   ],

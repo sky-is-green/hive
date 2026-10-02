@@ -451,8 +451,10 @@ and the porting work order: `docs/ENGINE.md` "Dual-engine direction".
 
 ## E4=Strata pilot and threshold re-fit (2026-10-03)
 
-Strata replaced Scion as E4 through the new endpoint-backed tier
-(`stacks/strata-125b.json`; `docs/ENGINE.md` "Integration in hivebench").
+Strata replaced Scion as E4 through the endpoint tier with the managed
+lifecycle (`stacks/strata-125b.json`: adopt a running server or start/stop it
+from a generated config; `docs/ENGINE.md` "Integration in hivebench — endpoint
+tier + managed launch").
 Both task sets, measure mode, frontier router + frontier verifier, one sample
 per task:
 
