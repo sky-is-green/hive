@@ -208,7 +208,7 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         bytes_gb=66.0,
         devices=(Device.DGPU0, Device.DGPU1),
         roles=("E4",),
-        notes="GSQ-RCO Q2_0 (ISTA-DASLab); expert offload via Ember; ~40 GB active",
+        notes="GSQ-RCO Q2_0 (ISTA-DASLab); expert offload via the prism slot cache; ~40 GB active",
     ),
     Candidate(
         id="scion-35b-a3b", label="Scion-35B-A3B",

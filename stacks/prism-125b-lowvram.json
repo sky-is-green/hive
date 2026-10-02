@@ -1,10 +1,10 @@
 {
-  "name": "ember-125b-lowvram",
+  "name": "prism-125b-lowvram",
   "version": 1,
   "tiers": [
     {
       "role": "face",
-      "repo": "local/ember",
+      "repo": "local/prism",
       "file": "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
       "ctx": 4096,
       "ngl": 99,

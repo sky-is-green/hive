@@ -1,10 +1,10 @@
 {
-  "name": "ember-35b",
+  "name": "prism-35b",
   "version": 1,
   "tiers": [
     {
       "role": "face",
-      "repo": "local/ember",
+      "repo": "local/prism",
       "file": "Qwen3.8-35B-A3B-IQ2_M.gguf",
       "ctx": 4096,
       "ngl": 99,
