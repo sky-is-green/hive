@@ -191,6 +191,28 @@ else must be refused with a precise error rather than silently mis-run"*, and
 indexer, hyper-connections) and MTP to that architecture. That focus is the
 speed.
 
+What actually blocks another model, from the source:
+
+- **Front door (fail-fast, trivial to relax):** the `qwen4exp` guard plus
+  direct reads of `qwen4exp.expert_count`, `qwen4exp.rope.*` and friends in
+  `program/generate.cpp` (generic GGUF keys are never consulted).
+- **Forward pass (the real work):** `core/layer.cpp` implements Flash-Next-only
+  machinery — QSA sparse attention with its indexer (`qsa.hpp`,
+  `native_qsa_indexer`, `qsa_select`, `qsa_decode_attn`), hyper-connection
+  mixers, PLE per-layer embeddings (`per_layer_token_embd.weight`), shared
+  expert gating; `ModelGeometry` carries indexer dimensions that only this
+  architecture has. A different model needs its own layer + graph, behind a
+  dispatch.
+- **Artifacts and quants:** the pack layout (`experts.bin`/`dense.bin`/
+  `embd.bin` + `manifest.json`/`index.txt`/`native_experts.txt`, built for this
+  exact tensor set) and the kernel quant families (Q2_0, IQ2_XS, IQ3_*,
+  bf16/f32/q8_0 — `s2_gemv*`, `iq_kernels`); our PQ2_0 ternary type has no
+  dequant/GEMV/MMQ implementation there.
+- **What is generic:** `third_party/llama.cpp` is pinned (`GIT_TAG
+  3cf03257…`), so ggml primitives exist; the expert cache, CPU co-execution,
+  MTP speculation, prefill chunking and serving are architecture-agnostic. A
+  port is "write the model + pack mapping + quant kernels", not a new engine.
+
 **Direction: run both engines behind the generator contract** — Strata for the
 Flash-Next tier, prism/llama.cpp for Scion-35B, the ternary pipeline and the
 decision models — until a port is justified.
