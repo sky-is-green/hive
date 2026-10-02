@@ -219,16 +219,20 @@ What actually blocks another model, from the source:
   MTP speculation, prefill chunking and serving are architecture-agnostic. A
   port is "write the model + pack mapping + quant kernels", not a new engine.
 
-**Direction: run both engines behind the generator contract** — Strata for the
-Flash-Next tier, prism/llama.cpp for Scion-35B, the ternary pipeline and the
-decision models — until a port is justified.
+**Direction confirmed (2026-10-02):** both engines live in the harness behind
+the generator contract — Strata for the Flash-Next tier, prism/llama.cpp for
+Scion-35B, the ternary pipeline and the decision models — and **our models are
+ported to Strata as a planned track** (work order below). Strata is MIT
+(`github.com/Niko1221/Strata`, Copyright (c) 2026 Niko1221 and contributors);
+ggml/llama.cpp are MIT; model files keep their own licenses (Qwen,
+ISTA-DASLab, Swift, Unsloth).
 
 | | gain | lose / cost |
 |---|---|---|
 | Strata as the Flash-Next tier | 2.2x decode (57 vs 26 t/s), MTP (~77% acceptance), CPU co-execution of misses, 8K prefill chunks, KV streaming/k8v4, `/metrics`, per-box calibration, coexistence reserve | single-arch lock-in; ternary/35B need a fork port; a second engine to pin and upgrade; greedy output is not byte-identical (adaptive cache + speculation); the prism lane stalls unless kept alive for 35B |
 | prism/llama.cpp as the general engine | every GGUF we own (Scion-35B PQ2_0, Bonsai, decision models), the ternary pipeline, upstream rebase, byte-identical greedy | slower on Flash-Next; its open list (CPU co-execution, MTP draft path, prefill chunking, telemetry) |
 
-**If ternary-on-Strata is wanted later**, the work order from the source:
+**Porting track (our models onto Strata)**, work order from the source:
 
 1. **architecture seam**: add a `qwen35moe` implementation behind a dispatch.
    `check_architecture` is the single choke point; `layer.cpp` is
