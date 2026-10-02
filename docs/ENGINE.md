@@ -254,6 +254,16 @@ round-trip (including `stacks/strata-125b.json`), health-probe semantics,
 verify-and-register apply, unload-without-kill, mixed managed/endpoint stacks,
 and endpoint-port avoidance.
 
+**Pilot result (2026-10-03):** with E4=Strata the cascade scored **27/27**
+(14/14 hard, 13/13 easy; Scion was 22/27, 9/14 hard) with **zero
+escalations**; hard-set mean 7.4 s / 167 tokens and $0.0033 total API spend
+for both sets. RAM available min 22.8 GB, VRAM peaks 17.7/19.0 GB with the
+coexist profile; the endpoint was unloaded via the stack API without stopping
+Strata, which released memory on close. The router threshold re-fit moved
+0.90 → 0.55 (quality 1.000 at api share 0 for every threshold ≤ 0.55).
+Artifacts: `experiments/cascade/results/strata-cascade-20261003-{hard,easy}/`
+and `strata-pilot-router-eval.{json,md}`.
+
 ### Dual-engine direction — what we gain, what we lose, the porting path (2026-10-02)
 
 Strata is **deliberately single-architecture**. The guard in

@@ -1,0 +1,421 @@
+{
+ "summary": {
+  "tasks": 27,
+  "sources": [
+   "strata-cascade-20261003-easy",
+   "strata-cascade-20261003-hard"
+  ],
+  "api_coverage": 1.0,
+  "always_local": {
+   "quality": 1.0,
+   "api_share": 0.0
+  },
+  "always_api": {
+   "quality": 1.0,
+   "api_share": 1.0
+  },
+  "oracle": {
+   "quality": 1.0,
+   "api_share": 0.0
+  },
+  "api_router": {
+   "tasks": 27,
+   "routing_accuracy": 1.0,
+   "quality": 1.0,
+   "api_share": 0.0
+  },
+  "tiny_jev": {
+   "model": "lostargon/Tiny-Jev-1.7B",
+   "device": "cuda",
+   "mean_ms": 46.32222222222222,
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.1,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.15,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.2,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.25,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.3,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.35,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.45,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.5,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.55,
+     "routing_accuracy": 1.0,
+     "quality": 1.0,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.6,
+     "routing_accuracy": 0.9629629629629629,
+     "quality": 1.0,
+     "api_share": 0.037037037037037035
+    },
+    {
+     "threshold": 0.65,
+     "routing_accuracy": 0.9259259259259259,
+     "quality": 1.0,
+     "api_share": 0.07407407407407407
+    },
+    {
+     "threshold": 0.7,
+     "routing_accuracy": 0.9259259259259259,
+     "quality": 1.0,
+     "api_share": 0.07407407407407407
+    },
+    {
+     "threshold": 0.75,
+     "routing_accuracy": 0.7777777777777778,
+     "quality": 1.0,
+     "api_share": 0.2222222222222222
+    },
+    {
+     "threshold": 0.8,
+     "routing_accuracy": 0.6666666666666666,
+     "quality": 1.0,
+     "api_share": 0.3333333333333333
+    },
+    {
+     "threshold": 0.85,
+     "routing_accuracy": 0.5555555555555556,
+     "quality": 1.0,
+     "api_share": 0.4444444444444444
+    },
+    {
+     "threshold": 0.9,
+     "routing_accuracy": 0.4444444444444444,
+     "quality": 1.0,
+     "api_share": 0.5555555555555556
+    },
+    {
+     "threshold": 0.95,
+     "routing_accuracy": 0.37037037037037035,
+     "quality": 1.0,
+     "api_share": 0.6296296296296297
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "id": "qa-capital-australia",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.7213,
+   "router_ms": 691.3
+  },
+  {
+   "id": "qa-element-w",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.8139,
+   "router_ms": 29.5
+  },
+  {
+   "id": "qa-pride-prejudice",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.8623,
+   "router_ms": 26.8
+  },
+  {
+   "id": "qa-largest-planet",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.7534,
+   "router_ms": 22.5
+  },
+  {
+   "id": "math-train-speed",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9805,
+   "router_ms": 21.2
+  },
+  {
+   "id": "math-linear",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.8137,
+   "router_ms": 20.7
+  },
+  {
+   "id": "math-percent",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.6239,
+   "router_ms": 19.5
+  },
+  {
+   "id": "math-diagonal",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9025,
+   "router_ms": 20.0
+  },
+  {
+   "id": "math-bat-ball",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9738,
+   "router_ms": 21.9
+  },
+  {
+   "id": "code-count-vowels",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9927,
+   "router_ms": 22.5
+  },
+  {
+   "id": "code-fib",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9951,
+   "router_ms": 21.9
+  },
+  {
+   "id": "code-palindrome",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9881,
+   "router_ms": 21.7
+  },
+  {
+   "id": "code-dedupe",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-easy",
+   "p_local_correct": 0.9938,
+   "router_ms": 20.1
+  },
+  {
+   "id": "math-shirt-price",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.8093,
+   "router_ms": 20.4
+  },
+  {
+   "id": "math-digit-7",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.7481,
+   "router_ms": 19.7
+  },
+  {
+   "id": "math-clock-angle",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.7092,
+   "router_ms": 19.8
+  },
+  {
+   "id": "math-day-of-week",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.722,
+   "router_ms": 20.3
+  },
+  {
+   "id": "math-probability",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.8791,
+   "router_ms": 21.7
+  },
+  {
+   "id": "math-even-sum",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.8586,
+   "router_ms": 19.9
+  },
+  {
+   "id": "math-depreciation",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.5727,
+   "router_ms": 21.8
+  },
+  {
+   "id": "qa-strawberry-r",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.7613,
+   "router_ms": 20.2
+  },
+  {
+   "id": "qa-berlin-wall",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.9274,
+   "router_ms": 19.5
+  },
+  {
+   "id": "qa-persistence-memory",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.795,
+   "router_ms": 19.6
+  },
+  {
+   "id": "code-run-length",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.9862,
+   "router_ms": 21.8
+  },
+  {
+   "id": "code-merge-intervals",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.975,
+   "router_ms": 22.5
+  },
+  {
+   "id": "code-parse-duration",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.9723,
+   "router_ms": 21.9
+  },
+  {
+   "id": "code-balanced-brackets",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-cascade-20261003-hard",
+   "p_local_correct": 0.9825,
+   "router_ms": 22.0
+  }
+ ]
+}

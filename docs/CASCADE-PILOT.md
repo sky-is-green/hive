@@ -449,6 +449,32 @@ prism/llama.cpp for Scion-35B, the ternary pipeline and decision models, both
 behind the swappable generator contract until a port is justified — gain/loss
 and the porting work order: `docs/ENGINE.md` "Dual-engine direction".
 
+## E4=Strata pilot and threshold re-fit (2026-10-03)
+
+Strata replaced Scion as E4 through the new endpoint-backed tier
+(`stacks/strata-125b.json`; `docs/ENGINE.md` "Integration in hivebench").
+Both task sets, measure mode, frontier router + frontier verifier, one sample
+per task:
+
+| generator | hard set | easy set | combined | escalations | hard-set mean |
+|---|---:|---:|---:|---:|---:|
+| Scion-35B (2026-10-01) | 9/14 | 13/13 | 22/27 | 5/14 | 3.9 s |
+| **Strata Q2_0 (2026-10-03)** | **14/14** | **13/13** | **27/27** | **0** | **7.4 s** (167 tok) |
+
+API ceiling 27/27; total spend **$0.0033** (no escalation answers). Resources:
+RAM available min **22.8 GB**, VRAM peaks **17.7/19.0 GB** with the coexist
+profile; Strata released memory on close. Artifacts:
+`experiments/cascade/results/strata-cascade-20261003-{hard,easy}/`
+(report + provenance + SUMMARY) and `strata-pilot-router-eval.{json,md}`.
+
+**Threshold re-fit.** With local accuracy saturated, Tiny-Jev policy quality
+is **1.000 at api share 0.000 for every threshold ≤ 0.55** (the 0.05–0.55
+sweep is flat); the Scion-era 0.90 escalates **55.6%** for no gain. New
+operating point: **0.55**, the top of the flat region, preserving escalation
+headroom for genuinely uncertain tasks. The 27-task set no longer
+discriminates the generator: the next calibration asset is the held-out
+benchmark slice, not more fitting on these labels.
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice
