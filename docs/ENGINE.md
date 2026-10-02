@@ -195,7 +195,13 @@ What actually blocks another model, from the source:
 
 - **Front door (fail-fast, trivial to relax):** the `qwen4exp` guard plus
   direct reads of `qwen4exp.expert_count`, `qwen4exp.rope.*` and friends in
-  `program/generate.cpp` (generic GGUF keys are never consulted).
+  `program/generate.cpp` (generic GGUF keys are never consulted). Empirical
+  (2026-10-02, engine 0.1.37): pointing the engine at the Scion-35B GGUF fails
+  with `no shard of the model holds per_layer_token_embd.weight`, and with
+  `--ple-gguf` supplied it fails with `architecture is 'qwen35moe', this
+  engine requires 'qwen4exp'`. GGUF is a container it can read; there are no
+  interpreters for other architectures in the binary (CMake compiles only
+  `third_party/llama.cpp/ggml`, not llama.cpp's `src/models/*`).
 - **Forward pass (the real work):** `core/layer.cpp` implements Flash-Next-only
   machinery — QSA sparse attention with its indexer (`qsa.hpp`,
   `native_qsa_indexer`, `qsa_select`, `qsa_decode_attn`), hyper-connection
