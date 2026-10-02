@@ -443,8 +443,11 @@ per-device latency) so the same cascade can map the box's ceiling across sizes
 (35B ↔ 125B ↔ others). **AMD-first: reach Strata-level Flash-Next performance
 before chasing cascade gains** — and the 2026-10-02 feasibility run did:
 Strata serves Q2_0 on this box at 56.8–57.3 t/s decode / 407–523 t/s prefill
-alongside the desktop (`experiments/cascade/results/strata-feasibility-20261002/`);
-the adoption decision for the tier is with the human.
+alongside the desktop (`experiments/cascade/results/strata-feasibility-20261002/`).
+**Dual-engine direction (2026-10-02):** Strata for the Flash-Next tier,
+prism/llama.cpp for Scion-35B, the ternary pipeline and decision models, both
+behind the swappable generator contract until a port is justified — gain/loss
+and the porting work order: `docs/ENGINE.md` "Dual-engine direction".
 
 ## Priority plan after the literature pass
 
