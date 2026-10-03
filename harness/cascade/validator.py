@@ -24,6 +24,7 @@ from __future__ import annotations
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 #: Default validator checkpoint (Tiny-Jev) and the environment overrides the
@@ -88,6 +89,12 @@ class ClefValidator:
     ``systemone``; this adapter asks one ``noul`` question and reads the
     probability.  Import/load happens lazily so the module stays importable in
     environments without transformers.
+
+    ``text_only`` (default) loads the backbone and the joint head directly
+    with a tokenizer-only processor: the released multimodal processor pulls
+    ``torchvision`` for its video processor, which text validation never uses.
+    Set ``text_only=False`` with the full processor stack installed to accept
+    images/videos.
     """
 
     DEFAULT_MODEL = "Cloudflare/clef-flash"
@@ -98,6 +105,7 @@ class ClefValidator:
         model_id: str = DEFAULT_MODEL,
         *,
         device: str = DEFAULT_DEVICE,
+        text_only: bool = True,
         _model: Any = None,
         _processor: Any = None,
         _systemone: Optional[Callable[..., dict]] = None,
@@ -119,7 +127,27 @@ class ClefValidator:
             sys.path.insert(0, path)
         import joint_schema_model as js  # type: ignore
 
-        self.model, self.processor = js.load_release_model(path, device=device)
+        if text_only:
+            import json as _json
+            import types
+
+            import torch
+            from safetensors.torch import load_file
+            from transformers import AutoTokenizer, Qwen3_5ForConditionalGeneration
+
+            backbone = Qwen3_5ForConditionalGeneration.from_pretrained(
+                path, dtype=torch.bfloat16, device_map={"": device})
+            backbone.config.use_cache = False
+            head = js.JointSchemaHead(
+                **_json.loads((Path(path) / "joint_head_config.json").read_text()))
+            head.load_state_dict(
+                load_file(Path(path) / "joint_head.safetensors"), strict=True)
+            head = head.to(device=device, dtype=torch.bfloat16)
+            self.model = js.ClefModel(backbone, head).eval()
+            self.processor = types.SimpleNamespace(
+                tokenizer=AutoTokenizer.from_pretrained(path))
+        else:
+            self.model, self.processor = js.load_release_model(path, device=device)
         self._systemone = js.systemone
 
     def verdict(self, task: dict, candidate: str) -> tuple[float, float]:

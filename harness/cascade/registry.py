@@ -189,9 +189,10 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         notes=(
             "Apache-2.0 decision model: Qwen3.5-9B backbone + joint schema "
             "head, SystemOne/Jev-compatible typed questions in one forward "
-            "pass, no generation; median 38.8 ms (H200-class). bf16 ~18.8 GB "
-            "cannot co-reside with E4 — ternary plan: PQ2_0 backbone + small "
-            "head sidecar (docs/CASCADE-PILOT.md 'Clef')"
+            "pass, no generation; median 38.8 ms (H200-class). Measured "
+            "validator (CPU, bf16): 67/70 train / 26/30 test correct verdicts "
+            "at 0.5, 0 false accepts train, ~3.2 s/check; ternary plan: PQ2_0 "
+            "backbone + head sidecar (docs/CASCADE-PILOT.md 'Clef')"
         ),
     ),
     Candidate(

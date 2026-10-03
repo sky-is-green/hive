@@ -57,7 +57,7 @@ def load_judgeable(path: Optional[str] = None) -> dict[str, dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="internlm/Intern-Decision-4B")
-    parser.add_argument("--family", choices=("auto", "intern", "jev", "tinyjev"),
+    parser.add_argument("--family", choices=("auto", "intern", "jev", "tinyjev", "clef"),
                         default="auto")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--report", default="",
@@ -113,17 +113,20 @@ def main() -> int:
             Jev9BJudge,
             TinyJevJudge,
         )
+        from harness.cascade.validator import ClefValidator
 
         family = args.family
         if family == "auto":
             low = args.model.lower()
             family = (
-                "tinyjev" if ("tiny-jev" in low or "tiny_jev" in low)
+                "clef" if "clef" in low
+                else "tinyjev" if ("tiny-jev" in low or "tiny_jev" in low)
                 else "jev" if "jev" in low
                 else "intern"
             )
         print(f"loading {args.model} ({family}) ...", file=sys.stderr)
         judge = {
+            "clef": ClefValidator,
             "tinyjev": TinyJevJudge,
             "jev": Jev9BJudge,
             "intern": InternDecisionJudge,
