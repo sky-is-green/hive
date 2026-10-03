@@ -560,6 +560,17 @@ the harness validator adapter (`ClefValidator`) speaks their SystemOne API, so
 `HIVE_VALIDATOR_MODEL=Cloudflare/clef-flash` swaps the validator today (bf16
 ~18.8 GB: box alone, or CPU).
 
+**Measured as the harness validator (2026-10-03, CPU, text-only path).**
+bf16 Clef-Flash: load ~5 s (warm page cache), **~3.2 s/check**, 18.8 GB RAM.
+Against the bench labels at threshold 0.5: **67/70 correct verdicts, 0 false
+accepts, 3 false rejects** on train and **26/30, 1 FA, 3 FR** on test —
+better than Tiny-Jev (62/70, 8 FR; 25/30, 4 FR) and matching the frontier API
+judge's 67/70 on train with no spend (the API leads 28/30 on test).  The
+released multimodal processor needs torchvision, so the adapter loads the
+backbone + joint head directly with a tokenizer-only processor; images/videos
+are a later opt-in.  Artifacts: `results/clef-flash-judge-eval-{train,test}.json`
+and `results/clef-flash-validator-20261003/SUMMARY.md`.
+
 **Ternary plan (ultra-lean package).**  The backbone is a standard Qwen3.5-9B,
 so the existing JEV-9B ternary pipeline applies: convert → `llama-quantize
 PQ2_0` (2.13 bpw) → serve on the fork, ≈2.4 GB.  The joint schema head is a
