@@ -122,6 +122,30 @@ release, `bridge-{uncorrected,corrected}.json`).  Scripts:
 `scion/dense/clef_export.py`, `scion/dense/clef_bridge_eval.py`; bridge batch
 mode + embedded-adapter attach in `tools/clef-bridge/`.
 
+## Stage D: harness backend + label benchmark (2026-10-03)
+
+`clef-ternary` is now a first-class validator backend:
+`harness/cascade/validator.py::ClefTernaryValidator` keeps the packaged body in
+a resident `clef_embed --serve` process (fresh context per check) and runs the
+joint head in torch fp32 on CPU; `load_validator` selects it for ids containing
+`ternary`, and `judge_eval.py` has the matching `--family ternary`.  The same
+`judge_eval` pipeline that scored bf16 Clef re-run over the train/test reports:
+
+| split | ternary harness | bf16 Clef (recorded) | API judge | mean ms/check |
+|---|---|---|---|---|
+| train | **68/70** (2 FA, 0 FR) | 67/70 (0 FA, 3 FR) | 67/70 (2 FA, 1 FR) | ~17,900 |
+| test | **29/30** (1 FA, 0 FR) | 26/30 (1 FA, 3 FR) | 28/30 (1 FA, 1 FR) | ~17,700 |
+
+Bit-for-bit with the offline bridge benchmark (max |Δp| 5e-5); both models now
+live side by side in `clef-flash-judge-eval-{train,test}.json`.
+
+**Calibration caveat:** corrected probabilities are compressed into
+[0.57, 0.60] and the accept cliff is at 0.60 (one record per split clears it).
+Threshold 0.5 is safe (no false rejects anywhere), but the model carries no
+graded confidence; recalibrate before using another operating point.  Latency
+is the recurrent GDN CPU prefill (~17.9 s/check); the HIP bridge on the
+non-display card is the fallback if that binds.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
