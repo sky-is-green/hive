@@ -70,12 +70,12 @@ def test_paths_and_route_table(client):
 
 def test_registry_covers_every_role(client):
     data = client.get("/v1/cascade/registry").json()
-    assert data["count"] == 22
+    assert data["count"] == 24
     # G1 is the deterministic harness policy (no model candidate by design).
     assert data["missing_roles"] == ["G1"]
     ids = {c["id"] for c in data["candidates"]}
     assert {"qwen3.5-2b", "ornith-1.5-9b", "scion-35b-a3b",
-            "flash-next-strata"} <= ids
+            "flash-next-strata", "clef-flash-9b", "clef-27b"} <= ids
 
 
 def test_plan_prices_the_route(client):
@@ -185,3 +185,64 @@ def test_runs_index_and_report(client):
 def test_report_validation(client):
     assert client.get("/v1/cascade/report/nope").status_code == 404
     assert client.get("/v1/cascade/report/..bad").status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# validator service
+# ---------------------------------------------------------------------------
+
+
+class _FakeValidator:
+    def __init__(self) -> None:
+        self.calls: list[tuple[dict, str, float | None]] = []
+
+    def status(self) -> dict:
+        return {"model": "fake-validator", "device": "cpu", "threshold": 0.5,
+                "loaded": True, "load_ms": 1.0, "checks": len(self.calls)}
+
+    def verdict(self, task, candidate, *, threshold=None):
+        self.calls.append((task, candidate, threshold))
+        return {"model": "fake-validator", "device": "cpu", "p_correct": 0.9,
+                "accept": True, "threshold": threshold or 0.5, "ms": 2.0,
+                "checks": len(self.calls)}
+
+
+def _validator_client(tmp_path, validator=None):
+    router = cascade_api.create_router(
+        runs_root=tmp_path / "runs", tasks_root=tmp_path, validator=validator)
+    app = FastAPI()
+    app.include_router(router)
+    return TestClient(app)
+
+
+def test_validator_status_and_validate_route(tmp_path):
+    validator = _FakeValidator()
+    client = _validator_client(tmp_path, validator)
+
+    status = client.get("/v1/cascade/validator").json()
+    assert status["configured"] is True and status["model"] == "fake-validator"
+
+    out = client.post("/v1/cascade/validate", json={
+        "task": {"prompt": "2+2?"}, "candidate": "4", "threshold": 0.7}).json()
+    assert out["p_correct"] == 0.9 and out["accept"] is True
+    assert validator.calls == [({"prompt": "2+2?"}, "4", 0.7)]
+
+
+def test_validate_rejects_malformed_input(tmp_path):
+    client = _validator_client(tmp_path, _FakeValidator())
+    assert client.post("/v1/cascade/validate", json={}).status_code == 422
+    assert client.post(
+        "/v1/cascade/validate",
+        json={"task": {}, "candidate": "x"}).status_code == 422
+    assert client.post(
+        "/v1/cascade/validate",
+        json={"task": {"prompt": "p"}, "candidate": "  "}).status_code == 422
+
+
+def test_validate_without_a_validator_is_503(tmp_path):
+    client = _validator_client(tmp_path)
+    status = client.get("/v1/cascade/validator").json()
+    assert status["configured"] is False
+    assert client.post(
+        "/v1/cascade/validate",
+        json={"task": {"prompt": "p"}, "candidate": "a"}).status_code == 503

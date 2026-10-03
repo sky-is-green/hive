@@ -69,6 +69,12 @@ from harness.cascade.scheduler import (
     plan_request,
 )
 from harness.cascade.telemetry import RoleRecord, TelemetryLog
+from harness.cascade.validator import (
+    ClefValidator,
+    TinyJevValidator,
+    ValidatorService,
+    load_validator,
+)
 
 __all__ = [
     # roles
@@ -118,4 +124,9 @@ __all__ = [
     "CandidateMeasurement",
     "pareto_frontier",
     "frontier_by_role",
+    # validator
+    "ClefValidator",
+    "TinyJevValidator",
+    "ValidatorService",
+    "load_validator",
 ]

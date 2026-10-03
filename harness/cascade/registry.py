@@ -181,6 +181,32 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
     ),
     Candidate(
+        id="clef-flash-9b", label="Cloudflare Clef-Flash 9B",
+        repo="Cloudflare/clef-flash",
+        params_b=9.0, precision="bf16", bytes_gb=18.8,
+        devices=(Device.DGPU0, Device.DGPU1),
+        roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
+        notes=(
+            "Apache-2.0 decision model: Qwen3.5-9B backbone + joint schema "
+            "head, SystemOne/Jev-compatible typed questions in one forward "
+            "pass, no generation; median 38.8 ms (H200-class). bf16 ~18.8 GB "
+            "cannot co-reside with E4 — ternary plan: PQ2_0 backbone + small "
+            "head sidecar (docs/CASCADE-PILOT.md 'Clef')"
+        ),
+    ),
+    Candidate(
+        id="clef-27b", label="Cloudflare Clef 27B",
+        repo="Cloudflare/clef",
+        params_b=27.0, precision="bf16", bytes_gb=54.0,
+        devices=(Device.DGPU0, Device.DGPU1),
+        roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
+        notes=(
+            "Apache-2.0 multimodal decision model: Qwen3.8-27B backbone + "
+            "joint schema head, 64k context, SystemOne-compatible; Decision "
+            "Index leader; bf16 ~54 GB needs the box alone"
+        ),
+    ),
+    Candidate(
         id="tiny-jev-1.7b", label="Tiny-Jev-1.7B",
         repo="lostargon/Tiny-Jev-1.7B",
         params_b=1.7, precision="bf16", bytes_gb=3.4,
