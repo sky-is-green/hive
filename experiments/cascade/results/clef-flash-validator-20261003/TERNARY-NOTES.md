@@ -99,10 +99,29 @@ proxy, not the ship number):
 | test correct | 7/30 | **29/30** (1 FA, 0 FR) | 26/30 | 25/30 |
 | hidden cos | 0.23 | 0.37 | 1.0 | — |
 
-**Paused before packaging.** The shippable number needs the branches packaged
-(`attn_out` as a LoRA on `attn_output`/`ssm_out`; `mlp_out` needs a dense
-`qwen35` `ffn_out` fork hook) and the benchmark re-run through the CPU bridge.
-Hidden cos 0.37 leaves headroom for a longer f32 run.
+## Stage C: packaged + honest CPU-bridge benchmark (2026-10-03)
+
+Both taps packaged (`attn_out` as LoRAs on `attn_output`/`ssm_out`; `mlp_out`
+via the new dense `qwen35` `ffn_out` virtual target in the fork), merged into
+the body (`adapter.embedded=true`, 3.10 GiB), and benchmarked through the
+llama.cpp CPU bridge + joint head sidecar over all 100 bench records.  **The
+honest numbers match the proxy, with zero verdict flips (max |Δp| 0.027):**
+
+| split | uncorrected bridge | **corrected bridge** | corrected proxy | bf16 Clef | Tiny-Jev |
+|---|---|---|---|---|---|
+| train | 18/70 (0 FA, 52 FR) | **68/70 (2 FA, 0 FR)** | 68/70 | 67/70 | 62/70 |
+| test | 8/30 (0 FA, 22 FR) | **29/30 (1 FA, 0 FR)** | 29/30 | 26/30 | 25/30 |
+| mean p train/test | 0.471 / 0.471 | 0.586 / 0.588 | 0.595 / 0.594 | 0.811 / 0.792 | — |
+| hidden cos train/test | 0.231 / 0.235 | 0.371 / 0.382 | 0.372 / 0.383 | 1.0 | — |
+
+CPU latency ~49 ms/token (recurrent GDN prefill; 13.8-28.6 s/record plus
+40-90 ms head) — ~5-8x the bf16 transformer validator's ~3.2 s/check.  The
+torch-vs-bridge body cos gap (0.948) does not reach the decision metric.
+Artifacts: `models/clef-flash-ternary/corrections/packaged/` (adapter, merged
+release, `bridge-{uncorrected,corrected}.json`).  Scripts:
+`scion/dense/clef_export.py`, `scion/dense/clef_bridge_eval.py`; bridge batch
+mode + embedded-adapter attach in `tools/clef-bridge/`.
 
 Handoff for the next session (assets, findings, next-step menu):
-`scion/dense/HANDOFF.md`.
+`scion/dense/HANDOFF.md`; external prior art (TAARDIS):
+`scion/docs/TAARDIS-PRIOR-ART.md`.
