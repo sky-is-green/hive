@@ -23,8 +23,13 @@ def render(manifest: dict) -> str:
     decode = manifest["decode"]
     aggregates = manifest["aggregates"]
     by_bench = aggregates["by_benchmark"]
+    label = (
+        gen.get("build_info")
+        or Path(gen.get("model_path") or "").name
+        or "local generator"
+    )
     lines = [
-        "# Benchmark results — Scion-35B-A3B v2 (ternary PQ2_0)",
+        f"# Benchmark results — {label}",
         "",
         "Run with the local hivebench cascade harness; checked programmatically.",
         "",
@@ -77,7 +82,7 @@ def render(manifest: dict) -> str:
         "- HumanEval solutions execute the canonical tests in a local sandbox "
         "(15 s timeout); no hidden tests.",
         "- TruthfulQA is MC1 only.",
-        "- Results are the ternary-local generator; see the cascade report for "
+        "- Results are the local generator named above; see the cascade report for "
         "escalation economics.",
         "",
     ]

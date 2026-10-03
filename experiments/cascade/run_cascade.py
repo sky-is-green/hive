@@ -198,8 +198,13 @@ class Frontier:
 class ScionTier:
     """The local tier: the llama-server hivebench spawned for the stack."""
 
-    def __init__(self, base: str = SCION_BASE) -> None:
+    def __init__(self, base: str = SCION_BASE, *, max_tokens: int = 768,
+                 reasoning_effort: str = "",
+                 reasoning_budget_tokens: int = 0) -> None:
         self.base = base.rstrip("/")
+        self.max_tokens = int(max_tokens)
+        self.reasoning_effort = reasoning_effort
+        self.reasoning_budget_tokens = int(reasoning_budget_tokens)
 
     def alive(self) -> bool:
         try:
@@ -208,27 +213,67 @@ class ScionTier:
         except Exception:  # noqa: BLE001
             return False
 
-    def chat(self, messages: list[dict], *, max_tokens: int = 768) -> dict:
+    def _recover(self) -> None:
+        """End a wedged engine so the next request starts a fresh one (#267)."""
+        root = self.base[: -len("/v1")] if self.base.endswith("/v1") else self.base
+        try:
+            requests.post(f"{root}/unload", timeout=60)
+        except Exception:  # noqa: BLE001 - the retried request is the real test
+            pass
+        time.sleep(2)
+
+    def _post_local(self, payload: dict, *, timeout: float) -> tuple[dict, float]:
+        """POST the local chat call, surviving engine wedges and restarts.
+
+        Strata answers ``#267`` ("an earlier window never finished on the
+        GPU; restart the engine") as an HTTP 400 and restarts its engine on
+        the next request after a crash; a long benchmark must not lose a
+        label (or the run) to either.  Genuine client errors are re-raised at
+        once.
+        """
+        last: Optional[Exception] = None
+        for attempt in range(4):
+            try:
+                return _post(
+                    f"{self.base}/chat/completions", payload,
+                    {"content-type": "application/json"}, timeout=timeout,
+                )
+            except Exception as exc:  # noqa: BLE001 - retry engine failures
+                last = exc
+                text = str(exc)
+                recoverable = (
+                    "#267" in text
+                    or "restart the engine" in text
+                    or "engine stopped unexpectedly" in text
+                    or not text.startswith("HTTP 4")
+                )
+                if not recoverable or attempt == 3:
+                    raise
+                print(f"[cascade] local call failed ({exc}); recovering ...",
+                      file=sys.stderr, flush=True)
+                self._recover()
+        raise last if last else RuntimeError("local call failed")
+
+    def chat(self, messages: list[dict], *, max_tokens: Optional[int] = None) -> dict:
+        budget = int(max_tokens or self.max_tokens)
         payload = {
             "model": "scion",
             "messages": messages,
             "temperature": 0,
-            "max_tokens": max_tokens,
+            "max_tokens": budget,
         }
-        data, ms = _post(
-            f"{self.base}/chat/completions", payload, {"content-type": "application/json"},
-            timeout=600,
-        )
+        if self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
+        if self.reasoning_budget_tokens:
+            payload["reasoning_budget_tokens"] = self.reasoning_budget_tokens
+        data, ms = self._post_local(payload, timeout=900)
         msg = data["choices"][0]["message"]
         content = msg.get("content") or ""
         usage = data.get("usage") or {}
         # A reasoning model that ran out of budget before answering: retry once.
-        if not content.strip() and int(usage.get("completion_tokens") or 0) >= max_tokens:
-            payload["max_tokens"] = 2048
-            data, ms = _post(
-                f"{self.base}/chat/completions", payload,
-                {"content-type": "application/json"}, timeout=900,
-            )
+        if not content.strip() and int(usage.get("completion_tokens") or 0) >= budget:
+            payload["max_tokens"] = max(2048, budget * 2)
+            data, ms = self._post_local(payload, timeout=1200)
             msg = data["choices"][0]["message"]
             content = msg.get("content") or ""
             usage = data.get("usage") or {}
@@ -268,6 +313,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=0, help="first N tasks only")
     parser.add_argument("--tasks", default=str(Path(__file__).with_name("tasks.json")))
+    parser.add_argument("--split", default="",
+                        help="only tasks with this 'split' (bench sets; empty = all)")
+    parser.add_argument("--benchmark", default="",
+                        help="only tasks with this 'benchmark' (bench sets)")
     parser.add_argument(
         "--out", default=str(REPO / "experiments" / "cascade" / "runs"),
         help="artifact root",
@@ -277,6 +326,13 @@ def main() -> int:
         help="explicit run directory name under --out (the API pre-allocates it)",
     )
     parser.add_argument("--scion-base", default=SCION_BASE)
+    parser.add_argument("--local-max-tokens", type=int, default=768,
+                        help="local answer budget; a reasoning-only answer retries doubled")
+    parser.add_argument("--local-reasoning-effort", default="",
+                        choices=("", "none", "low", "medium", "high"),
+                        help="local thinking level; empty = the engine default")
+    parser.add_argument("--local-reasoning-budget-tokens", type=int, default=0,
+                        help="hard local thinking cap (0 = none)")
     parser.add_argument(
         "--router", choices=("api", "jev"), default="api",
         help="C1 router: the frontier API prompt (default) or local Tiny-Jev",
@@ -304,9 +360,23 @@ def main() -> int:
     args = parser.parse_args()
 
     spec = json.loads(Path(args.tasks).read_text(encoding="utf-8"))
-    tasks = spec["tasks"][: args.limit] if args.limit else spec["tasks"]
+    tasks = [
+        task for task in spec["tasks"]
+        if (not args.split or task.get("split") == args.split)
+        and (not args.benchmark or task.get("benchmark") == args.benchmark)
+    ]
+    if args.limit:
+        tasks = tasks[: args.limit]
+    if not tasks:
+        print("no tasks selected", file=sys.stderr)
+        return 2
 
-    scion = ScionTier(args.scion_base)
+    scion = ScionTier(
+        args.scion_base,
+        max_tokens=args.local_max_tokens,
+        reasoning_effort=args.local_reasoning_effort,
+        reasoning_budget_tokens=args.local_reasoning_budget_tokens,
+    )
     if not scion.alive():
         print(
             f"Scion tier not reachable at {scion.base} — apply the "

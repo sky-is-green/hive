@@ -477,6 +477,34 @@ headroom for genuinely uncertain tasks. The 27-task set no longer
 discriminates the generator: the next calibration asset is the held-out
 benchmark slice, not more fitting on these labels.
 
+## Held-out benchmark slice (2026-10-03)
+
+The 27 hand-written tasks are calibration only; `cascade-bench-v1`
+(`experiments/cascade/tasks-bench.json`) is the held-out floor: seeded,
+stratified GSM8K / MATH / HumanEval / TruthfulQA, 70 train / 30 test, all
+checkers programmatic. Tools: `bench_tasks.py` (build), `stream_capture.py`
+(K samples + model card), `run_cascade.py --split` (local+API labels),
+`bench_refit.py` (fit train → report test).
+
+**E4=Strata on the 30-task test split** (3 samples/task, T=0.7, high thinking
+capped at 1,024 tokens, max_tokens 2,048): sample accuracy **0.889** (task
+macro 0.889; GSM8K 0.972, MATH 0.833, HumanEval 0.833, TruthfulQA 0.833).
+Model card: `results/strata-bench-test-capped-20261003/MODEL-CARD.md`.
+
+**Cascade labels** (T=0, same cap): local 0.971 train / **0.967 test**; API
+0.900 / 0.933; cascade 0.971 / 0.967. **Refit:** Tiny-Jev on train — every
+threshold ≤ 0.35 gives quality 0.971 at API share 0; the rule (max quality →
+min API share → highest threshold) chooses **0.35**; on the held-out test that
+is **quality 0.967 at API share 0.000** (routing accuracy 0.967). The mix
+stays local-only on these benchmarks.
+
+**Engine stability.** The first uncapped capture lost 8 samples to engine
+restarts (Strata #267 verify wedge / crashes under sustained mmap paging, 195
+GB of file reads) and 2 to thinking truncation; `results/strata-bench-test-20261003/INCIDENT.md`
+records it. `stream_capture.stream_reliable` and the runner's local tier now
+recover with `/unload` + retry (real 4xx still raises); the capped re-run and
+the label runs recorded the wedge twice and lost no labels.
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice

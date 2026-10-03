@@ -1,0 +1,450 @@
+{
+ "summary": {
+  "tasks": 30,
+  "sources": [
+   "strata-bench-test-labels-20261003"
+  ],
+  "api_coverage": 1.0,
+  "always_local": {
+   "quality": 0.9666666666666667,
+   "api_share": 0.0
+  },
+  "always_api": {
+   "quality": 0.9333333333333333,
+   "api_share": 1.0
+  },
+  "oracle": {
+   "quality": 1.0,
+   "api_share": 0.03333333333333333
+  },
+  "api_router": {
+   "tasks": 30,
+   "routing_accuracy": 0.6333333333333333,
+   "quality": 0.9666666666666667,
+   "api_share": 0.4
+  },
+  "tiny_jev": {
+   "model": "lostargon/Tiny-Jev-1.7B",
+   "device": "cuda",
+   "mean_ms": 41.019999999999996,
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.1,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.15,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.2,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.25,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.3,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.35,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.45,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.5,
+     "routing_accuracy": 0.9666666666666667,
+     "quality": 0.9666666666666667,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.55,
+     "routing_accuracy": 0.9333333333333333,
+     "quality": 0.9666666666666667,
+     "api_share": 0.1
+    },
+    {
+     "threshold": 0.6,
+     "routing_accuracy": 0.9333333333333333,
+     "quality": 0.9666666666666667,
+     "api_share": 0.1
+    },
+    {
+     "threshold": 0.65,
+     "routing_accuracy": 0.9333333333333333,
+     "quality": 0.9666666666666667,
+     "api_share": 0.1
+    },
+    {
+     "threshold": 0.7,
+     "routing_accuracy": 0.9333333333333333,
+     "quality": 0.9666666666666667,
+     "api_share": 0.1
+    },
+    {
+     "threshold": 0.75,
+     "routing_accuracy": 0.9,
+     "quality": 0.9666666666666667,
+     "api_share": 0.13333333333333333
+    },
+    {
+     "threshold": 0.8,
+     "routing_accuracy": 0.8,
+     "quality": 0.9666666666666667,
+     "api_share": 0.23333333333333334
+    },
+    {
+     "threshold": 0.85,
+     "routing_accuracy": 0.6666666666666666,
+     "quality": 0.9333333333333333,
+     "api_share": 0.36666666666666664
+    },
+    {
+     "threshold": 0.9,
+     "routing_accuracy": 0.4,
+     "quality": 0.9333333333333333,
+     "api_share": 0.6333333333333333
+    },
+    {
+     "threshold": 0.95,
+     "routing_accuracy": 0.26666666666666666,
+     "quality": 0.9333333333333333,
+     "api_share": 0.7666666666666667
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "id": "gsm8k-0005",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9081,
+   "router_ms": 495.4
+  },
+  {
+   "id": "gsm8k-0006",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9281,
+   "router_ms": 34.2
+  },
+  {
+   "id": "gsm8k-0008",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8565,
+   "router_ms": 31.7
+  },
+  {
+   "id": "gsm8k-0009",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9604,
+   "router_ms": 29.1
+  },
+  {
+   "id": "gsm8k-0014",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8908,
+   "router_ms": 22.3
+  },
+  {
+   "id": "gsm8k-0015",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8649,
+   "router_ms": 26.6
+  },
+  {
+   "id": "gsm8k-0020",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9433,
+   "router_ms": 24.5
+  },
+  {
+   "id": "gsm8k-0033",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8553,
+   "router_ms": 25.1
+  },
+  {
+   "id": "gsm8k-0035",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8817,
+   "router_ms": 24.0
+  },
+  {
+   "id": "gsm8k-0036",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9054,
+   "router_ms": 24.8
+  },
+  {
+   "id": "gsm8k-0037",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8787,
+   "router_ms": 24.6
+  },
+  {
+   "id": "gsm8k-0038",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.7976,
+   "router_ms": 28.4
+  },
+  {
+   "id": "math-0002",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8425,
+   "router_ms": 22.7
+  },
+  {
+   "id": "math-0005",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8053,
+   "router_ms": 21.8
+  },
+  {
+   "id": "math-0006",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8663,
+   "router_ms": 22.4
+  },
+  {
+   "id": "math-0013",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.5232,
+   "router_ms": 21.7
+  },
+  {
+   "id": "math-0016",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.7955,
+   "router_ms": 22.5
+  },
+  {
+   "id": "math-0017",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8327,
+   "router_ms": 24.5
+  },
+  {
+   "id": "math-0020",
+   "bucket": "reasoning",
+   "scion_ok": false,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.5478,
+   "router_ms": 22.1
+  },
+  {
+   "id": "math-0023",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.7828,
+   "router_ms": 21.7
+  },
+  {
+   "id": "humaneval-0001",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9932,
+   "router_ms": 25.6
+  },
+  {
+   "id": "humaneval-0002",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9886,
+   "router_ms": 27.1
+  },
+  {
+   "id": "humaneval-0003",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9898,
+   "router_ms": 24.5
+  },
+  {
+   "id": "humaneval-0004",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9803,
+   "router_ms": 27.8
+  },
+  {
+   "id": "humaneval-0007",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9868,
+   "router_ms": 27.4
+  },
+  {
+   "id": "humaneval-0015",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.9884,
+   "router_ms": 27.3
+  },
+  {
+   "id": "truthfulqa-0008",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.7321,
+   "router_ms": 26.3
+  },
+  {
+   "id": "truthfulqa-0011",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8053,
+   "router_ms": 25.2
+  },
+  {
+   "id": "truthfulqa-0013",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.8798,
+   "router_ms": 24.4
+  },
+  {
+   "id": "truthfulqa-0015",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "local",
+   "source": "strata-bench-test-labels-20261003",
+   "p_local_correct": 0.5102,
+   "router_ms": 24.9
+  }
+ ]
+}

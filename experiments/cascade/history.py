@@ -8,7 +8,11 @@ from typing import Optional
 
 REPO = Path(__file__).resolve().parents[2]
 CASCADE = REPO / "experiments" / "cascade"
-TASK_FILES = (CASCADE / "tasks.json", CASCADE / "tasks-hard.json")
+TASK_FILES = (
+    CASCADE / "tasks.json",
+    CASCADE / "tasks-hard.json",
+    CASCADE / "tasks-bench.json",
+)
 RUNS = CASCADE / "runs"
 
 
