@@ -1,0 +1,20 @@
+{
+  "name": "scion-35b-v2",
+  "version": 1,
+  "tiers": [
+    {
+      "role": "face",
+      "repo": "local/scion",
+      "file": "qwen35-release-v2-cur05-soup.gguf",
+      "ctx": 4096,
+      "ngl": 99,
+      "backend": "rocm",
+      "cache_k": "q8_0",
+      "cache_v": "q8_0",
+      "pin": "HIP_VISIBLE_DEVICES=1",
+      "spec": { "type": "draft-mtp-sidecar", "n_max": 1 },
+      "engine_args": ["-md", "/home/penis/Desktop/work/hivebench/models/gguf/mtp-sidecar-v2-cur05.gguf"]
+    }
+  ],
+  "routing": { "workers_as": "subagent" }
+}
