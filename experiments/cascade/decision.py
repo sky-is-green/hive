@@ -117,6 +117,61 @@ class InternDecisionJudge:
         return float(answer["noul"]), float(result["timing"]["inference_ms"])
 
 
+class TinyJevJudge:
+    """Tiny-Jev-1.7B as an answer validator: P(the candidate answer is correct).
+
+    The checkpoint's typed ``noul`` head answers a yes/no question about a JSON
+    state in one forward pass.  This is the D3 role for the local-first
+    default: the 177B generator is strong enough that routing is unnecessary,
+    and validation is advisory — when an API fallback is configured, a reject
+    sends the task there; otherwise the local answer is returned and the flag
+    is recorded.
+
+    **CPU by default**: the validator must not create a second ROCm context
+    while the serving engine is resident (two contexts can hang this host).
+    ``device="cuda"`` is for offline evaluation with the GPUs free.
+    """
+
+    DEFAULT_MODEL = "lostargon/Tiny-Jev-1.7B"
+    INSTRUCTION = "The candidate answer is correct and complete for the task."
+
+    def __init__(
+        self,
+        model_id: str = DEFAULT_MODEL,
+        *,
+        device: str = "cpu",
+        _model: Any = None,
+        _tokenizer: Any = None,
+        _torch: Any = None,
+    ) -> None:
+        if _model is not None:
+            # Test seam: no transformers/torch import in the unit environment.
+            self.tok = _tokenizer
+            self.model = _model
+            self.torch = _torch
+            self.device = device
+            return
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+
+        self.torch = torch
+        self.tok = AutoTokenizer.from_pretrained(model_id)
+        self.model = AutoModel.from_pretrained(model_id, trust_remote_code=True)
+        self.model.eval()
+        self.device = device
+        if device == "auto":
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model.to(self.device)
+
+    def verdict(self, task: dict, candidate: str) -> tuple[float, float]:
+        """P(candidate is correct) and the forward-pass latency in ms."""
+        state = {"task": task["prompt"], "candidate_answer": candidate}
+        started = time.time()
+        with self.torch.no_grad():
+            p = float(self.model.noul(self.tok, state, self.INSTRUCTION))
+        return p, (time.time() - started) * 1000.0
+
+
 class Jev9BJudge:
     """autotrust/JEV-9B — a Jev-1.13 student, transformers readout.
 

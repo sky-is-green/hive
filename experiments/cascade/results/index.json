@@ -208,5 +208,21 @@
    "test_api_share_at_threshold": 0.0,
    "test_routing_accuracy": 0.967
   }
+ },
+ {
+  "run": "strata-local-smoke-20261003",
+  "kind": "local-flow-smoke",
+  "created": "2026-10-03 03:39:43",
+  "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
+  "engine_commit": "db4f91a1171d697928b0d2e1f50ef95e25559d4c",
+  "metrics": {
+   "tasks": 2,
+   "local_accuracy": 1.0,
+   "escalation_rate": 0.0,
+   "cost_usd": 0,
+   "router": "none",
+   "judge": "tiny-jev",
+   "api_fallback": false
+  }
  }
 ]
