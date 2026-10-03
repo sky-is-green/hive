@@ -571,19 +571,24 @@ backbone + joint head directly with a tokenizer-only processor; images/videos
 are a later opt-in.  Artifacts: `results/clef-flash-judge-eval-{train,test}.json`
 and `results/clef-flash-validator-20261003/SUMMARY.md`.
 
-**Ternary plan (ultra-lean package).**  The backbone is a standard Qwen3.5-9B,
-so the existing JEV-9B ternary pipeline applies: convert → `llama-quantize
-PQ2_0` (2.13 bpw) → serve on the fork, ≈2.4 GB.  The joint schema head is a
-~100M-parameter torch module (width 1024, 4 decoder + 2 routing layers) that
-reads **per-token hidden states, input ids/spans and the lm_head weight**, so
-it needs a bridge from the quantized backbone: either (a) a head sidecar fed
-per-token embeddings from llama.cpp (the `llama_get_embeddings_ith` route;
-verify it in the fork) or (b) a small C++/HIP port of the head into the fork.
-Work order: (1) download and verify bf16 through the harness validator on
-CPU; (2) backbone PQ2_0 conversion with the JEV pipeline + a KLD check
-against bf16; (3) head sidecar + hidden-state bridge; (4) parity test
-(ternary vs bf16 decisions on the bench labels).  Steps 1–2 need a ~19 GB
-download and a heavy box slot — ask first.
+**Ternary status (2026-10-03, measured).**  The bf16 validator is benchmarked
+(above) and the bridge is built and verified: `tools/clef-bridge` extracts
+exact per-token hidden states from a GGUF backbone (`llama_get_embeddings_ith`)
+and matches HF `last_hidden_state` at cosine 1.0000 on f16.  The correct Scion
+recipe is `llama-quantize PQ2_0` **with `GGML_PQ2_0_LLOYD=1`** *plus trained
+residual corrections*: absmax (the default) destroys the model (cos 0.007),
+Lloyd alone gives cos 0.417 and shifts every decision down ~0.43, so the
+corrections are load-bearing exactly as in Scion (uncorrected MoE PPL 566.7
+vs 14.48 corrected).  The PQ2_0 body is 3.26 GB (2.90 BPW).
+
+**Next session: dense correction training.**  Teacher-cached output-KD with the
+deployed Lloyd quantizer in the loop; correction placements re-derived for the
+dense/hybrid Qwen3.5 stack (attention-out and MLP-out residual taps first);
+evaluation is decision parity against the bf16 table, not just PPL.  Plan:
+`scion/docs/DENSE-TERNARY-QAT.md` (Scion repo, dense route); measurements:
+`results/clef-flash-validator-20261003/TERNARY-NOTES.md`.  Packaging lands as
+one directory (PQ2_0 body + joint head + tokenizer) and a `clef-ternary`
+backend in the harness validator service.
 
 ## Priority plan after the literature pass
 
