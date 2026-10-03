@@ -11,7 +11,8 @@ rejects are wasted escalations.
 | Tiny-Jev-1.7B (bf16) | 62/70 | 25/30 | 0 / 1 | 8 / 4 | ~960 |
 | **Clef-Flash-9B (bf16, text-only)** | **67/70** | **26/30** | **0 / 1** | **3 / 3** | ~3,200 |
 | frontier API judge (recorded) | 67/70 | 28/30 | 2 / 1 | 1 / 1 | paid, ~1,500 |
-| **Clef-Flash-9B ternary r512 (deployed)** | **68/70** | **29/30** | **2 / 1** | **0 / 0** | **~17,900** |
+| Clef-Flash-9B ternary r512 (deployed) † | 68/70 | 29/30 | 2 / 1 | 0 / 0 | ~17,900 |
+| always-accept baseline | 68/70 | 29/30 | 2 / 1 | 0 / 0 | — |
 
 Clef-Flash is the better **local** validator: it matches the API judge's train
 verdicts (67/70) with zero false accepts and no API spend, and beats Tiny-Jev
@@ -20,19 +21,24 @@ the one wrong answer there is not separated until Clef's 0.80 threshold,
 which then rejects 6 correct answers — so the honest operating point remains
 0.5 with 1 leak on test.
 
-The **ternary** row is the deployed `clef-ternary` harness backend on the
-merged single-file release (PQ2_0 body + rank-512 corrections, 3.3 GB): the
-llama.cpp bridge on CPU + the joint head sidecar in torch fp32 on CPU — the 9B
-never enters torch and the GPUs stay free.  It reproduces the offline bridge
-benchmark bit-for-bit (max |Δp| 5e-5), beats bf16 Clef and the API judge on
-verdict count on both splits, and never false-rejects.  Its two train false
-accepts are the same records bf16 gets wrong (`truthfulqa-0005/0014`); the
-single test leak is `math-0020`.  **Caveat:** the corrected head's
-probabilities are compressed into **[0.57, 0.60]** (one record per split clears
-0.60) and the accept cliff is at 0.60, so 0.5 is a very safe operating point
-but there is no graded confidence left — recalibrate before trusting any other
-threshold.  Speed: ~17.9 s/check (dominated by the recurrent GDN CPU prefill),
-so it is the quality lane, not the low-latency one.
+† **The ternary row is the always-accept baseline, not discrimination** (see
+`TERNARY-NOTES.md` Stage E, 2026-10-03).  The corrected head's probabilities
+collapse into [0.57, 0.60], so at any threshold in [0.40, 0.55] it accepts
+every record; on this benchmark (97% of records correct) that reproduces the
+always-accept row exactly.  Its AUC is **0.41 train / 0.44 held-out** (chance
+is 0.5), while the uncorrected PQ2_0 body — miscalibrated, useful threshold
+~0.46 — retains AUC **0.80 train / 0.57 held-out**.  The 46-record held-out
+probe (27 unseen correct + 19 constructed negatives) confirms it: corrected
+27/46 with 19 false accepts, uncorrected 24/46 with 13 FA / 9 FR, bf16 Clef
+and Tiny-Jev remain the only validated discriminators here.  Do not use the
+ternary row as evidence of quality, and do not post the current corrections.
+
+Mechanically: the ternary plumbing is sound (bridge + head sidecar, bit-exact
+against the offline benchmark, ~17.9 s/check on the recurrent GDN CPU prefill);
+the correction *training objective* is what failed — the branch residual is
+O(hidden norm) (~110 vs ~120 per token) and the pointwise decision KD on a
+97%-positive set taught "accept".  A retrain needs a ranking-aware loss,
+class balance and residual regularization — or the rotation-first V2 route.
 
 Artifacts: `clef-flash-judge-eval-{train,test}.json` (per-task p_correct and
 the full sweep, now carrying both the bf16 `clef-flash` and the
@@ -45,8 +51,9 @@ torchvision dependency.
 
 bf16 Clef-Flash is 18.8 GB and ~3.2 s/check on CPU — usable as the harness
 validator when the engine is stopped, but not co-resident-friendly.  The
-ternary build (PQ2_0 body 3.3 GB + head sidecar) *is* the co-resident lane:
-no torch on the 9B, no GPU, 68/70 and 29/30 at 0.5.  It is ~5-6x slower per
-check than the bf16 transformer path because the deployed runtime is the
-recurrent GDN prefill; if latency becomes binding, the same bridge builds for
-HIP and can use the non-display card (one heavy process policy).
+ternary *plumbing* (PQ2_0 body 3.3 GB + head sidecar, no torch on the 9B, no
+GPU) is the co-resident lane at ~17.9 s/check, but its current corrections do
+not discriminate; the uncorrected body retains the ranking and is the honest
+base to build on (calibration first, then a ranking-aware retrain or V2).  If
+latency becomes binding, the same bridge builds for HIP and can use the
+non-display card (one heavy process policy).
