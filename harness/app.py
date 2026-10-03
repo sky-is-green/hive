@@ -2134,7 +2134,11 @@ def create_app(
     # Cascade pilot (Track C): the console contract.  The router wraps
     # harness.cascade and the experiments/cascade run artifacts; it is a
     # factory so tests can point it at a tmp runs root with a fake launcher.
-    app.include_router(cascade_api.create_router())
+    # The validator is lazy (no model loads until /v1/cascade/validate is
+    # called) and CPU-default; HIVE_VALIDATOR_MODEL swaps the checkpoint.
+    from harness.cascade.validator import ValidatorService
+
+    app.include_router(cascade_api.create_router(validator=ValidatorService()))
 
     def register_local_remove(key: str) -> None:
         """Retire a local instance's provider + engine profile."""

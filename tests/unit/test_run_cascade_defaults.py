@@ -40,6 +40,13 @@ def test_measurement_configuration_is_still_available():
     assert (args.router, args.judge, args.router_mode) == ("api", "api", "measure")
 
 
+def test_harness_validator_mode_points_at_the_sidecar():
+    args = rc.build_parser().parse_args(["--judge", "harness"])
+
+    assert args.judge == "harness"
+    assert args.validator_url.endswith("/v1/cascade/validate")
+
+
 def test_fallback_frontier_needs_no_opencode_auth(monkeypatch):
     monkeypatch.delenv("CASCADE_API_KEY", raising=False)
 

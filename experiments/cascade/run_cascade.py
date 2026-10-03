@@ -362,15 +362,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--router-model", default="lostargon/Tiny-Jev-1.7B")
     parser.add_argument(
-        "--judge", choices=("none", "tiny-jev", "local", "api"), default="tiny-jev",
-        help="D3 validation: none, local Tiny-Jev (default, ~40 ms), local "
-             "Intern-Decision-4B/JEV, or the frontier API prompt",
+        "--judge", choices=("none", "tiny-jev", "local", "api", "harness"), default="tiny-jev",
+        help="D3 validation: none, local Tiny-Jev (default, in-process), local "
+             "Intern-Decision-4B/JEV, the frontier API prompt, or the harness "
+             "validator service at --validator-url",
     )
     parser.add_argument("--judge-model", default="",
                         help="empty = the default model for the chosen judge")
     parser.add_argument("--judge-device", default="cpu",
                         help="cpu (default; safe beside the resident engine) or "
                              "cuda when the GPUs are free")
+    parser.add_argument(
+        "--validator-url",
+        default=os.environ.get("CASCADE_VALIDATOR_URL",
+                               "http://127.0.0.1:8765/v1/cascade/validate"),
+        help="harness validator endpoint used by --judge harness",
+    )
     parser.add_argument(
         "--judge-threshold", type=float, default=0.5,
         help="accept the candidate when P(correct) >= this",
@@ -521,7 +528,7 @@ def main() -> int:
         broker.register_handler("C1", jev_router_handler)
 
     verify_enabled = args.judge != "none"
-    if args.judge_device != "cpu" and scion.alive():
+    if args.judge in ("tiny-jev", "local") and args.judge_device != "cpu" and scion.alive():
         print(
             "[cascade] WARNING: a torch judge on the GPUs while the local engine "
             "is resident creates a second ROCm context; this host can hang "
@@ -529,6 +536,41 @@ def main() -> int:
             "the GPUs are actually free.",
             file=sys.stderr, flush=True,
         )
+    if args.judge == "harness":
+        # The harness owns the validator: one service for any engine, on CPU.
+        def harness_verify_handler(batch):
+            results = []
+            for j in batch:
+                try:
+                    resp = requests.post(
+                        args.validator_url,
+                        json={
+                            "task": j.payload["task"],
+                            "candidate": j.payload["candidate"],
+                            "threshold": policy.accept_confidence,
+                        },
+                        timeout=180,
+                    )
+                    if resp.status_code >= 400:
+                        raise RuntimeError(
+                            f"HTTP {resp.status_code}: {resp.text[:200]}")
+                    data = resp.json()
+                    p = float(data["p_correct"])
+                    accept = bool(data.get("accept", p >= policy.accept_confidence))
+                    results.append(
+                        result_for(j, "accept" if accept else "reject", p,
+                                   latency_ms=float(data.get("ms") or 0.0),
+                                   payload={"judge": "harness",
+                                            "model": data.get("model")})
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    results.append(
+                        result_for(j, "reject", 0.0, payload={"error": str(exc)[:200]})
+                    )
+            return results
+
+        broker.register_handler("D3", harness_verify_handler)
+
     if args.judge == "tiny-jev":
         # Local D3, advisory: Tiny-Jev's `noul` head, one forward pass (~40 ms).
         from experiments.cascade.decision import TinyJevJudge

@@ -14,6 +14,8 @@ Path                          Verb  Contract
 ``/v1/cascade/roles``         GET   role taxonomy A1–H1 (data)
 ``/v1/cascade/paths``         GET   paths P0–P6 + the route table
 ``/v1/cascade/registry``      GET   candidate catalog + role coverage
+``/v1/cascade/validator``     GET   local validator status (model/device/threshold)
+``/v1/cascade/validate``      POST  score one candidate answer (P(correct))
 ``/v1/cascade/plan``          GET   ``plan_request`` for bucket/confidence/out_len
 ``/v1/cascade/frontier``      GET   per-role Pareto fronts from an oracle file
 ``/v1/cascade/run``           POST  launch a pilot/oracle run (background)
@@ -121,12 +123,15 @@ def create_router(
     tasks_root: Any = None,
     spawn: Optional[Spawner] = None,
     registry: Optional[CandidateRegistry] = None,
+    validator: Any = None,
 ) -> APIRouter:
     """Return the ``/v1/cascade`` router.
 
     ``runs_root``/``tasks_root``/``runner`` are injectable so tests (and the
     app) can point the router at a tmp tree; ``spawn`` replaces the subprocess
-    launcher in tests.
+    launcher in tests; ``validator`` is a
+    :class:`harness.cascade.validator.ValidatorService`-like object (lazy in
+    production, a fake in tests).
     """
     router = APIRouter(prefix=PREFIX, tags=["cascade"])
     runs = Path(runs_root) if runs_root is not None else DEFAULT_RUNS_ROOT
@@ -154,6 +159,30 @@ def create_router(
             "candidates": candidates,
             "missing_roles": list(catalog.missing_roles([r.id for r in ROLES])),
         }
+
+    @router.get("/validator")
+    def validator_status() -> dict[str, Any]:
+        if validator is None:
+            return {"configured": False, "loaded": False,
+                    "note": "no validator attached to this sidecar"}
+        return {"configured": True, **validator.status()}
+
+    @router.post("/validate")
+    def validate(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        if validator is None:
+            raise HTTPException(503, "no validator attached to this sidecar")
+        task = body.get("task")
+        candidate = body.get("candidate")
+        if not isinstance(task, dict) or not str(task.get("prompt") or "").strip():
+            raise HTTPException(422, "task must be an object with a non-empty prompt")
+        if not isinstance(candidate, str) or not candidate.strip():
+            raise HTTPException(422, "candidate must be a non-empty string")
+        try:
+            return validator.verdict(task, candidate, threshold=body.get("threshold"))
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a broken model is a 503
+            raise HTTPException(503, f"validator failed: {exc}") from exc
 
     @router.get("/plan")
     def plan(

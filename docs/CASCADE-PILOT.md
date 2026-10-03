@@ -535,6 +535,45 @@ slipped through at 0.5.  Treat it as a cheap advisory flag, not a gate — with
 an API fallback configured, threshold 0.5 costs ~12% extra API calls to catch
 most errors; without one, false flags are free.
 
+### Validator service in the harness (2026-10-03)
+
+The validator is a harness citizen now, not a runner import:
+`harness/cascade/validator.py` owns a lazy, CPU-default service exposed by the
+sidecar as `GET /v1/cascade/validator` and `POST /v1/cascade/validate`
+(`{task, candidate} -> P(correct)`), and the runner can use it with
+`--judge harness` (`--validator-url`, default the sidecar).  One service
+checks any engine's output; `HIVE_VALIDATOR_MODEL` swaps the checkpoint (e.g.
+`Cloudflare/clef-flash`) and nothing loads until the first request.  Measured
+under the sidecar venv, CPU: **load 14.4 s, ~1.0 s/check** (0.56–1.3 s over 8
+GSM8K records) — never a second ROCm context.
+
+### Clef / Clef-Flash — first-class decision models (2026-10-03)
+
+Cloudflare released **Clef** (27B, Qwen3.8-27B backbone) and **Clef-Flash**
+(9B, Qwen3.5-9B + vision) on 2026-10-01, Apache 2.0: typed questions
+(`noul`/`choice`/`score`) answered by a **joint schema head** in one forward
+pass, no generation, Jev/SystemOne-compatible.  Median 38.8 ms (Flash,
+H200-class); Decision Index for Flash: MMLU 91.8, ARC-Challenge 98.3,
+WinoGrande 97.5, GSM8K 67.3 (Clef is stronger on long-context/multimodal and
+forecasting).  Registry candidates `clef-flash-9b` / `clef-27b` are in, and
+the harness validator adapter (`ClefValidator`) speaks their SystemOne API, so
+`HIVE_VALIDATOR_MODEL=Cloudflare/clef-flash` swaps the validator today (bf16
+~18.8 GB: box alone, or CPU).
+
+**Ternary plan (ultra-lean package).**  The backbone is a standard Qwen3.5-9B,
+so the existing JEV-9B ternary pipeline applies: convert → `llama-quantize
+PQ2_0` (2.13 bpw) → serve on the fork, ≈2.4 GB.  The joint schema head is a
+~100M-parameter torch module (width 1024, 4 decoder + 2 routing layers) that
+reads **per-token hidden states, input ids/spans and the lm_head weight**, so
+it needs a bridge from the quantized backbone: either (a) a head sidecar fed
+per-token embeddings from llama.cpp (the `llama_get_embeddings_ith` route;
+verify it in the fork) or (b) a small C++/HIP port of the head into the fork.
+Work order: (1) download and verify bf16 through the harness validator on
+CPU; (2) backbone PQ2_0 conversion with the JEV pipeline + a KLD check
+against bf16; (3) head sidecar + hidden-state bridge; (4) parity test
+(ternary vs bf16 decisions on the bench labels).  Steps 1–2 need a ~19 GB
+download and a heavy box slot — ask first.
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice
