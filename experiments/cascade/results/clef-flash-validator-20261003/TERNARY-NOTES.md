@@ -50,3 +50,56 @@ and re-run this parity benchmark.  That is a training run; decide local
 Artifacts: `/home/penis/Desktop/work/models/clef-flash-ternary/` (f16, PQ2_0
 Lloyd, lm_head, hf-head/), bridge source kept at `/tmp/opencode/clef_embed.cpp`
 (port to `tools/clef-bridge/` when the model lands).
+
+## Stage A: reverse loader + runtime-kernel match (2026-10-03)
+
+No HF backbone on disk, so the in-loop torch student is reverse-mapped from the
+deployed GGUF (`scion/dense/clef_dense_load.py`; the dense route is its own
+sibling to `scion/moe/`, not part of the MoE harness).
+
+- f16 GGUF -> `Qwen3_5TextModel`: `missing=0 unexpected=0`; the inverted
+  converter is validated.
+- PQ2_0 dequant is **byte-identical** to the fork's `dequantize_row_pq2_0`
+  (called via a small C harness; max abs diff 0.0). Embedding Q4_K and output
+  Q6_K dequant also match `gguf.quants.dequantize`.
+- The deployed forward uses the **recurrent** GDN prefill; transformers defaults
+  to the **chunked** one. Chunked decays vs the CPU bridge (f16 per-token cos
+  1.0 -> 0.82 at token 39); recurrent gives f16 f32 **cos 0.9975** vs the CPU
+  bridge. The training forward must patch `chunk_gated_delta_rule` ->
+  `torch_recurrent_gated_delta_rule`.
+- Bridge note: `n_gpu_layers=0` still built a ROCm context in one run; force
+  CPU with `HIP_VISIBLE_DEVICES="" ROCR_VISIBLE_DEVICES=""` when co-running
+  with torch.
+
+**Incident (2026-10-03):** the first full 9B validation load used a naive
+state-dict builder with `dtype=float32` and OOM'd the 30 GB host (a 36 GB fp32
+state dict, plus the desktop). Mitigation: a streamed loader
+(`load_text_model_streamed`) builds bf16 and adopts one tensor at a time -- no
+full state dict, never fp32 for a 9B model -- and every heavy stage is gated on
+a measured host/VRAM peak.
+
+**Do not train this 9B in bf16 torch on this box.** Two identical chunked
+evaluations of the same PQ2 body produced *different* non-finite record sets
+(23 then 50 of 70): the ROCm/bf16 forward is nondeterministically non-finite.
+f32 fixes it (31.8 GB body, does not fit the 21.5 GB card), so training ran on
+a rental.
+
+## Stage B: rental correction pilot (2026-10-03)
+
+One A40 48 GB (RunPod, ~$0.6, deleted after), f32 body + recurrent GDN + rank-512
+branches on the attention and MLP outputs + decision KD, one epoch (78 steps).
+Artifacts: `models/clef-flash-ternary/corrections/pilot-rental/` (checkpoint +
+`eval-{base,corr}.json`).  Decision parity under the f32-recurrent **torch
+proxy** (the PQ2 f32 torch forward is cos 0.948 vs the CPU bridge, so this is a
+proxy, not the ship number):
+
+| split | uncorrected | corrected | bf16 Clef | Tiny-Jev |
+|---|---|---|---|---|
+| train correct | 26/70 | **68/70** (2 FA, 0 FR) | 67/70 | 62/70 |
+| test correct | 7/30 | **29/30** (1 FA, 0 FR) | 26/30 | 25/30 |
+| hidden cos | 0.23 | 0.37 | 1.0 | — |
+
+**Paused before packaging.** The shippable number needs the branches packaged
+(`attn_out` as a LoRA on `attn_output`/`ssm_out`; `mlp_out` needs a dense
+`qwen35` `ffn_out` fork hook) and the benchmark re-run through the CPU bridge.
+Hidden cos 0.37 leaves headroom for a longer f32 run.
