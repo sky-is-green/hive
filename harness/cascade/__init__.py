@@ -70,6 +70,7 @@ from harness.cascade.scheduler import (
 )
 from harness.cascade.telemetry import RoleRecord, TelemetryLog
 from harness.cascade.validator import (
+    ClefTernaryValidator,
     ClefValidator,
     TinyJevValidator,
     ValidatorService,
@@ -125,6 +126,7 @@ __all__ = [
     "pareto_frontier",
     "frontier_by_role",
     # validator
+    "ClefTernaryValidator",
     "ClefValidator",
     "TinyJevValidator",
     "ValidatorService",

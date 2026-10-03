@@ -3,18 +3,29 @@
 //
 //   single:  clef_embed <model.gguf> <tokens.txt> <out.bin>  [n_ctx] [n_gpu_layers]
 //   batch:   clef_embed <model.gguf> <tokens_dir> <out_dir>  [n_ctx] [n_gpu_layers]
+//   serve:   clef_embed <model.gguf> --serve  [n_ctx] [n_gpu_layers]
 //
 // Batch mode loads the model once and decodes every *.tok in the directory with
 // a fresh context per record (so no cross-record state leaks), writing
 // <stem>.bin next to it in the output dir.  Per-record timing goes to stderr as
-// "REC <stem> <n_tokens> <ms>", followed by a "TOTAL ..." line.  Private
-// research helper; no GPU layers by default (CPU keeps it off the display card).
+// "REC <stem> <n_tokens> <ms>", followed by a "TOTAL ..." line.
+//
+// Serve mode keeps the model resident for a harness: stdout protocol is
+// "READY <n_embd>", then one request per stdin line "<tokens.txt> <out.bin>"
+// answered by "OK <n_tokens> <ms>" or "ERR <reason>" (one fresh context per
+// request, same as batch).  LLAMA logs go to stderr.
+//
+// Private research helper; no GPU layers by default (CPU keeps it off the
+// display card).
 #include "llama.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -100,16 +111,19 @@ static bool decode_one(llama_model * model, const std::string & tok_path,
 }
 
 int main(int argc, char ** argv) {
-    if (argc < 4) {
+    const bool serve = argc >= 3 && strcmp(argv[2], "--serve") == 0;
+    if ((!serve && argc < 4) || (serve && argc < 3)) {
         fprintf(stderr,
-                "usage: clef_embed <model.gguf> <tokens.txt|tokens_dir> <out.bin|out_dir> [n_ctx] [n_gpu_layers]\n");
+                "usage: clef_embed <model.gguf> <tokens.txt|tokens_dir> <out.bin|out_dir> [n_ctx] [n_gpu_layers]\n"
+                "       clef_embed <model.gguf> --serve [n_ctx] [n_gpu_layers]\n");
         return 2;
     }
-    const bool batch = fs::is_directory(argv[2]);
+    const bool batch = !serve && fs::is_directory(argv[2]);
 
     llama_backend_init();
     llama_model_params mparams = llama_model_default_params();
-    mparams.n_gpu_layers = (argc > 5) ? atoi(argv[5]) : 0;  // 0 = CPU
+    const int gpu_arg = serve ? 4 : 5;
+    mparams.n_gpu_layers = (argc > gpu_arg) ? atoi(argv[gpu_arg]) : 0;  // 0 = CPU
     const auto tl0 = std::chrono::steady_clock::now();
     llama_model * model = llama_model_load_from_file(argv[1], mparams);
     if (model == nullptr) {
@@ -119,10 +133,33 @@ int main(int argc, char ** argv) {
     const double load_ms = std::chrono::duration<double, std::milli>(
         std::chrono::steady_clock::now() - tl0).count();
 
-    const int n_ctx = argc > 4 ? atoi(argv[4]) : 4096;
+    const int n_ctx = argc > (serve ? 3 : 4) ? atoi(argv[serve ? 3 : 4]) : 4096;
     int rc = 0;
 
-    if (!batch) {
+    if (serve) {
+        // stdout is the protocol channel; llama logs stay on stderr
+        printf("READY %d\n", llama_model_n_embd(model));
+        fflush(stdout);
+        std::string line;
+        while (std::getline(std::cin, line)) {
+            std::istringstream iss(line);
+            std::string tok_path;
+            std::string out_path;
+            if (!(iss >> tok_path >> out_path)) {
+                printf("ERR bad request\n");
+                fflush(stdout);
+                continue;
+            }
+            double ms = 0.0;
+            long long ntok = 0;
+            if (!decode_one(model, tok_path, out_path, n_ctx, true, &ms, &ntok)) {
+                printf("ERR decode failed\n");
+            } else {
+                printf("OK %lld %.1f\n", ntok, ms);
+            }
+            fflush(stdout);
+        }
+    } else if (!batch) {
         double ms = 0.0;
         long long ntok = 0;
         if (!decode_one(model, argv[2], argv[3], n_ctx, false, &ms, &ntok)) {

@@ -31,6 +31,9 @@ beside a resident serving engine (two ROCm contexts can hang this host).
 
 # batch: model loads once, fresh context per record (no state leaks)
 ./clef_embed model.gguf tokens_dir out_dir [n_ctx] [n_gpu_layers]
+
+# serve: resident model for a harness (stdout protocol, see below)
+./clef_embed model.gguf --serve [n_ctx] [n_gpu_layers]
 ```
 
 - `tokens.txt`: space-separated ids (the Clef `encode_record` order).
@@ -38,6 +41,11 @@ beside a resident serving engine (two ROCm contexts can hang this host).
 - batch mode reads every `*.tok` in `tokens_dir` (sorted), writes `<stem>.bin`
   into `out_dir`, and prints `REC <stem> <n_tokens> <ms>` plus a `TOTAL` line
   with the one-time model load cost to stderr.
+- serve mode keeps the model resident for a harness: stdout is the protocol,
+  `READY <n_embd>` first, then one request per stdin line
+  `<tokens.txt> <out.bin>` answered with `OK <n_tokens> <ms>` or
+  `ERR <reason>` (one fresh context per request, like batch).  The
+  `clef-ternary` harness backend (`harness/cascade/validator.py`) uses this.
 - `n_gpu_layers`: `0` (default) keeps it CPU-only.
 
 ## Embedded adapters (single-file releases)

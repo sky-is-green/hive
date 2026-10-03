@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 
 from harness.cascade.validator import (
+    ClefTernaryValidator,
     ClefValidator,
     TinyJevValidator,
     ValidatorService,
@@ -76,6 +77,49 @@ def test_load_validator_selects_clef_by_model_id(monkeypatch):
     assert load_validator("Cloudflare/clef-flash", "cpu") == "clef"
     assert load_validator("lostargon/Tiny-Jev-1.7B", "cpu") == "tiny"
     assert seen["clef"] == ("Cloudflare/clef-flash", "cpu")
+
+
+def test_load_validator_selects_ternary_by_model_id(monkeypatch):
+    seen: dict[str, tuple[str, str]] = {}
+
+    def ternary(model_id, *, device):
+        seen["ternary"] = (model_id, device)
+        return "ternary"
+
+    monkeypatch.setattr("harness.cascade.validator.ClefTernaryValidator", ternary)
+
+    assert load_validator("clef-flash-ternary", "cpu") == "ternary"
+    assert seen["ternary"] == ("clef-flash-ternary", "cpu")
+
+
+class _FakeEnc:
+    input_ids = [1, 2, 3]
+
+
+def test_ternary_adapter_frames_one_noul_question():
+    calls: dict[str, object] = {}
+
+    def encode(prompt: str, candidate: str) -> _FakeEnc:
+        calls["encode"] = (prompt, candidate)
+        return _FakeEnc()
+
+    def runner(ids):
+        calls["ids"] = list(ids)
+        return "hidden"
+
+    def head(hidden, enc):
+        calls["head"] = (hidden, enc)
+        return 0.81
+
+    validator = ClefTernaryValidator(
+        "clef-flash-ternary", _runner=runner, _head_fn=head, _encode_fn=encode)
+    p, ms = validator.verdict({"prompt": "2+2?"}, "4")
+
+    assert p == 0.81 and ms >= 0.0
+    assert calls["encode"] == ("2+2?", "4")
+    assert calls["ids"] == [1, 2, 3]
+    assert calls["head"][0] == "hidden"
+    validator.close()  # no process in the seam path; must not raise
 
 
 def test_clef_adapter_frames_one_noul_question():
