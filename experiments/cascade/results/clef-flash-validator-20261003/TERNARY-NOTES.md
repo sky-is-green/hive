@@ -103,3 +103,6 @@ proxy, not the ship number):
 (`attn_out` as a LoRA on `attn_output`/`ssm_out`; `mlp_out` needs a dense
 `qwen35` `ffn_out` fork hook) and the benchmark re-run through the CPU bridge.
 Hidden cos 0.37 leaves headroom for a longer f32 run.
+
+Handoff for the next session (assets, findings, next-step menu):
+`scion/dense/HANDOFF.md`.
