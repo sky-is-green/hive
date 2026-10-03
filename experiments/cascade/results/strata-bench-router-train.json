@@ -1,0 +1,850 @@
+{
+ "summary": {
+  "tasks": 70,
+  "sources": [
+   "strata-bench-train-20261003"
+  ],
+  "api_coverage": 1.0,
+  "always_local": {
+   "quality": 0.9714285714285714,
+   "api_share": 0.0
+  },
+  "always_api": {
+   "quality": 0.9,
+   "api_share": 1.0
+  },
+  "oracle": {
+   "quality": 1.0,
+   "api_share": 0.02857142857142857
+  },
+  "api_router": {
+   "tasks": 70,
+   "routing_accuracy": 0.7142857142857143,
+   "quality": 0.9428571428571428,
+   "api_share": 0.2857142857142857
+  },
+  "tiny_jev": {
+   "model": "lostargon/Tiny-Jev-1.7B",
+   "device": "cuda",
+   "mean_ms": 35.058571428571426,
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.1,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.15,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.2,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.25,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.3,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.35,
+     "routing_accuracy": 0.9714285714285714,
+     "quality": 0.9714285714285714,
+     "api_share": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "routing_accuracy": 0.9857142857142858,
+     "quality": 0.9714285714285714,
+     "api_share": 0.014285714285714285
+    },
+    {
+     "threshold": 0.45,
+     "routing_accuracy": 0.9857142857142858,
+     "quality": 0.9714285714285714,
+     "api_share": 0.014285714285714285
+    },
+    {
+     "threshold": 0.5,
+     "routing_accuracy": 0.9857142857142858,
+     "quality": 0.9714285714285714,
+     "api_share": 0.014285714285714285
+    },
+    {
+     "threshold": 0.55,
+     "routing_accuracy": 0.9571428571428572,
+     "quality": 0.9714285714285714,
+     "api_share": 0.04285714285714286
+    },
+    {
+     "threshold": 0.6,
+     "routing_accuracy": 0.9571428571428572,
+     "quality": 0.9714285714285714,
+     "api_share": 0.04285714285714286
+    },
+    {
+     "threshold": 0.65,
+     "routing_accuracy": 0.9142857142857143,
+     "quality": 0.9571428571428572,
+     "api_share": 0.08571428571428572
+    },
+    {
+     "threshold": 0.7,
+     "routing_accuracy": 0.8857142857142857,
+     "quality": 0.9428571428571428,
+     "api_share": 0.11428571428571428
+    },
+    {
+     "threshold": 0.75,
+     "routing_accuracy": 0.8428571428571429,
+     "quality": 0.9428571428571428,
+     "api_share": 0.15714285714285714
+    },
+    {
+     "threshold": 0.8,
+     "routing_accuracy": 0.7571428571428571,
+     "quality": 0.9285714285714286,
+     "api_share": 0.24285714285714285
+    },
+    {
+     "threshold": 0.85,
+     "routing_accuracy": 0.6857142857142857,
+     "quality": 0.9285714285714286,
+     "api_share": 0.3142857142857143
+    },
+    {
+     "threshold": 0.9,
+     "routing_accuracy": 0.5,
+     "quality": 0.9142857142857143,
+     "api_share": 0.5285714285714286
+    },
+    {
+     "threshold": 0.95,
+     "routing_accuracy": 0.3142857142857143,
+     "quality": 0.9142857142857143,
+     "api_share": 0.7142857142857143
+    }
+   ]
+  }
+ },
+ "rows": [
+  {
+   "id": "gsm8k-0001",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7579,
+   "router_ms": 686.6
+  },
+  {
+   "id": "gsm8k-0002",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8802,
+   "router_ms": 39.0
+  },
+  {
+   "id": "gsm8k-0003",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8861,
+   "router_ms": 27.8
+  },
+  {
+   "id": "gsm8k-0004",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8558,
+   "router_ms": 28.1
+  },
+  {
+   "id": "gsm8k-0007",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.844,
+   "router_ms": 26.1
+  },
+  {
+   "id": "gsm8k-0010",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9458,
+   "router_ms": 22.4
+  },
+  {
+   "id": "gsm8k-0011",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9702,
+   "router_ms": 24.1
+  },
+  {
+   "id": "gsm8k-0012",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9574,
+   "router_ms": 24.6
+  },
+  {
+   "id": "gsm8k-0013",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8847,
+   "router_ms": 25.1
+  },
+  {
+   "id": "gsm8k-0016",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8763,
+   "router_ms": 21.8
+  },
+  {
+   "id": "gsm8k-0017",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9462,
+   "router_ms": 22.5
+  },
+  {
+   "id": "gsm8k-0018",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9608,
+   "router_ms": 24.0
+  },
+  {
+   "id": "gsm8k-0019",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8994,
+   "router_ms": 22.5
+  },
+  {
+   "id": "gsm8k-0021",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.926,
+   "router_ms": 23.8
+  },
+  {
+   "id": "gsm8k-0022",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9396,
+   "router_ms": 24.6
+  },
+  {
+   "id": "gsm8k-0023",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8631,
+   "router_ms": 24.5
+  },
+  {
+   "id": "gsm8k-0024",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9814,
+   "router_ms": 23.9
+  },
+  {
+   "id": "gsm8k-0025",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9382,
+   "router_ms": 26.7
+  },
+  {
+   "id": "gsm8k-0026",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8758,
+   "router_ms": 24.3
+  },
+  {
+   "id": "gsm8k-0027",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9467,
+   "router_ms": 25.2
+  },
+  {
+   "id": "gsm8k-0028",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9284,
+   "router_ms": 24.6
+  },
+  {
+   "id": "gsm8k-0029",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.908,
+   "router_ms": 26.5
+  },
+  {
+   "id": "gsm8k-0030",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9424,
+   "router_ms": 24.9
+  },
+  {
+   "id": "gsm8k-0031",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9542,
+   "router_ms": 24.0
+  },
+  {
+   "id": "gsm8k-0032",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9562,
+   "router_ms": 24.6
+  },
+  {
+   "id": "gsm8k-0034",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9273,
+   "router_ms": 24.8
+  },
+  {
+   "id": "gsm8k-0039",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.853,
+   "router_ms": 24.0
+  },
+  {
+   "id": "gsm8k-0040",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9141,
+   "router_ms": 22.6
+  },
+  {
+   "id": "math-0001",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.6245,
+   "router_ms": 21.8
+  },
+  {
+   "id": "math-0003",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8996,
+   "router_ms": 33.8
+  },
+  {
+   "id": "math-0004",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8252,
+   "router_ms": 22.4
+  },
+  {
+   "id": "math-0007",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7939,
+   "router_ms": 24.4
+  },
+  {
+   "id": "math-0008",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8389,
+   "router_ms": 22.5
+  },
+  {
+   "id": "math-0009",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8426,
+   "router_ms": 26.2
+  },
+  {
+   "id": "math-0010",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8854,
+   "router_ms": 34.4
+  },
+  {
+   "id": "math-0011",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.6135,
+   "router_ms": 22.7
+  },
+  {
+   "id": "math-0012",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7227,
+   "router_ms": 21.6
+  },
+  {
+   "id": "math-0014",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8997,
+   "router_ms": 22.4
+  },
+  {
+   "id": "math-0015",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9652,
+   "router_ms": 25.0
+  },
+  {
+   "id": "math-0018",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7062,
+   "router_ms": 22.2
+  },
+  {
+   "id": "math-0019",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.5373,
+   "router_ms": 21.8
+  },
+  {
+   "id": "math-0021",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.6183,
+   "router_ms": 22.6
+  },
+  {
+   "id": "math-0022",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8798,
+   "router_ms": 21.7
+  },
+  {
+   "id": "math-0024",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8005,
+   "router_ms": 26.7
+  },
+  {
+   "id": "math-0025",
+   "bucket": "reasoning",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.6583,
+   "router_ms": 22.3
+  },
+  {
+   "id": "humaneval-0005",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9916,
+   "router_ms": 26.2
+  },
+  {
+   "id": "humaneval-0006",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9696,
+   "router_ms": 28.0
+  },
+  {
+   "id": "humaneval-0008",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9551,
+   "router_ms": 31.7
+  },
+  {
+   "id": "humaneval-0009",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9946,
+   "router_ms": 26.5
+  },
+  {
+   "id": "humaneval-0010",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9868,
+   "router_ms": 34.4
+  },
+  {
+   "id": "humaneval-0011",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.963,
+   "router_ms": 27.6
+  },
+  {
+   "id": "humaneval-0012",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9855,
+   "router_ms": 24.2
+  },
+  {
+   "id": "humaneval-0013",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9937,
+   "router_ms": 24.6
+  },
+  {
+   "id": "humaneval-0014",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9936,
+   "router_ms": 24.1
+  },
+  {
+   "id": "humaneval-0016",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7911,
+   "router_ms": 26.5
+  },
+  {
+   "id": "humaneval-0017",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9713,
+   "router_ms": 27.6
+  },
+  {
+   "id": "humaneval-0018",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9841,
+   "router_ms": 26.9
+  },
+  {
+   "id": "humaneval-0019",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.968,
+   "router_ms": 35.7
+  },
+  {
+   "id": "humaneval-0020",
+   "bucket": "code",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9589,
+   "router_ms": 26.5
+  },
+  {
+   "id": "truthfulqa-0001",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7532,
+   "router_ms": 26.6
+  },
+  {
+   "id": "truthfulqa-0002",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9396,
+   "router_ms": 25.9
+  },
+  {
+   "id": "truthfulqa-0003",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.6838,
+   "router_ms": 22.5
+  },
+  {
+   "id": "truthfulqa-0004",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7964,
+   "router_ms": 25.7
+  },
+  {
+   "id": "truthfulqa-0005",
+   "bucket": "qa",
+   "scion_ok": false,
+   "api_ok": false,
+   "api_router": "api",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8839,
+   "router_ms": 32.4
+  },
+  {
+   "id": "truthfulqa-0006",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.5,
+   "router_ms": 24.8
+  },
+  {
+   "id": "truthfulqa-0007",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7321,
+   "router_ms": 25.7
+  },
+  {
+   "id": "truthfulqa-0009",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.8544,
+   "router_ms": 24.9
+  },
+  {
+   "id": "truthfulqa-0010",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": false,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.7983,
+   "router_ms": 24.8
+  },
+  {
+   "id": "truthfulqa-0012",
+   "bucket": "qa",
+   "scion_ok": true,
+   "api_ok": true,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.9106,
+   "router_ms": 25.8
+  },
+  {
+   "id": "truthfulqa-0014",
+   "bucket": "qa",
+   "scion_ok": false,
+   "api_ok": false,
+   "api_router": "local",
+   "source": "strata-bench-train-20261003",
+   "p_local_correct": 0.3674,
+   "router_ms": 26.4
+  }
+ ]
+}

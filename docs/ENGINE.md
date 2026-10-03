@@ -280,6 +280,19 @@ Strata, which released memory on close. The router threshold re-fit moved
 Artifacts: `experiments/cascade/results/strata-cascade-20261003-{hard,easy}/`
 and `strata-pilot-router-eval.{json,md}`.
 
+**Held-out benchmark slice (2026-10-03):** the seeded 100-task
+`cascade-bench-v1` (GSM8K/MATH/HumanEval/TruthfulQA, 70/30 train/test) is the
+held-out floor. Test split, 3 samples/task (T=0.7, thinking capped at 1,024):
+Strata **0.889** sample accuracy (GSM8K 0.972, MATH 0.833, HumanEval 0.833,
+TruthfulQA 0.833). Cascade labels (T=0): local 0.971 train / 0.967 test, API
+0.900/0.933; a router threshold fitted on train (0.35: quality 0.971, API
+share 0) held out at **0.967 quality with API share 0**. The first uncapped
+capture (0.833) is superseded — its misses were engine restarts (#267 wedged
+verify windows under sustained mmap paging) and thinking truncation, now
+recovered in-client (`/unload` + retry); see
+`experiments/cascade/results/strata-bench-test-20261003/INCIDENT.md`.
+Artifacts: `experiments/cascade/results/strata-bench-*`.
+
 ### Dual-engine direction — what we gain, what we lose, the porting path (2026-10-02)
 
 Strata is **deliberately single-architecture**. The guard in

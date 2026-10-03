@@ -94,12 +94,27 @@ def git_state() -> dict[str, Any]:
     return {"commit": run("rev-parse", "HEAD"), "dirty_files": len(dirty)}
 
 
-def stream_once(base: str, prompt: str, *, temperature: float, max_tokens: int) -> dict[str, Any]:
-    """One streaming completion; returns the delta trace with arrival times."""
-    payload = {
-        "model": "scion",
+def completion_payload(
+    prompt: str,
+    *,
+    model: str = "scion",
+    temperature: float,
+    max_tokens: int,
+    reasoning_effort: str = "",
+    reasoning_budget_tokens: int = 0,
+    system: str = SCION_SYSTEM,
+) -> dict[str, Any]:
+    """The chat-completions body for one capture sample.
+
+    Reasoning controls are only sent when set: an empty ``reasoning_effort``
+    keeps the engine's own default (Strata: high), which is what the Scion
+    captures recorded.  A local model name is sent as-is; servers that ignore
+    it (Strata) serve the loaded model.
+    """
+    payload: dict[str, Any] = {
+        "model": model,
         "messages": [
-            {"role": "system", "content": SCION_SYSTEM},
+            {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
         "temperature": temperature,
@@ -107,6 +122,29 @@ def stream_once(base: str, prompt: str, *, temperature: float, max_tokens: int) 
         "stream": True,
         "stream_options": {"include_usage": True},
     }
+    if reasoning_effort:
+        payload["reasoning_effort"] = reasoning_effort
+    if reasoning_budget_tokens:
+        payload["reasoning_budget_tokens"] = int(reasoning_budget_tokens)
+    return payload
+
+
+def stream_once(
+    base: str,
+    prompt: str,
+    *,
+    temperature: float,
+    max_tokens: int,
+    model: str = "scion",
+    reasoning_effort: str = "",
+    reasoning_budget_tokens: int = 0,
+) -> dict[str, Any]:
+    """One streaming completion; returns the delta trace with arrival times."""
+    payload = completion_payload(
+        prompt, model=model, temperature=temperature, max_tokens=max_tokens,
+        reasoning_effort=reasoning_effort,
+        reasoning_budget_tokens=reasoning_budget_tokens,
+    )
     started = time.time()
     chunks: list[dict[str, Any]] = []
     content: list[str] = []
@@ -160,6 +198,51 @@ def stream_once(base: str, prompt: str, *, temperature: float, max_tokens: int) 
     }
 
 
+def force_restart(base: str) -> None:
+    """End a wedged engine so the next request starts a fresh one (#267)."""
+    root = base[: -len("/v1")] if base.endswith("/v1") else base
+    try:
+        requests.post(f"{root}/unload", timeout=60)
+    except Exception:  # noqa: BLE001 - the retried request is the real test
+        pass
+    time.sleep(2)
+
+
+def stream_reliable(base: str, prompt: str, *, temperature: float,
+                    max_tokens: int, model: str = "scion",
+                    reasoning_effort: str = "",
+                    reasoning_budget_tokens: int = 0) -> dict[str, Any]:
+    """``stream_once`` with recovery from engine wedges and restarts.
+
+    A long capture must not record an engine crash as a wrong answer: #267
+    (HTTP 400 "restart the engine") and dropped streams retry after an
+    ``/unload``; genuine client errors (other 4xx) re-raise at once.
+    """
+    last: Optional[Exception] = None
+    for attempt in range(4):
+        try:
+            return stream_once(
+                base, prompt, temperature=temperature, max_tokens=max_tokens,
+                model=model, reasoning_effort=reasoning_effort,
+                reasoning_budget_tokens=reasoning_budget_tokens,
+            )
+        except Exception as exc:  # noqa: BLE001 - retry engine failures
+            last = exc
+            text = str(exc)
+            recoverable = (
+                "#267" in text
+                or "restart the engine" in text
+                or "engine stopped unexpectedly" in text
+                or not text.startswith("HTTP 4")
+            )
+            if not recoverable or attempt == 3:
+                raise
+            print(f"[capture] {text[:140]}; recovering ...", file=sys.stderr,
+                  flush=True)
+            force_restart(base)
+    raise last if last else RuntimeError("capture call failed")
+
+
 def task_accuracy(rows: list[dict]) -> dict[str, float]:
     sample_ok = [1.0 if s["ok"] else 0.0 for r in rows for s in r["samples"]]
     per_task = [sum(1.0 for s in r["samples"] if s["ok"]) / len(r["samples"]) for r in rows]
@@ -174,6 +257,8 @@ def task_accuracy(rows: list[dict]) -> dict[str, float]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default=SCION_BASE)
+    parser.add_argument("--model", default=os.environ.get("CASCADE_LOCAL_MODEL", "scion"),
+                        help="model name sent to the endpoint (Strata ignores it)")
     parser.add_argument("--tasks", default=str(CASCADE / "tasks-bench.json"))
     parser.add_argument("--split", choices=("train", "test", "all"), default="test")
     parser.add_argument("--benchmark", default="", help="limit to one benchmark")
@@ -181,6 +266,11 @@ def main() -> int:
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-tokens", type=int, default=1536)
+    parser.add_argument("--reasoning-effort", default="",
+                        choices=("", "none", "low", "medium", "high"),
+                        help="per-request thinking level; empty = the engine default")
+    parser.add_argument("--reasoning-budget-tokens", type=int, default=0,
+                        help="hard thinking cap per request (0 = none)")
     parser.add_argument("--stack", default="scion-35b-cascade")
     parser.add_argument("--name", default=time.strftime("%Y%m%d-%H%M%S"))
     parser.add_argument("--out", default=str(CASCADE / "results"))
@@ -242,6 +332,9 @@ def main() -> int:
             "samples": args.samples,
             "temperature": args.temperature,
             "max_tokens": args.max_tokens,
+            "model": args.model,
+            "reasoning_effort": args.reasoning_effort or "engine-default",
+            "reasoning_budget_tokens": args.reasoning_budget_tokens or None,
             "system": SCION_SYSTEM,
         },
         "checker_notes": CHECKER_NOTES,
@@ -252,11 +345,14 @@ def main() -> int:
     for index, task in enumerate(tasks, 1):
         samples = []
         for _ in range(args.samples):
-            out = stream_once(
+            out = stream_reliable(
                 args.base,
                 task["prompt"],
                 temperature=args.temperature,
                 max_tokens=args.max_tokens,
+                model=args.model,
+                reasoning_effort=args.reasoning_effort,
+                reasoning_budget_tokens=args.reasoning_budget_tokens,
             )
             samples.append(
                 {
