@@ -293,6 +293,12 @@ recovered in-client (`/unload` + retry); see
 `experiments/cascade/results/strata-bench-test-20261003/INCIDENT.md`.
 Artifacts: `experiments/cascade/results/strata-bench-*`.
 
+**Cascade default (2026-10-03):** local-first — no pre-generation router,
+Tiny-Jev validation on **CPU** (a torch ROCm context beside the resident HIP
+engine hangs this host), and the API **off** unless the user configures
+`--api-fallback URL`; a rejected answer then escalates there, otherwise it is
+returned and flagged.  The benchmark's measurement configuration is unchanged.
+
 ### Dual-engine direction — what we gain, what we lose, the porting path (2026-10-02)
 
 Strata is **deliberately single-architecture**. The guard in

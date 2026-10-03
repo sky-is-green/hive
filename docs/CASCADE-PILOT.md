@@ -505,6 +505,36 @@ records it. `stream_capture.stream_reliable` and the runner's local tier now
 recover with `/unload` + retry (real 4xx still raises); the capped re-run and
 the label runs recorded the wedge twice and lost no labels.
 
+## Local-first default (2026-10-03)
+
+The Strata-era default drops the pre-generation gate: the 177B local model
+answers every task, **Tiny-Jev validates** the answer (advisory, ~40 ms
+GPU-free), and the **API is off** unless a fallback endpoint is supplied
+(`--api-fallback URL`, optional `--api-fallback-model`/`--api-fallback-key`).
+A rejected answer then escalates to that endpoint; without one it is returned
+and flagged (`flagged_no_fallback` in the report).
+
+The validator runs on **CPU** beside the resident engine by default.  A torch
+ROCm context next to Strata's HIP context can hang this host — observed twice
+as a hard machine restart while smoke-testing this flow — and a 1.7B forward
+pass on CPU costs far less than one generation.  `--judge-device cuda` is for
+offline evaluation with the GPUs free, and the runner warns when it is chosen
+while the local engine is resident.
+
+Runner defaults: `--router none --judge tiny-jev --judge-device cpu
+--router-mode gate`.  The benchmark's measurement configuration
+(`--router api --judge api --router-mode measure`) is unchanged and remains
+what threshold fitting consumes.  Live smoke (2 tasks, no gateway, no API):
+local 2/2, Tiny-Jev accepts at p≈0.99, $0 —
+`results/strata-local-smoke-20261003/`.
+
+Measured validation quality on the bench labels (offline, GPUs free, ~40 ms
+GPU): train AUC 0.94, 2/2 wrong answers caught at threshold 0.5, but ~12% of
+correct answers flagged; on the 30-task test split the single wrong answer
+slipped through at 0.5.  Treat it as a cheap advisory flag, not a gate — with
+an API fallback configured, threshold 0.5 costs ~12% extra API calls to catch
+most errors; without one, false flags are free.
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice

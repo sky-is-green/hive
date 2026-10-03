@@ -33,15 +33,20 @@ from experiments.cascade.history import RUNS, load_tasks  # noqa: E402
 CASCADE = REPO / "experiments" / "cascade"
 
 
-def load_judgeable() -> dict[str, dict]:
+def load_judgeable(path: Optional[str] = None) -> dict[str, dict]:
     """Latest record per task that has both a candidate answer and a verdict.
 
     ``load_history`` keeps the newest record per task, and gate-mode records
     have no candidate — this keeps the records a judge can actually be scored
-    on (i.e. the measure-mode runs), newest wins.
+    on (i.e. the measure-mode runs), newest wins.  ``path`` scores one report
+    (a benchmark run under ``results/``) instead of the runs index.
     """
+    if path:
+        reports = [Path(path)]
+    else:
+        reports = sorted(RUNS.glob("*/report.json"), key=lambda p: p.stat().st_mtime)
     merged: dict[str, dict] = {}
-    for report_path in sorted(RUNS.glob("*/report.json"), key=lambda p: p.stat().st_mtime):
+    for report_path in reports:
         data = json.loads(report_path.read_text(encoding="utf-8"))
         for record in data.get("records", []):
             if record.get("scion_answer") and record.get("verdict") in ("accept", "reject"):
@@ -52,14 +57,17 @@ def load_judgeable() -> dict[str, dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="internlm/Intern-Decision-4B")
-    parser.add_argument("--family", choices=("auto", "intern", "jev"), default="auto")
+    parser.add_argument("--family", choices=("auto", "intern", "jev", "tinyjev"),
+                        default="auto")
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--report", default="",
+                        help="score one report JSON (bench run) instead of the runs index")
     parser.add_argument("--no-model", action="store_true", help="recorded API verdicts only")
     parser.add_argument("--out", default=str(CASCADE / "judge-eval.json"))
     args = parser.parse_args()
 
     tasks = load_tasks()
-    history = load_judgeable()
+    history = load_judgeable(args.report or None)
     rows: list[dict[str, Any]] = []
     for tid, record in history.items():
         task = tasks.get(tid)
@@ -100,15 +108,26 @@ def main() -> int:
 
     out = Path(args.out)
     if not args.no_model:
-        from experiments.cascade.decision import InternDecisionJudge, Jev9BJudge
+        from experiments.cascade.decision import (
+            InternDecisionJudge,
+            Jev9BJudge,
+            TinyJevJudge,
+        )
 
         family = args.family
         if family == "auto":
-            family = "jev" if "jev" in args.model.lower() else "intern"
+            low = args.model.lower()
+            family = (
+                "tinyjev" if ("tiny-jev" in low or "tiny_jev" in low)
+                else "jev" if "jev" in low
+                else "intern"
+            )
         print(f"loading {args.model} ({family}) ...", file=sys.stderr)
-        judge = (Jev9BJudge if family == "jev" else InternDecisionJudge)(
-            args.model, device=args.device
-        )
+        judge = {
+            "tinyjev": TinyJevJudge,
+            "jev": Jev9BJudge,
+            "intern": InternDecisionJudge,
+        }[family](args.model, device=args.device)
         engine = getattr(judge, "engine", None)
         for row in rows:
             task = tasks[row["id"]]
@@ -139,7 +158,7 @@ def main() -> int:
             "model": args.model,
             "family": family,
             "device": str(engine.backend.device.type) if engine is not None else judge.device,
-            "temperature": engine.temperature if engine is not None else judge.temperatures,
+            "temperature": engine.temperature if engine is not None else getattr(judge, "temperatures", None),
             "mean_ms": round(sum(r["judge_ms"] for r in rows) / n, 1),
             "no_leak": no_leak,
             "sweep": sweep,
@@ -172,7 +191,7 @@ def main() -> int:
         nl = s.get("no_leak")
         if nl:
             print(f"{'  no-leak point':22} {nl['accept_rate']:>11.3f} {nl['false_accepts']:>9} {nl['false_rejects']:>9} {nl['correct_verdicts']}/{n}   thr={nl['threshold']:.2f}")
-    print("\nthreshold sweep (intern-decision):")
+    print("\nthreshold sweep (local judge):")
     for row in summary.get("intern_decision", {}).get("sweep", []):
         print(f"  thr {row['threshold']:.2f}  accept {row['accept_rate']:.3f}  false_acc {row['false_accepts']}  false_rej {row['false_rejects']}  correct {row['correct_verdicts']}/{n}")
     print("artifact:", out)

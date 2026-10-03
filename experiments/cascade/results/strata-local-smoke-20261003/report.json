@@ -1,0 +1,122 @@
+{
+ "spec": "cascade-bench-v1",
+ "scion_base": "http://127.0.0.1:8080/v1",
+ "router": "none",
+ "judge": "tiny-jev",
+ "router_mode": "gate",
+ "api_fallback": null,
+ "api_model": null,
+ "summary": {
+  "tasks": 2,
+  "gated": 0,
+  "gate_rate": 0.0,
+  "scion_accuracy": 1.0,
+  "api_accuracy": null,
+  "cascade_accuracy": 1.0,
+  "escalation_rate": 0.0,
+  "accept_rate": 1.0,
+  "false_accept_rate": 0.0,
+  "accepted_and_wrong": 0,
+  "false_rejects": 0,
+  "corrections": 0,
+  "router_agreement": null,
+  "scion_mean_ms": 26221.85,
+  "scion_mean_tokens": 239.0,
+  "api_mean_ms": null,
+  "fallback_available": false,
+  "flagged_no_fallback": 0,
+  "usage": {
+   "total_cost_usd": 0
+  },
+  "telemetry": {
+   "E4-local": {
+    "count": 2,
+    "latency_ms": {
+     "mean": 26221.838117,
+     "p50": 14978.093624,
+     "p95": 37465.582609,
+     "max": 37465.582609
+    },
+    "tokens": 478,
+    "non_ok": 0,
+    "non_ok_rate": 0.0,
+    "escalated": 0,
+    "async": 0
+   },
+   "D3-verify": {
+    "count": 2,
+    "latency_ms": {
+     "mean": 4243.126392,
+     "p50": 1309.816599,
+     "p95": 7176.436186,
+     "max": 7176.436186
+    },
+    "tokens": 0,
+    "non_ok": 2,
+    "non_ok_rate": 1.0,
+    "escalated": 0,
+    "async": 2
+   }
+  }
+ },
+ "records": [
+  {
+   "id": "gsm8k-0005",
+   "bucket": "reasoning",
+   "planned_path": "P5",
+   "scion_answer": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 10",
+   "scion_ok": true,
+   "scion_ms": 37465.6,
+   "scion_tokens": 305,
+   "router_route": null,
+   "router_confidence": null,
+   "router_agrees": null,
+   "verdict": "accept",
+   "verdict_confidence": 0.9896300435066223,
+   "verdict_reason": "",
+   "escalated": false,
+   "gated": false,
+   "api_ok": null,
+   "api_answer": null,
+   "api_finish": null,
+   "api_ms": null,
+   "api_direct_correct": null,
+   "cascade_ok": true,
+   "false_accept": false,
+   "false_reject": false,
+   "corrected": false,
+   "judge": "tiny-jev",
+   "fallback_available": false,
+   "flagged": false
+  },
+  {
+   "id": "gsm8k-0006",
+   "bucket": "reasoning",
+   "planned_path": "P5",
+   "scion_answer": "Adam\u2019s trousers cost $30.\n\nHis mother gave him $6.  \nHis father gave him twice as much as his mother:\n\n\\[\n2 \\times 6 = 12\n\\]\n\nTotal money given by his parents:\n\n\\[\n6 + 12 = 18\n\\]\n\nAdam had to contribute:\n\n\\[\n30 - 18 = 12\n\\]\n\nFinal answer: 12",
+   "scion_ok": true,
+   "scion_ms": 14978.1,
+   "scion_tokens": 173,
+   "router_route": null,
+   "router_confidence": null,
+   "router_agrees": null,
+   "verdict": "accept",
+   "verdict_confidence": 0.9888344407081604,
+   "verdict_reason": "",
+   "escalated": false,
+   "gated": false,
+   "api_ok": null,
+   "api_answer": null,
+   "api_finish": null,
+   "api_ms": null,
+   "api_direct_correct": null,
+   "cascade_ok": true,
+   "false_accept": false,
+   "false_reject": false,
+   "corrected": false,
+   "judge": "tiny-jev",
+   "fallback_available": false,
+   "flagged": false
+  }
+ ]
+}

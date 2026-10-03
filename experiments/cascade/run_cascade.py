@@ -1,28 +1,22 @@
 #!/usr/bin/env python
-"""Cascade pilot v1 — Scion (hivebench stack tier) + a frontier API tier.
+"""Cascade runner — local generation + validation, optional API fallback.
 
-The first real exercise of ``harness/cascade``: Scion is *summoned through
-hivebench* (the ``scion-35b-cascade`` stack, spawned by the stack manager),
-and the frontier API model plays the cascade's learned-judgment roles —
-C1 router, D3 verifier, E4 escalation.  The deterministic layer under test is
-the package built this session: path planning, the async judgement broker
-(batched per role, generation-cancellable), the escalation policy and the
-telemetry log.
+The Strata-era default: the local endpoint answers every task (no
+pre-generation router), a local validator checks the answer, and the API is
+**off unless** ``--api-fallback`` names an OpenAI-compatible endpoint — then a
+rejected answer escalates there.  Tiny-Jev is the default validator
+(``--judge tiny-jev``, ~40 ms/check); ``--judge none`` skips validation and
+``--judge local`` uses Intern-Decision-4B/JEV.
 
-Per task, four measurements:
+The measurement configuration the benchmark used is still available:
+``--router api --judge api --router-mode measure`` records the frontier
+router's decision and an API comparison answer for every task, which is what
+threshold fitting consumes.
 
-1. ``local``      — Scion answers alone.
-2. ``api``        — the frontier model answers alone (the ceiling).
-3. ``router``     — the frontier model predicts whether Scion can answer.
-4. ``cascade``    — Scion answers, the frontier verifier accepts or rejects,
-                    a rejection escalates to the frontier answer.
+Per task the runner records the local answer and outcome, the validation
+verdict, any fallback answer, and the checker labels.
 
-Artifacts: ``experiments/cascade/runs/<timestamp>/report.json``.
-
-Usage::
-
-    .venv/bin/python experiments/cascade/run_cascade.py --limit 3
-    .venv/bin/python experiments/cascade/run_cascade.py            # full set
+Artifacts: ``<out>/<run-name>/report.json``.
 """
 
 from __future__ import annotations
@@ -137,14 +131,38 @@ def _api_key() -> str:
 
 
 class Frontier:
-    """The paid tier: OpenAI-compatible endpoint, retries, usage accounting."""
+    """An OpenAI-compatible paid tier: retries, usage accounting.
 
-    def __init__(self, usage: Usage, session: Optional[str] = None) -> None:
+    The measurement roles (router / verifier / comparison answer) use the
+    configured API (``CASCADE_API_*``).  A user's fallback endpoint is the same
+    class with ``base_url``/``model``/``key`` overridden and the ``fallback``
+    tag, so its spend lands on its own usage line.
+    """
+
+    def __init__(
+        self,
+        usage: Usage,
+        session: Optional[str] = None,
+        *,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        key: Optional[str] = None,
+    ) -> None:
         self.usage = usage
         self.session = session or f"cascade-pilot-{uuid.uuid4().hex[:12]}"
+        self.base_url = base_url or API_URL
+        self.model = model or API_MODEL
         # A gateway (LiteLLM) in front of the provider takes its own bearer
-        # token; fall back to the OpenCode auth store when calling direct.
-        self.key = os.environ.get("CASCADE_API_KEY") or _api_key()
+        # token; fall back to the OpenCode auth store when calling direct.  A
+        # user-supplied fallback endpoint may need no key at all.
+        if key:
+            self.key = key
+        elif os.environ.get("CASCADE_API_KEY"):
+            self.key = os.environ["CASCADE_API_KEY"]
+        elif base_url:
+            self.key = "none"
+        else:
+            self.key = _api_key()
         # Per-role virtual keys: route / verify / escalate each get their own
         # spend line at the gateway.  The call tag names the role.
         self.role_keys = {
@@ -155,7 +173,7 @@ class Frontier:
 
     def chat(self, messages: list[dict], *, tag: str, max_tokens: int) -> dict:
         payload = {
-            "model": API_MODEL,
+            "model": self.model,
             "messages": messages,
             "temperature": 0,
             "max_tokens": max_tokens,
@@ -170,7 +188,7 @@ class Frontier:
         budget = max_tokens
         for attempt in range(3):
             try:
-                data, ms = _post(API_URL, payload | {"max_tokens": budget}, headers, timeout=180)
+                data, ms = _post(self.base_url, payload | {"max_tokens": budget}, headers, timeout=180)
                 self.usage.add(tag, data.get("usage"))
                 choice = data["choices"][0]
                 msg = choice["message"]
@@ -309,7 +327,7 @@ def verify_prompt(task: dict, candidate: str) -> list[dict]:
     ]
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=0, help="first N tasks only")
     parser.add_argument("--tasks", default=str(Path(__file__).with_name("tasks.json")))
@@ -334,8 +352,9 @@ def main() -> int:
     parser.add_argument("--local-reasoning-budget-tokens", type=int, default=0,
                         help="hard local thinking cap (0 = none)")
     parser.add_argument(
-        "--router", choices=("api", "jev"), default="api",
-        help="C1 router: the frontier API prompt (default) or local Tiny-Jev",
+        "--router", choices=("none", "jev", "api"), default="none",
+        help="C1: none (default; always answer locally), local Tiny-Jev, or "
+             "the frontier API prompt",
     )
     parser.add_argument(
         "--router-threshold", type=float, default=0.90,
@@ -343,21 +362,39 @@ def main() -> int:
     )
     parser.add_argument("--router-model", default="lostargon/Tiny-Jev-1.7B")
     parser.add_argument(
-        "--judge", choices=("api", "local"), default="api",
-        help="D3 judge: frontier API prompt (default) or local Intern-Decision-4B",
+        "--judge", choices=("none", "tiny-jev", "local", "api"), default="tiny-jev",
+        help="D3 validation: none, local Tiny-Jev (default, ~40 ms), local "
+             "Intern-Decision-4B/JEV, or the frontier API prompt",
     )
-    parser.add_argument("--judge-model", default="internlm/Intern-Decision-4B")
-    parser.add_argument("--judge-device", default="cuda")
+    parser.add_argument("--judge-model", default="",
+                        help="empty = the default model for the chosen judge")
+    parser.add_argument("--judge-device", default="cpu",
+                        help="cpu (default; safe beside the resident engine) or "
+                             "cuda when the GPUs are free")
     parser.add_argument(
         "--judge-threshold", type=float, default=0.5,
         help="accept the candidate when P(correct) >= this",
     )
     parser.add_argument(
-        "--router-mode", choices=("measure", "gate"), default="measure",
-        help="measure: record the route but always generate locally; "
-             "gate: an API route skips local generation and the verifier",
+        "--router-mode", choices=("measure", "gate"), default="gate",
+        help="gate (default): a router 'api' decision skips local generation "
+             "and the verifier; measure: record the route but always generate "
+             "locally and fetch the API comparison answer",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--api-fallback", default="",
+        help="OpenAI-compatible base URL used ONLY when validation rejects and "
+             "no other API role is configured; empty (default) = API off",
+    )
+    parser.add_argument("--api-fallback-model", default="",
+                        help="model name for the fallback (default: CASCADE_API_MODEL)")
+    parser.add_argument("--api-fallback-key", default="",
+                        help="bearer key for the fallback (default: CASCADE_API_KEY)")
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
 
     spec = json.loads(Path(args.tasks).read_text(encoding="utf-8"))
     tasks = [
@@ -379,15 +416,26 @@ def main() -> int:
     )
     if not scion.alive():
         print(
-            f"Scion tier not reachable at {scion.base} — apply the "
-            "'scion-35b-cascade' stack through hivebench first "
-            "(POST /v1/stacks/scion-35b-cascade/apply).",
+            f"local tier not reachable at {scion.base} — apply the "
+            "'strata-125b' stack through hivebench "
+            "(POST /v1/stacks/strata-125b/apply), start the server yourself, "
+            "or point --scion-base at a running endpoint.",
             file=sys.stderr,
         )
         return 2
 
     usage = Usage()
-    frontier = Frontier(usage)
+    measure = args.router_mode == "measure"
+    needs_api = measure or args.router == "api" or args.judge == "api"
+    frontier = Frontier(usage) if needs_api else None
+    fallback = None
+    if args.api_fallback:
+        fallback = Frontier(
+            usage,
+            base_url=args.api_fallback,
+            model=args.api_fallback_model or None,
+            key=args.api_fallback_key or None,
+        )
     telemetry = TelemetryLog()
     policy = Policy(accept_confidence=args.judge_threshold)
     broker = JudgementBroker()
@@ -472,13 +520,49 @@ def main() -> int:
 
         broker.register_handler("C1", jev_router_handler)
 
+    verify_enabled = args.judge != "none"
+    if args.judge_device != "cpu" and scion.alive():
+        print(
+            "[cascade] WARNING: a torch judge on the GPUs while the local engine "
+            "is resident creates a second ROCm context; this host can hang "
+            "(harness/models.py).  Use --judge-device cpu (the default) unless "
+            "the GPUs are actually free.",
+            file=sys.stderr, flush=True,
+        )
+    if args.judge == "tiny-jev":
+        # Local D3, advisory: Tiny-Jev's `noul` head, one forward pass (~40 ms).
+        from experiments.cascade.decision import TinyJevJudge
+
+        model_id = args.judge_model or TinyJevJudge.DEFAULT_MODEL
+        print(f"[cascade] loading local validator {model_id} ...")
+        judge = TinyJevJudge(model_id, device=args.judge_device)
+
+        def tiny_jev_verify_handler(batch):
+            results = []
+            for j in batch:
+                try:
+                    p, ms = judge.verdict(j.payload["task"], j.payload["candidate"])
+                    decision = "accept" if p >= policy.accept_confidence else "reject"
+                    results.append(
+                        result_for(j, decision, p, latency_ms=ms,
+                                   payload={"judge": model_id.split("/")[-1]})
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    results.append(
+                        result_for(j, "reject", 0.0, payload={"error": str(exc)[:200]})
+                    )
+            return results
+
+        broker.register_handler("D3", tiny_jev_verify_handler)
+
     if args.judge == "local":
         # Local D3: Intern-Decision-4B, one masked-next-token forward pass per
         # judgement (calibrated P(candidate is correct)).
         from experiments.cascade.decision import InternDecisionJudge
 
-        print(f"[cascade] loading local judge {args.judge_model} ...")
-        judge = InternDecisionJudge(args.judge_model, device=args.judge_device)
+        model_id = args.judge_model or "internlm/Intern-Decision-4B"
+        print(f"[cascade] loading local judge {model_id} ...")
+        judge = InternDecisionJudge(model_id, device=args.judge_device)
 
         def local_verify_handler(batch):
             results = []
@@ -488,7 +572,7 @@ def main() -> int:
                     decision = "accept" if p >= policy.accept_confidence else "reject"
                     results.append(
                         result_for(j, decision, p, latency_ms=ms,
-                                   payload={"judge": "intern-decision-4b"})
+                                   payload={"judge": model_id.split("/")[-1]})
                     )
                 except Exception as exc:  # noqa: BLE001
                     results.append(
@@ -498,17 +582,19 @@ def main() -> int:
 
         broker.register_handler("D3", local_verify_handler)
 
-    # -- phase A: router batch -----------------------------------------
-    print(f"[cascade] router phase over {len(tasks)} tasks ...")
-    for task in tasks:
-        broker.submit(
-            Judgement(
-                id=f"route-{task['id']}", request_id=task["id"], generation_id=0,
-                role="C1", kind="route", payload={"task": task},
+    # -- phase A: router batch (skipped in the local-first default) -----
+    routes: dict[str, Any] = {}
+    if args.router != "none":
+        print(f"[cascade] router phase over {len(tasks)} tasks ...")
+        for task in tasks:
+            broker.submit(
+                Judgement(
+                    id=f"route-{task['id']}", request_id=task["id"], generation_id=0,
+                    role="C1", kind="route", payload={"task": task},
+                )
             )
-        )
-    broker.run_pending()
-    routes = {r.request_id: r for r in broker.consume()}
+        broker.run_pending()
+        routes = {r.request_id: r for r in broker.consume()}
 
     registry = default_registry()
     records: list[dict[str, Any]] = []
@@ -553,6 +639,9 @@ def main() -> int:
                     "api_direct_correct": api_ok,
                     "cascade_ok": api_ok,
                     "false_accept": False, "false_reject": False, "corrected": False,
+                    "judge": None,
+                    "fallback_available": fallback is not None,
+                    "flagged": False,
                 }
             )
             continue
@@ -565,39 +654,57 @@ def main() -> int:
             outcome="ok" if local_ok else "wrong",
         )
 
-        broker.submit(
-            Judgement(
-                id=f"verify-{task['id']}", request_id=task["id"], generation_id=0,
-                role="D3", kind="verify",
-                payload={"task": task, "candidate": local["content"]},
+        if verify_enabled:
+            broker.submit(
+                Judgement(
+                    id=f"verify-{task['id']}", request_id=task["id"], generation_id=0,
+                    role="D3", kind="verify",
+                    payload={"task": task, "candidate": local["content"]},
+                )
             )
-        )
-        broker.run_pending()
-        verdicts = {r.request_id: r for r in broker.consume()}
-        verdict = verdicts.get(task["id"])
-        if verdict is None:
+            broker.run_pending()
+            verdicts = {r.request_id: r for r in broker.consume()}
+            verdict = verdicts.get(task["id"])
+            if verdict is None:
+                verdict = result_for(
+                    Judgement(id=f"verify-{task['id']}", request_id=task["id"],
+                              generation_id=0, role="D3", kind="verify"),
+                    "reject", 0.0, payload={"error": "no verdict"},
+                )
+        else:
             verdict = result_for(
                 Judgement(id=f"verify-{task['id']}", request_id=task["id"],
                           generation_id=0, role="D3", kind="verify"),
-                "reject", 0.0, payload={"error": "no verdict"},
+                "accept", 1.0, latency_ms=0.0, payload={"judge": "none"},
             )
-        escalate = verifier_rejects(verdict, policy)
+        rejected = verifier_rejects(verdict, policy) if verify_enabled else False
         telemetry.log(
-            task["id"], planned.path, "D3-verify", "api", verdict.latency_ms,
-            outcome="reject" if escalate else "accept", async_=True,
+            task["id"], planned.path, "D3-verify",
+            "api" if args.judge == "api" else args.judge_device,
+            verdict.latency_ms,
+            outcome="reject" if rejected else "accept", async_=True,
         )
 
+        # Escalate only when there is somewhere to escalate to.  With the API
+        # fallback unset (the default), a reject is recorded and the local
+        # answer is returned; measure mode uses the measurement API instead.
+        escalate = rejected and (measure or fallback is not None)
         api_direct = None
-        if escalate or args.router_mode == "measure":
+        if measure:
             api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
+        elif escalate:
+            api_direct = fallback.chat(answer_prompt(task), tag="fallback", max_tokens=700)
         api_ok = check(task, api_direct["content"]) if api_direct is not None else None
 
         cascade_answer = api_direct["content"] if escalate else local["content"]
         cascade_ok = api_ok if escalate else local_ok
+        flagged = rejected and not measure and fallback is None
 
         if escalate:
             telemetry.log(
-                task["id"], planned.path, "E4-api", "api", api_direct["latency_ms"],
+                task["id"], planned.path,
+                "E4-api" if measure else "E4-fallback",
+                "api", api_direct["latency_ms"],
                 outcome="ok" if api_ok else "wrong", escalated=True,
             )
 
@@ -629,6 +736,9 @@ def main() -> int:
                 "false_accept": (not escalate) and (not local_ok),
                 "false_reject": escalate and local_ok,
                 "corrected": escalate and local_ok is False and api_ok,
+                "judge": args.judge,
+                "fallback_available": fallback is not None,
+                "flagged": flagged,
             }
         )
 
@@ -660,6 +770,8 @@ def main() -> int:
         "scion_mean_ms": mean(measured, "scion_ms"),
         "scion_mean_tokens": mean(measured, "scion_tokens"),
         "api_mean_ms": mean(api_rows, "api_ms"),
+        "fallback_available": fallback is not None,
+        "flagged_no_fallback": sum(1 for r in records if r.get("flagged")),
         "usage": usage.summary(),
         "telemetry": telemetry.summary(),
     }
@@ -670,7 +782,12 @@ def main() -> int:
     report = {
         "spec": spec["name"],
         "scion_base": scion.base,
-        "api_model": API_MODEL,
+        "router": args.router,
+        "judge": args.judge,
+        "router_mode": args.router_mode,
+        "api_fallback": args.api_fallback or None,
+        "api_model": (frontier.model if frontier is not None
+                      else (fallback.model if fallback is not None else None)),
         "summary": summary,
         "records": records,
     }
