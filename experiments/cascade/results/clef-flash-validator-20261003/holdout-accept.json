@@ -1,0 +1,292 @@
+{
+ "labels": {
+  "qa-capital-australia": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-element-w": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-pride-prejudice": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-largest-planet": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "math-train-speed": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-linear": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-percent": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-diagonal": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-bat-ball": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "code-count-vowels": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-fib": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-palindrome": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-dedupe": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "math-shirt-price": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-digit-7": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-clock-angle": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-day-of-week": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-probability": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-even-sum": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-depreciation": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "qa-strawberry-r": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-berlin-wall": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-persistence-memory": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "code-run-length": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-merge-intervals": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-parse-duration": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-balanced-brackets": {
+   "bucket": "code",
+   "scion_ok": true
+  }
+ },
+ "models": {
+  "clef-flash-ternary": {
+   "model": "clef-flash-ternary",
+   "family": "ternary",
+   "device": "cpu",
+   "temperature": null,
+   "mean_ms": 9822.7,
+   "no_leak": {
+    "threshold": 0.05,
+    "accept_rate": 1.0,
+    "false_accepts": 0,
+    "false_rejects": 0,
+    "correct_verdicts": 27
+   },
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.1,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.15,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.2,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.25,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.3,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.35,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.4,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.45,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.5,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.55,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.6,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.65,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.7,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.75,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.8,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.85,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.9,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.95,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    }
+   ],
+   "p_correct": {
+    "qa-capital-australia": 0.5832,
+    "qa-element-w": 0.5876,
+    "qa-pride-prejudice": 0.5819,
+    "qa-largest-planet": 0.5793,
+    "math-train-speed": 0.5822,
+    "math-linear": 0.5827,
+    "math-percent": 0.5916,
+    "math-diagonal": 0.5758,
+    "math-bat-ball": 0.5713,
+    "code-count-vowels": 0.5912,
+    "code-fib": 0.585,
+    "code-palindrome": 0.5685,
+    "code-dedupe": 0.5837,
+    "math-shirt-price": 0.585,
+    "math-digit-7": 0.5856,
+    "math-clock-angle": 0.5871,
+    "math-day-of-week": 0.5741,
+    "math-probability": 0.5894,
+    "math-even-sum": 0.5892,
+    "math-depreciation": 0.5773,
+    "qa-strawberry-r": 0.5802,
+    "qa-berlin-wall": 0.5827,
+    "qa-persistence-memory": 0.5803,
+    "code-run-length": 0.5948,
+    "code-merge-intervals": 0.5852,
+    "code-parse-duration": 0.5962,
+    "code-balanced-brackets": 0.5854
+   }
+  }
+ }
+}

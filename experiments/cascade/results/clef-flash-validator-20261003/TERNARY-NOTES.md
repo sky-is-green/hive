@@ -146,6 +146,48 @@ graded confidence; recalibrate before using another operating point.  Latency
 is the recurrent GDN CPU prefill (~17.9 s/check); the HIP bridge on the
 non-display card is the fallback if that binds.
 
+## Stage E: held-out generalization checkpoint — the parity number is majority-class (2026-10-03)
+
+Before any HF release, the packaged artifact was scored on records **outside**
+the cascade-bench-v1 distribution: 27 unseen correct answers from the
+easy+hard task sets (reasoning 12, code 8, qa 7) plus 19 constructed negatives
+(same last-number perturbation rule as training, all verified wrong by the
+checker), run through the same harness backend; the uncorrected PQ2_0 body was
+run identically for contrast.
+
+| body | operating point | bench-train | bench-test | held-out 46 | AUC train / test / held-out |
+|---|---|---|---|---|---|
+| uncorrected PQ2_0 | thr 0.46 (train-fit) | 43/70 (0 FA, 27 FR) | 22/30 (0 FA, 8 FR) | 24/46 (13 FA, 9 FR) | 0.801 / 0.759 / 0.569 |
+| **corrected (shipped candidate)** | thr 0.40-0.55 | 68/70 (2 FA, 0 FR) | 29/30 (1 FA, 0 FR) | 27/46 (19 FA, 0 FR) | **0.412** / 0.759* / **0.435** |
+| always-accept baseline | — | 68/70 | 29/30 | 27/46 | 0.500 |
+
+\* bench-test has a single negative record, so its AUC is not meaningful.
+
+**What this means.** The corrected model's headline 68/70 and 29/30 is exactly
+the always-accept baseline on a 97%-positive bench; its within-split AUC is
+**0.41 (worse than chance)** on train and 0.44 held-out — the corrections
+flatten the ranking into a task-agnostic band around p≈0.58.  The uncorrected
+PQ2_0 body actually *retains* ranking signal (AUC 0.80 train, 0.57 held-out)
+but is miscalibrated (its useful threshold is ~0.46, not 0.5).  So: the
+corrections did not teach rejection, they learned "accept" and destroyed
+ranking; the earlier "above bf16 Clef" framing is not supported.  The bf16
+validator (67/70 with 0 FA/3 FR) discriminates; the corrected ternary does
+not.
+
+**Protocol fix (apply from now on):** verdict accuracy on an imbalanced set is
+not evidence.  Report AUC / TPR at fixed FPR / balanced accuracy, and always
+include the always-accept baseline.  Keep this 46-record probe frozen; the
+next iteration needs a fresh holdout.
+
+**Consequences.** Do not post the current corrections.  The cheap baseline to
+build on is the uncorrected body with a calibrated head (ranking ceiling
+unchanged); a new correction run needs a ranking-aware decision loss, class
+balance, and residual-magnitude regularization (the branch delta is O(hidden
+norm): ~110 vs ~120 per token, which is why the fine structure drowns), or the
+rotation-first V2 conversion.  Latency is the recurrent GDN CPU prefill
+(~17.9 s/check); the HIP bridge on the non-display card is the fallback if
+that binds.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
