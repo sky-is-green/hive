@@ -247,15 +247,19 @@ the fork applies the activation transform.  Converter/self-test:
 
 **Body fidelity (the rotation is real):**
 
-| metric | f16 | deployed PQ2_0 (unrotated) | **V2 rotated** |
-|---|---|---|---|
-| wikitext-2 PPL (c512, 100 chunks, GPU) | **12.59** | 8684.23 | **514.35** |
-| hidden cos vs f16 (48 tokens) | 1.0 | 0.336 | **0.498** |
+| metric | f16 | deployed PQ2_0 (unrotated) | **V2 rotated** | V2 no-rotation control |
+|---|---|---|---|---|
+| wikitext-2 PPL (c512, 100 chunks, GPU) | **12.59** | 8684.23 | **514.35** | 9640.77 |
+| hidden cos vs f16 (48 tokens) | 1.0 | 0.336 | **0.498** | 0.311 |
 
-V2 already exceeds the *trained-corrections* proxy hidden fidelity (0.372) with
-no training, and improves PPL 16.9x over the deployed body.  Generation quality
-is still far from f16 — the Bonsai forensics' expected PTQ ceiling (trained
-placement/KD is the documented missing lever).
+The **no-rotation control** (identical tensor selection/exemptions, folding and
+metadata disabled) is statistically identical to the deployed body, so the
+entire gain is the rotation — the GDN exemptions contribute nothing on their
+own.  V2 already exceeds the *trained-corrections* proxy hidden fidelity (0.372)
+with no training, and improves PPL 16.9x over the deployed body.  Generation
+quality is still far from f16 — the Bonsai forensics' expected PTQ ceiling
+(trained placement/KD is the documented missing lever).  A mixed-precision
+ablation sweep (`scion/dense/clef_v2_sweep.sh`) locates the residual damage.
 
 **Decisions (frozen probe + bench, V2 body, frozen head):**
 
