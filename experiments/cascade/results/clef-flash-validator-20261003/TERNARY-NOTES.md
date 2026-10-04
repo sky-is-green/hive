@@ -278,14 +278,17 @@ measurements isolate the scale rule from the error compensation:
 | RTN + **Lloyd** scales | **476.08** |
 | GPTQ + absmean scales | 2460.25 |
 | RTN + absmean scales | 15936.78 |
-| GPTQ + **Lloyd** scales | *in flight* |
+| **GPTQ + Lloyd scales** | **277.25** |
 
 The scale rule dominates (33x between Lloyd and absmean RTN at the same
 rotation) — consistent with the original Clef finding that the deployed Lloyd
-rule is load-bearing.  GPTQ's compensation *is* working (6.5x better than its
-own scale baseline) but cannot overcome a wrong scale rule.  `--gptq-lloyd-scales`
-injects the deployed rule; that run is the current test, with `act-order`,
-`refine` and flip-polish queued, and KD only if PTQ plateaus.
+rule is load-bearing.  GPTQ's compensation is real once the rule is right:
+**277.25 vs 476.08 signed RTN** (1.72x) in the same 5.52 GiB full-ternary
+container, versus the best mixed-precision variant `nodown` at 265 for +2.6 GB.
+The next sweeps are `act-order` (running), `refine_iters`, damping, and more
+Hessian tokens (48 windows leaves the 12288-wide `ffn_down` at ~2 tokens/dim);
+flip-polish follows if PTQ plateaus, with rotation-in-the-loop KD only if PTQ
+is exhausted.
 
 **Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
 same settings; kept-F16 targets are unrotated and absent from the metadata):
