@@ -237,6 +237,11 @@ frozen probe and only after V2 is derisked on a smaller model.
 
 ## Stage G: V2 rotated-basis conversion — fidelity wins, decisions don't (2026-10-04)
 
+> The **current objective is Goal B** (a good ternary community quant; metric =
+> PPL), so the quantizer table at the end of this stage is the live thread.
+> The decision results earlier in the stage remain for the record: the ternary
+> validator is not achievable through PTQ, and bf16 Clef keeps that role.
+
 The rotation-first route reached its first artifact:
 `clef-flash-v2-pq2_0-rot.gguf` (5.52 GiB, 427 tensors) is a re-conversion of
 the **f16** body with `W' = W·Rᵀ` folded into 176 attention/MLP linears
