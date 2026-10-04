@@ -1,0 +1,75 @@
+{
+ "body": "/home/penis/Desktop/work/models/clef-flash-ternary/clef-flash-PQ2_0.gguf",
+ "body_sha256": "8c36444c54b096cf3941f5953881608d96cdc6a03274acd350acc0236057e680",
+ "protocol": "p_cal = sigmoid(a * (logit(p_raw) - logit(t))); a = Platt slope (BCE), t = raw threshold maximizing balanced accuracy on the fit set; fit set = bench-train + training negatives",
+ "fit": {
+  "n": 123,
+  "pos": 68,
+  "neg": 55,
+  "auc": 0.5385,
+  "platt_a": 0.5492,
+  "threshold_raw": 0.48,
+  "balanced_acc": 0.5846,
+  "false_accepts": 19,
+  "false_rejects": 33
+ },
+ "calibration": {
+  "a": 0.5492016077041626,
+  "threshold_raw": 0.48,
+  "b": 0.043959583739300555
+ },
+ "bench_train": {
+  "n": 70,
+  "pos": 68,
+  "neg": 2,
+  "auc": 0.8015,
+  "raw@0.5": {
+   "correct": 18,
+   "false_accepts": 0,
+   "false_rejects": 52,
+   "balanced_acc": 0.6176
+  },
+  "cal@0.5": {
+   "correct": 37,
+   "false_accepts": 0,
+   "false_rejects": 33,
+   "balanced_acc": 0.7574
+  }
+ },
+ "bench_test": {
+  "n": 30,
+  "pos": 29,
+  "neg": 1,
+  "auc": 0.7586,
+  "raw@0.5": {
+   "correct": 8,
+   "false_accepts": 0,
+   "false_rejects": 22,
+   "balanced_acc": 0.6207
+  },
+  "cal@0.5": {
+   "correct": 12,
+   "false_accepts": 0,
+   "false_rejects": 18,
+   "balanced_acc": 0.6897
+  }
+ },
+ "holdout": {
+  "n": 46,
+  "pos": 27,
+  "neg": 19,
+  "auc": 0.5692,
+  "raw@0.5": {
+   "correct": 24,
+   "false_accepts": 6,
+   "false_rejects": 16,
+   "balanced_acc": 0.5458
+  },
+  "cal@0.5": {
+   "correct": 25,
+   "false_accepts": 10,
+   "false_rejects": 11,
+   "balanced_acc": 0.5331
+  }
+ }
+}

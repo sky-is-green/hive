@@ -22,23 +22,27 @@ which then rejects 6 correct answers — so the honest operating point remains
 0.5 with 1 leak on test.
 
 † **The ternary row is the always-accept baseline, not discrimination** (see
-`TERNARY-NOTES.md` Stage E, 2026-10-03).  The corrected head's probabilities
-collapse into [0.57, 0.60], so at any threshold in [0.40, 0.55] it accepts
-every record; on this benchmark (97% of records correct) that reproduces the
-always-accept row exactly.  Its AUC is **0.41 train / 0.44 held-out** (chance
-is 0.5), while the uncorrected PQ2_0 body — miscalibrated, useful threshold
-~0.46 — retains AUC **0.80 train / 0.57 held-out**.  The 46-record held-out
-probe (27 unseen correct + 19 constructed negatives) confirms it: corrected
-27/46 with 19 false accepts, uncorrected 24/46 with 13 FA / 9 FR, bf16 Clef
-and Tiny-Jev remain the only validated discriminators here.  Do not use the
-ternary row as evidence of quality, and do not post the current corrections.
+`TERNARY-NOTES.md` Stages E-F, 2026-10-03/04).  The corrected head's
+probabilities collapse into [0.57, 0.60], so at any threshold in [0.40, 0.55]
+it accepts every record; on this benchmark (97% of records correct) that
+reproduces the always-accept row exactly.  Its AUC is **0.41 train / 0.44
+held-out** (chance 0.5); it also accepts 58/58 of its own training negatives,
+so the decision train never learned rejection.  The uncorrected PQ2_0 body is
+miscalibrated (useful threshold ~0.46) and near chance against real negatives:
+AUC **0.539 on the balanced fit set / 0.569 held-out** (an earlier "0.80" was
+a 2-negative artifact).  A calibrated uncorrected variant gives bench-test
+12/30 (0 FA, 18 FR) and held-out 25/46 (10 FA, 11 FR) — an honest v0, not a
+useful general validator.  The f16 teacher itself scores **AUC 0.938 fit /
+0.844 on the frozen probe** (34/46 at 0.5), so the probe is valid and the
+student gap is real.  Do not use the ternary row as evidence of quality, and
+do not post the current corrections.
 
 Mechanically: the ternary plumbing is sound (bridge + head sidecar, bit-exact
 against the offline benchmark, ~17.9 s/check on the recurrent GDN CPU prefill);
 the correction *training objective* is what failed — the branch residual is
-O(hidden norm) (~110 vs ~120 per token) and the pointwise decision KD on a
-97%-positive set taught "accept".  A retrain needs a ranking-aware loss,
-class balance and residual regularization — or the rotation-first V2 route.
+O(hidden norm) (~110 vs ~120 per token) and the pointwise decision KD on hard
+negatives taught "accept".  Next: rotation-first V2 (body fidelity), or a
+bounded ranking-loss retrain with residual regularization evaluated on AUC/BA.
 
 Artifacts: `clef-flash-judge-eval-{train,test}.json` (per-task p_correct and
 the full sweep, now carrying both the bf16 `clef-flash` and the

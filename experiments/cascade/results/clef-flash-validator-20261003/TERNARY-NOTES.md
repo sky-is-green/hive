@@ -188,6 +188,53 @@ rotation-first V2 conversion.  Latency is the recurrent GDN CPU prefill
 (~17.9 s/check); the HIP bridge on the non-display card is the fallback if
 that binds.
 
+## Stage F: calibration baseline + diagnostics — what failed and why (2026-10-04)
+
+Two free follow-ups after the checkpoint.
+
+**Calibration baseline** (`scion/dense/clef_calibrate.py`, uncorrected body):
+fit set = bench-train (68 pos) + 55 usable training negatives (of 58; 5
+perturbations stayed checker-correct).  Teacher (f16, cached option logits) on
+that fit set: **AUC 0.939** (finite entries); the uncorrected student:
+**AUC 0.539**.  Fitted Platt slope a=0.549, raw boundary t=0.48:
+
+| set | raw@0.5 | calibrated@0.5 |
+|---|---|---|
+| bench-train | 18/70 (0 FA, 52 FR) | 37/70 (0 FA, 33 FR) |
+| bench-test | 8/30 (0 FA, 22 FR) | 12/30 (0 FA, 18 FR) |
+| held-out 46 | 24/46 (6 FA, 16 FR, BA 0.546) | 25/46 (10 FA, 11 FR, BA 0.533) |
+
+So calibration repairs the in-distribution shift (and the earlier "uncorrected
+AUC 0.80" was a 2-negative artifact — against real negatives the body is near
+chance: 0.539 fit / 0.569 held-out).  It is an honest v0, not a useful general
+validator.
+
+**Why the corrections failed** (`scion/dense/clef_probe_diag.py`):
+
+| model | fit-neg AUC | held-out AUC | held-out @0.5 |
+|---|---|---|---|
+| f16 teacher (GGUF bridge) | 0.939 | **0.844** | 34/46 (2 FA, 10 FR), BA 0.762 |
+| uncorrected PQ2 + calibration | 0.539 | 0.569 | 25/46 (10 FA, 11 FR), BA 0.533 |
+| corrected merged (shipped candidate) | **accepts 58/58** | 0.435 | 27/46 (19 FA, 0 FR) = always-accept |
+
+The corrected model accepts **every one of the 58 training negatives**
+(p 0.574-0.605) while the teacher rejects 50/58 — the failure is not
+overfitting: the decision KD never learned rejection on any data; it is a
+constant-accept shift.  Mechanism: hidden fidelity is 0.23-0.37 cos and the
+branch residual is O(hidden norm) (~110 vs ~120 per token), so the frozen head
+is reading a signal that was already weak and is then swamped; the pointwise
+KD on hard negatives collapsed to the prior.
+
+**Conclusion.**  The sidecar recipe as trained cannot produce a general
+validator, and its failure is at the objective/body-fidelity level, not the
+plumbing.  The evidence-backed route to a genuinely useful ternary Clef is the
+rotation-first V2 conversion (same-arch Qwen3.5-0.8B precedent at k1/k2),
+which fixes body fidelity instead of patching the head.  A sidecar retry would
+need (a) a ranking/pairwise decision loss with class balance, (b) residual
+regularization, (c) acceptance on AUC / balanced accuracy, not verdict counts
+— a bounded rental pilot (~1-1.5 h, ~$1) can test it, but only against the
+frozen probe and only after V2 is derisked on a smaller model.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.

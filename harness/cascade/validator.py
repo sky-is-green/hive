@@ -177,13 +177,41 @@ DEFAULT_TERNARY_BODY = "corrections/packaged/clef-flash-PQ2_0-corr-r512-g128-ste
 DEFAULT_TERNARY_BRIDGE = REPO_ROOT / "tools" / "clef-bridge" / "clef_embed"
 
 
+def calibration_from_file(path: Any) -> Optional[tuple[float, float]]:
+    """Read ``{"calibration": {"a": ..., "threshold_raw": ...}}`` (or flat)."""
+    import json
+
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    cal = data.get("calibration", data)
+    if "a" in cal and "threshold_raw" in cal:
+        return float(cal["a"]), float(cal["threshold_raw"])
+    return None
+
+
+def apply_calibration(p: float, a: float, threshold: float) -> float:
+    """Monotone noul recalibration ``sigmoid(a * (logit(p) - logit(t)))``.
+
+    The boundary lands at ``p_raw == threshold``, so the service's 0.5 cut is
+    the fitted operating point.
+    """
+    import math
+
+    p = min(max(float(p), 1e-6), 1 - 1e-6)
+    threshold = min(max(float(threshold), 1e-6), 1 - 1e-6)
+    return 1.0 / (1.0 + math.exp(-a * (math.log(p / (1 - p))
+                                       - math.log(threshold / (1 - threshold)))))
+
+
 class ClefTernaryValidator:
     """Clef-Flash ternary corrections through the llama.cpp CPU bridge.
 
     ``model_id`` may be a merged-body ``.gguf`` path, a model directory, or a
     label; the packaged release under ``models/clef-flash-ternary/`` is the
     default (env overrides: ``HIVE_TERNARY_DIR``, ``HIVE_TERNARY_BODY``,
-    ``HIVE_TERNARY_BRIDGE``, ``HIVE_TERNARY_NCTX``).
+    ``HIVE_TERNARY_BRIDGE``, ``HIVE_TERNARY_NCTX``, and
+    ``HIVE_TERNARY_CALIBRATION`` pointing at a calibration JSON written by
+    ``scion/dense/clef_calibrate.py``; applied to the noul output so the 0.5
+    service threshold lands on the fitted operating point).
 
     Per check: encode the one ``noul`` question with the release tokenizer, send
     the exact ids to a resident ``clef_embed --serve`` process (fresh context,
@@ -201,12 +229,14 @@ class ClefTernaryValidator:
         _runner: Any = None,
         _head_fn: Any = None,
         _encode_fn: Any = None,
+        _calibration: Any = None,
     ) -> None:
         self.model_id = model_id
         self.device = device
         self._proc: Any = None
         self._work: Any = None
         self._log: Any = None
+        self._cal = tuple(_calibration) if _calibration else None
         if _head_fn is not None:
             # Test seam: injected encode/run/score, no torch and no bridge.
             self._runner = _runner
@@ -294,6 +324,10 @@ class ClefTernaryValidator:
         self._runner = self._request
         self._head_fn = self._score
 
+        env_cal = os.environ.get("HIVE_TERNARY_CALIBRATION")
+        if env_cal:
+            self._cal = calibration_from_file(env_cal)
+
     def _request(self, ids: Any) -> Any:
         import numpy as np
 
@@ -328,8 +362,10 @@ class ClefTernaryValidator:
         enc = self._encode_fn(task["prompt"], candidate)
         started = time.time()
         hidden = self._runner(enc.input_ids)
-        p = self._head_fn(hidden, enc)
-        return float(p), (time.time() - started) * 1000.0
+        p = float(self._head_fn(hidden, enc))
+        if self._cal is not None:
+            p = apply_calibration(p, *self._cal)
+        return p, (time.time() - started) * 1000.0
 
     def close(self) -> None:
         if self._proc is not None:
