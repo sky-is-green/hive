@@ -260,13 +260,27 @@ proxy hidden fidelity (0.372) with no training, and improves PPL 16.9x over the
 deployed body.  A PRF-signed basis (seed 1337, explicit sign metadata) improves
 it further: **PPL 476.08** vs 514.35 with identity signs.
 
-**The missing quantizer step (GPTQ).** V2 is rotation + plain Lloyd RTN; the
-TAARDIS 27B reference (13.61 PPL "weights alone") is rotation + Hessian-weighted
-GPTQ + flip-polish.  The local pipeline now exists: `dense/clef_v2_hessians.py`
-(per-linear ``XᵀX/N`` from the bf16 recurrent-GDN forward, layer-group passes)
-and GPTQ wiring in `dense/clef_v2_convert.py` (`R H Rᵀ` via the forensics'
-`rotate_hessian`, group 128, PQ2_0 pack).  GPTQ results land next; that is the
-lever expected to close the 476 -> ~13 gap, with KD only if it plateaus.
+**The missing quantizer step (GPTQ) — measured.** V2 is rotation + plain Lloyd
+RTN; the TAARDIS 27B reference (13.61 PPL "weights alone") is rotation +
+Hessian-weighted GPTQ + flip-polish.  The local pipeline now exists:
+`dense/clef_v2_hessians.py` (per-linear ``XᵀX/N`` from the bf16 recurrent-GDN
+forward, layer-group passes) and GPTQ wiring in `dense/clef_v2_convert.py`
+(`R H Rᵀ` via the forensics' `rotate_hessian`, group 128, PQ2_0 pack).  First
+measurements isolate the scale rule from the error compensation:
+
+| quantizer (signed basis, c512, 100 chunks) | PPL |
+|---|---|
+| RTN + **Lloyd** scales | **476.08** |
+| GPTQ + absmean scales | 2460.25 |
+| RTN + absmean scales | 15936.78 |
+| GPTQ + **Lloyd** scales | *in flight* |
+
+The scale rule dominates (33x between Lloyd and absmean RTN at the same
+rotation) — consistent with the original Clef finding that the deployed Lloyd
+rule is load-bearing.  GPTQ's compensation *is* working (6.5x better than its
+own scale baseline) but cannot overcome a wrong scale rule.  `--gptq-lloyd-scales`
+injects the deployed rule; that run is the current test, with `act-order`,
+`refine` and flip-polish queued, and KD only if PTQ plateaus.
 
 **Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
 same settings; kept-F16 targets are unrotated and absent from the metadata):
