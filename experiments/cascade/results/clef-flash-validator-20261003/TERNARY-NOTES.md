@@ -253,13 +253,31 @@ the fork applies the activation transform.  Converter/self-test:
 | hidden cos vs f16 (48 tokens) | 1.0 | 0.336 | **0.498** | 0.311 |
 
 The **no-rotation control** (identical tensor selection/exemptions, folding and
-metadata disabled) is statistically identical to the deployed body, so the
-entire gain is the rotation — the GDN exemptions contribute nothing on their
-own.  V2 already exceeds the *trained-corrections* proxy hidden fidelity (0.372)
-with no training, and improves PPL 16.9x over the deployed body.  Generation
-quality is still far from f16 — the Bonsai forensics' expected PTQ ceiling
-(trained placement/KD is the documented missing lever).  A mixed-precision
-ablation sweep (`scion/dense/clef_v2_sweep.sh`) locates the residual damage.
+metadata disabled) is statistically identical to the deployed body (9516 GPU /
+9640 CPU vs 8684), so the entire gain is the rotation — the GDN exemptions
+contribute nothing on their own.  V2 already exceeds the *trained-corrections*
+proxy hidden fidelity (0.372) with no training, and improves PPL 16.9x over the
+deployed body.
+
+**Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
+same settings; kept-F16 targets are unrotated and absent from the metadata):
+
+| variant (kept F16) | PPL | vs V2 |
+|---|---|---|
+| f16 | 12.59 | — |
+| V2 all-ternary | **514.35** | 1.00x |
+| no-rotation control | 9516.34 | 18.5x worse |
+| nodown (`ffn_down`) | **265.13** | 1.94x better |
+| noqkv (`attn_qkv`) | 280.41 | 1.83x better |
+| noedge (layers 0/1/30/31) | 272.60 | 1.89x better |
+| nomlp (all FFN) | 846.36 | 1.65x worse |
+
+**Non-monotone:** keeping *all* FFN exact is worse than quantizing it, so the
+residual damage is not additive — ternary errors partially cancel across the
+stack.  The best single intervention recovers only ~2x; the 514 -> 12.6 gap is
+the PTQ ceiling the forensics predicted (trained placement / KD is the missing
+lever).  The best variant (`nodown`) is run through the frozen decision probe
+to test whether body fidelity moves the head at all.
 
 **Decisions (frozen probe + bench, V2 body, frozen head):**
 
