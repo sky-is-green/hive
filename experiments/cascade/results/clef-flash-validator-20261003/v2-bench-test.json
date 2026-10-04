@@ -1,0 +1,307 @@
+{
+ "labels": {
+  "gsm8k-0005": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0006": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0008": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0009": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0014": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0015": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0020": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0033": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0035": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0036": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0037": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "gsm8k-0038": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0002": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0005": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0006": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0013": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0016": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0017": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-0020": {
+   "bucket": "reasoning",
+   "scion_ok": false
+  },
+  "math-0023": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "humaneval-0001": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "humaneval-0002": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "humaneval-0003": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "humaneval-0004": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "humaneval-0007": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "humaneval-0015": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "truthfulqa-0008": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "truthfulqa-0011": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "truthfulqa-0013": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "truthfulqa-0015": {
+   "bucket": "qa",
+   "scion_ok": true
+  }
+ },
+ "models": {
+  "clef-flash-ternary-v2": {
+   "model": "clef-flash-ternary-v2",
+   "family": "ternary",
+   "device": "cpu",
+   "temperature": null,
+   "mean_ms": 69081.9,
+   "no_leak": {
+    "threshold": 0.45,
+    "accept_rate": 0.6333333333333333,
+    "false_accepts": 0,
+    "false_rejects": 10,
+    "correct_verdicts": 20
+   },
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.1,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.15,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.2,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.25,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.3,
+     "accept_rate": 1.0,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct_verdicts": 29
+    },
+    {
+     "threshold": 0.35,
+     "accept_rate": 0.9666666666666667,
+     "false_accepts": 1,
+     "false_rejects": 1,
+     "correct_verdicts": 28
+    },
+    {
+     "threshold": 0.4,
+     "accept_rate": 0.9333333333333333,
+     "false_accepts": 1,
+     "false_rejects": 2,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.45,
+     "accept_rate": 0.6333333333333333,
+     "false_accepts": 0,
+     "false_rejects": 10,
+     "correct_verdicts": 20
+    },
+    {
+     "threshold": 0.5,
+     "accept_rate": 0.2,
+     "false_accepts": 0,
+     "false_rejects": 23,
+     "correct_verdicts": 7
+    },
+    {
+     "threshold": 0.55,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.6,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.65,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.7,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.75,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.8,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.85,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.9,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    },
+    {
+     "threshold": 0.95,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 29,
+     "correct_verdicts": 1
+    }
+   ],
+   "p_correct": {
+    "gsm8k-0005": 0.4726,
+    "gsm8k-0006": 0.5225,
+    "gsm8k-0008": 0.5181,
+    "gsm8k-0009": 0.452,
+    "gsm8k-0014": 0.4851,
+    "gsm8k-0015": 0.4597,
+    "gsm8k-0020": 0.4712,
+    "gsm8k-0033": 0.4912,
+    "gsm8k-0035": 0.4572,
+    "gsm8k-0036": 0.4908,
+    "gsm8k-0037": 0.4045,
+    "gsm8k-0038": 0.5219,
+    "math-0002": 0.4237,
+    "math-0005": 0.4384,
+    "math-0006": 0.4508,
+    "math-0013": 0.4746,
+    "math-0016": 0.5161,
+    "math-0017": 0.3479,
+    "math-0020": 0.4269,
+    "math-0023": 0.4584,
+    "humaneval-0001": 0.4412,
+    "humaneval-0002": 0.3802,
+    "humaneval-0003": 0.4779,
+    "humaneval-0004": 0.4177,
+    "humaneval-0007": 0.4478,
+    "humaneval-0015": 0.4075,
+    "truthfulqa-0008": 0.5359,
+    "truthfulqa-0011": 0.4602,
+    "truthfulqa-0013": 0.5208,
+    "truthfulqa-0015": 0.427
+   }
+  }
+ }
+}

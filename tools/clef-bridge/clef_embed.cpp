@@ -124,6 +124,12 @@ int main(int argc, char ** argv) {
     llama_model_params mparams = llama_model_default_params();
     const int gpu_arg = serve ? 4 : 5;
     mparams.n_gpu_layers = (argc > gpu_arg) ? atoi(argv[gpu_arg]) : 0;  // 0 = CPU
+    // rotated-basis models crash the CPU path when weights land in extra repack
+    // buffers (rotation tensors are allocated on the weight's buft); disabling
+    // extra bufts is the known-good workaround until the loader falls back
+    if (getenv("CLEF_EMBED_NO_REPACK")) {
+        mparams.use_extra_bufts = false;
+    }
     const auto tl0 = std::chrono::steady_clock::now();
     llama_model * model = llama_model_load_from_file(argv[1], mparams);
     if (model == nullptr) {
