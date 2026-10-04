@@ -14,6 +14,8 @@ from harness.cascade.validator import (
     ClefValidator,
     TinyJevValidator,
     ValidatorService,
+    apply_calibration,
+    calibration_from_file,
     load_validator,
 )
 
@@ -145,3 +147,25 @@ def test_clef_adapter_frames_one_noul_question():
     assert request["state"] == {"task": "2+2?", "candidate_answer": "4"}
     assert request["questions"]["verdict"]["type"] == "noul"
     assert request["questions"]["verdict"]["instructions"] == TinyJevValidator.INSTRUCTION
+
+
+def test_calibration_boundary_and_file(tmp_path):
+    import json as _json
+
+    cal = tmp_path / "cal.json"
+    cal.write_text(_json.dumps({"calibration": {"a": 2.0, "threshold_raw": 0.6}}))
+    assert calibration_from_file(cal) == (2.0, 0.6)
+    assert abs(apply_calibration(0.6, 2.0, 0.6) - 0.5) < 1e-12  # boundary
+    assert apply_calibration(0.7, 2.0, 0.6) > 0.5
+    assert apply_calibration(0.5, 2.0, 0.6) < 0.5
+
+
+def test_ternary_adapter_applies_injected_calibration():
+    def build(cal):
+        return ClefTernaryValidator(
+            "x", _runner=lambda ids: "h", _head_fn=lambda h, e: 0.7,
+            _encode_fn=lambda p, c: _FakeEnc(), _calibration=cal)
+
+    p_low, _ = build((1.0, 0.8)).verdict({"prompt": "p"}, "a")   # raw below boundary
+    p_high, _ = build((1.0, 0.6)).verdict({"prompt": "p"}, "a")  # raw above boundary
+    assert p_low < 0.5 < p_high
