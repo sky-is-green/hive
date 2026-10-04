@@ -44,6 +44,13 @@ O(hidden norm) (~110 vs ~120 per token) and the pointwise decision KD on hard
 negatives taught "accept".  Next: rotation-first V2 (body fidelity), or a
 bounded ranking-loss retrain with residual regularization evaluated on AUC/BA.
 
+**Update (V2, `TERNARY-NOTES.md` Stage G):** the rotated-basis re-conversion
+lifts body fidelity a lot — wikitext PPL 8684 -> **514** (f16 12.59) and hidden
+cos 0.336 -> **0.498** — but it does **not** fix decisions: frozen-probe AUC
+**0.464** vs the deployed body's 0.569 (teacher 0.844), with the head's p
+compressed into [0.39, 0.54].  V2 is the better base for a training fix; the
+decision channel still needs one.
+
 Artifacts: `clef-flash-judge-eval-{train,test}.json` (per-task p_correct and
 the full sweep, now carrying both the bf16 `clef-flash` and the
 `clef-flash-ternary` entries).  Load: ~5 s warm page cache (bf16 sidecar) /

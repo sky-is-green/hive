@@ -47,6 +47,10 @@ beside a resident serving engine (two ROCm contexts can hang this host).
   `ERR <reason>` (one fresh context per request, like batch).  The
   `clef-ternary` harness backend (`harness/cascade/validator.py`) uses this.
 - `n_gpu_layers`: `0` (default) keeps it CPU-only.
+- `CLEF_EMBED_NO_REPACK=1`: disables the CPU extra (repack) buffer types.
+  Needed only for rotated-basis models on older fork builds whose rotation
+  tensors were allocated on the weight's repack buft (a crash; fixed in
+  `llama-model.cpp` by falling back to the plain CPU buft).  Slower decode.
 
 ## Embedded adapters (single-file releases)
 

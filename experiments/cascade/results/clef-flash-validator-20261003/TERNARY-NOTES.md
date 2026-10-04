@@ -235,6 +235,56 @@ regularization, (c) acceptance on AUC / balanced accuracy, not verdict counts
 — a bounded rental pilot (~1-1.5 h, ~$1) can test it, but only against the
 frozen probe and only after V2 is derisked on a smaller model.
 
+## Stage G: V2 rotated-basis conversion — fidelity wins, decisions don't (2026-10-04)
+
+The rotation-first route reached its first artifact:
+`clef-flash-v2-pq2_0-rot.gguf` (5.52 GiB, 427 tensors) is a re-conversion of
+the **f16** body with `W' = W·Rᵀ` folded into 176 attention/MLP linears
+(block-Hadamard 1024, identity signs), Lloyd-g128 ternarization, `ssm_out`
+unrotated-ternary, everything else copied, and `prism.hadamard.*` metadata so
+the fork applies the activation transform.  Converter/self-test:
+`scion/dense/clef_v2_convert.py`.
+
+**Body fidelity (the rotation is real):**
+
+| metric | f16 | deployed PQ2_0 (unrotated) | **V2 rotated** |
+|---|---|---|---|
+| wikitext-2 PPL (c512, 100 chunks, GPU) | **12.59** | 8684.23 | **514.35** |
+| hidden cos vs f16 (48 tokens) | 1.0 | 0.336 | **0.498** |
+
+V2 already exceeds the *trained-corrections* proxy hidden fidelity (0.372) with
+no training, and improves PPL 16.9x over the deployed body.  Generation quality
+is still far from f16 — the Bonsai forensics' expected PTQ ceiling (trained
+placement/KD is the documented missing lever).
+
+**Decisions (frozen probe + bench, V2 body, frozen head):**
+
+| set | raw @0.5 | best/other | AUC |
+|---|---|---|---|
+| held-out 46 (27 pos + 19 neg) | 20/46 (2 FA, 24 FR) | BA 0.519 @ thr 0.45 (TP 11/27, TN 12/19) | **0.464** |
+| bench-train 70 | 14/70 (0 FA, 56 FR) | accept-all 68/70; 65/70 @0.40 (2 FA, 3 FR) | 0.404* |
+| bench-test 30 | 7/30 (0 FA, 23 FR) | accept-all 29/30; 27/30 @0.40 (1 FA, 2 FR) | 0.793* |
+
+\* 2 / 1 negatives respectively: not meaningful estimates.
+
+**V2 does not fix decisions.**  Probe AUC 0.464 (within noise of chance) is not
+better than the deployed unrotated body (0.569), and the head's p values
+compress into ~[0.39, 0.54].  The teacher is 0.844 on the same probe, so the
+signal exists; the quantized body's states through the frozen head still don't
+carry it.  A usable ternary validator therefore still needs **training** — and
+V2 is the better platform for it (better hidden fidelity, and the fork supports
+rotated-basis adapters).  Two local follow-ups remain cheap: a controlled
+no-rotation variant to attribute the fidelity gain, and GPTQ/Hessian placement
+to lift PPL further.
+
+**Fork bug found and fixed:** rotated models segfaulted the CPU path whenever
+repacking was active (rotation/sign tensors allocated on a CPU repack buft).
+`llama-model.cpp` now falls back to the plain CPU buft (mirroring the adapter
+loader); verified on V2 (cos unchanged, speed restored).  The bridge also
+exposes `CLEF_EMBED_NO_REPACK` for older builds.  The V2 decision battery ran
+under the no-repack workaround (~70 s/check); with the fix it is back to
+~18-20 s/check.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.

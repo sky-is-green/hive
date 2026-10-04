@@ -1,0 +1,292 @@
+{
+ "labels": {
+  "qa-capital-australia": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-element-w": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-pride-prejudice": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-largest-planet": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "math-train-speed": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-linear": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-percent": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-diagonal": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-bat-ball": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "code-count-vowels": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-fib": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-palindrome": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-dedupe": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "math-shirt-price": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-digit-7": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-clock-angle": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-day-of-week": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-probability": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-even-sum": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "math-depreciation": {
+   "bucket": "reasoning",
+   "scion_ok": true
+  },
+  "qa-strawberry-r": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-berlin-wall": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "qa-persistence-memory": {
+   "bucket": "qa",
+   "scion_ok": true
+  },
+  "code-run-length": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-merge-intervals": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-parse-duration": {
+   "bucket": "code",
+   "scion_ok": true
+  },
+  "code-balanced-brackets": {
+   "bucket": "code",
+   "scion_ok": true
+  }
+ },
+ "models": {
+  "clef-flash-ternary-v2": {
+   "model": "clef-flash-ternary-v2",
+   "family": "ternary",
+   "device": "cpu",
+   "temperature": null,
+   "mean_ms": 37403.8,
+   "no_leak": {
+    "threshold": 0.05,
+    "accept_rate": 1.0,
+    "false_accepts": 0,
+    "false_rejects": 0,
+    "correct_verdicts": 27
+   },
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.1,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.15,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.2,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.25,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.3,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.35,
+     "accept_rate": 1.0,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct_verdicts": 27
+    },
+    {
+     "threshold": 0.4,
+     "accept_rate": 0.9259259259259259,
+     "false_accepts": 0,
+     "false_rejects": 2,
+     "correct_verdicts": 25
+    },
+    {
+     "threshold": 0.45,
+     "accept_rate": 0.4074074074074074,
+     "false_accepts": 0,
+     "false_rejects": 16,
+     "correct_verdicts": 11
+    },
+    {
+     "threshold": 0.5,
+     "accept_rate": 0.1111111111111111,
+     "false_accepts": 0,
+     "false_rejects": 24,
+     "correct_verdicts": 3
+    },
+    {
+     "threshold": 0.55,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.6,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.65,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.7,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.75,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.8,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.85,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.9,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    },
+    {
+     "threshold": 0.95,
+     "accept_rate": 0.0,
+     "false_accepts": 0,
+     "false_rejects": 27,
+     "correct_verdicts": 0
+    }
+   ],
+   "p_correct": {
+    "qa-capital-australia": 0.4082,
+    "qa-element-w": 0.4518,
+    "qa-pride-prejudice": 0.4464,
+    "qa-largest-planet": 0.4522,
+    "math-train-speed": 0.469,
+    "math-linear": 0.4086,
+    "math-percent": 0.3901,
+    "math-diagonal": 0.4022,
+    "math-bat-ball": 0.4595,
+    "code-count-vowels": 0.5034,
+    "code-fib": 0.4495,
+    "code-palindrome": 0.4154,
+    "code-dedupe": 0.3878,
+    "math-shirt-price": 0.4341,
+    "math-digit-7": 0.4168,
+    "math-clock-angle": 0.4249,
+    "math-day-of-week": 0.4366,
+    "math-probability": 0.5097,
+    "math-even-sum": 0.4354,
+    "math-depreciation": 0.5368,
+    "qa-strawberry-r": 0.484,
+    "qa-berlin-wall": 0.4268,
+    "qa-persistence-memory": 0.4247,
+    "code-run-length": 0.454,
+    "code-merge-intervals": 0.4442,
+    "code-parse-duration": 0.4699,
+    "code-balanced-brackets": 0.4641
+   }
+  }
+ }
+}
