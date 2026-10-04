@@ -276,8 +276,16 @@ same settings; kept-F16 targets are unrotated and absent from the metadata):
 residual damage is not additive — ternary errors partially cancel across the
 stack.  The best single intervention recovers only ~2x; the 514 -> 12.6 gap is
 the PTQ ceiling the forensics predicted (trained placement / KD is the missing
-lever).  The best variant (`nodown`) is run through the frozen decision probe
-to test whether body fidelity moves the head at all.
+lever).
+
+**The best variant does not move the head.**  `nodown` through the frozen
+decision probe: **AUC 0.503** (pos med 0.433, neg med 0.435), best BA 0.550 at
+an unusable operating point — exactly chance, like V2 (0.464) and the deployed
+body (0.569), against the teacher's 0.844.  Body PPL and head decisions are
+decoupled in this regime, so local PTQ/mixed-precision work is exhausted: it
+improves fidelity (~2x toward f16) but not decisions.  A usable ternary
+validator needs a training run on the decision channel (ranking-aware loss on
+the V2/nodown base), or the bf16 Clef validator stays in that role.
 
 **Decisions (frozen probe + bench, V2 body, frozen head):**
 
