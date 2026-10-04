@@ -257,7 +257,16 @@ metadata disabled) is statistically identical to the deployed body (9516 GPU /
 9640 CPU vs 8684), so the entire gain is the rotation — the GDN exemptions
 contribute nothing on their own.  V2 already exceeds the *trained-corrections*
 proxy hidden fidelity (0.372) with no training, and improves PPL 16.9x over the
-deployed body.
+deployed body.  A PRF-signed basis (seed 1337, explicit sign metadata) improves
+it further: **PPL 476.08** vs 514.35 with identity signs.
+
+**The missing quantizer step (GPTQ).** V2 is rotation + plain Lloyd RTN; the
+TAARDIS 27B reference (13.61 PPL "weights alone") is rotation + Hessian-weighted
+GPTQ + flip-polish.  The local pipeline now exists: `dense/clef_v2_hessians.py`
+(per-linear ``XᵀX/N`` from the bf16 recurrent-GDN forward, layer-group passes)
+and GPTQ wiring in `dense/clef_v2_convert.py` (`R H Rᵀ` via the forensics'
+`rotate_hessian`, group 128, PQ2_0 pack).  GPTQ results land next; that is the
+lever expected to close the 476 -> ~13 gap, with KD only if it plateaus.
 
 **Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
 same settings; kept-F16 targets are unrotated and absent from the metadata):
