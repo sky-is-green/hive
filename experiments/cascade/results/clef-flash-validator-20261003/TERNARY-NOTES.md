@@ -282,6 +282,7 @@ measurements isolate the scale rule from the error compensation:
 | GPTQ + Lloyd + act-order, 48-w Hessians | 141.56 |
 | GPTQ + Lloyd + act-order, 128-w Hessians | 120.62 |
 | **GPTQ + Lloyd + act-order, 128-w Hess + `ffn_down` F16** | **75.20** |
+| + flip-polish 4 (same recipe) | 3012.85 — falsified |
 
 The scale rule dominates (33x between Lloyd and absmean RTN at the same
 rotation) — consistent with the original Clef finding that the deployed Lloyd
@@ -290,10 +291,14 @@ rule is load-bearing.  GPTQ's compensation is real once the rule is right:
 and **128-window Hessians take it to 120.62** (1.17x more, same 5.52 GiB
 container).  Mixed precision stacks on top of that: keeping `ffn_down` F16
 lands at **75.20 in 8.13 GiB** (1.60x from 120.62) — the wide, weakly measured
-12288-d Hessians stay out of the ternary set.  Next: 256-window capture (~2 h)
-re-applied to the nodown mix, more `--keep-f16` stacking, and a damp sweep;
-`--gptq-refine` is a no-op with Lloyd scales.  Flip-polish follows if PTQ
-plateaus, KD (rental) only if PTQ is exhausted.
+12288-d Hessians stay out of the ternary set.  Flip-polish was then tried and
+**falsified**: greedy per-trit descent drops the Hessian proxy 35-95% per
+tensor yet PPL explodes **75.20 -> 3012.85** — the per-layer proxy is not
+trustworthy beyond GPTQ's constrained point (end-to-end compounding; the
+forensics' local-KD warning, F6/F7).  PTQ is exhausted (`--gptq-refine` is a
+no-op with Lloyd scales; damping/sign-seed/window stacking are marginal by the
+lever ranking).  Next: rotation-in-the-loop KD/QAT (rental), base choice
+75.20 mixed vs 120.62 all-ternary.
 
 **Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
 same settings; kept-F16 targets are unrotated and absent from the metadata):
