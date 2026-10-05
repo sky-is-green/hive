@@ -374,7 +374,9 @@ secure pod, 1.7 h, ~$3.9) goes **120.62 -> 23.25 PPL** (5.2x) in the same
 rental trains the reverse-loaded HF layout, so masters must be re-permuted
 with the inverse of `clef_dense_load._undo_gdn` (attn_qkv / attn_gate /
 ssm_out) before packing — without it PPL explodes (~17k) while the pod-side
-hidden KD still looks healthy.
+hidden KD still looks healthy.  Frozen probe on the QAT body for the record:
+**AUC 0.573** (pos med 0.428, neg med 0.421), best BA 0.500 — decisions remain
+decoupled; bf16 Clef keeps the validator role.
 
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
