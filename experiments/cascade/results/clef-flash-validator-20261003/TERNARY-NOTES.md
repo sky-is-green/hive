@@ -386,6 +386,21 @@ still degenerate in free generation; artifact GGUF hidden cos through the
 bridge is 0.838 (f16 0.9999), so the export is faithful and the limit is
 training fidelity.  Free-generation samples now gate the release.
 
+**Post-QAT reality check + community landscape (2026-10-06).**  The QAT body
+is faithful but its free generation degrades (above); logits-KD and mixed-base
+derisks at 0.8B did not fix it at our training scale.  Meanwhile the
+community: Clef/Clef-Flash already have many 4-8 bit quants (bartowski +
+ggml-org GGUFs, MLX / FP8 / NVFP4 / EXL3 / OpenVINO, W4A16 AutoRound/GPTQ for
+both sizes) — **no ternary Clef exists**; the ternary bar is PrismML
+**Ternary-Bonsai-8B** (trained low-bit, Q2_0 g128, 2.03 GiB, ~1.44x PPL,
+near-base benchmarks) and TAARDIS-27B (13.61); the community formats are
+mainline TQ1_0/TQ2_0 plus the fork's **PTQ1_0** (Prism codec, type 143);
+evaluation norm is KL/top-1 vs bf16 on ~250k mixed tokens incl. code.  Next
+(gating, local, ~1 h): quantize the Clef-Flash f16 to TQ1_0/TQ2_0/PTQ1_0
+(+optional imatrix) and compare PPL + generation — the gate for whether the
+rotation+GPTQ+QAT pipeline is worth a release or a bigger (Bonsai-style)
+training investment.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
