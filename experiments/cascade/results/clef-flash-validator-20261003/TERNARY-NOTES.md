@@ -376,7 +376,11 @@ with the inverse of `clef_dense_load._undo_gdn` (attn_qkv / attn_gate /
 ssm_out) before packing — without it PPL explodes (~17k) while the pod-side
 hidden KD still looks healthy.  Frozen probe on the QAT body for the record:
 **AUC 0.573** (pos med 0.428, neg med 0.421), best BA 0.500 — decisions remain
-decoupled; bf16 Clef keeps the validator role.
+decoupled; bf16 Clef keeps the validator role.  **Pre-post generation test
+caught a blocker:** hidden-KD-only QAT (v1) has degenerate free generation
+(loops, wrong math, code garbage) despite PPL 23.25 — f16 control is clean,
+teacher-forced NLL on the f16's own text 2.02 vs 1.24.  Fix queued: QAT v2
+with chunked logits KD (the forensics' objective).
 
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
