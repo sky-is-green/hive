@@ -280,18 +280,20 @@ measurements isolate the scale rule from the error compensation:
 | RTN + absmean scales | 15936.78 |
 | GPTQ + Lloyd scales | 277.25 |
 | GPTQ + Lloyd + act-order, 48-w Hessians | 141.56 |
-| **GPTQ + Lloyd + act-order, 128-w Hessians** | **120.62** |
+| GPTQ + Lloyd + act-order, 128-w Hessians | 120.62 |
+| **GPTQ + Lloyd + act-order, 128-w Hess + `ffn_down` F16** | **75.20** |
 
 The scale rule dominates (33x between Lloyd and absmean RTN at the same
 rotation) — consistent with the original Clef finding that the deployed Lloyd
 rule is load-bearing.  GPTQ's compensation is real once the rule is right:
 277.25 vs 476.08 signed RTN, **act-order brings it to 141.56** (3.4x total),
-and **128-window Hessians take it to 120.62** (1.17x more; 54 min capture,
-same 5.52 GiB container) — far ahead of the best mixed-precision variant
-`nodown` at 265 for +2.6 GB.  Next: 256-window capture (~2 h) and/or the
-`--keep-f16 ffn_down` combination; a damp sweep on h128 is lower priority.
+and **128-window Hessians take it to 120.62** (1.17x more, same 5.52 GiB
+container).  Mixed precision stacks on top of that: keeping `ffn_down` F16
+lands at **75.20 in 8.13 GiB** (1.60x from 120.62) — the wide, weakly measured
+12288-d Hessians stay out of the ternary set.  Next: 256-window capture (~2 h)
+re-applied to the nodown mix, more `--keep-f16` stacking, and a damp sweep;
 `--gptq-refine` is a no-op with Lloyd scales.  Flip-polish follows if PTQ
-plateaus, with rotation-in-the-loop KD only if PTQ is exhausted.
+plateaus, KD (rental) only if PTQ is exhausted.
 
 **Mixed-precision sweep** (`scion/dense/clef_v2_sweep_gpu.sh`, 100 chunks, GPU,
 same settings; kept-F16 targets are unrotated and absent from the metadata):
