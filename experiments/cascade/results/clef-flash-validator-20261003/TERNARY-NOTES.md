@@ -360,9 +360,11 @@ under the no-repack workaround (~70 s/check); with the fix it is back to
 `scion/dense/qat_derisk.py` (rotation fold + Lloyd STE + f16 hidden-state KD +
 Adafactor) recovers a post-hoc rotated ternary body from **PPL 34,938 to 57.1
 (612x) in 300 steps / 21 min** (2.1x f16 27.2; peak 7.8 GB VRAM, 4x512 batch).
-The training loop for the 9B rental is therefore validated at small scale;
-longer-horizon and mixed-base variants are in flight.  Note the 0.8B is far
-more ternary-fragile than the 9B (isolated damage: self-attn 1.4x, MLP 8.9x,
+Longer / mixed follow-ups: all-ternary 600 steps -> **48.4** (1.78x f16);
+mixed base (`down_proj` F16) 10,020 -> **48.8 in 300 steps**.  The training
+loop for the 9B rental is therefore validated at small scale; both bases
+converge to ~48-49, the mixed one ~4x faster.  Note the 0.8B is far more
+ternary-fragile than the 9B (isolated damage: self-attn 1.4x, MLP 8.9x,
 GDN 27.5x; ~1,200x combined) — a hard, useful stress case.
 
 Handoff for the next session (assets, findings, next-step menu):
