@@ -367,6 +367,15 @@ converge to ~48-49, the mixed one ~4x faster.  Note the 0.8B is far more
 ternary-fragile than the 9B (isolated damage: self-attn 1.4x, MLP 8.9x,
 GDN 27.5x; ~1,200x combined) — a hard, useful stress case.
 
+**9B QAT result (2026-10-05).**  The h128 all-ternary body trained 1200 steps
+(rotation fold + Lloyd STE + f16 hidden-state KD, Adafactor; one L40S 48 GB
+secure pod, 1.7 h, ~$3.9) goes **120.62 -> 23.25 PPL** (5.2x) in the same
+5.52 GiB container (f16 12.59 = 1.85x).  Export gotcha for the record: the
+rental trains the reverse-loaded HF layout, so masters must be re-permuted
+with the inverse of `clef_dense_load._undo_gdn` (attn_qkv / attn_gate /
+ssm_out) before packing — without it PPL explodes (~17k) while the pod-side
+hidden KD still looks healthy.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
