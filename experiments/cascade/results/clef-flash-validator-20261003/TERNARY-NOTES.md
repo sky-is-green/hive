@@ -356,6 +356,15 @@ exposes `CLEF_EMBED_NO_REPACK` for older builds.  The V2 decision battery ran
 under the no-repack workaround (~70 s/check); with the fix it is back to
 ~18-20 s/check.
 
+**Solver derisk (2026-10-05).** On Qwen3.5-0.8B (same hybrid arch),
+`scion/dense/qat_derisk.py` (rotation fold + Lloyd STE + f16 hidden-state KD +
+Adafactor) recovers a post-hoc rotated ternary body from **PPL 34,938 to 57.1
+(612x) in 300 steps / 21 min** (2.1x f16 27.2; peak 7.8 GB VRAM, 4x512 batch).
+The training loop for the 9B rental is therefore validated at small scale;
+longer-horizon and mixed-base variants are in flight.  Note the 0.8B is far
+more ternary-fragile than the 9B (isolated damage: self-attn 1.4x, MLP 8.9x,
+GDN 27.5x; ~1,200x combined) — a hard, useful stress case.
+
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
