@@ -380,7 +380,11 @@ decoupled; bf16 Clef keeps the validator role.  **Pre-post generation test
 caught a blocker:** hidden-KD-only QAT (v1) has degenerate free generation
 (loops, wrong math, code garbage) despite PPL 23.25 — f16 control is clean,
 teacher-forced NLL on the f16's own text 2.02 vs 1.24.  Fix queued: QAT v2
-with chunked logits KD (the forensics' objective).
+with chunked logits KD (the forensics' objective).  **Logits-KD derisk
+(0.8B):** hidden-only 56.3, hidden+logits 45.5, mixed+logits 40.4 PPL — all
+still degenerate in free generation; artifact GGUF hidden cos through the
+bridge is 0.838 (f16 0.9999), so the export is faithful and the limit is
+training fidelity.  Free-generation samples now gate the release.
 
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
