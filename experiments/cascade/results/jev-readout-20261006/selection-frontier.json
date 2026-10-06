@@ -32,5 +32,17 @@
  "oracle_best_of_4": {
   "correct": 27,
   "acc": 0.9
+ },
+ "gated_sequential": {
+  "policy": "inspect samples in order; accept the first with raw ridge score >= 0.3 (chosen on train); else best by score",
+  "test": {
+   "correct": 23,
+   "n": 30,
+   "acc": 0.767,
+   "mean_samples": 1.17,
+   "tokens": 14857,
+   "tok_per_correct": 646
+  },
+  "note": "scores are raw ridge values (variant_fit, uncalibrated); threshold tuned on the 70 train tasks"
  }
 }
