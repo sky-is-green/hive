@@ -31,14 +31,14 @@ self-bias because it has no behavioural channel.
    labels (0.959); 0.8B scales 0.784 -> 0.831 -> 0.924 at 20/100/262.
 4. **Generalization** — cross-type transfer (fit on number-flips -> boxed
    0.998, code 0.874); frozen head catches 28 natural errors (0.971).
-5. **Self-bias audit** — uncontrolled source swap: +0.078 correct / +0.018
-   wrong.  **Controlled attribution** (identical text, own vs other, n=200):
-   head +0.178 correct / **+0.098 wrong**; prompted +0.033 correct / +0.099
-   wrong.  Self-bias is real in both readouts, but for the head it is a
-   calibration shift across a ~0.85 correct/wrong gap (natural-error AUC 0.971
-   own vs 0.990 other), not a ranking inversion.  The MTP-head claim is
-   therefore "auditable and correctable" (source-aware thresholds,
-   attribution-balanced refit), not "bias-free".
+5. **Self-bias audit** — uncontrolled source swap +0.078/+0.018 (style, not
+   authorship).  Controlled attribution (identical text, own vs other, n=200)
+   is **format-locked**: an out-of-format head shows +0.178/+0.098, but
+   in-format refits are attribution-neutral (baseline -0.003/-0.013, balanced
+   +0.007/-0.013 over 60 held-out candidates).  The prompted judge shows a
+   real **+0.099** on its own wrong answers.  The MTP-head claim: fit the head
+   on the serving prompt and it is attribution-neutral (caveat: 9 held-out
+   negatives; more data for the wrong-answer claim).
 6. **Quantization** — T3 measured on the Clef bodies (same prompts, final
    layer): f16 refit 0.952; refit on 2-bit ternary: QAT 0.712, h128 GPTQ
    0.648 (tracks PPL); **frozen f16 head does not transfer** (0.502 / 0.510,

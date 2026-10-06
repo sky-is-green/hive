@@ -51,28 +51,29 @@ def main() -> int:
     for i, k in enumerate(keys):
         task, source, attrib = k.rsplit(":", 2)
         base_idx[(task, source)][attrib] = i
-    key_row = {k: rows[f"{k[0]}:{k[1]}"] for k in base_idx}
+    key_row = {f"{t}:{s}": rows[f"{t}:{s}"] for (t, s) in base_idx}
+    base_of = {i: keys[i].rsplit(":", 1)[0] for i in range(len(keys))}
 
     train_bases = [k for k in base_idx if splits.get(k[0]) == "train"]
     test_bases = [k for k in base_idx if splits.get(k[0]) == "test"]
 
     def fit(indices: list[int]):
-        y = np.array([key_row[keys[i].rsplit(":", 2)[0] + ":" + keys[i].rsplit(":", 2)[1]]["label"]
-                      for i in indices], dtype=np.float64)
+        y = np.array([key_row[base_of[i]]["label"] for i in indices],
+                     dtype=np.float64)
         return ridge_fit(X[indices], y)
 
     def report(model, tag):
         sc = ridge_score(X, model)
         deltas: dict[int, list] = {0: [], 1: []}
         for k in test_bases:
-            lab = key_row[k]["label"]
+            lab = key_row[f"{k[0]}:{k[1]}"]["label"]
             deltas[lab].append(float(sc[base_idx[k]["own"]] - sc[base_idx[k]["other"]]))
         out = {"delta_correct": float(np.mean(deltas[1])),
                "delta_wrong": float(np.mean(deltas[0])),
                "n_correct": len(deltas[1]), "n_wrong": len(deltas[0])}
         for cond in ("own", "other"):
             idx = [base_idx[k][cond] for k in test_bases]
-            y = [key_row[k]["label"] for k in test_bases]
+            y = [key_row[f"{k[0]}:{k[1]}"]["label"] for k in test_bases]
             out[f"auc_{cond}"] = auc(list(sc[idx]), y)
         print(f"{tag}: {json.dumps(out, indent=1)}")
         return out
