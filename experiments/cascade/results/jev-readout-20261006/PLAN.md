@@ -84,16 +84,31 @@ purpose-trained Intern-4B (0.979), with a usable no-false-accept point
 
 
 
+### T3 ternary survival (final layer, same prompts and items)
+
+| body | PPL | refit head (test AUC / BA) | f16 head frozen |
+|---|---|---|---|
+| Clef f16 | 12.59 | **0.952 / 0.914** | — |
+| Clef QAT (2.1 bpw) | 23.25 | **0.712 / 0.684** | 0.502 |
+| Clef h128 GPTQ | 120.6 | **0.648 / 0.667** | 0.510 |
+
+Cross-body transfer: the f16 head is at chance on both ternary bodies
+(0.502 / 0.510); QAT->f16 transfers at 0.866, h128->f16 at 0.241.  So at 2-bit
+the decision signal *partially* survives (QAT > h128, tracking PPL) but the
+**direction does not transfer**: each body needs its own head, and refit
+recovery at the final layer is 0.65-0.71 vs 0.95 for f16.  Prior work reports
+4-bit probes keep 0.90-1.00 AUROC; 2-bit is where readout fidelity breaks
+materially.  Mid-layer extraction for ternary bodies (fork graph hook) is the
+open follow-up; the QAT body is the better platform (0.712).
+
 ## Status and next steps
 
 - Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session
   (prompted, probe, 100 generated answers); source-swap audit incl. natural
-  errors; T2 size/label map.
-- Running: T3 ternary survival (Clef f16 / h128 / QAT embeddings, cross-body
-  transfer).
-- Next: controlled attribution test (same text, own vs other), calibration
-  (threshold/no-false-accept points already reported), one cascade end-to-end
-  run, whitepaper outline.
+  errors; T2 size/label map; T3 ternary survival.
+- Next: controlled attribution test (same text, own vs other), JEV-9B on
+  J-Bench if it fits a card, calibration section, one cascade end-to-end run,
+  whitepaper draft.
 
 
 

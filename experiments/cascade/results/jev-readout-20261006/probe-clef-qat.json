@@ -1,0 +1,61 @@
+{
+ "name": "clef-qat",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 262,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.09142084393054761,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.711850971066191,
+    "best_ba": {
+     "bal_acc": 0.6954022988505747,
+     "threshold": 0.2
+    },
+    "ece": 0.32911320418620826,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.5,
+     "false_accepts": 36,
+     "false_rejects": 7,
+     "correct": 73,
+     "n": 116,
+     "bal_acc": 0.6724137931034482
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-clef-qat.npz",
+ "n_layers": null,
+ "dim": 4096
+}

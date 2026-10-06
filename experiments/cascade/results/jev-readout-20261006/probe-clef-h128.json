@@ -1,0 +1,61 @@
+{
+ "name": "clef-h128",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 262,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.09091420670979378,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.6476416963931827,
+    "best_ba": {
+     "bal_acc": 0.6494252873563218,
+     "threshold": 0.99
+    },
+    "ece": 0.4323069024959836,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.5344827586206896,
+     "false_accepts": 44,
+     "false_rejects": 11,
+     "correct": 61,
+     "n": 116,
+     "bal_acc": 0.5574712643678161
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-clef-h128.npz",
+ "n_layers": null,
+ "dim": 4096
+}
