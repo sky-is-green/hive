@@ -1,0 +1,51 @@
+{
+ "n_train": 70,
+ "n_test": 30,
+ "chosen": {
+  "retry_thr": 0.75,
+  "twoband_hi": 0.55
+ },
+ "test": {
+  "single": {
+   "n": 30,
+   "correct": 21,
+   "tokens": 12092,
+   "tok_per_correct": 575.8095238095239
+  },
+  "best_of_2": {
+   "n": 30,
+   "correct": 23,
+   "tokens": 23619,
+   "tok_per_correct": 1026.9130434782608
+  },
+  "best_of_3": {
+   "n": 30,
+   "correct": 22,
+   "tokens": 36037,
+   "tok_per_correct": 1638.0454545454545
+  },
+  "best_of_4": {
+   "n": 30,
+   "correct": 22,
+   "tokens": 47525,
+   "tok_per_correct": 2160.2272727272725
+  },
+  "retry": {
+   "n": 30,
+   "correct": 21,
+   "tokens": 15357,
+   "tok_per_correct": 731.2857142857143
+  },
+  "twoband": {
+   "n": 30,
+   "correct": 21,
+   "tokens": 13957,
+   "tok_per_correct": 664.6190476190476
+  },
+  "oracle_best_of_4": {
+   "n": 30,
+   "correct": 27,
+   "tok_per_correct": null
+  }
+ }
+}
