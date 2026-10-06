@@ -111,6 +111,37 @@ recovery at the final layer is 0.65-0.71 vs 0.95 for f16.  Prior work reports
 materially.  Mid-layer extraction for ternary bodies (fork graph hook) is the
 open follow-up; the QAT body is the better platform (0.712).
 
+### L1/L2 correction + L3 monitor (2026-10-06)
+
+Selection/retry arms (100 tasks x 4 samples, temp 0.7; `correction-eval.json`):
+
+| arm | correct | acc | tokens | tokens/correct |
+|---|---|---|---|---|
+| B0 single sample | 76/100 | 0.760 | 37,234 | 490 |
+| B1 majority of 4 | 80/100 | 0.800 | 36,747 | 459 |
+| **T1 best-of-4 head** | **81/100** | **0.810** | 37,576 | **464** |
+| T2@0.5 head retry | 80/100 | 0.800 | 54,927 | 687 |
+| **T2@0.87 head retry** | **83/100** | **0.830** | 61,344 | 739 |
+
+Selection gives **+5 points at the same token budget** and beats majority vote
+at equal tokens; retry gives +7 points at +50-60% tokens.
+
+**L3 online monitor: negative.**  Per-position hidden states from the same 399
+streams (`test-mtp-probe`) predict final correctness at **AUC 0.55-0.62 at
+every horizon** (start 64-512, midpoint, last tokens; `monitor-diag.json`),
+and token-level tail statistics (switch rate, stability) combine to only
+**0.67** (`monitor-token-diag.json`).  Early-abort gates at start horizons
+burst false-cancels (e.g. 59/80 correct streams at 128 tokens;
+`monitor-probe.json`).  **The decision signal is not on the generation path**:
+it materialises when the candidate is read back in a verification prompt,
+where the same model scores 0.97-0.999.  Verification is a second, cheap
+*read* (one prefill, zero generated tokens), not a state continuation -- which
+is why a lite two-pass works while "monitor while writing" does not, with a
+linear head.  A gradient-trained trajectory monitor (Gnosis-style) is the
+remaining option if the online path is ever pursued.
+
+
+
 ## Status and next steps
 
 - Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session;
@@ -118,9 +149,10 @@ open follow-up; the QAT body is the better platform (0.712).
   survival; controlled attribution + balanced refit; exported
   `scion-35b-a3b-decision-head.json` for the released model with the
   before/after report (`SCION-HEAD-REPORT.md`): prompted **7/28 -> head
-  23/28** own-error catches at zero false rejects (thr 0.5).
-- Next: JEV-9B on J-Bench if it fits a card, one cascade end-to-end run with a
-  head-backed validator, whitepaper draft.
+  23/28** own-error catches at zero false rejects (thr 0.5); L1/L2 correction
+  arms (selection +5 pts at equal tokens); L3 monitor negative.
+- Next: cascade end-to-end with head-backed selection, whitepaper draft, and
+  (optional) a learned trajectory monitor if the online path is pursued.
 
 
 
