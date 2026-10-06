@@ -75,6 +75,10 @@ def main() -> int:
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--layers", default="0.5,0.75,1.0",
                     help="comma-separated depth fractions")
+    ap.add_argument("--labels", type=int, default=0,
+                    help="subsample this many train items for the head "
+                         "(0 = all; label-budget curve)")
+    ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
@@ -135,12 +139,20 @@ def main() -> int:
     if not train or not test:
         raise SystemExit("train/test split empty (limit too small); "
                          "increase --limit or drop it")
+    if args.labels and args.labels < len(train):
+        rng = np.random.default_rng(args.seed)
+        keep = rng.choice(len(train), size=args.labels, replace=False)
+        train_ids = {train[int(k)]["item_id"] for k in keep}
+        print(f"label budget: {args.labels}/{len(train)} train items", flush=True)
+    else:
+        train_ids = {i["item_id"] for i in train}
     results = {"name": args.name, "backend": args.hf, "layers": {},
                "state_file": f"probe-states-{args.name}.npz",
                "n_layers": n_layers}
+    train_fit = [i for i in train if i["item_id"] in train_ids]
     for f in fracs:
-        Xtr = np.stack([states[i["item_id"]][f] for i in train]).astype(np.float64)
-        ytr = np.array([i["label"] for i in train], dtype=np.float64)
+        Xtr = np.stack([states[i["item_id"]][f] for i in train_fit]).astype(np.float64)
+        ytr = np.array([i["label"] for i in train_fit], dtype=np.float64)
         model_r = ridge_fit(Xtr, ytr)
         str_scores = ridge_score(Xtr, model_r)
         a, b = platt(str_scores, ytr)
