@@ -1,0 +1,33 @@
+{
+ "n_tasks": 100,
+ "best_thr": 0.75,
+ "conditional": {
+  "n_wrong_prev": 9,
+  "blind_any_fix": 6,
+  "hint_any_fix": 4,
+  "blind_first_fix": 5,
+  "hint_first_fix": 2
+ },
+ "test": {
+  "single": {
+   "n": 30,
+   "correct": 21,
+   "tokens": 12092
+  },
+  "blind_retry": {
+   "n": 30,
+   "correct": 21,
+   "tokens": 15357
+  },
+  "hinted_retry": {
+   "n": 30,
+   "correct": 22,
+   "tokens": 15259
+  },
+  "hinted_best": {
+   "n": 30,
+   "correct": 23,
+   "tokens": 39036
+  }
+ }
+}
