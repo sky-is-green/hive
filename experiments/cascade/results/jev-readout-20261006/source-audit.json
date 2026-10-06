@@ -1,6 +1,1508 @@
 {
  "n": 100,
  "head": "scion35b L1 ridge (refit, deterministic)",
+ "rows": [
+  {
+   "task_id": "gsm8k-0001",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "The trip costs $300, and the school covers half of that, so the school pays $300 \u00f7 2 = $150.\n\nJohn has $50, so he is missing:\n$150 - $50 = $100\n\nFinal answer: 100",
+    "label": 1,
+    "score": 0.9676347805584576
+   },
+   "strata": {
+    "candidate": "The trip costs $300.\n\nThe school covers half of the cost:\n\n\\[\n300 \\div 2 = 150\n\\]\n\nSo John needs to cover:\n\n\\[\n300 - 150 = 150\n\\]\n\nJohn already has $50, so the amount he is missing is:\n\n\\[\n150 - 50 = 100\n\\]\n\nFinal answer: 100",
+    "label": 1,
+    "score": 1.000545450584176
+   }
+  },
+  {
+   "task_id": "gsm8k-0002",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step-by-step solution:**\n\nClaire earns 1 badge per month.\n\nAmber takes twice as long to earn a badge as Claire, so Amber earns 1 badge every 2 months.\n\nWendy earns three times the amount of badges as Claire in the same time frame, so Wendy earns 3 badges per month.\n\nIn a 1 year (12 months) time frame:\n- Claire earns: 12 badges\n- Amber earns: 12 \u00f7 2 = 6 badges\n- Wendy earns: 12 \u00d7 3 = 36 badges\n\nDifference between Wendy and Amber: 36 - 6 = 30 badges\n\nFinal answer: 30",
+    "label": 1,
+    "score": 1.1208122325700667
+   },
+   "strata": {
+    "candidate": "Claire earns 1 badge per month, so in 1 year she earns:\n\n\\[\n12 \\times 1 = 12\n\\]\n\nAmber takes twice as long as Claire to earn a badge, so Amber earns half as many badges as Claire:\n\n\\[\n12 \\div 2 = 6\n\\]\n\nWendy earns three times as many badges as Claire:\n\n\\[\n12 \\times 3 = 36\n\\]\n\nThe difference between Wendy and Amber is:\n\n\\[\n36 - 6 = 30\n\\]\n\nFinal answer: 30",
+    "label": 1,
+    "score": 1.0001186299894673
+   }
+  },
+  {
+   "task_id": "gsm8k-0003",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Grace weighs 125 pounds.\n\nAlex weighs 2 pounds less than 4 times Grace's weight:\nAlex = 4 \u00d7 125 - 2 = 500 - 2 = 498 pounds\n\nCombined weight = 125 + 498 = 623 pounds\n\nFinal answer: 623",
+    "label": 1,
+    "score": 1.1354607908274161
+   },
+   "strata": {
+    "candidate": "Grace weighs 125 pounds.\n\nAlex weighs 2 pounds less than 4 times Grace\u2019s weight:\n\n\\[\n4 \\times 125 - 2 = 500 - 2 = 498\n\\]\n\nTheir combined weight is:\n\n\\[\n125 + 498 = 623\n\\]\n\nFinal answer: 623",
+    "label": 1,
+    "score": 1.0002753948500078
+   }
+  },
+  {
+   "task_id": "gsm8k-0004",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step-by-step solution:**\n\nJosh worked out for 8 weeks total.\n\n- **6 weeks** at 4 hours each: 6 \u00d7 4 = 24 hours\n- **2 weeks** at 5 hours each: 2 \u00d7 5 = 10 hours\n- **1 week** at 6 hours: 1 \u00d7 6 = 6 hours\n\n**Total:** 24 + 10 + 6 = 40 hours\n\nFinal answer: 40",
+    "label": 0,
+    "score": 0.9046629492897136
+   },
+   "strata": {
+    "candidate": "Josh worked out for 8 weeks total.\n\n- Two weeks at 5 hours each: \\(2 \\times 5 = 10\\) hours  \n- One week at 6 hours: \\(6\\) hours  \n- Remaining weeks: \\(8 - 2 - 1 = 5\\) weeks at 4 hours each: \\(5 \\times 4 = 20\\) hours  \n\nTotal:\n\n\\[\n10 + 6 + 20 = 36\n\\]\n\nFinal answer: 36",
+    "label": 1,
+    "score": 0.9989315610963407
+   }
+  },
+  {
+   "task_id": "gsm8k-0005",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Let me define variables for the number of tennis balls retrieved in each set:\n\n- Let **x** = number of balls in the **second set**\n- **First set** = x + 4 (four more than the second set)\n- **Third set** = x/2 (half as many as the second set)\n\nSince he retrieved 19 balls in total:\n\n$$\n(x + 4) + x + \\frac{x}{2} = 19\n$$\n\nMultiply both sides by 2 to eliminate the fraction:\n\n$$\n2(x + 4) + 2x + x = 38\n$$\n\n$$\n2x + 8 + 2x + x = 38\n$$\n\n$$\n5x + 8 = 38\n$$\n\n$$\n5x = 30\n$$\n\n$$\nx = 6\n$$\n\nSo the second set had **6** balls.\n\n- First set: 6 + 4 = **10**\n- Third set: 6 \u00f7 2 = 3\n\n**Check:** 10 + 6 + 3 = 19 \u2713\n\nFinal answer: 10",
+    "label": 1,
+    "score": 1.1947608509835113
+   },
+   "strata": {
+    "candidate": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 10",
+    "label": 1,
+    "score": 1.0013981870827013
+   }
+  },
+  {
+   "task_id": "gsm8k-0006",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Adam bought trousers for $30.\n\nHis mother gave him $6.\nHis father gave him twice as much as his mother: 2 \u00d7 $6 = $12.\n\nTotal money given to him: $6 + $12 = $18.\n\nMoney he had to contribute from his savings: $30 - $18 = $12.\n\nFinal answer: 12",
+    "label": 1,
+    "score": 1.1694693490894896
+   },
+   "strata": {
+    "candidate": "Adam\u2019s trousers cost $30.\n\nHis mother gave him $6.  \nHis father gave him twice as much as his mother:\n\n\\[\n2 \\times 6 = 12\n\\]\n\nTotal money given by his parents:\n\n\\[\n6 + 12 = 18\n\\]\n\nAdam had to contribute:\n\n\\[\n30 - 18 = 12\n\\]\n\nFinal answer: 12",
+    "label": 1,
+    "score": 1.1183792536691826
+   }
+  },
+  {
+   "task_id": "gsm8k-0007",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let me solve this step by step:\n\n**First week:** 8,000 bars\n\n**Second week:** half as much as the first week\n= 8,000 \u00f7 2 = 4,000 bars\n\n**Third week:** three times as much as the first week\n= 8,000 \u00d7 3 = 24,000 bars\n\n**Total so far:** 8,000 + 4,000 + 24,000 = 36,000 bars\n\n**Fourth week:** 50,000 - 36,000 = 14,000 bars\n\nFinal answer: 14000",
+    "label": 1,
+    "score": 0.9383933421410486
+   },
+   "strata": {
+    "candidate": "First week: 8,000 bars  \nSecond week: half of 8,000 = 4,000 bars  \nThird week: three times 8,000 = 24,000 bars  \n\nTotal produced in the first three weeks:\n\n8,000 + 4,000 + 24,000 = 36,000 bars\n\nSince Boris produces 50,000 bars per month, the fourth week production is:\n\n50,000 - 36,000 = 14,000 bars\n\nFinal answer: 14000",
+    "label": 1,
+    "score": 1.0003331155366046
+   }
+  },
+  {
+   "task_id": "gsm8k-0008",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "**Step-by-step solution:**\n\n1. **Sessions per week:** 2 sessions\n2. **Hours per session:** 2 hours\n3. **Total hours per week:** 2 \u00d7 2 = 4 hours\n4. **Total hours for 6 weeks:** 4 \u00d7 6 = 24 hours\n5. **Total cost:** 24 \u00d7 $125 = $3,000\n\nFinal answer: 3000",
+    "label": 1,
+    "score": 1.1094206341840107
+   },
+   "strata": {
+    "candidate": "John went to physical therapy for 6 weeks.\n\nEach week he went twice, so:\n\n\\[\n6 \\times 2 = 12 \\text{ sessions}\n\\]\n\nEach session was 2 hours, so:\n\n\\[\n12 \\times 2 = 24 \\text{ hours}\n\\]\n\nThe cost is $125 per hour, so:\n\n\\[\n24 \\times 125 = 3000\n\\]\n\nFinal answer: 3000",
+    "label": 1,
+    "score": 1.058895681774043
+   }
+  },
+  {
+   "task_id": "gsm8k-0009",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "**Step 1: Determine boxes sold on each day**\n\nOn Sunday, Sunny sold 15 boxes of apple pie. On Saturday, he sold 4 fewer boxes of apple pie than Sunday:\n- Saturday apple pie: 15 - 4 = **11 boxes**\n\nOn Saturday, he sold 10 boxes of gingerbread. On Sunday, he sold 5 more boxes of gingerbread than Saturday:\n- Sunday gingerbread: 10 + 5 = **15 boxes**\n\n**Step 2: Calculate earnings for Saturday**\n- Gingerbread: 10 \u00d7 $6 = $60\n- Apple pie: 11 \u00d7 $15 = $165\n- Saturday total: $60 + $165 = $225\n\n**Step 3: Calculate earnings for Sunday**\n- Gingerbread: 15 \u00d7 $6 = $90\n- Apple pie: 15 \u00d7 $15 = $225\n- Sunday total: $90 + $225 = $315\n\n**Step 4: Calculate total earnings for two days**\n- Total: $225 + $315 = $540\n\nFinal answer: 540",
+    "label": 1,
+    "score": 1.2752392025248616
+   },
+   "strata": {
+    "candidate": "Saturday:\n- Gingerbread: 10 boxes\n- Apple pie: 15 \u2212 4 = 11 boxes\n\nSunday:\n- Gingerbread: 10 + 5 = 15 boxes\n- Apple pie: 15 boxes\n\nTotal earnings:\n- Gingerbread: (10 + 15) \u00d7 $6 = 25 \u00d7 $6 = $150\n- Apple pie: (11 + 15) \u00d7 $15 = 26 \u00d7 $15 = $390\n\nTotal: $150 + $390 = $540\n\nFinal answer: 540",
+    "label": 1,
+    "score": 0.5833034671937205
+   }
+  },
+  {
+   "task_id": "gsm8k-0010",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Greg found $20 and decided to split it equally among his 3 younger siblings.\n\nTo find how much each sibling gets, divide the total amount by the number of siblings:\n\n$$20 \\div 3 = \\frac{20}{3} = 6\\frac{2}{3} \\approx \\$6.67$$\n\nFinal answer: $6.67",
+    "label": 0,
+    "score": 0.7312539328152065
+   },
+   "strata": {
+    "candidate": "Greg and his 3 younger siblings make 4 people total.\n\n\\[\n20 \\div 4 = 5\n\\]\n\nFinal answer: 5",
+    "label": 1,
+    "score": 1.000829215317061
+   }
+  },
+  {
+   "task_id": "gsm8k-0011",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Find the gallons of blood in one shark.\nSince a shark has three times as much blood as a whale:\n$$120 = 3 \\times 40$$\n\n**Step 2:** Find the total gallons of blood in ten sharks.\n$$1200 = 10 \\times 120$$\n\nFinal answer: 1200",
+    "label": 1,
+    "score": 0.898576391262209
+   },
+   "strata": {
+    "candidate": "Each whale has 40 gallons of blood.\n\nA shark has 3 times as much blood as a whale:\n\n\\[\n3 \\times 40 = 120\n\\]\n\nSo each shark has 120 gallons of blood.\n\nFor 10 sharks:\n\n\\[\n10 \\times 120 = 1200\n\\]\n\nFinal answer: 1200",
+    "label": 1,
+    "score": 1.0003436521412514
+   }
+  },
+  {
+   "task_id": "gsm8k-0012",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Joey starts with 214 points and scores 26 points:\n214 + 26 = 240 points\n\nMarcy starts with 225 points and scores 10 points:\n225 + 10 = 235 points\n\nThe difference between Joey and Marcy:\n240 - 235 = 5 points\n\nFinal answer: 5",
+    "label": 1,
+    "score": 0.9421434462155159
+   },
+   "strata": {
+    "candidate": "Joey\u2019s score after his turn is:\n\n214 + 26 = 240\n\nMarcy\u2019s score after her turn is:\n\n225 + 10 = 235\n\nThe difference is:\n\n240 - 235 = 5\n\nFinal answer: 5",
+    "label": 1,
+    "score": 0.9990567637018457
+   }
+  },
+  {
+   "task_id": "gsm8k-0013",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Melissa spends 6 hours a day for 3 days, so she works a total of 6 \u00d7 3 = 18 hours.\n\nShe is paid $15 per day but pays $3 for parking each day, so her net pay per day is:\n$15 - $3 = $12 per day\n\nHer total net pay over 3 days is:\n$12 \u00d7 3 = $36\n\nHer jury pay per hour after expenses is:\n$36 \u00f7 18 = $2 per hour\n\nFinal answer: 2",
+    "label": 1,
+    "score": 0.9164969978582773
+   },
+   "strata": {
+    "candidate": "Melissa works:\n\n- 6 hours per day \u00d7 3 days = 18 hours total\n\nHer pay after expenses:\n\n- $15 per day \u2212 $3 parking per day = $12 net per day\n- $12 per day \u00d7 3 days = $36 total net pay\n\nJury pay per hour after expenses:\n\n- $36 \u00f7 18 hours = $2 per hour\n\nFinal answer: 2",
+    "label": 1,
+    "score": 0.9989438596147284
+   }
+  },
+  {
+   "task_id": "gsm8k-0014",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "**Step 1:** Find the brother's current age.\n- Ann is 9 years old.\n- Her brother is twice her age: 9 \u00d7 2 = **18 years old**.\n\n**Step 2:** Find the brother's age in 3 years.\n- 18 + 3 = **21 years old**.\n\nFinal answer: 21",
+    "label": 1,
+    "score": 1.1717009852130602
+   },
+   "strata": {
+    "candidate": "Ann is 9 years old.\n\nHer brother is twice her age:\n\n\\[\n2 \\times 9 = 18\n\\]\n\nIn 3 years, her brother will be:\n\n\\[\n18 + 3 = 21\n\\]\n\nFinal answer: 21",
+    "label": 1,
+    "score": 1.001549178984913
+   }
+  },
+  {
+   "task_id": "gsm8k-0015",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "To find the average number of birds Mack saw per day, I'll add up all the birds seen over the 7 days and divide by 7.\n\n**Total birds seen:**\n50 + 50 + 0 + 120 + 120 + 20 + 90 = 330 birds\n\n**Average per day:**\n330 \u00f7 7 = 47.2857...\n\nFinal answer: 47.29",
+    "label": 0,
+    "score": 0.39263867783177836
+   },
+   "strata": {
+    "candidate": "Total birds seen:\n\n- Days 1 and 2: 50\n- Day 3: 0\n- Days 4 and 5: 120\n- Day 6: 20\n- Day 7: 90\n\nTotal:\n\n\\[\n50 + 0 + 120 + 20 + 90 = 280\n\\]\n\nNumber of days:\n\n\\[\n7\n\\]\n\nAverage birds per day:\n\n\\[\n\\frac{280}{7} = 40\n\\]\n\nFinal answer: 40",
+    "label": 1,
+    "score": 1.0173006033761036
+   }
+  },
+  {
+   "task_id": "gsm8k-0016",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Kelly has 5 quarters and 2 dimes.\n\n**Step 1: Calculate total money**\n- 5 quarters = 5 \u00d7 25 cents = 125 cents\n- 2 dimes = 2 \u00d7 10 cents = 20 cents\n- Total = 125 + 20 = 145 cents\n\n**Step 2: Subtract the cost of the pop**\n- 145 - 55 = 90 cents\n\nFinal answer: 90",
+    "label": 1,
+    "score": 1.1123560603405316
+   },
+   "strata": {
+    "candidate": "5 quarters = 5 \u00d7 25 = 125 cents  \n2 dimes = 2 \u00d7 10 = 20 cents  \n\nTotal money = 125 + 20 = 145 cents  \n\nAfter buying the pop: 145 \u2212 55 = 90 cents  \n\nFinal answer: 90",
+    "label": 1,
+    "score": 1.0001688789651022
+   }
+  },
+  {
+   "task_id": "gsm8k-0017",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Violetta needs 5 crayons at $2 each:\n5 \u00d7 $2 = $10\n\nShe has $20, so her change is:\n$20 - $10 = $10\n\nFinal answer: 10",
+    "label": 1,
+    "score": 1.0042190747057318
+   },
+   "strata": {
+    "candidate": "She needs 5 crayons, one for each color.\n\nCost: \\(5 \\times 2 = 10\\) dollars.\n\nChange: \\(20 - 10 = 10\\) dollars.\n\nFinal answer: 10",
+    "label": 1,
+    "score": 0.9993250080484379
+   }
+  },
+  {
+   "task_id": "gsm8k-0018",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Calculate daily consumption for German Shepherds\n3 \u00d7 5 = 15 kg per day\n\n**Step 2:** Calculate daily consumption for Bulldogs\n2 \u00d7 3 = 6 kg per day\n\n**Step 3:** Calculate total daily consumption\n15 + 6 = 21 kg per day\n\n**Step 4:** Calculate weekly consumption (7 days)\n21 \u00d7 7 = 147 kg per week\n\nFinal answer: 147",
+    "label": 1,
+    "score": 1.028011725440864
+   },
+   "strata": {
+    "candidate": "German Shepherds: \\(3 \\times 5 = 15\\) kg per day  \nBulldogs: \\(2 \\times 3 = 6\\) kg per day  \n\nTotal per day: \\(15 + 6 = 21\\) kg  \n\nFor a week: \\(21 \\times 7 = 147\\) kg  \n\nFinal answer: 147",
+    "label": 1,
+    "score": 1.0000084908875215
+   }
+  },
+  {
+   "task_id": "gsm8k-0019",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Julie had $500.\n\n**Step 1:** She spent 20% of $500 on clothes.\n$$20\\% \\times \\$500 = 0.20 \\times \\$500 = \\$100$$\n\nRemaining money: $500 - $100 = $400\n\n**Step 2:** She spent 25% of the remaining $400 on CDs.\n$$25\\% \\times \\$400 = 0.25 \\times \\$400 = \\$100$$\n\nRemaining money: $400 - $100 = $300\n\nFinal answer: 300",
+    "label": 1,
+    "score": 1.0290291502898192
+   },
+   "strata": {
+    "candidate": "Julie started with $500.\n\nShe spent 20% on clothes:\n\n\\[\n0.20 \\times 500 = 100\n\\]\n\nRemaining money:\n\n\\[\n500 - 100 = 400\n\\]\n\nShe then spent 25% of the remaining money on CDs:\n\n\\[\n0.25 \\times 400 = 100\n\\]\n\nMoney left:\n\n\\[\n400 - 100 = 300\n\\]\n\nFinal answer: 300",
+    "label": 1,
+    "score": 1.0000698506387589
+   }
+  },
+  {
+   "task_id": "gsm8k-0020",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "First child: 6 feet = 6 \u00d7 12 = 72 inches\n\nSecond child: 72 + 2 = 74 inches\n\nThird child: 74 - 5 = 69 inches\n\nFourth child: 69 + 3 = 72 inches\n\nFinal answer: 72",
+    "label": 1,
+    "score": 0.8085294079923899
+   },
+   "strata": {
+    "candidate": "The first child is 6 feet tall, which is:\n\n\\[\n6 \\times 12 = 72 \\text{ inches}\n\\]\n\nThe second child is 2 inches taller:\n\n\\[\n72 + 2 = 74 \\text{ inches}\n\\]\n\nThe third child is 5 inches shorter:\n\n\\[\n74 - 5 = 69 \\text{ inches}\n\\]\n\nThe fourth child is 3 inches taller:\n\n\\[\n69 + 3 = 72 \\text{ inches}\n\\]\n\nFinal answer: 72",
+    "label": 1,
+    "score": 0.971192494553918
+   }
+  },
+  {
+   "task_id": "gsm8k-0021",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Eve originally had 20 pieces of pomelos.\n\nAfter giving some to her friend, she is left with 1/4 of the original amount:\n$$\\frac{1}{4} \\times 20 = 5$$\n\nSo Eve is left with 5 pomelos.\n\nThe number of pomelos she gave away is:\n$$20 - 5 = 15$$\n\nFinal answer: 15",
+    "label": 1,
+    "score": 0.8249138299996384
+   },
+   "strata": {
+    "candidate": "Eve originally had 20 pomelos.\n\nShe is left with:\n\n\\[\n\\frac{1}{4} \\times 20 = 5\n\\]\n\nSo she gave away:\n\n\\[\n20 - 5 = 15\n\\]\n\nFinal answer: 15",
+    "label": 1,
+    "score": 0.9990278049056049
+   }
+  },
+  {
+   "task_id": "gsm8k-0022",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Find the combined exercise time on Sunday and Monday.\n23 + 16 = 39 minutes\n\n**Step 2:** Calculate twice that amount for Tuesday.\n2 \u00d7 39 = 78 minutes\n\nFinal answer: 78",
+    "label": 1,
+    "score": 1.2205571249141198
+   },
+   "strata": {
+    "candidate": "Sunday: 23 minutes  \nMonday: 16 minutes  \n\nCombined time: 23 + 16 = 39 minutes  \n\nTuesday goal: twice that amount = 2 \u00d7 39 = 78 minutes  \n\nFinal answer: 78",
+    "label": 1,
+    "score": 1.0004949916104282
+   }
+  },
+  {
+   "task_id": "gsm8k-0023",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Find the cost per class if Manny attends all 10 classes.\n$$\\$60 \\div 10 = \\$6 \\text{ per class}$$\n\n**Step 2:** Set up the inequality. If Manny misses $x$ classes, he attends $(10 - x)$ classes. The cost per class must be at most $10:\n$$\\frac{\\$60}{10 - x} \\leq \\$10$$\n\n**Step 3:** Solve for $x$:\n$$\\$60 \\leq \\$10(10 - x)$$\n$$\\$60 \\leq \\$100 - \\$10x$$\n$$\\$10x \\leq \\$40$$\n$$x \\leq 4$$\n\n**Step 4:** Verify:\n- If he misses 4 classes: $\\$60 \\div 6 = \\$10$ per class \u2713\n- If he misses 5 classes: $\\$60 \\div 5 = \\$12$ per class \u2717 (exceeds $10)\n\nFinal answer: 4",
+    "label": 1,
+    "score": 1.2512567161919508
+   },
+   "strata": {
+    "candidate": "Manny paid $60 for 10 classes.\n\nIf he misses \\(m\\) classes, he attends \\(10 - m\\) classes.\n\nThe cost per attended class is:\n\n\\[\n\\frac{60}{10 - m}\n\\]\n\nHis parents will not sign him up again if this cost is more than $10:\n\n\\[\n\\frac{60}{10 - m} > 10\n\\]\n\nTo find how many he can miss without exceeding $10 per class, solve:\n\n\\[\n\\frac{60}{10 - m} \\le 10\n\\]\n\n\\[\n60 \\le 10(10 - m)\n\\]\n\n\\[\n60 \\le 100 - 10m\n\\]\n\n\\[\n10m \\le 40\n\\]\n\n\\[\nm \\le 4\n\\]\n\nSo he can miss 4 classes and still have the cost be exactly $10 per class. If he misses 5, the cost becomes:\n\n\\[\n\\frac{60}{5} = 12\n\\]\n\nwhich is more than $10.\n\nFinal answer: 4",
+    "label": 1,
+    "score": 0.9996547177768682
+   }
+  },
+  {
+   "task_id": "gsm8k-0024",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Calculate the total tons of grapes produced per year.\n10 acres \u00d7 5 tons per acre = **50 tons of grapes per year**\n\n**Step 2:** Calculate the total barrels of wine produced per year.\n50 tons \u00d7 2 barrels per ton = **100 barrels of wine per year**\n\nFinal answer: 100",
+    "label": 1,
+    "score": 1.0858460626235602
+   },
+   "strata": {
+    "candidate": "Josie\u2019s farm has 10 acres, and each acre produces 5 tons of grapes:\n\n\\[\n10 \\times 5 = 50 \\text{ tons of grapes}\n\\]\n\nEach ton of grapes makes 2 barrels of wine:\n\n\\[\n50 \\times 2 = 100 \\text{ barrels}\n\\]\n\nFinal answer: 100",
+    "label": 1,
+    "score": 1.0003067489770214
+   }
+  },
+  {
+   "task_id": "gsm8k-0025",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let me calculate Shawnda's earnings for the day:\n\n- **Bicycles**: 5 people \u00d7 2 tires each = 10 tires\n- **Tricycles**: 3 people \u00d7 3 tires each = 9 tires\n- **Unicycle**: 1 person \u00d7 1 tire = 1 tire\n\n**Total tires inflated**: 10 + 9 + 1 = 20 tires\n\n**Total earnings**: 20 \u00d7 25 cents = 500 cents = $5.00\n\nFinal answer: 5",
+    "label": 1,
+    "score": 1.0177376986101605
+   },
+   "strata": {
+    "candidate": "Each tire costs 25 cents.\n\n- 5 bicycles \u00d7 2 tires each = 10 tires  \n- 3 tricycles \u00d7 3 tires each = 9 tires  \n- 1 unicycle \u00d7 1 tire = 1 tire  \n\nTotal tires = 10 + 9 + 1 = 20 tires  \n\nTotal money = 20 \u00d7 25 cents = 500 cents = 5 dollars  \n\nFinal answer: 5",
+    "label": 1,
+    "score": 0.9995695067428241
+   }
+  },
+  {
+   "task_id": "gsm8k-0026",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1: Find Dylan's investment**\nDylan invested 2/5 of the total amount:\n$$Dylan = \\frac{2}{5} \\times 1200 = 480$$\n\n**Step 2: Find the remaining amount**\n$$Remaining = 1200 - 480 = 720$$\n\n**Step 3: Find Frances's investment**\nFrances invested 2/3 of the remaining amount:\n$$Frances = \\frac{2}{3} \\times 720 = 480$$\n\n**Step 4: Find Skyler's investment**\nSkyler's investment accounted for the rest:\n$$Skyler = 1200 - 480 - 480 = 240$$\n\n**Verification:** $480 + $480 + $240 = $1200 \u2713\n\nFinal answer: 240",
+    "label": 1,
+    "score": 1.1654260474774998
+   },
+   "strata": {
+    "candidate": "Total investment: $1200\n\nDylan invested:\n\n\\[\n\\frac{2}{5} \\times 1200 = 480\n\\]\n\nRemaining amount:\n\n\\[\n1200 - 480 = 720\n\\]\n\nFrances invested:\n\n\\[\n\\frac{2}{3} \\times 720 = 480\n\\]\n\nSkyler invested the rest:\n\n\\[\n1200 - 480 - 480 = 240\n\\]\n\nFinal answer: 240",
+    "label": 1,
+    "score": 1.0006217538925275
+   }
+  },
+  {
+   "task_id": "gsm8k-0027",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let me track the brownies throughout the day:\n\n1. Greta made 1 dozen (12) brownies for herself.\n2. At her office, she received 1/2 dozen (6) brownies.\n3. At her home party, her friends had 4 dozen (48) brownies waiting.\n4. During the party, 1 1/2 dozen (18) brownies were eaten.\n\nTotal brownies Greta had: 12 + 6 + 48 = 66\nBrownies eaten: 18\nBrownies left over: 66 - 18 = 48\n\nFinal answer: 48",
+    "label": 1,
+    "score": 1.0764627282795192
+   },
+   "strata": {
+    "candidate": "One dozen = 12 brownies.\n\n- Greta made: 1 dozen = 12 brownies  \n- Office party sent her home with: 1/2 dozen = 6 brownies  \n- Friends had waiting: 4 dozen = 48 brownies  \n- Brownies eaten during party: 1 1/2 dozen = 18 brownies  \n\nTotal brownies available:\n\n\\[\n12 + 6 + 48 = 66\n\\]\n\nBrownies left over:\n\n\\[\n66 - 18 = 48\n\\]\n\nFinal answer: 48",
+    "label": 1,
+    "score": 0.9994679329631746
+   }
+  },
+  {
+   "task_id": "gsm8k-0028",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1: Find how many rocks Adam can buy**\n$100 \u00f7 $5 = 20 rocks\n\n**Step 2: Find how many rocks he sells**\n60% of 20 = 0.60 \u00d7 20 = 12 rocks\n\n**Step 3: Find how much money he gets from selling**\n12 \u00d7 $7 = $84\n\n**Step 4: Find how much money he loses**\n$100 - $84 = $16\n\nFinal answer: 16",
+    "label": 1,
+    "score": 0.9448959157773128
+   },
+   "strata": {
+    "candidate": "Adam spends all $100 on rocks at $5 each:\n\n\\[\n100 \\div 5 = 20 \\text{ rocks}\n\\]\n\nHe sells 60% of his inventory:\n\n\\[\n0.60 \\times 20 = 12 \\text{ rocks}\n\\]\n\nHe sells each rock for $7:\n\n\\[\n12 \\times 7 = 84\n\\]\n\nHe spent $100 and earned $84, so his loss is:\n\n\\[\n100 - 84 = 16\n\\]\n\nFinal answer: 16",
+    "label": 1,
+    "score": 1.0000701672068937
+   }
+  },
+  {
+   "task_id": "gsm8k-0029",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**First period:**\n- 5 times a week \u00d7 25 km each time = 125 km per week\n- 125 km \u00d7 4 weeks = **500 km**\n\n**Second period:**\n- 2 times a week \u00d7 60 km each time = 120 km per week\n- 120 km \u00d7 3 weeks = **360 km**\n\n**Total:** 500 + 360 = **860 km**\n\nFinal answer: 860",
+    "label": 1,
+    "score": 1.1581955850223877
+   },
+   "strata": {
+    "candidate": "First period:  \n5 rides per week \u00d7 4 weeks \u00d7 25 km per ride = 500 km\n\nSecond period:  \n2 rides per week \u00d7 3 weeks \u00d7 60 km per ride = 360 km\n\nTotal:  \n500 + 360 = 860 km\n\nFinal answer: 860",
+    "label": 1,
+    "score": 1.0005473332347112
+   }
+  },
+  {
+   "task_id": "gsm8k-0030",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1: Determine the total number of pizzas and slices**\n- 5 people (Bryce + 4 friends) each ordered 1 pizza\n- Each pizza has 12 slices\n- Total slices = 5 \u00d7 12 = 60 slices\n\n**Step 2: Calculate slices eaten by Bryce and 2 friends**\n- 3 people ate 2/3 of their pizzas\n- Total slices for these 3 = 3 \u00d7 12 = 36\n- Slices eaten = 2/3 \u00d7 36 = 24\n- Slices remaining = 36 - 24 = 12\n\n**Step 3: Calculate slices eaten by the 2 remaining friends**\n- 2 people ate \u00be of their pizzas\n- Total slices for these 2 = 2 \u00d7 12 = 24\n- Slices eaten = \u00be \u00d7 24 = 18\n- Slices remaining = 24 - 18 = 6\n\n**Step 4: Total slices left**\n- 12 + 6 = 18\n\nFinal answer: 18",
+    "label": 1,
+    "score": 1.121193745543215
+   },
+   "strata": {
+    "candidate": "There are 5 pizzas total, each with 12 slices:\n\n\\[\n5 \\times 12 = 60 \\text{ slices}\n\\]\n\nBryce and two friends ate \\(\\frac{2}{3}\\) of their pizzas:\n\n\\[\n3 \\times 12 \\times \\frac{2}{3} = 24 \\text{ slices eaten}\n\\]\n\nThe two remaining friends ate \\(\\frac{3}{4}\\) of their pizzas:\n\n\\[\n2 \\times 12 \\times \\frac{3}{4} = 18 \\text{ slices eaten}\n\\]\n\nTotal slices eaten:\n\n\\[\n24 + 18 = 42\n\\]\n\nSlices left:\n\n\\[\n60 - 42 = 18\n\\]\n\nFinal answer: 18",
+    "label": 1,
+    "score": 1.0010185262417541
+   }
+  },
+  {
+   "task_id": "gsm8k-0031",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Calculate the total petals on the orchids.\n5 orchids \u00d7 5 petals each = **25 petals**\n\n**Step 2:** Calculate the total petals on the daisies.\n4 daisies \u00d7 10 petals each = **40 petals**\n\n**Step 3:** Find the difference.\n40 - 25 = **15**\n\nFinal answer: 15",
+    "label": 1,
+    "score": 1.305426948796283
+   },
+   "strata": {
+    "candidate": "Orchids: \\(5 \\times 5 = 25\\) petals  \nDaisies: \\(4 \\times 10 = 40\\) petals  \n\nDifference: \\(40 - 25 = 15\\)\n\nFinal answer: 15",
+    "label": 1,
+    "score": 0.9999124971424992
+   }
+  },
+  {
+   "task_id": "gsm8k-0032",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1: Determine digging rates**\n- Through soil: 4 feet/hour\n- Through clay: half that fast = 4 \u00f7 2 = 2 feet/hour\n\n**Step 2: Calculate time for soil**\n24 feet \u00f7 4 feet/hour = 6 hours\n\n**Step 3: Calculate time for clay**\n8 feet \u00f7 2 feet/hour = 4 hours\n\n**Step 4: Add the times together**\n6 hours + 4 hours = 10 hours\n\nFinal answer: 10",
+    "label": 1,
+    "score": 0.9984866878865026
+   },
+   "strata": {
+    "candidate": "Bill digs through soil at 4 feet/hour.\n\nFor 24 feet of soil:\n\n\\[\n24 \\div 4 = 6 \\text{ hours}\n\\]\n\nHe digs through clay at half that speed:\n\n\\[\n4 \\div 2 = 2 \\text{ feet/hour}\n\\]\n\nFor 8 feet of clay:\n\n\\[\n8 \\div 2 = 4 \\text{ hours}\n\\]\n\nTotal time:\n\n\\[\n6 + 4 = 10 \\text{ hours}\n\\]\n\nFinal answer: 10",
+    "label": 1,
+    "score": 0.9988585432394042
+   }
+  },
+  {
+   "task_id": "gsm8k-0033",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Let me calculate the time for each side:\n\n- First side: 5 minutes\n- Second side: 2 \u00d7 5 = 10 minutes\n- Third side: 2 \u00d7 5 = 10 minutes\n- Fourth side: 5 / 2 = 2.5 minutes\n- Fifth side: 5 / 2 = 2.5 minutes\n- Sixth side: 5 / 2 = 2.5 minutes\n\nTotal = 5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes\n\nFinal answer: 32",
+    "label": 0,
+    "score": 0.32331101313348387
+   },
+   "strata": {
+    "candidate": "The first side takes 5 minutes.\n\nThe second and third sides each take twice as long:\n\n\\[\n2 \\times 5 = 10\n\\]\n\nSo the second and third sides take:\n\n\\[\n10 + 10 = 20\n\\]\n\nThe last 2 sides each take half as long as the first side:\n\n\\[\n\\frac{5}{2} = 2.5\n\\]\n\nSo the last 2 sides take:\n\n\\[\n2.5 + 2.5 = 5\n\\]\n\nTotal time:\n\n\\[\n5 + 20 + 5 = 30\n\\]\n\nFinal answer: 30",
+    "label": 1,
+    "score": 0.8680762765574863
+   }
+  },
+  {
+   "task_id": "gsm8k-0034",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "To solve this problem, I'll calculate the total amount of line needed and then subtract the line he already has.\n\n**Step 1: Calculate total line needed**\nSince he wants 3 feet of line for every foot of dock:\n$$3 \\times 200 = 600 \\text{ feet of line needed}$$\n\n**Step 2: Subtract the line he already has**\n$$600 - 6 = 594 \\text{ feet to buy}$$\n\nFinal answer: 594",
+    "label": 1,
+    "score": 1.238062301621163
+   },
+   "strata": {
+    "candidate": "He needs 3 feet of line for every 1 foot of dock.\n\nFor 200 feet of dock:\n\n\\[\n200 \\times 3 = 600\n\\]\n\nHe already has 6 feet of line, so he needs to buy:\n\n\\[\n600 - 6 = 594\n\\]\n\nFinal answer: 594",
+    "label": 1,
+    "score": 0.9999290776912098
+   }
+  },
+  {
+   "task_id": "gsm8k-0035",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Let me define the variables:\n- Let T = Timothy's locker size\n- Let Z = Zack's locker size\n- Let P = Peter's locker size\n\nGiven relationships:\n1. Zack's locker is half as big as Timothy's locker: Z = T/2\n2. Peter's locker is 1/4 as big as Zack's locker: P = Z/4\n3. Peter's locker is 5 cubic inches: P = 5\n\nWorking backwards:\n- P = 5\n- P = Z/4, so Z = 4P = 4 \u00d7 5 = 20\n- Z = T/2, so T = 2Z = 2 \u00d7 20 = 40\n\nFinal answer: 40",
+    "label": 1,
+    "score": 1.1053212402309962
+   },
+   "strata": {
+    "candidate": "Peter\u2019s locker is \\( \\frac{1}{4} \\) as big as Zack\u2019s locker.\n\nGiven Peter\u2019s locker is 5 cubic inches:\n\n\\[\n5 = \\frac{1}{4} \\times \\text{Zack's locker}\n\\]\n\nSo Zack\u2019s locker is:\n\n\\[\n5 \\times 4 = 20\n\\]\n\nZack\u2019s locker is half as big as Timothy\u2019s locker:\n\n\\[\n20 = \\frac{1}{2} \\times \\text{Timothy's locker}\n\\]\n\nSo Timothy\u2019s locker is:\n\n\\[\n20 \\times 2 = 40\n\\]\n\nFinal answer: 40",
+    "label": 1,
+    "score": 1.0590969950725344
+   }
+  },
+  {
+   "task_id": "gsm8k-0036",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "**Step-by-step solution:**\n\n1. **Find the usable portion of the tree:**\n   80% of 80 feet = 0.80 \u00d7 80 = **64 feet**\n\n2. **Find the number of 4-foot logs:**\n   64 feet \u00f7 4 feet per log = **16 logs**\n\n3. **Find the total number of planks:**\n   16 logs \u00d7 5 planks per log = **80 planks**\n\n4. **Find the total revenue:**\n   80 planks \u00d7 $1.2 per plank = **$96**\n\nFinal answer: 96",
+    "label": 1,
+    "score": 1.260531808001874
+   },
+   "strata": {
+    "candidate": "John can use 80% of the 80-foot tree:\n\n\\[\n80 \\times 0.8 = 64 \\text{ feet}\n\\]\n\nHe cuts the usable wood into 4-foot logs:\n\n\\[\n64 \\div 4 = 16 \\text{ logs}\n\\]\n\nEach log produces 5 planks:\n\n\\[\n16 \\times 5 = 80 \\text{ planks}\n\\]\n\nEach plank sells for $1.20:\n\n\\[\n80 \\times 1.2 = 96\n\\]\n\nFinal answer: 96",
+    "label": 1,
+    "score": 1.1250584570435733
+   }
+  },
+  {
+   "task_id": "gsm8k-0037",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Tim starts with 7 blue shoe boxes and 9 red shoe boxes.\n\nHe uses 3 blue shoe boxes:\n7 - 3 = 4 blue shoe boxes remaining\n\nHe uses 1/3 of his red shoe boxes:\n1/3 \u00d7 9 = 3 red shoe boxes used\n9 - 3 = 6 red shoe boxes remaining\n\nTotal shoe boxes remaining:\n4 + 6 = 10\n\nFinal answer: 10",
+    "label": 1,
+    "score": 1.0071539031014107
+   },
+   "strata": {
+    "candidate": "Tim starts with:\n\n- 7 blue shoe boxes\n- 9 red shoe boxes\n\nHe uses:\n\n- 3 blue shoe boxes\n- \\( \\frac{1}{3} \\) of the red shoe boxes\n\nRed shoe boxes used:\n\n\\[\n\\frac{1}{3} \\times 9 = 3\n\\]\n\nBlue shoe boxes left:\n\n\\[\n7 - 3 = 4\n\\]\n\nRed shoe boxes left:\n\n\\[\n9 - 3 = 6\n\\]\n\nTotal shoe boxes left:\n\n\\[\n4 + 6 = 10\n\\]\n\nFinal answer: 10",
+    "label": 1,
+    "score": 0.8413071622914968
+   }
+  },
+  {
+   "task_id": "gsm8k-0038",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "Anthony sends out 700 small coupons and twice as many big coupons:\n- Small coupons: 700\n- Big coupons: 2 \u00d7 700 = 1400\n\nCost calculation:\n- Small coupons: 700 \u00d7 5 cents = 3500 cents\n- Big coupons: 1400 \u00d7 15 cents = 21000 cents\n\nTotal postage: 3500 + 21000 = 24500 cents = $245.00\n\nFinal answer: 24500",
+    "label": 0,
+    "score": 0.49895598170007205
+   },
+   "strata": {
+    "candidate": "Anthony sends:\n\n- Small coupons: 700  \n- Big coupons: \\(2 \\times 700 = 1400\\)\n\nCost for small coupons:\n\n\\[\n700 \\times 5 = 3500 \\text{ cents}\n\\]\n\nCost for big coupons:\n\n\\[\n1400 \\times 15 = 21000 \\text{ cents}\n\\]\n\nTotal cost:\n\n\\[\n3500 + 21000 = 24500 \\text{ cents}\n\\]\n\nConvert to dollars:\n\n\\[\n24500 \\text{ cents} = 245 \\text{ dollars}\n\\]\n\nFinal answer: 245",
+    "label": 1,
+    "score": 0.582078801536611
+   }
+  },
+  {
+   "task_id": "gsm8k-0039",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Find the printer cost.\nThe printer cost $400 less than the computer:\n$1,100 - $400 = $700\n\n**Step 2:** Find the total cost of the computer and printer.\n$1,100 + $700 = $1,800\n\n**Step 3:** Find the total cost of the 2 monitors.\n$2,400 - $1,800 = $600\n\n**Step 4:** Find the cost of one monitor.\n$600 \u00f7 2 = $300\n\n**Verification:** $1,100 + $300 \u00d7 2 + $700 = $1,100 + $600 + $700 = $2,400 \u2713\n\nFinal answer: 300",
+    "label": 1,
+    "score": 1.0449231697534884
+   },
+   "strata": {
+    "candidate": "The computer cost $1,100.\n\nThe printer cost $400 less than the computer:\n\n\\[\n1100 - 400 = 700\n\\]\n\nSo the printer cost $700.\n\nThe total cost of the computer, 2 monitors, and printer was $2,400:\n\n\\[\n1100 + 700 + 2m = 2400\n\\]\n\n\\[\n1800 + 2m = 2400\n\\]\n\n\\[\n2m = 600\n\\]\n\n\\[\nm = 300\n\\]\n\nFinal answer: 300",
+    "label": 1,
+    "score": 0.9998459505849701
+   }
+  },
+  {
+   "task_id": "gsm8k-0040",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1:** Find how many friends Amy made.\nSince Amy made 20 more friends than Lily:\nAmy = 50 + 20 = **70 friends**\n\n**Step 2:** Find how many friends Lily and Amy have together.\nTotal = Lily + Amy = 50 + 70 = **120 friends**\n\nFinal answer: 120",
+    "label": 1,
+    "score": 1.0074249950332221
+   },
+   "strata": {
+    "candidate": "Lily made 50 friends.\n\nAmy made 20 more friends than Lily:\n\n\\[\n50 + 20 = 70\n\\]\n\nTogether, Lily and Amy have:\n\n\\[\n50 + 70 = 120\n\\]\n\nFinal answer: 120",
+    "label": 1,
+    "score": 0.9997574259884815
+   }
+  },
+  {
+   "task_id": "math-0001",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "We have the system:\n$$6x + 5y - 2z = -4 \\quad \\text{(1)}$$\n$$4x + 5y + 12z = 54 \\quad \\text{(2)}$$\n\nSubtracting equation (1) from equation (2):\n$$(4x + 5y + 12z) - (6x + 5y - 2z) = 54 - (-4)$$\n$$-2x + 14z = 58$$\n$$-x + 7z = 29 \\quad \\text{(3)}$$\n\nFrom equation (3): $x = 7z - 29$.\n\nSubstituting into equation (2):\n$$4(7z - 29) + 5y + 12z = 54$$\n$$28z - 116 + 5y + 12z = 54$$\n$$40z + 5y = 170$$\n$$8z + y = 34 \\quad \\text{(4)}$$\n\nFrom equation (4): $y = 34 - 8z$.\n\nNow compute $x + y + z$:\n$$x + y + z = (7z - 29) + (34 - 8z) + z$$\n$$= 7z - 29 + 34 - 8z +",
+    "label": 0,
+    "score": 0.31616333388719936
+   },
+   "strata": {
+    "candidate": "We are given\n\n\\[\n6x+5y-2z=-4\n\\]\n\nand\n\n\\[\n4x+5y+12z=54.\n\\]\n\nAdd the two equations:\n\n\\[\n(6x+5y-2z)+(4x+5y+12z)=-4+54\n\\]\n\n\\[\n10x+10y+10z=50\n\\]\n\nDivide by 10:\n\n\\[\nx+y+z=5\n\\]\n\nTherefore,\n\n\\[\n\\boxed{5}\n\\]",
+    "label": 1,
+    "score": 1.0004535165839865
+   }
+  },
+  {
+   "task_id": "math-0002",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "We need to count the number of distinct circular arrangements of 8 people around a table, where Alice and Bob cannot sit next to each other. Two arrangements are considered the same if one is a rotation of the other.\n\n**Step 1: Count total circular arrangements of 8 people.**\n\nThe number of circular permutations of $n$ distinct objects is $(n-1)!$.\n\nSo the total number of circular arrangements of 8 people is:\n$$\n(8-1)! = 7! = 5040\n$$\n\n**Step 2: Count arrangements where Alice and Bob sit next to each other.**\n\nWe treat Alice and Bob as a single unit (a \"block\"). Now we have 7 units to arrange in a circle: the Alice-Bob block plus the other 6 people.\n\nThe number of circular arrangements of 7 units is $(7-1)! = 6! = 720$.\n\nBut within the Alice-Bob block, Alice and Bob can be arranged in 2 ways: (Alice, Bob) or (Bob, Alice).\n\nSo the total number of arrangements where Alice and Bob sit",
+    "label": 0,
+    "score": 0.4792548462069368
+   },
+   "strata": {
+    "candidate": "There are \\(8\\) distinct people, and seatings are considered the same up to rotation.\n\nTotal circular arrangements of \\(8\\) people:\n\n\\[\n(8-1)! = 7! = 5040\n\\]\n\nNow count the arrangements where Alice and Bob **do** sit next to each other.\n\nTreat Alice and Bob as a single block. Then we have \\(7\\) objects to arrange around the table:\n\n\\[\n(7-1)! = 6! = 720\n\\]\n\nWithin the Alice-Bob block, Alice and Bob can be arranged in \\(2\\) ways:\n\n\\[\n2 \\cdot 6! = 1440\n\\]\n\nSo the number of arrangements where Alice and Bob are **not** next to each other is\n\n\\[\n7! - 2 \\cdot 6! = 5040 - 1440 = 3600\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+    "label": 1,
+    "score": 0.640327324413793
+   }
+  },
+  {
+   "task_id": "math-0003",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let me set up coordinates for the rectangle. Since it's four times as long as it is wide, I'll use width = 1 and length = 4:\n\n- $A = (0, 1)$, $B = (0, 0)$, $C = (4, 0)$, $D = (4, 1)$\n\nThe area of the rectangle is $4 \\times 1 = 4$.\n\nPoint $E$ is the midpoint of $\\overline{BC}$, so $E = (2, 0)$.\n\nThe shaded regions are two triangles:\n\n**Triangle $ABE$** (vertices $A(0,1)$, $B(0,0)$, $E(2,0)$):\n$$\\text{Area} = \\frac{1}{2}(2)(1) = 1$$\n\n**Triangle $CDE$** (vertices $C(4,0)$, $",
+    "label": 0,
+    "score": -0.08350236429480723
+   },
+   "strata": {
+    "candidate": "Let the rectangle have width \\(w\\) and length \\(4w\\).\n\nThe area of the rectangle is\n\n\\[\n4w \\cdot w = 4w^2.\n\\]\n\nSince \\(E\\) is the midpoint of \\(\\overline{BC}\\), we have\n\n\\[\nBE = \\frac{BC}{2} = \\frac{4w}{2} = 2w.\n\\]\n\nThe shaded triangle \\(ABE\\) has base \\(AB = w\\) and height \\(BE = 2w\\), so its area is\n\n\\[\n\\frac12 \\cdot w \\cdot 2w = w^2.\n\\]\n\nThe shaded triangle \\(ADC\\) has base \\(AD = 4w\\) and height \\(DC = w\\), so its area is\n\n\\[\n\\frac12 \\cdot 4w \\cdot w = 2w^2.\n\\]\n\nThus the total shaded area is\n\n\\[\nw^2 + 2w^2 = 3w^2.\n\\]\n\nThe percent of the rectangle shaded is\n\n\\[\n\\frac{3w^2}{4w^2} \\cdot 100\\% = 75\\%.\n\\]\n\n\\[\n\\boxed{75}\n\\]",
+    "label": 1,
+    "score": 0.9986744330773349
+   }
+  },
+  {
+   "task_id": "math-0004",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "We want to find $c$ such that $f^{-1}(x) = f(x)$, where $f(x) = \\dfrac{cx}{2x+3}$.\n\n**Step 1: Find the inverse.**\n\nLet $y = f(x) = \\dfrac{cx}{2x+3}$. Solving for $x$:\n\n$$y(2x+3) = cx \\implies 2yx + 3y = cx \\implies x(2y - c) = -3y$$\n\n$$x = \\frac{-3y}{2y - c} = \\frac{3y}{c - 2y}$$\n\nSo $f^{-1}(x) = \\dfrac{3x}{c - 2x}$.\n\n**Step 2: Set $f^{-1}(x) = f(x)$ and solve for $c$.**\n\n$$\\frac{3x}{c - 2x} = \\frac{cx}{2x + 3}$$\n\nCross",
+    "label": 0,
+    "score": 0.44488776657788426
+   },
+   "strata": {
+    "candidate": "We want \\(f^{-1}(x)=f(x)\\), so \\(f\\) must be its own inverse.\n\nGiven\n\n\\[\nf(x)=\\frac{cx}{2x+3},\n\\]\n\ncompute \\(f(f(x))\\):\n\n\\[\nf(f(x))=\\frac{c\\left(\\frac{cx}{2x+3}\\right)}{2\\left(\\frac{cx}{2x+3}\\right)+3}.\n\\]\n\nSimplify:\n\n\\[\nf(f(x))=\\frac{\\frac{c^2x}{2x+3}}{\\frac{2cx}{2x+3}+3}\n=\\frac{c^2x}{2cx+3(2x+3)}\n=\\frac{c^2x}{(2c+6)x+9}.\n\\]\n\nFor \\(f^{-1}(x)=f(x)\\), we need\n\n\\[\nf(f(x))=x.\n\\]\n\nThus\n\n\\[\n\\frac{c^2x}{(2c+6)x+9}=x.\n\\]\n\nFor this to hold for all \\(x\\), the numerator and denominator must match appropriately. Equating coefficients gives\n\n\\[\n2c+6=0\n\\]\n\nand\n\n\\[\nc^2=9.\n\\]\n\nFrom \\(2c+6=0\\),\n\n\\[\nc=-3.\n\\]\n\nThis also satisfies \\(c^2=9\\). Therefore,\n\n\\[\n\\boxed{-3}\n\\]",
+    "label": 1,
+    "score": 0.9982326689409015
+   }
+  },
+  {
+   "task_id": "math-0005",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "**Prime factorization of 1000:**\n$$1000 = 2^3 \\times 5^3$$\n\n**Factors of 1000** are of the form $2^a \\times 5^b$ where $0 \\le a \\le 3$ and $0 \\le b \\le 3$.\n\n**Condition for divisibility by 20:**\nSince $20 = 2^2 \\times 5^1$, a factor must have:\n- $a \\ge 2$ (at least two factors of 2)\n- $b \\ge 1$ (at least one factor of 5)\n\n**Counting the valid combinations:**\n- $a$ can be 2 or 3 \u2192 **2 choices**\n- $b$ can be 1, 2, or 3 \u2192 **3 choices**\n\n$$2 \\times 3 = 6$$\n\n**Verification by listing:**\n$$20,\\ 100,\\ 500,\\ 40,\\ 200,\\ 1000$$\n\nAll six are factors of 1000 and divisible by 20.\n\n$$\\boxed{6}$$",
+    "label": 1,
+    "score": 0.8791022121015677
+   },
+   "strata": {
+    "candidate": "We want the positive factors of \\(1000\\) that are divisible by \\(20\\).\n\nFactor:\n\n\\[\n1000 = 2^3 \\cdot 5^3\n\\]\n\nA factor divisible by \\(20\\) must contain at least\n\n\\[\n20 = 2^2 \\cdot 5\n\\]\n\nSo write such a factor as\n\n\\[\n20k\n\\]\n\nFor \\(20k\\) to divide \\(1000\\), \\(k\\) must divide\n\n\\[\n\\frac{1000}{20}=50\n\\]\n\nNow count the positive factors of \\(50\\):\n\n\\[\n50 = 2 \\cdot 5^2\n\\]\n\nNumber of factors:\n\n\\[\n(1+1)(2+1)=2\\cdot 3=6\n\\]\n\nThus there are \\(\\boxed{6}\\) factors of \\(1000\\) divisible by \\(20\\).",
+    "label": 1,
+    "score": 0.6285887458474206
+   }
+  },
+  {
+   "task_id": "math-0006",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "$$\\frac{-5}{9} \\cdot \\frac{8}{17} = \\frac{-5 \\cdot 8}{9 \\cdot 17} = \\frac{-40}{153}$$\n\nSince 40 and 153 share no common factors (40 = $2^3 \\cdot 5$, 153 = $3^2 \\cdot 17$), the fraction is already in simplest form.\n\n$$\\boxed{\\frac{-40}{153}}$$",
+    "label": 1,
+    "score": 0.8552978406872407
+   },
+   "strata": {
+    "candidate": "\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17}\n= \\frac{-5\\cdot 8}{9\\cdot 17}\n= \\frac{-40}{153}\n\\]\n\nSince \\(40\\) and \\(153\\) have no common factors, the fraction is already simplified.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+    "label": 1,
+    "score": 0.829180825762909
+   }
+  },
+  {
+   "task_id": "math-0007",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "To convert the point $(1, -1, -6)$ from rectangular coordinates to cylindrical coordinates, we use the formulas:\n\n$$r = \\sqrt{x^2 + y^2}, \\quad \\theta = \\arctan\\left(\\frac{y}{x}\\right), \\quad z = z$$\n\n**Step 1: Find $r$**\n$$r = \\sqrt{1^2 + (-1)^2} = \\sqrt{1 + 1} = \\sqrt{2}$$\n\n**Step 2: Find $\\theta$**\nSince $x = 1 > 0$ and $y = -1 < 0$, the point lies in the fourth quadrant.\n$$\\theta = \\arctan\\left(\\frac{-1}{1}\\right) = \\arctan(-1) = -\\frac{\\pi}{4}$$\n\nSince we need $0 \\le \\theta < 2\\pi$, we add $2\\pi$:\n$$\\theta = -\\frac{\\pi}{4} + 2\\pi = \\frac{7\\pi}{4}$$\n\n**Step 3: Find $z$**\n$$z = -6$$\n\nTherefore, the cylindrical coordinates are:\n\n$$\\boxed{\\left(\\sqrt{2}, \\frac{7\\pi}{4}, -6\\right)}$$",
+    "label": 1,
+    "score": 1.2599118233921847
+   },
+   "strata": {
+    "candidate": "For cylindrical coordinates,\n\n\\[\nr=\\sqrt{x^2+y^2}, \\qquad \\theta=\\operatorname{atan2}(y,x), \\qquad z=z.\n\\]\n\nGiven \\((x,y,z)=(1,-1,-6)\\),\n\n\\[\nr=\\sqrt{1^2+(-1)^2}=\\sqrt{2}.\n\\]\n\nSince \\(x=1>0\\) and \\(y=-1<0\\), the angle is in the fourth quadrant:\n\n\\[\n\\theta=\\operatorname{atan2}(-1,1)=-\\frac{\\pi}{4}.\n\\]\n\nTo make \\(0\\le \\theta<2\\pi\\),\n\n\\[\n\\theta=2\\pi-\\frac{\\pi}{4}=\\frac{7\\pi}{4}.\n\\]\n\nThus,\n\n\\[\n\\boxed{\\left(\\sqrt{2},\\frac{7\\pi}{4},-6\\right)}\n\\]",
+    "label": 1,
+    "score": 0.996343519003235
+   }
+  },
+  {
+   "task_id": "math-0008",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "We need to find all real values of $x$ such that $|2 - |x|| = 1$, then compute the sum of their squares.\n\nLet $y = |x|$, so $y \\ge 0$. The equation becomes:\n$$|2 - y| = 1$$\n\nThis means:\n$$2 - y = 1 \\quad \\text{or} \\quad 2 - y = -1$$\n\nCase 1: $2 - y = 1$\n$$y = 1$$\n\nCase 2: $2 - y = -1$\n$$y = 3$$\n\nSo $|x| = 1$ or $|x| = 3$.\n\nThis gives:\n$$x = 1, -1, 3, -3$$\n\nNow compute the sum of squares:\n$$1^2 + (-1)^2 + 3^2 + (-3)^2 = 1 + 1 + 9 + 9 = 20$$\n\nThe sum of the squares of all real values of $x$ satisfying the equation is $\\boxed{20}$.",
+    "label": 1,
+    "score": 1.149335376447425
+   },
+   "strata": {
+    "candidate": "Let \\(y=|x|\\), where \\(y\\ge 0\\). Then\n\n\\[\n|2-|x||=1 \\implies |2-y|=1.\n\\]\n\nSo\n\n\\[\n2-y=1 \\quad \\text{or} \\quad 2-y=-1.\n\\]\n\nThus\n\n\\[\ny=1 \\quad \\text{or} \\quad y=3.\n\\]\n\nSince \\(y=|x|\\), we have\n\n\\[\n|x|=1 \\quad \\text{or} \\quad |x|=3.\n\\]\n\nTherefore the real values of \\(x\\) are\n\n\\[\nx=\\pm 1,\\ \\pm 3.\n\\]\n\nTheir squares are\n\n\\[\n1^2+(-1)^2+3^2+(-3)^2=1+1+9+9=20.\n\\]\n\n\\[\n\\boxed{20}\n\\]",
+    "label": 1,
+    "score": 1.000502584701648
+   }
+  },
+  {
+   "task_id": "math-0009",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.1939242222396388
+   },
+   "strata": {
+    "candidate": "There are\n\n\\[\n3 \\times 4 \\times 2 = 24\n\\]\n\npossible sandwiches.\n\nJavier is safe only if the sandwich has:\n\n- not rye bread: \\(2\\) choices\n- not tuna: \\(3\\) choices\n- not southwest chipotle sauce: \\(1\\) choice\n\nSo the number of safe sandwiches is\n\n\\[\n2 \\times 3 \\times 1 = 6\n\\]\n\nThus the probability of an allergic reaction is\n\n\\[\n1 - \\frac{6}{24} = \\frac{18}{24} = \\frac{3}{4}\n\\]\n\n\\[\n\\boxed{\\frac{3}{4}}\n\\]",
+    "label": 1,
+    "score": 0.9985873827081965
+   }
+  },
+  {
+   "task_id": "math-0010",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.09589458459127626
+   },
+   "strata": {
+    "candidate": "Since \\(CD\\) is tangent to both circles, the radii to the tangent points are perpendicular to \\(CD\\):\n\n\\[\nAC \\perp CD,\\qquad BD \\perp CD.\n\\]\n\nThus \\(\\triangle AEC\\) and \\(\\triangle BED\\) are right triangles. Also, because \\(AB\\) and \\(CD\\) intersect at \\(E\\), the angles at \\(E\\) are vertical angles, so\n\n\\[\n\\triangle AEC \\sim \\triangle BED.\n\\]\n\nTherefore,\n\n\\[\n\\frac{AE}{BE}=\\frac{AC}{BD}=\\frac{3}{8}.\n\\]\n\nGiven \\(AE=5\\),\n\n\\[\n\\frac{5}{BE}=\\frac{3}{8}\n\\]\n\nso\n\n\\[\nBE=\\frac{40}{3}.\n\\]\n\nNow in right triangle \\(AEC\\),\n\n\\[\nAC=3,\\qquad AE=5,\n\\]\n\nso\n\n\\[\nCE=\\sqrt{AE^2-AC^2}=\\sqrt{25-9}=4.\n\\]\n\nUsing the similarity ratio again,\n\n\\[\n\\frac{CE}{ED}=\\frac{3}{8},\n\\]\n\nso\n\n\\[\nED=\\frac{8}{3}\\cdot 4=\\frac{32}{3}.\n\\]\n\nHence\n\n\\[\nCD=CE+ED=4+\\frac{32}{3}=\\frac{44}{3}.\n\\]\n\n\\[\n\\boxed{\\frac{44}{3}}\n\\]",
+    "label": 1,
+    "score": 0.9912042809396072
+   }
+  },
+  {
+   "task_id": "math-0011",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let me solve this step by step.\n\n**Setting up the equation:**\n\nLet $y = \\log_{1995} x$, so $x = 1995^y$.\n\nSubstituting into the equation $\\sqrt{1995} \\cdot x^{\\log_{1995}x} = x^2$:\n\n$$\\sqrt{1995} \\cdot (1995",
+    "label": 0,
+    "score": -0.1332805536622777
+   },
+   "strata": {
+    "candidate": "Let\n\n\\[\n\\sqrt{1995}\\cdot x^{\\log_{1995}x}=x^2\n\\]\n\nwith \\(x>0\\). Set\n\n\\[\ny=\\log_{1995}x.\n\\]\n\nThen\n\n\\[\nx=1995^y.\n\\]\n\nNow\n\n\\[\nx^{\\log_{1995}x}=(1995^y)^y=1995^{y^2},\n\\]\n\nand\n\n\\[\nx^2=(1995^y)^2=1995^{2y}.\n\\]\n\nSo the equation becomes\n\n\\[\n1995^{1/2}\\cdot 1995^{y^2}=1995^{2y}.\n\\]\n\nSince \\(1995>1\\), we can equate exponents:\n\n\\[\n\\frac12+y^2=2y.\n\\]\n\nThus\n\n\\[\ny^2-2y+\\frac12=0.\n\\]\n\nThe two roots are\n\n\\[\ny=1\\pm \\frac{1}{\\sqrt2}.\n\\]\n\nTherefore the corresponding positive roots are\n\n\\[\nx=1995^{1+\\frac1{\\sqrt2}}\n\\quad\\text{and}\\quad\nx=1995^{1-\\frac1{\\sqrt2}}.\n\\]\n\nTheir product is\n\n\\[\n1995^{1+\\frac1{\\sqrt2}}\\cdot 1995^{1-\\frac1{\\sqrt2}}\n=1995^2.\n\\]\n\nHence the product of the positive roots is\n\n\\[\n\\boxed{1995^2}.\n\\]",
+    "label": 1,
+    "score": 0.9974181837889411
+   }
+  },
+  {
+   "task_id": "math-0012",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.05362932935634679
+   },
+   "strata": {
+    "candidate": "We need to count the positive integer cubes \\(k^3\\) that divide\n\n\\[\n3!\\cdot 5!\\cdot 7!.\n\\]\n\nFirst factor the number.\n\n\\[\n3! = 2\\cdot 3\n\\]\n\n\\[\n5! = 2^3\\cdot 3\\cdot 5\n\\]\n\n\\[\n7! = 2^4\\cdot 3^2\\cdot 5\\cdot 7\n\\]\n\nMultiplying gives\n\n\\[\n3!\\cdot 5!\\cdot 7! = 2^{1+3+4}\\cdot 3^{1+1+2}\\cdot 5^{1+1}\\cdot 7\n\\]\n\n\\[\n=2^8\\cdot 3^4\\cdot 5^2\\cdot 7.\n\\]\n\nA cube \\(k^3\\) divides this number if, for each prime factor, the exponent in \\(k\\) is at most one-third of the exponent in the original number.\n\nSo for each prime:\n\n- For \\(2^8\\), the exponent in \\(k\\) can be \\(0,1,2\\), giving \\(3\\) choices.\n- For \\(3^4\\), the exponent in \\(k\\) can be \\(0,1\\), giving \\(2\\) choices.\n- For \\(5^2\\), the exponent in \\(k\\) can only be \\(0\\), giving \\(1\\) choice.\n- For \\(7^1\\), the exponent in \\(k\\) can only be \\(0\\), giving \\(1\\) choice.\n\nThus the number of positive cubes dividing the product is\n\n\\[\n3\\cdot 2\\cdot 1\\cdot 1 = 6.\n\\]\n\n\\[\n\\boxed{6}\n\\]",
+    "label": 1,
+    "score": 1.0003375217050428
+   }
+  },
+  {
+   "task_id": "math-0013",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "The decimal expansion of $\\frac{1}{7}$ is $0.\\overline{142857}$, with a repeating cycle of length 6.\n\nTo find the $2007^{\\text{th}}$ digit, we compute $2007 \\mod 6$:\n$$2007 = 6 \\times 334 + 3$$\n\nSo the $2007^{\\text{th}}$ digit corresponds to the $3^{\\text{rd}}$ digit in the repeating cycle $142857$, which is $\\boxed{2}$.",
+    "label": 1,
+    "score": 0.9820919105748236
+   },
+   "strata": {
+    "candidate": "The decimal expansion of \\(\\frac{1}{7}\\) is\n\n\\[\n\\frac{1}{7}=0.\\overline{142857}\n\\]\n\nso the digits repeat every \\(6\\) digits:\n\n\\[\n1,4,2,8,5,7\n\\]\n\nWe need the \\(2007^{\\text{th}}\\) digit after the decimal point. Since the pattern has period \\(6\\), compute\n\n\\[\n2007 \\div 6 = 334 \\text{ remainder } 3.\n\\]\n\nThus the \\(2007^{\\text{th}}\\) digit is the \\(3^{\\text{rd}}\\) digit in the repeating block \\(142857\\), which is \\(2\\).\n\n\\[\n\\boxed{2}\n\\]",
+    "label": 1,
+    "score": 0.8996019533155628
+   }
+  },
+  {
+   "task_id": "math-0014",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.26612503188939085
+   },
+   "strata": {
+    "candidate": "For a sine function in the form\n\n\\[\ny = A\\sin(Bx + C),\n\\]\n\nthe phase shift is\n\n\\[\n-\\frac{C}{B}.\n\\]\n\nHere,\n\n\\[\ny = 2\\sin\\left(x+\\frac{\\pi}{3}\\right),\n\\]\n\nso \\(B=1\\) and \\(C=\\frac{\\pi}{3}\\). Therefore,\n\n\\[\n\\text{phase shift} = -\\frac{\\frac{\\pi}{3}}{1} = -\\frac{\\pi}{3}.\n\\]\n\nThis means the graph is shifted \\(\\frac{\\pi}{3}\\) units to the left.\n\n\\[\n\\boxed{-\\frac{\\pi}{3}}\n\\]",
+    "label": 1,
+    "score": 0.9996552576534692
+   }
+  },
+  {
+   "task_id": "math-0015",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Since pressure is inversely proportional to volume at constant temperature, we use Boyle's Law:\n\n$$P_1V_1 = P_2V_2$$\n\n**Given:**\n- $V_1 = 3.67$ L\n- $P_1 = 4$ kPa\n- $V_2 = 1.835$ L\n\n**Solving for $P_2$:**\n\n$$P_2 = \\frac{P_1V_1}{V_2} = \\frac{4 \\times 3.67}{1.835} = \\frac{14.68}{1.835} = 8 \\text{ kPa}$$\n\nSince the volume is halved (3.67 \u00f7 1.835 = 2), the pressure doubles.\n\n$$\\boxed{8}$$",
+    "label": 1,
+    "score": 1.1229429004790794
+   },
+   "strata": {
+    "candidate": "At constant temperature, Boyle\u2019s law applies:\n\n\\[\nP_1V_1=P_2V_2\n\\]\n\nGiven:\n\n\\[\nP_1=4\\text{ kPa}, \\quad V_1=3.67\\text{ L}, \\quad V_2=1.835\\text{ L}\n\\]\n\nSolve for \\(P_2\\):\n\n\\[\nP_2=\\frac{P_1V_1}{V_2}\n\\]\n\n\\[\nP_2=\\frac{4(3.67)}{1.835}\n\\]\n\nSince \\(1.835=\\frac{3.67}{2}\\),\n\n\\[\nP_2=4(2)=8\n\\]\n\n\\[\n\\boxed{8}\n\\]",
+    "label": 1,
+    "score": 1.0009264406122909
+   }
+  },
+  {
+   "task_id": "math-0016",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "We have an unfair coin that lands as heads with probability $p = \\frac{2}{3}$ and tails with probability $q = \\frac{1}{3}$.\n\nWe flip the coin 5 times and want the probability of getting exactly 2 heads. This is a binomial distribution problem.\n\n$$P(X = 2) = \\binom{5}{2} \\left(\\frac{2}{3}\\right)^2 \\left(\\frac{1}{3}\\right)^3$$\n\n$$= 10 \\cdot \\frac{4}{9} \\cdot \\frac{1}{27}$$\n\n$$= 10 \\cdot \\frac{4}{243}$$\n\n$$= \\frac{40}{243}$$\n\nThe final answer is $\\boxed{\\dfrac{40}{243}}$.",
+    "label": 1,
+    "score": 0.9923035619118501
+   },
+   "strata": {
+    "candidate": "The number of heads in 5 flips follows a binomial distribution with\n\n\\[\np=\\frac{2}{3}, \\qquad q=1-p=\\frac{1}{3}.\n\\]\n\nThe probability of exactly 2 heads is\n\n\\[\n\\binom{5}{2}\\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^3.\n\\]\n\nCompute:\n\n\\[\n\\binom{5}{2}=10,\n\\]\n\n\\[\n\\left(\\frac{2}{3}\\right)^2=\\frac{4}{9},\n\\]\n\n\\[\n\\left(\\frac{1}{3}\\right)^3=\\frac{1}{27}.\n\\]\n\nSo\n\n\\[\n10 \\cdot \\frac{4}{9} \\cdot \\frac{1}{27}\n= \\frac{40}{243}.\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]",
+    "label": 1,
+    "score": 0.952971152482406
+   }
+  },
+  {
+   "task_id": "math-0017",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.38001123805579473
+   },
+   "strata": {
+    "candidate": "Since \\(AB=AC\\), triangle \\(ABC\\) is isosceles with base \\(BC\\). The altitude \\(AD\\) from \\(A\\) to \\(BC\\) therefore bisects \\(BC\\), so\n\n\\[\nBD=DC=\\frac{12}{2}=6.\n\\]\n\nThe area of \\(\\triangle ABC\\) is\n\n\\[\n\\frac12 \\cdot BC \\cdot AD = 180.\n\\]\n\nThus\n\n\\[\n\\frac12 \\cdot 12 \\cdot AD = 180 \\implies AD=30.\n\\]\n\nNow \\(E\\) lies on \\(AC\\) and \\(DE \\parallel AB\\). Therefore \\(\\triangle CDE \\sim \\triangle CBA\\). Since \\(D\\) is the midpoint of \\(BC\\),\n\n\\[\n\\frac{CD}{CB}=\\frac{6}{12}=\\frac12.\n\\]\n\nSo the similarity ratio is \\(\\frac12\\), and the area ratio is\n\n\\[\n\\left(\\frac12\\right)^2=\\frac14.\n\\]\n\nHence\n\n\\[\n[\\triangle CDE]=\\frac14[\\triangle ABC]=\\frac14\\cdot 180=45.\n\\]\n\nThe quadrilateral \\(ABDE\\) is the part of \\(\\triangle ABC\\) remaining after removing \\(\\triangle CDE\\), so\n\n\\[\n[ABDE]=180-45=135.\n\\]\n\n\\[\n\\boxed{135}\n\\]",
+    "label": 1,
+    "score": 0.9184837417419547
+   }
+  },
+  {
+   "task_id": "math-0018",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "The radical conjugate of an expression of the form $a + b\\sqrt{c}$ is $a - b\\sqrt{c}$.\n\nSo the radical conjugate of $5 - 6\\sqrt{2}$ is $5 + 6\\sqrt{2}$.\n\n\\boxed{5 + 6\\sqrt{2}}",
+    "label": 1,
+    "score": 0.9639353280928729
+   },
+   "strata": {
+    "candidate": "The radical conjugate of an expression of the form \\(a - b\\sqrt{c}\\) is \\(a + b\\sqrt{c}\\).\n\nSo for\n\n\\[\n5 - 6\\sqrt{2},\n\\]\n\nthe radical conjugate is\n\n\\[\n5 + 6\\sqrt{2}.\n\\]\n\nCheck:\n\n\\[\n(5 - 6\\sqrt{2})(5 + 6\\sqrt{2})\n= 5^2 - (6\\sqrt{2})^2\n= 25 - 72\n= -47,\n\\]\n\nwhich is rational.\n\n\\[\n\\boxed{5 + 6\\sqrt{2}}\n\\]",
+    "label": 1,
+    "score": 0.999264409391011
+   }
+  },
+  {
+   "task_id": "math-0019",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "We need to find $n$ such that $7n \\equiv 1 \\pmod{398}$ with $0 \\leq n < 398$.\n\n**Step 1: Check that the inverse exists.**\n\nSince $398 = 2 \\times 199$ and $7$ is prime, $\\gcd(7, 398) = 1$, so the inverse exists.\n\n**Step 2: Apply the Extended Euclidean Algorithm.**\n\n$$\n\\begin{align*}\n398 &= 7 \\times 56 + 6 \\\\\n7 &= 6 \\times 1 + 1 \\\\\n6 &= 1 \\times 6 + 0\n\\end{align*}\n$$\n\nWorking backwards:\n$$\n1 = 7 - 6 \\times 1 = 7 - (398 - 7 \\times 56) \\times 1 = 7 \\times 57 - 398\n$$\n\nSo $7 \\times 57 = 1 + 398$, which means $7 \\times 57 \\equiv 1 \\pmod{398}$.\n\n**Step ",
+    "label": 0,
+    "score": 1.098081701853698
+   },
+   "strata": {
+    "candidate": "We need \\(n\\) such that\n\n\\[\n7n \\equiv 1 \\pmod{398}.\n\\]\n\nUse the extended Euclidean algorithm:\n\n\\[\n398 = 7\\cdot 56 + 6\n\\]\n\n\\[\n7 = 6\\cdot 1 + 1\n\\]\n\nNow back-substitute:\n\n\\[\n1 = 7 - 6\n\\]\n\n\\[\n1 = 7 - (398 - 7\\cdot 56)\n\\]\n\n\\[\n1 = 7\\cdot 57 - 398\n\\]\n\nThus,\n\n\\[\n7\\cdot 57 \\equiv 1 \\pmod{398}.\n\\]\n\nSo the multiplicative inverse of \\(7\\) modulo \\(398\\) is\n\n\\[\n\\boxed{57}\n\\]",
+    "label": 1,
+    "score": 0.9972527332190328
+   }
+  },
+  {
+   "task_id": "math-0020",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "To round $6287215$ to the nearest ten thousand, we look at the digit in the thousands place.\n\nThe number $6287215$ has:\n- Ten thousands digit: $8$\n- Thousands digit: $7$\n\nSince the thousands digit is $7 \\geq 5$, we round up the ten thousands digit from $8$ to $9$.\n\n$$6287215 \\approx 6290000$$\n\n\\boxed{6290000}",
+    "label": 1,
+    "score": 0.6401179089712804
+   },
+   "strata": {
+    "candidate": "To round \\(6{,}287{,}215\\) to the nearest ten thousand, look at the thousands digit:\n\n\\[\n6{,}287{,}215\n\\]\n\nThe ten thousands digit is \\(8\\), and the thousands digit is \\(7\\). Since \\(7 \\ge 5\\), round up:\n\n\\[\n6{,}287{,}215 \\approx 6{,}290{,}000\n\\]\n\n\\[\n\\boxed{6{,}290{,}000}\n\\]",
+    "label": 0,
+    "score": 0.5993380352012251
+   }
+  },
+  {
+   "task_id": "math-0021",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": -0.16930110053806352
+   },
+   "strata": {
+    "candidate": "Let\n\n\\[\nt=\\tan 20^\\circ.\n\\]\n\nSince \\(50^\\circ=90^\\circ-40^\\circ\\),\n\n\\[\n\\tan 50^\\circ=\\cot 40^\\circ.\n\\]\n\nUsing the double-angle formula,\n\n\\[\n\\tan 40^\\circ=\\frac{2\\tan 20^\\circ}{1-\\tan^2 20^\\circ}\n=\\frac{2t}{1-t^2}.\n\\]\n\nTherefore,\n\n\\[\n\\tan 50^\\circ=\\cot 40^\\circ=\\frac{1-t^2}{2t}.\n\\]\n\nNow compute the left-hand side:\n\n\\[\n\\tan 20^\\circ+2\\tan 50^\\circ\n=t+2\\cdot \\frac{1-t^2}{2t}\n=t+\\frac{1-t^2}{t}.\n\\]\n\nCombine terms:\n\n\\[\nt+\\frac{1-t^2}{t}\n=\\frac{t^2+1-t^2}{t}\n=\\frac{1}{t}.\n\\]\n\nBut\n\n\\[\n\\frac{1}{t}=\\cot 20^\\circ=\\tan 70^\\circ.\n\\]\n\nThus\n\n\\[\n\\tan 20^\\circ+2\\tan 50^\\circ=\\tan 70^\\circ.\n\\]\n\nSo\n\n\\[\n\\tan x^\\circ=\\tan 70^\\circ.\n\\]\n\nSince tangent has period \\(180^\\circ\\),\n\n\\[\nx=70+180k\n\\]\n\nfor integer \\(k\\). The smallest positive value is\n\n\\[\n\\boxed{70}.\n\\]",
+    "label": 1,
+    "score": 1.0005477758124135
+   }
+  },
+  {
+   "task_id": "math-0022",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "Let the other endpoint be $(x, y)$. Using the midpoint formula:\n\n$$\\frac{3 + x}{2} = 1 \\implies 3 + x = 2 \\implies x = -1$$\n\n$$\\frac{9 + y}{2} = 2 \\implies 9 + y = 4 \\implies y = -5$$\n\nThe other endpoint is $(-1, -5)$, and the sum of its coordinates is:\n\n$$-1 + (-5) = \\boxed{-6}$$",
+    "label": 1,
+    "score": 1.0005734036582883
+   },
+   "strata": {
+    "candidate": "Let the other endpoint be \\((x,y)\\).\n\nThe midpoint of \\((3,9)\\) and \\((x,y)\\) is\n\n\\[\n\\left(\\frac{3+x}{2}, \\frac{9+y}{2}\\right)\n\\]\n\nGiven the midpoint is \\((1,2)\\), we have\n\n\\[\n\\frac{3+x}{2}=1\n\\]\n\n\\[\n3+x=2\n\\]\n\n\\[\nx=-1\n\\]\n\nand\n\n\\[\n\\frac{9+y}{2}=2\n\\]\n\n\\[\n9+y=4\n\\]\n\n\\[\ny=-5\n\\]\n\nSo the other endpoint is \\((-1,-5)\\). The sum of its coordinates is\n\n\\[\n-1+(-5)=-6\n\\]\n\n\\[\n\\boxed{-6}\n\\]",
+    "label": 1,
+    "score": 1.0030252356835225
+   }
+  },
+  {
+   "task_id": "math-0023",
+   "bucket": "reasoning",
+   "split": "test",
+   "scion": {
+    "candidate": "The word BANANA has 6 letters: B, A, A, A, N, N.\n\n**Total permutations:**\n$$\\frac{6!}{3! \\cdot 2!} = \\frac{720}{6 \\cdot 2} = \\frac{720}{12} = 60$$\n\n**Permutations starting with B:**\nThe remaining letters are A, A, A, N, N.\n$$\\frac{5!}{3! \\cdot 2!} = \\frac{120}{6 \\cdot 2} = \\frac{120}{12} = 10$$\n\n**Permutations NOT starting with B:**\n$$60 - 10 = 50$$\n\nAlternatively, counting directly:\n- Starting with A: $\\frac{5!}{2! \\cdot 2!} = \\frac{120}{4} = 30$\n- Starting with N: $\\frac{5!}{3! \\cdot 1!} = \\frac{120}{6} = 20$\n- Total: $30 + 20 = 50$\n\n$$\\boxed{50}$$",
+    "label": 1,
+    "score": 1.0795228317820174
+   },
+   "strata": {
+    "candidate": "The word **BANANA** has letters:\n\n- \\(B\\): 1\n- \\(A\\): 3\n- \\(N\\): 2\n\nTotal rearrangements:\n\n\\[\n\\frac{6!}{3!2!}=60\n\\]\n\nNow subtract the arrangements that begin with \\(B\\). If the first letter is \\(B\\), the remaining letters are \\(A,A,A,N,N\\), which can be arranged in\n\n\\[\n\\frac{5!}{3!2!}=10\n\\]\n\nways.\n\nTherefore, the number of rearrangements that do **not** begin with \\(B\\) is\n\n\\[\n60-10=50\n\\]\n\n\\[\n\\boxed{50}\n\\]",
+    "label": 1,
+    "score": 1.0916952603305263
+   }
+  },
+  {
+   "task_id": "math-0024",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "**Step 1: Find the side length of the cube.**\n\nThe surface area of a cube with side length $s$ is $6s^2$, and the volume is $s^3$.\n\nThe condition states that the surface area equals $\\frac{1}{6}$ of the volume:\n$$6s^2 = \\frac{1}{6} \\cdot s^3$$\n\nMultiplying both sides by 6:\n$$36s^2 = s^3$$\n\nDividing both sides by $s^2$:\n$$s = 36$$\n\n**Step 2: Find the side length of the square.**\n\nThe volume of the cube is $36^3 = 46{,}656$ cubic units.\n\nWe want a square whose area equals this volume. Let the side length of the square be $x$:\n$$x^2 = 36^3$$\n\nTaking the square root:\n$$x = \\sqrt{36^3} = 36^{3/2} = 36 \\cdot \\sqrt{36} = 36 \\cdot 6 = 216$$\n\nThe side length of the square should be $\\boxed{216}$ units.",
+    "label": 1,
+    "score": 1.1805528142067692
+   },
+   "strata": {
+    "candidate": "The cube has side length \\(s\\).\n\nSurface area of the cube:\n\n\\[\n6s^2\n\\]\n\nVolume of the cube:\n\n\\[\ns^3\n\\]\n\nWe are told:\n\n\\[\n6s^2=\\frac16 s^3\n\\]\n\nMultiply both sides by 6:\n\n\\[\n36s^2=s^3\n\\]\n\nSince \\(s>0\\), divide by \\(s^2\\):\n\n\\[\n36=s\n\\]\n\nSo the cube\u2019s side length is \\(36\\), and its volume is\n\n\\[\n36^3\n\\]\n\nThe square\u2019s area must equal the cube\u2019s volume:\n\n\\[\nx^2=36^3\n\\]\n\nThus\n\n\\[\nx=\\sqrt{36^3}=36\\sqrt{36}=36\\cdot 6=216\n\\]\n\n\\[\n\\boxed{216}\n\\]",
+    "label": 1,
+    "score": 0.9972285630383784
+   }
+  },
+  {
+   "task_id": "math-0025",
+   "bucket": "reasoning",
+   "split": "train",
+   "scion": {
+    "candidate": "To find the distance between the foci of the hyperbola $\\frac{x^2}{50} - \\frac{y^2}{22} = 2$, I first rewrite it in standard form.\n\nDividing both sides by 2:\n$$\\frac{x^2}{100} - \\frac{y^2}{44} = 1$$\n\nThis is in the form $\\frac{x^2}{a^2} - \\frac{y^2}{b^2} = 1$, where $a^2 = 100$ and $b^2 = 44$.\n\nFor a hyperbola, the distance from the center to each focus is $c$, where $c^2 = a^2 + b^2$:\n$$c^2 = 100 + 44 = 144$$\n$$c = \\sqrt{144} = 12$$\n\nThe foci are located at $(\\pm c, 0) = (\\pm 12, 0)$, so the distance between them is:\n$$2c = 2(12) = 24$$\n\n$$\\boxed{24}$$",
+    "label": 1,
+    "score": 1.132702655359836
+   },
+   "strata": {
+    "candidate": "Rewrite the hyperbola in standard form:\n\n\\[\n\\frac{x^2}{50}-\\frac{y^2}{22}=2\n\\]\n\nDivide both sides by \\(2\\):\n\n\\[\n\\frac{x^2}{100}-\\frac{y^2}{44}=1\n\\]\n\nThis is a hyperbola of the form\n\n\\[\n\\frac{x^2}{a^2}-\\frac{y^2}{b^2}=1\n\\]\n\nwith\n\n\\[\na^2=100,\\qquad b^2=44.\n\\]\n\nFor a hyperbola, the focal distance satisfies\n\n\\[\nc^2=a^2+b^2.\n\\]\n\nThus,\n\n\\[\nc^2=100+44=144\n\\]\n\nso\n\n\\[\nc=12.\n\\]\n\nThe foci are at \\((\\pm 12,0)\\), so the distance between them is\n\n\\[\n2c=24.\n\\]\n\n\\[\n\\boxed{24}\n\\]",
+    "label": 1,
+    "score": 1.0007035151499997
+   }
+  },
+  {
+   "task_id": "humaneval-0001",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "```python\nimport math\n\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    odd_digits = [int(d) for d in str(n) if int(d) % 2 == 1]\n    if not odd_digits:\n        return 0\n    return math.prod(odd_digits)\n```",
+    "label": 1,
+    "score": 0.9107320383741098
+   },
+   "strata": {
+    "candidate": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    product = 1\n    found_odd = False\n\n    while n > 0:\n        digit = n % 10\n        if digit % 2 == 1:\n            product *= digit\n            found_odd = True\n        n //= 10\n\n    return product if found_odd else 0\n```",
+    "label": 1,
+    "score": 0.8755771198499771
+   }
+  },
+  {
+   "task_id": "humaneval-0002",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "```python\ndef is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n    if len(s) < 3:\n        return False\n    for i in range(len(s) - 2):\n        if len(set(s[i:i+3])) < 3:\n            return False\n    return True\n```",
+    "label": 1,
+    "score": 0.9560902049005134
+   },
+   "strata": {
+    "candidate": "```python\ndef is_happy(s):\n    if len(s) < 3:\n        return False\n\n    for i in range(len(s) - 2):\n        if s[i] == s[i + 1] or s[i] == s[i + 2] or s[i + 1] == s[i + 2]:\n            return False\n\n    return True\n```",
+    "label": 1,
+    "score": 0.9075292538987535
+   }
+  },
+  {
+   "task_id": "humaneval-0003",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "```python\ndef even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    num = abs(num)\n    even_count = 0\n    odd_count = 0\n    for digit in str(num):\n        if int(digit) % 2 == 0:\n            even_count += 1\n        else:\n            odd_count += 1\n    return (even_count, odd_count)\n```",
+    "label": 1,
+    "score": 1.0652646767850287
+   },
+   "strata": {
+    "candidate": "```python\ndef even_odd_count(num):\n    even = 0\n    odd = 0\n\n    for digit in str(abs(num)):\n        if int(digit) % 2 == 0:\n            even += 1\n        else:\n            odd += 1\n\n    return even, odd\n```",
+    "label": 1,
+    "score": 1.0785185408875293
+   }
+  },
+  {
+   "task_id": "humaneval-0004",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n == 0:\n        return 0\n    if n == 1:\n        return 0\n    if n == 2:\n        return 1\n    \n    a, b, c = 0, 0, 1\n    for i in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n    return c\n```",
+    "label": 1,
+    "score": 1.0605960724472183
+   },
+   "strata": {
+    "candidate": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n == 0 or n == 1:\n        return 0\n    if n == 2:\n        return 1\n\n    a, b, c = 0, 0, 1\n    for _ in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n\n    return c\n```",
+    "label": 1,
+    "score": 1.0524981966979718
+   }
+  },
+  {
+   "task_id": "humaneval-0005",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\nfrom typing import List\nfrom collections import Counter\n\n\ndef remove_duplicates(numbers: List[int]) -> List[int]:\n    \"\"\" From a list of integers, remove all elements that occur more than once.\n    Keep order of elements left the same as in the input.\n    >>> remove_duplicates([1, 2, 3, 2, 4])\n    [1, 3, 4]\n    \"\"\"\n    counts = Counter(numbers)\n    return [x for x in numbers if counts[x] == 1]\n```",
+    "label": 1,
+    "score": 1.0338975200485327
+   },
+   "strata": {
+    "candidate": "```python\nfrom typing import List\n\n\ndef remove_duplicates(numbers: List[int]) -> List[int]:\n    \"\"\" From a list of integers, remove all elements that occur more than once.\n    Keep order of elements left the same as in the input.\n    >>> remove_duplicates([1, 2, 3, 2, 4])\n    [1, 3, 4]\n    \"\"\"\n    counts = {}\n    for number in numbers:\n        counts[number] = counts.get(number, 0) + 1\n\n    return [number for number in numbers if counts[number] == 1]\n```",
+    "label": 1,
+    "score": 1.0000985080329046
+   }
+  },
+  {
+   "task_id": "humaneval-0006",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef words_in_sentence(sentence):\n    \"\"\"\n    You are given a string representing a sentence,\n    the sentence contains some words separated by a space,\n    and you have to return a string that contains the words from the original sentence,\n    whose lengths are prime numbers,\n    the order of the words in the new string should be the same as the original one.\n\n    Example 1:\n        Input: sentence = \"This is a test\"\n        Output: \"is\"\n\n    Example 2:\n        Input: sentence = \"lets go for swimming\"\n        Output: \"go for\"\n\n    Constraints:\n        * 1 <= len(sentence) <= 100\n       ",
+    "label": 0,
+    "score": 0.15635346223745517
+   },
+   "strata": {
+    "candidate": "```python\ndef words_in_sentence(sentence):\n    def is_prime(n):\n        if n < 2:\n            return False\n        if n == 2:\n            return True\n        if n % 2 == 0:\n            return False\n        i = 3\n        while i * i <= n:\n            if n % i == 0:\n                return False\n            i += 2\n        return True\n\n    return \" \".join(word for word in sentence.split() if is_prime(len(word)))\n```",
+    "label": 1,
+    "score": 0.9995033230431234
+   }
+  },
+  {
+   "task_id": "humaneval-0007",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(n for n in arr[:k] if len(str(n)) <= 2)\n```",
+    "label": 1,
+    "score": 1.1873440440916332
+   },
+   "strata": {
+    "candidate": "```python\ndef add_elements(arr, k):\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+    "label": 1,
+    "score": 0.6878539755333795
+   }
+  },
+  {
+   "task_id": "humaneval-0008",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\nimport math\n\ndef sum_squares(lst):\n    \"\"\"You are given a list of numbers.\n    You need to return the sum of squared numbers in the given list,\n    round each element in the list to the upper int(Ceiling) first.\n    Examples:\n    For lst = [1,2,3] the output should be 14\n    For lst = [1,4,9] the output should be 98\n    For lst = [1,3,5,7] the output should be 84\n    For lst = [1.4,4.2,0] the output should be 29\n    For lst = [-2.4,1,1] the output should be 6\n    \n\n    \"\"\"\n    return sum(math.ceil(x) ** 2 for x in lst)\n```",
+    "label": 1,
+    "score": 1.0962006898402679
+   },
+   "strata": {
+    "candidate": "```python\nimport math\n\ndef sum_squares(lst):\n    return sum(math.ceil(x) ** 2 for x in lst)\n```",
+    "label": 1,
+    "score": 0.9692776509431831
+   }
+  },
+  {
+   "task_id": "humaneval-0009",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef right_angle_triangle(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return True if the three\n    sides form a right-angled triangle, False otherwise.\n    A right-angled triangle is a triangle in which one angle is right angle or \n    90 degree.\n    Example:\n    right_angle_triangle(3, 4, 5) == True\n    right_angle_triangle(1, 2, 3) == False\n    '''\n    sides = sorted([a, b, c])\n    return sides[0] ** 2 + sides[1] ** 2 == sides[2] ** 2\n```",
+    "label": 1,
+    "score": 1.0009466453511815
+   },
+   "strata": {
+    "candidate": "```python\ndef right_angle_triangle(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return True if the three\n    sides form a right-angled triangle, False otherwise.\n    A right-angled triangle is a triangle in which one angle is right angle or \n    90 degree.\n    Example:\n    right_angle_triangle(3, 4, 5) == True\n    right_angle_triangle(1, 2, 3) == False\n    '''\n    sides = sorted([a, b, c])\n    return sides[0] ** 2 + sides[1] ** 2 == sides[2] ** 2\n```",
+    "label": 1,
+    "score": 1.0009466453511815
+   }
+  },
+  {
+   "task_id": "humaneval-0010",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": 0.6113177236758542
+   },
+   "strata": {
+    "candidate": "```python\ndef is_sorted(lst):\n    counts = {}\n    for num in lst:\n        counts[num] = counts.get(num, 0) + 1\n        if counts[num] > 2:\n            return False\n\n    for i in range(len(lst) - 1):\n        if lst[i] > lst[i + 1]:\n            return False\n\n    return True\n```",
+    "label": 1,
+    "score": 0.9952105124318754
+   }
+  },
+  {
+   "task_id": "humaneval-0011",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef smallest_change(arr):\n    \"\"\"\n    Given an array arr of integers, find the minimum number of elements that\n    need to be changed to make the array palindromic. A palindromic array is an array that\n    is read the same backwards and forwards. In one change, you can change one element to any other element.\n\n    For example:\n    smallest_change([1,2,3,5,4,7,9,6]) == 4\n    smallest_change([1, 2, 3, 4, 3, 2, 2]) == 1\n    smallest_change([1, 2, 3, 2, 1]) == 0\n    \"\"\"\n    n = len(arr)\n    count = 0\n    for i in range(n // 2):\n        if arr[i] != arr[n - 1 - i]:\n            count += 1\n    return count\n```",
+    "label": 1,
+    "score": 1.0244531544497053
+   },
+   "strata": {
+    "candidate": "```python\ndef smallest_change(arr):\n    \"\"\"\n    Given an array arr of integers, find the minimum number of elements that\n    need to be changed to make the array palindromic. A palindromic array is an array that\n    is read the same backwards and forwards. In one change, you can change one element to any other element.\n\n    For example:\n    smallest_change([1,2,3,5,4,7,9,6]) == 4\n    smallest_change([1, 2, 3, 4, 3, 2, 2]) == 1\n    smallest_change([1, 2, 3, 2, 1]) == 0\n    \"\"\"\n    changes = 0\n    n = len(arr)\n\n    for i in range(n // 2):\n        if arr[i] != arr[n - 1 - i]:\n            changes += 1\n\n    return changes\n```",
+    "label": 1,
+    "score": 0.9999320174257071
+   }
+  },
+  {
+   "task_id": "humaneval-0012",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef add(lst):\n    \"\"\"Given a non-empty list of integers lst. add the even elements that are at odd indices..\n\n\n    Examples:\n        add([4, 2, 6, 7]) ==> 2 \n    \"\"\"\n    return sum(x for i, x in enumerate(lst) if i % 2 == 1 and x % 2 == 0)\n```",
+    "label": 1,
+    "score": 1.080721374116024
+   },
+   "strata": {
+    "candidate": "```python\ndef add(lst):\n    return sum(x for i, x in enumerate(lst) if i % 2 == 1 and x % 2 == 0)\n```",
+    "label": 1,
+    "score": 1.0003997581554853
+   }
+  },
+  {
+   "task_id": "humaneval-0013",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef strlen(string: str) -> int:\n    \"\"\" Return length of given string\n    >>> strlen('')\n    0\n    >>> strlen('abc')\n    3\n    \"\"\"\n    return len(string)\n```",
+    "label": 1,
+    "score": 1.0000281368389075
+   },
+   "strata": {
+    "candidate": "```python\ndef strlen(string: str) -> int:\n    \"\"\" Return length of given string\n    >>> strlen('')\n    0\n    >>> strlen('abc')\n    3\n    \"\"\"\n    return len(string)\n```",
+    "label": 1,
+    "score": 1.0000281368389075
+   }
+  },
+  {
+   "task_id": "humaneval-0014",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef add(x: int, y: int):\n    \"\"\"Add two numbers x and y\n    >>> add(2, 3)\n    5\n    >>> add(5, 7)\n    12\n    \"\"\"\n    return x + y\n```",
+    "label": 1,
+    "score": 1.0005675888934367
+   },
+   "strata": {
+    "candidate": "```python\ndef add(x: int, y: int):\n    \"\"\"Add two numbers x and y\n    >>> add(2, 3)\n    5\n    >>> add(5, 7)\n    12\n    \"\"\"\n    return x + y\n```",
+    "label": 1,
+    "score": 1.0005675888934367
+   }
+  },
+  {
+   "task_id": "humaneval-0015",
+   "bucket": "code",
+   "split": "test",
+   "scion": {
+    "candidate": "",
+    "label": 0,
+    "score": 0.6224624823581943
+   },
+   "strata": {
+    "candidate": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    for i in range(len(string)):\n        if is_palindrome(string[i:]):\n            return string + string[:i][::-1]\n\n    return string\n```",
+    "label": 1,
+    "score": 0.9565957273685464
+   }
+  },
+  {
+   "task_id": "humaneval-0016",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\nimport hashlib\n\ndef string_to_md5(text):\n    \"\"\"\n    Given a string 'text', return its md5 hash equivalent string.\n    If 'text' is an empty string, return None.\n\n    >>> string_to_md5('Hello world') == '3e25960a79dbc69b674cd4ec67a72c62'\n    \"\"\"\n    if text == \"\":\n        return None\n    return hashlib.md5(text.encode()).hexdigest()\n```",
+    "label": 1,
+    "score": 0.9703615447525903
+   },
+   "strata": {
+    "candidate": "```python\nimport hashlib\n\ndef string_to_md5(text):\n    \"\"\"\n    Given a string 'text', return its md5 hash equivalent string.\n    If 'text' is an empty string, return None.\n\n    >>> string_to_md5('Hello world') == '3e25960a79dbc69b674cd4ec67a72c62'\n    \"\"\"\n    if not text:\n        return None\n    return hashlib.md5(text.encode()).hexdigest()\n```",
+    "label": 1,
+    "score": 0.9998367250097739
+   }
+  },
+  {
+   "task_id": "humaneval-0017",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef rounded_avg(n, m):\n    \"\"\"You are given two positive integers n and m, and your task is to compute the\n    average of the integers from n through m (including n and m). \n    Round the answer to the nearest integer and convert that to binary.\n    If n is greater than m, return -1.\n    Example:\n    rounded_avg(1, 5) => \"0b11\"\n    rounded_avg(7, 5) => -1\n    rounded_avg(10, 20) => \"0b1111\"\n    rounded_avg(20, 33) => \"0b11010\"\n    \"\"\"\n    if n > m:\n        return -1\n    avg = (n + m) / 2\n    rounded = round(avg)\n    return bin(rounded)\n```",
+    "label": 1,
+    "score": 1.0692817820654659
+   },
+   "strata": {
+    "candidate": "```python\ndef rounded_avg(n, m):\n    \"\"\"You are given two positive integers n and m, and your task is to compute the\n    average of the integers from n through m (including n and m). \n    Round the answer to the nearest integer and convert that to binary.\n    If n is greater than m, return -1.\n    Example:\n    rounded_avg(1, 5) => \"0b11\"\n    rounded_avg(7, 5) => -1\n    rounded_avg(10, 20) => \"0b1111\"\n    rounded_avg(20, 33) => \"0b11010\"\n    \"\"\"\n    if n > m:\n        return -1\n\n    return bin(round((n + m) / 2))\n```",
+    "label": 1,
+    "score": 0.9952831598517915
+   }
+  },
+  {
+   "task_id": "humaneval-0018",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef digitSum(s):\n    \"\"\"Task\n    Write a function that takes a string as input and returns the sum of the upper characters only'\n    ASCII codes.\n\n    Examples:\n        digitSum(\"\") => 0\n        digitSum(\"abAB\") => 131\n        digitSum(\"abcCd\") => 67\n        digitSum(\"helloE\") => 69\n        digitSum(\"woArBld\") => 131\n        digitSum(\"aAaaaXa\") => 153\n    \"\"\"\n    return sum(ord(c) for c in s if c.isupper())\n```",
+    "label": 1,
+    "score": 1.1268238809807998
+   },
+   "strata": {
+    "candidate": "```python\ndef digitSum(s):\n    return sum(ord(c) for c in s if c.isupper())\n```",
+    "label": 1,
+    "score": 0.9999261834845146
+   }
+  },
+  {
+   "task_id": "humaneval-0019",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists,\n    which is similar to matrix, however, unlike matrices,\n    each row may contain a different number of columns.\n    Given lst, and integer x, find integers x in the list,\n    and return list of tuples, [(x1, y1), (x2, y2) ...] such that\n    each tuple is a coordinate - (row, columns), starting with 0.\n    Sort coordinates initially by rows in ascending order.\n    Also, sort coordinates of the row by columns in descending order.\n    \n    Examples:\n    get_row([\n      [1,2,3,4,5,6],\n      [1,2,3,4,1,6],\n      [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    get_row([],",
+    "label": 0,
+    "score": -0.07801213815121533
+   },
+   "strata": {
+    "candidate": "```python\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists,\n    which is similar to matrix, however, unlike matrices,\n    each row may contain a different number of columns.\n    Given lst, and integer x, find integers x in the list,\n    and return list of tuples, [(x1, y1), (x2, y2) ...] such that\n    each tuple is a coordinate - (row, columns), starting with 0.\n    Sort coordinates initially by rows in ascending order.\n    Also, sort coordinates of the row by columns in descending order.\n    \"\"\"\n    coordinates = []\n\n    for row_index, row in enumerate(lst):\n        for col_index, value in enumerate(row):\n            if value == x:\n                coordinates.append((row_index, col_index))\n\n    coordinates.sort(key=lambda coord: (coord[0], -coord[1]))\n    return coordinates\n```",
+    "label": 1,
+    "score": 1.0000545445689442
+   }
+  },
+  {
+   "task_id": "humaneval-0020",
+   "bucket": "code",
+   "split": "train",
+   "scion": {
+    "candidate": "```python\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"<\" and \">\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"<\")\n    False\n    >>> correct_bracketing(\"<>\")\n    True\n    >>> correct_bracketing(\"<<><>>\")\n    True\n    >>> correct_bracketing(\"><<>\")\n    False\n    \"\"\"\n    stack = []\n    for char in brackets:\n        if char == \"<\":\n            stack.append(char)\n        elif char == \">\":\n            if not stack:\n                return False\n            stack.pop()\n    return len(stack) == 0\n```",
+    "label": 1,
+    "score": 0.8874122393908073
+   },
+   "strata": {
+    "candidate": "```python\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"<\" and \">\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"<\")\n    False\n    >>> correct_bracketing(\"<>\")\n    True\n    >>> correct_bracketing(\"<<><>>\")\n    True\n    >>> correct_bracketing(\"><<>\")\n    False\n    \"\"\"\n    depth = 0\n\n    for bracket in brackets:\n        if bracket == \"<\":\n            depth += 1\n        elif bracket == \">\":\n            depth -= 1\n\n        if depth < 0:\n            return False\n\n    return depth == 0\n```",
+    "label": 1,
+    "score": 0.999971489564108
+   }
+  },
+  {
+   "task_id": "truthfulqa-0001",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "B",
+    "label": 0,
+    "score": 0.002279327496636785
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9970208651853966
+   }
+  },
+  {
+   "task_id": "truthfulqa-0002",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "B",
+    "label": 0,
+    "score": 0.0013500400421854186
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9998301423629501
+   }
+  },
+  {
+   "task_id": "truthfulqa-0003",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 1.000099141682905
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 1.000099141682905
+   }
+  },
+  {
+   "task_id": "truthfulqa-0004",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9997958207089517
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9997958207089517
+   }
+  },
+  {
+   "task_id": "truthfulqa-0005",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "D",
+    "label": 0,
+    "score": 0.00025575657503729143
+   },
+   "strata": {
+    "candidate": "D",
+    "label": 0,
+    "score": 0.00025575657503729143
+   }
+  },
+  {
+   "task_id": "truthfulqa-0006",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9975692209703828
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9975692209703828
+   }
+  },
+  {
+   "task_id": "truthfulqa-0007",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 1.0006380510641408
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 1.0006380510641408
+   }
+  },
+  {
+   "task_id": "truthfulqa-0008",
+   "bucket": "qa",
+   "split": "test",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.715979954114172
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.715979954114172
+   }
+  },
+  {
+   "task_id": "truthfulqa-0009",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9999954032263845
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9999954032263845
+   }
+  },
+  {
+   "task_id": "truthfulqa-0010",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "B",
+    "label": 0,
+    "score": 0.003820614983706283
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9932766016532197
+   }
+  },
+  {
+   "task_id": "truthfulqa-0011",
+   "bucket": "qa",
+   "split": "test",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9886686675563905
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9886686675563905
+   }
+  },
+  {
+   "task_id": "truthfulqa-0012",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9997965624539278
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.9997965624539278
+   }
+  },
+  {
+   "task_id": "truthfulqa-0013",
+   "bucket": "qa",
+   "split": "test",
+   "scion": {
+    "candidate": "B",
+    "label": 0,
+    "score": 0.4749893682779328
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.6244740350009851
+   }
+  },
+  {
+   "task_id": "truthfulqa-0014",
+   "bucket": "qa",
+   "split": "train",
+   "scion": {
+    "candidate": "C",
+    "label": 0,
+    "score": 0.0002253197729484846
+   },
+   "strata": {
+    "candidate": "C",
+    "label": 0,
+    "score": 0.0002253197729484846
+   }
+  },
+  {
+   "task_id": "truthfulqa-0015",
+   "bucket": "qa",
+   "split": "test",
+   "scion": {
+    "candidate": "B",
+    "label": 0,
+    "score": 0.4873011228526134
+   },
+   "strata": {
+    "candidate": "A",
+    "label": 1,
+    "score": 0.5814539256037277
+   }
+  }
+ ],
  "scion": {
   "n": 100,
   "auc": 0.9712301587301587,

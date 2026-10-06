@@ -113,12 +113,14 @@ open follow-up; the QAT body is the better platform (0.712).
 
 ## Status and next steps
 
-- Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session
-  (prompted, probe, 100 generated answers); source-swap audit incl. natural
-  errors; T2 size/label map; T3 ternary survival.
-- Next: controlled attribution test (same text, own vs other), JEV-9B on
-  J-Bench if it fits a card, calibration section, one cascade end-to-end run,
-  whitepaper draft.
+- Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session;
+  source-swap audit incl. natural errors; T2 size/label map; T3 ternary
+  survival; controlled attribution + balanced refit; exported
+  `scion-35b-a3b-decision-head.json` for the released model with the
+  before/after report (`SCION-HEAD-REPORT.md`): prompted **7/28 -> head
+  23/28** own-error catches at zero false rejects (thr 0.5).
+- Next: JEV-9B on J-Bench if it fits a card, one cascade end-to-end run with a
+  head-backed validator, whitepaper draft.
 
 
 
