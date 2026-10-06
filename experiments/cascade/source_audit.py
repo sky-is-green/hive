@@ -89,6 +89,7 @@ def main() -> int:
                 strata[rec["id"]] = rec
 
     rows = []
+    embs: dict[str, np.ndarray] = {}
     t0 = time.time()
     for rec in scion:
         task_id = rec["id"]
@@ -102,8 +103,9 @@ def main() -> int:
         foreign = {**base, "source": "strata", "candidate": other["scion_answer"],
                    "label": int(bool(other.get("scion_ok")))}
         for item in (own, foreign):
-            item["score"] = float(ridge_score(embed(args.server, item)[None, :],
-                                              model)[0])
+            vec = embed(args.server, item)
+            item["score"] = float(ridge_score(vec[None, :], model)[0])
+            embs[f"{task_id}:{item['source']}"] = vec
         rows.append({"task_id": task_id, "bucket": rec["bucket"],
                      "split": rec["split"],
                      "scion": {"candidate": own["candidate"], "label": own["label"],
@@ -114,7 +116,12 @@ def main() -> int:
         if len(rows) % 10 == 0:
             print(f"[{len(rows)}] {time.time()-t0:.0f}s", flush=True)
 
-    out = {"n": len(rows), "head": "scion35b L1 ridge (refit, deterministic)"}
+    keys = list(embs)
+    np.savez_compressed(args.out.with_name("source-audit-states.npz"),
+                        keys=np.array(keys),
+                        emb=np.stack([embs[k] for k in keys]).astype(np.float16))
+    out = {"n": len(rows), "head": "scion35b L1 ridge (refit, deterministic)",
+           "rows": rows}
     for src in ("scion", "strata"):
         s = [r[src] for r in rows]
         out[src] = {
