@@ -29,10 +29,31 @@ split is frozen; fitting uses train only.  Prior art: `PRIOR-ART.md`.
 - G3: if a sub-1B model must be quantised for residency, T3 decides whether the
   readout survives.
 
-## Smoke results so far
+## Results so far (2026-10-06)
 
-- `readout-smoke-qwen35-0.8b.json`: prompted readout, 6 test items, AUC 0.375
-  (sanity generation answers "A. Yes" — prompt format is understood).
-- `probe-smoke0.8b.json`: ridge probe on the first 120 items, test AUC 0.973
-  (final layer) / 0.898 (mid layer) — the model's hidden state carries the
-  verdict even when its prompted answer does not.
+| readout | model | test AUC | note |
+|---|---|---|---|
+| prompted yes/no | Qwen3.5-0.8B | 0.375 (n=6) | smoke only |
+| prompted yes/no | Qwen3.5-4B | 0.494 (n=116) | **82.8% option-order flips** — dominated by a label/position bias |
+| probe, depth 0.75 | Qwen3.5-0.8B | 0.924 | best layer for the 0.8B |
+| probe, final | Qwen3.5-0.8B | 0.795 | signal degrades at the last layer here |
+| probe, depth 0.75 | Qwen3.5-4B | 0.946 | nearly coincident with final |
+| probe, final | Qwen3.5-4B | 0.960 | best overall |
+| probe (4B, 0.75), cross-type transfer | fit on num-flips only | boxed 0.998, code 0.874 | a general correctness signal, not perturbation detection |
+| probe (4B, 0.75), per negative type | entity 1.00, boxed 0.99, code 0.91, num 0.98, choice 0.81-0.86 (n=4) | | choice items underpowered |
+
+Caveats: `Qwen/Qwen3.5-0.8B` and `Qwen/Qwen3.5-4B` are base
+(`Qwen3_5ForConditionalGeneration`) checkpoints without an instruct tag, so the
+prompted leg is **not** a fair instruction-tuned comparison — the trained
+judges (Intern family, Tiny-Jev, JEV-9B) and the Scion-35B generator session
+supply that leg.  All negatives are still perturbations; natural generator
+errors are added in the Scion session.
+
+## Status
+
+- `jev-small` chain: done (probe 0.8B/4B, prompted 4B).
+- `jev-judges` chain: running (Intern 4B/2B/0.8B on GPU, Tiny-Jev on CPU).
+- queued: Scion-35B generator session (prompted self-judge, final-layer probe
+  via the bridge, natural wrong answers on the test split); ternary survival
+  probe once a mid-layer hidden path exists for the V2/QAT GGUFs.
+
