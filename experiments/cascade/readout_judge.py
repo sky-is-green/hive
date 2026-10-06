@@ -242,6 +242,60 @@ class ServerReadout:
         return yes / (yes + no)
 
 
+class ServerChatReadout:
+    """Prompted readout through a llama-server GGUF model.
+
+    The prompt is built with the model's own chat template
+    (``/apply-template``, thinking disabled) and the answer is read from the
+    top logprobabilities at the first generated position (``n_probs``).
+    """
+
+    SYSTEM = ("You are a decision function. Reply with the answer label only.")
+
+    def __init__(self, url: str, timeout: float = 600.0):
+        self.url = url.rstrip("/")
+        self.timeout = timeout
+        self.missing = 0
+
+    def _post(self, path: str, body: dict) -> dict:
+        req = urllib.request.Request(self.url + path,
+                                     data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            return json.load(r)
+
+    def _prompt(self, item: dict, swap: bool) -> str:
+        messages = [
+            {"role": "system", "content": self.SYSTEM},
+            {"role": "user", "content": order_body(item, swap)},
+        ]
+        result = self._post("/apply-template", {
+            "messages": messages, "add_generation_prompt": True,
+            "chat_template_kwargs": {"enable_thinking": False}})
+        return result["prompt"]
+
+    def p_yes(self, item: dict, swap: bool) -> float:
+        prompt = self._prompt(item, swap)
+        result = self._post("/completion", {
+            "prompt": prompt, "n_predict": 1, "temperature": 0.0, "seed": 1337,
+            "n_probs": 20, "cache_prompt": False})
+        cp = result.get("completion_probabilities") or []
+        probs = {e["token"]: math.exp(e["logprob"])
+                 for e in (cp[0].get("top_logprobs", []) if cp else [])}
+        yes = sum(v for k, v in probs.items() if _is_label(k, "A", "Yes", swap))
+        no = sum(v for k, v in probs.items() if _is_label(k, "B", "No", swap))
+        if yes + no <= 0:
+            self.missing += 1
+            return 0.5
+        return yes / (yes + no)
+
+
+def _is_label(token: str, letter: str, word: str, swap: bool) -> bool:
+    t = token.strip().strip(".").strip().lower()
+    want_letter = letter if not swap else ("B" if letter == "A" else "A")
+    return t in (want_letter.lower(), word.lower())
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--bench", type=Path, default=DEFAULT_BENCH)
@@ -249,6 +303,10 @@ def main() -> int:
     ap.add_argument("--name", required=True)
     ap.add_argument("--hf", default="")
     ap.add_argument("--server", default="")
+    ap.add_argument("--server-chat", default="",
+                    help="llama-server URL; builds the prompt with "
+                         "/apply-template (thinking disabled) and reads "
+                         "n_probs at the answer position")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--no-chat", action="store_true",
                     help="do not apply the tokenizer chat template (HF backend)")
@@ -267,11 +325,14 @@ def main() -> int:
     if args.hf:
         backend = HFReadout(args.hf, args.device, chat=not args.no_chat)
         name = args.name or Path(args.hf).name
+    elif args.server_chat:
+        backend = ServerChatReadout(args.server_chat)
+        name = args.name or "server-chat"
     elif args.server:
         backend = ServerReadout(args.server)
         name = args.name or "server"
     else:
-        raise SystemExit("need --hf or --server")
+        raise SystemExit("need --hf, --server or --server-chat")
 
     out_items = []
     t0 = time.time()

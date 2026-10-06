@@ -60,14 +60,20 @@ def main() -> int:
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for path in sorted(R.glob("readout-*.json")):
+        if "smoke" in path.stem:
+            continue
         items = load_items(path)
         if items:
             lines.append(row(path.stem.replace("readout-", ""), "prompted", items))
     for path in sorted(R.glob("judge-*.json")):
+        if "smoke" in path.stem:
+            continue
         items = load_items(path)
         if items:
             lines.append(row(path.stem.replace("judge-", ""), "trained-judge", items))
     for path in sorted(R.glob("probe-*.json")):
+        if "smoke" in path.stem:
+            continue
         data = json.loads(path.read_text())
         states_path = R / data.get("state_file", "")
         if not states_path.exists():
