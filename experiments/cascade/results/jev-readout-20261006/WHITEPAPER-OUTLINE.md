@@ -31,12 +31,21 @@ self-bias because it has no behavioural channel.
    labels (0.959); 0.8B scales 0.784 -> 0.831 -> 0.924 at 20/100/262.
 4. **Generalization** — cross-type transfer (fit on number-flips -> boxed
    0.998, code 0.874); frozen head catches 28 natural errors (0.971).
-5. **Self-bias audit** — paired own/other answers, equal labels: +0.078 on
-   correct, +0.018 on wrong (no error inflation); controlled attribution test
-   pending.
-6. **Quantization** — T3 pending: f16 -> ternary (h128 GPTQ, QAT) cross-body
-   transfer at the final layer.  Prior art: 4-bit probes keep 0.90-1.00 AUROC
-   (Aiersilan 2026); 2-bit is the open point.
+5. **Self-bias audit** — uncontrolled source swap: +0.078 correct / +0.018
+   wrong.  **Controlled attribution** (identical text, own vs other, n=200):
+   head +0.178 correct / **+0.098 wrong**; prompted +0.033 correct / +0.099
+   wrong.  Self-bias is real in both readouts, but for the head it is a
+   calibration shift across a ~0.85 correct/wrong gap (natural-error AUC 0.971
+   own vs 0.990 other), not a ranking inversion.  The MTP-head claim is
+   therefore "auditable and correctable" (source-aware thresholds,
+   attribution-balanced refit), not "bias-free".
+6. **Quantization** — T3 measured on the Clef bodies (same prompts, final
+   layer): f16 refit 0.952; refit on 2-bit ternary: QAT 0.712, h128 GPTQ
+   0.648 (tracks PPL); **frozen f16 head does not transfer** (0.502 / 0.510,
+   chance).  Contrast with prior art: 4-bit probes keep 0.90-1.00 AUROC;
+   2-bit is where readout fidelity breaks materially, and heads are
+   per-body (consistent with AnyJev heads not transferring across models).
+   Mid-layer extraction is the open follow-up.
 7. **Systems** — head = `[hidden, K]` + stats (KB), zero resident model, no
    second ROCm context; fits the MTP/router sidecar pattern; online-monitor
    variant (read states during generation) is future work.

@@ -64,10 +64,15 @@ Other measurements:
     **28 natural errors** (mean score 1.04 correct vs 0.22 wrong) — the
     correctness signal generalizes beyond perturbations;
   - Strata's answers: AUC 0.990 (97 correct / 3 wrong).
-  Self-preference deltas: **correct +0.078** (own above other), **wrong +0.018**
-  — a small familiarity shift on correct answers, **no inflation of own
-  errors**.  The controlled attribution test (same text, "your answer" vs
-  "another model's") remains as the next audit.
+  Uncontrolled self-preference deltas: correct +0.078, wrong +0.018.
+- **Controlled attribution audit (n=200, `attribution-audit.json`)**: identical
+  candidate text under "Your own answer" vs "Another model's answer".  Head
+  score deltas: **+0.178 (correct), +0.098 (wrong)**; prompted: +0.033
+  (correct), **+0.099 (wrong)**.  Self-bias is real and measurable in both
+  readouts.  For the head it is a calibration shift against a ~0.85
+  correct/wrong gap (natural-error AUC 0.971 own vs 0.990 other) — not a
+  ranking inversion.  Mitigations: source-aware thresholds,
+  attribution-balanced refit (next).
 
 ### T2 size / label map (probe at depth 0.75, test AUC)
 
