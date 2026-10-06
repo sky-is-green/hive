@@ -1,0 +1,60 @@
+{
+ "name": "qwen35-4b-l300",
+ "backend": "Qwen/Qwen3.5-4B",
+ "layers": {
+  "0.75": {
+   "train": {
+    "layer": 24,
+    "depth": "0.75",
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.08938193152863008,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": 24,
+    "depth": "0.75",
+    "n": 116,
+    "auc": 0.9464922711058263,
+    "best_ba": {
+     "bal_acc": 0.9137931034482758,
+     "threshold": 0.57
+    },
+    "ece": 0.17187466942260646,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.3879310344827586,
+     "false_accepts": 17,
+     "false_rejects": 1,
+     "correct": 98,
+     "n": 116,
+     "bal_acc": 0.8850574712643678
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-qwen35-4b-l300.npz",
+ "n_layers": 32
+}
