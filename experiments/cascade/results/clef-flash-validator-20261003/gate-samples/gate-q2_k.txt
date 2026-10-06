@@ -1,0 +1,41 @@
+===== prose (temp 0.7, 120 tok, seed 1337) =====
+The history of the Roman Empire begins with
+ the Kingdom of Rome, and ends with the Fall of Rome. The Kingdom of Rome is the period from the founding of Rome (traditionally 753 BC) to the end of the Republic (509 BC onwards). The Roman Republic (509 BC – 27 BC) is a complex period that includes the late Kingdom (509 BC – 265 BC), the Middle Republic (265 BC – 133 BC), and the Late Republic (133 BC – 27 BC). The Empire (27 BC – 
+
+===== code (temp 0.7, 120 tok, seed 1337) =====
+def fibonacci(n):
+
+    """
+    Generates Fibonacci sequence up to n terms.
+    """
+    a, b = 0, 1
+    result = []
+    for _ in range(n):
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+print(fibonacci(5))
+
+def s_is_square(s):
+    """
+    Check if s is a perfect square.
+    """
+    s_root = s ** 0.5
+    return s_root.is_integer()
+
+print(s_is_square(4))
+
+
+
+===== math (temp 0.0, 100 tok, seed 1337) =====
+Question: A train travels 240 km in 3 hours. What is its average speed? Answer:
+ 80 km/h.
+
+Question: A car travels 180 km in 3 hours. What is its average speed?60 km/h.
+
+Question: A train travels 180 km in 3 hours. What is its average speed?60 km/h.
+
+Question: A car travels 120 km in 2 hours. What is its average speed?60 km/h.
+
+Question: A car travels 120 km in 

@@ -404,3 +404,63 @@ training investment.
 Handoff for the next session (assets, findings, next-step menu):
 `scion/dense/HANDOFF.md`; external prior art (TAARDIS):
 `scion/docs/TAARDIS-PRIOR-ART.md`.
+
+## Stage H (cont.): community-standard ternary gate — TQ1_0/TQ2_0/PTQ1_0 vs QAT (2026-10-06)
+
+The HANDOFF item-4 gate: can a plain, community-standard ternary quant of the
+Clef-Flash f16 body match the rotation+GPTQ+QAT artifact?  Local, ~1.5 h, no
+rental, non-display GPU, all GPU steps serialized.  Harness:
+`scion/dense/clef_gate_chain.sh` (imatrix -> quantize -> PPL -> probes) and
+`scion/dense/clef_gen_probe.py` (llama-server + `/completion`; probes are the
+QAT acceptance suite: prose temp 0.7 x120, code temp 0.7 x120, math temp 0.0
+x100, seed 1337 pinned sampler).  Machine record:
+`community-gate-20261006.json` next to this file.
+
+| model | size | bpw | wikitext PPL (c512, 100 ch) | free generation (8-gram repeat p/c/m) |
+|---|---|---|---|---|
+| f16 control | 17.9 GB | 16 | 12.5894 | 0 / 0 / 0 |
+| QAT artifact (`v2/clef-flash-v2-qat-a1.gguf`) | 5.52 GiB | ~2.1 | 23.2508 | 0 / 0 / **0.846 (math loop)** |
+| TQ1_0 + imatrix | 2.68 GiB | 2.56 | **1,860,827** | token soup (server 500) |
+| TQ1_0 no imatrix | 2.68 GiB | 2.56 | 1,860,827 | same |
+| TQ2_0 + imatrix | 2.98 GiB | 2.85 | 1,860,827 | token soup |
+| PTQ1_0 + imatrix | 2.73 GiB | 2.61 | 2,097,117 | token soup |
+| Q2_K + imatrix (non-ternary ref) | 3.56 GiB | 3.41 | **13.0553** | 0 / 0 / 0.298 (template echo) |
+
+**Why the ternary codecs collapse (measured, not inferred).**  The fork's
+`quantize_row_tq1_0_ref` is naive absmax: `d = max|w|`, no Lloyd/deadzone
+search (`ptq1_0` is the same rule at group 128 and never reads
+`GGML_PQ2_0_LLOYD`).  Dequantizing a tensor back with `gguf-py` gives
+per-tensor cos 0.69 vs the f16 source (the deployed Lloyd `PQ2_0` sits at
+~0.90), and imatrix is a no-op for these codecs: TQ1_0 with and without the
+matrix are identical to 4 dp, and TQ1_0/TQ2_0 even carry identical weight
+values (same rounding rule, different packing) -> identical PPL.  These are
+BitNet-style codecs for weights already trained ternary, not post-hoc quants
+of a standard f16 model.  Two independent runtimes (fork 0.2.0-dev and the
+Prism 0.5.0-dev build) produce the same token soup from the TQ1_0 file, so
+this is codec behavior, not a kernel bug.  The raw samples are in
+`v2/gate-gen/gate-{tq1_0,tq2_0,ptq1_0}-prism.txt` (copies under
+`gate-samples/` here; the fork's server returns HTTP 500 "output that does not
+match the expected Content-only format" on them; the Prism server returns the
+raw text).
+
+**What the gate says.**  Our QAT clearly wins against plain ternary — by 4-5
+orders of magnitude — but that comparison flatters the pipeline: those codecs
+are not meant for this model, and the *non-ternary* reference beats the
+artifact outright.  A plain Q2_K (+imatrix, mainline, no fork metadata) is
+**13.06 PPL (1.04x f16), clean generation, 3.56 GiB** vs the QAT artifact's
+23.25 / degenerate math / 5.52 GiB; it also loads and runs on the Prism build
+(3-chunk sanity 15.35).  The real ternary bar remains PrismML's *trained*
+Ternary-Bonsai (~1.44x) and TAARDIS (13.61).  The QAT artifact's generation
+blocker reproduces in the fixed-seed harness: the math probe answers
+"120 km/h" then loops "1. 1. 1..." at greedy temperature.
+
+**Decision: no release yet; not a dead end.**  The pipeline is the only route
+to a viable ternary Clef (plain ternary cannot represent this model), but the
+current artifact is not postable and the honest competitive target is the
+trained-low-bit bar.  Proposed next run (needs approval): one proper QAT —
+mixed corpus incl. code/math, 5-10M tokens (vs 1.2M), hidden + top-k logits
+KD, ~$8-15 — accepted on (a) clean generation on this probe suite, (b) PPL
+<= ~18, (c) KL/top-1 vs bf16 on ~250k mixed tokens (the community eval norm),
+before any HF upload.  Alternative if not pursued: park the community-quant
+lane (Q2_K-class quants already cover size/value) and keep the ternary
+pipeline as research with the sidecar/decision lane on bf16 Clef.
