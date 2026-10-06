@@ -60,7 +60,7 @@ def main() -> int:
     SD = np.asarray(head["weights"]["sd"])
     B = head["weights"]["b"]
     PA, PC = head["weights"]["platt"]
-    frozen = (W, MU, SD, B)
+    frozen = (W, (MU, SD, B))
 
     tasks = {t["id"]: t for t in json.loads(
         (CASCADE / "tasks-bench.json").read_text())["tasks"]}
