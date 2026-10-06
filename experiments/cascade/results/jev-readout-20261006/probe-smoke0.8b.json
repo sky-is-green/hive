@@ -1,0 +1,128 @@
+{
+ "name": "smoke0.8b",
+ "backend": "Qwen/Qwen3.5-0.8B",
+ "layers": {
+  "0.5": {
+   "train": {
+    "layer": 12,
+    "depth": "0.5",
+    "n": 92,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.09117423601072637,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.25,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 92,
+     "n": 92,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.25,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 92,
+     "n": 92,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": 12,
+    "depth": "0.5",
+    "n": 28,
+    "auc": 0.8979591836734694,
+    "best_ba": {
+     "bal_acc": 0.8333333333333333,
+     "threshold": 0.29
+    },
+    "ece": 0.27602597483357466,
+    "no_leak": {
+     "threshold": 0.99,
+     "accept_rate": 0.14285714285714285,
+     "false_accepts": 0,
+     "false_rejects": 3,
+     "correct": 25,
+     "n": 28,
+     "bal_acc": 0.7857142857142857
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.5,
+     "false_accepts": 7,
+     "false_rejects": 0,
+     "correct": 21,
+     "n": 28,
+     "bal_acc": 0.8333333333333333
+    }
+   }
+  },
+  "1": {
+   "train": {
+    "layer": 24,
+    "depth": "1",
+    "n": 92,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.0915417877681127,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.25,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 92,
+     "n": 92,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.25,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 92,
+     "n": 92,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": 24,
+    "depth": "1",
+    "n": 28,
+    "auc": 0.9727891156462585,
+    "best_ba": {
+     "bal_acc": 0.9285714285714286,
+     "threshold": 0.45
+    },
+    "ece": 0.1201556371183834,
+    "no_leak": {
+     "threshold": 0.76,
+     "accept_rate": 0.17857142857142858,
+     "false_accepts": 0,
+     "false_rejects": 2,
+     "correct": 26,
+     "n": 28,
+     "bal_acc": 0.8571428571428572
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.32142857142857145,
+     "false_accepts": 3,
+     "false_rejects": 1,
+     "correct": 24,
+     "n": 28,
+     "bal_acc": 0.8571428571428571
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-smoke0.8b.npz",
+ "n_layers": 24
+}

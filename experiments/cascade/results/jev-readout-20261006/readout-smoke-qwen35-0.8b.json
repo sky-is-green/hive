@@ -1,0 +1,149 @@
+{
+ "name": "smoke-qwen35-0.8b",
+ "backend": "Qwen/Qwen3.5-0.8B",
+ "split": "test",
+ "items": [
+  {
+   "bucket": "reasoning",
+   "candidate": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 10",
+   "item_id": "gsm8k-0005:pos",
+   "label": 1,
+   "origin": "recorded",
+   "prompt": "Rory is retrieving tennis balls from the court after a tennis match. In the first of three sets, he had to retrieve four more balls than in the second set. In the third set, he retrieved half as many balls as in the second. He retrieved 19 tennis balls in all. How many tennis balls did he retrieve in the first set of the match?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0005",
+   "p_correct": 0.5285530388355255,
+   "p_order1": 0.9241418242454529,
+   "p_order2": 0.8670357465744019,
+   "order_disagree": false
+  },
+  {
+   "bucket": "reasoning",
+   "candidate": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 20",
+   "item_id": "gsm8k-0005:neg1",
+   "label": 0,
+   "origin": "perturbed:num-flip",
+   "prompt": "Rory is retrieving tennis balls from the court after a tennis match. In the first of three sets, he had to retrieve four more balls than in the second set. In the third set, he retrieved half as many balls as in the second. He retrieved 19 tennis balls in all. How many tennis balls did he retrieve in the first set of the match?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0005",
+   "p_correct": 0.5723986327648163,
+   "p_order1": 0.863391637802124,
+   "p_order2": 0.7185943722724915,
+   "order_disagree": false
+  },
+  {
+   "bucket": "reasoning",
+   "candidate": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 17",
+   "item_id": "gsm8k-0005:neg2",
+   "label": 0,
+   "origin": "perturbed:num-flip",
+   "prompt": "Rory is retrieving tennis balls from the court after a tennis match. In the first of three sets, he had to retrieve four more balls than in the second set. In the third set, he retrieved half as many balls as in the second. He retrieved 19 tennis balls in all. How many tennis balls did he retrieve in the first set of the match?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0005",
+   "p_correct": 0.5284363031387329,
+   "p_order1": 0.7879312038421631,
+   "p_order2": 0.7310585975646973,
+   "order_disagree": false
+  },
+  {
+   "bucket": "reasoning",
+   "candidate": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\n5x = 30\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the first set had:\n\n\\[\nx + 4 = 6 + 4 = 10\n\\]\n\nFinal answer: 9",
+   "item_id": "gsm8k-0005:neg3",
+   "label": 0,
+   "origin": "perturbed:num-flip",
+   "prompt": "Rory is retrieving tennis balls from the court after a tennis match. In the first of three sets, he had to retrieve four more balls than in the second set. In the third set, he retrieved half as many balls as in the second. He retrieved 19 tennis balls in all. How many tennis balls did he retrieve in the first set of the match?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0005",
+   "p_correct": 0.5462008714675903,
+   "p_order1": 0.7981867790222168,
+   "p_order2": 0.7057850360870361,
+   "order_disagree": false
+  },
+  {
+   "bucket": "reasoning",
+   "candidate": "Adam\u2019s trousers cost $30.\n\nHis mother gave him $6.  \nHis father gave him twice as much as his mother:\n\n\\[\n2 \\times 6 = 12\n\\]\n\nTotal money given by his parents:\n\n\\[\n6 + 12 = 18\n\\]\n\nAdam had to contribute:\n\n\\[\n30 - 18 = 12\n\\]\n\nFinal answer: 12",
+   "item_id": "gsm8k-0006:pos",
+   "label": 1,
+   "origin": "recorded",
+   "prompt": "Adam bought himself some new trousers for $30. His mother gave him $6 for this purpose, and his father gave him twice as much. How much money did Adam have to contribute from his savings?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0006",
+   "p_correct": 0.5517800450325012,
+   "p_order1": 0.7549149990081787,
+   "p_order2": 0.6513549089431763,
+   "order_disagree": false
+  },
+  {
+   "bucket": "reasoning",
+   "candidate": "Adam\u2019s trousers cost $30.\n\nHis mother gave him $6.  \nHis father gave him twice as much as his mother:\n\n\\[\n2 \\times 6 = 12\n\\]\n\nTotal money given by his parents:\n\n\\[\n6 + 12 = 18\n\\]\n\nAdam had to contribute:\n\n\\[\n30 - 18 = 12\n\\]\n\nFinal answer: 24",
+   "item_id": "gsm8k-0006:neg1",
+   "label": 0,
+   "origin": "perturbed:num-flip",
+   "prompt": "Adam bought himself some new trousers for $30. His mother gave him $6 for this purpose, and his father gave him twice as much. How much money did Adam have to contribute from his savings?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "split": "test",
+   "task_id": "gsm8k-0006",
+   "p_correct": 0.6092971861362457,
+   "p_order1": 0.7185943722724915,
+   "p_order2": 0.5,
+   "order_disagree": false
+  }
+ ],
+ "metrics": {
+  "n": 6,
+  "auc": 0.375,
+  "ece": 0.22277767956256866,
+  "at_0.5": {
+   "threshold": 0.5,
+   "accept_rate": 1.0,
+   "false_accepts": 4,
+   "false_rejects": 0,
+   "correct": 2,
+   "n": 6,
+   "bal_acc": 0.5
+  },
+  "no_leak": {
+   "threshold": 0.61,
+   "accept_rate": 0.0,
+   "false_accepts": 0,
+   "false_rejects": 2,
+   "correct": 4,
+   "n": 6,
+   "bal_acc": 0.5
+  },
+  "best_ba": {
+   "bal_acc": 0.5,
+   "threshold": 0.2
+  },
+  "order_flip_rate": 0.0
+ },
+ "metrics_by_bucket": {
+  "reasoning": {
+   "n": 6,
+   "auc": 0.375,
+   "ece": 0.22277767956256866,
+   "at_0.5": {
+    "threshold": 0.5,
+    "accept_rate": 1.0,
+    "false_accepts": 4,
+    "false_rejects": 0,
+    "correct": 2,
+    "n": 6,
+    "bal_acc": 0.5
+   },
+   "no_leak": {
+    "threshold": 0.61,
+    "accept_rate": 0.0,
+    "false_accepts": 0,
+    "false_rejects": 2,
+    "correct": 4,
+    "n": 6,
+    "bal_acc": 0.5
+   },
+   "best_ba": {
+    "bal_acc": 0.5,
+    "threshold": 0.2
+   },
+   "order_flip_rate": 0.0
+  }
+ }
+}
