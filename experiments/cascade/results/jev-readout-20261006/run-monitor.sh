@@ -35,6 +35,7 @@ wait $SRV 2>/dev/null
 
 N=$("$PY" -c "import json;print(len(json.load(open('$M/meta.json'))['order']))")
 SEQ=$("$PY" -c "import json;print(json.load(open('$M/meta.json'))['seq'])")
+mkdir -p "$M/dump"
 echo "== hidden dump ($N windows x $SEQ, GPU) $(date -Is)"
 export HIP_VISIBLE_DEVICES=1
 "$P" "$T/Scion-35B-A3B-PQ2_0-corr.gguf" "$M/tokens.bin" "$N" "$SEQ" "$M/dump" 999 \
