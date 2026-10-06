@@ -65,14 +65,19 @@ Other measurements:
     correctness signal generalizes beyond perturbations;
   - Strata's answers: AUC 0.990 (97 correct / 3 wrong).
   Uncontrolled self-preference deltas: correct +0.078, wrong +0.018.
-- **Controlled attribution audit (n=200, `attribution-audit.json`)**: identical
-  candidate text under "Your own answer" vs "Another model's answer".  Head
-  score deltas: **+0.178 (correct), +0.098 (wrong)**; prompted: +0.033
-  (correct), **+0.099 (wrong)**.  Self-bias is real and measurable in both
-  readouts.  For the head it is a calibration shift against a ~0.85
-  correct/wrong gap (natural-error AUC 0.971 own vs 0.990 other) — not a
-  ranking inversion.  Mitigations: source-aware thresholds,
-  attribution-balanced refit (next).
+- **Self-bias / attribution (done, `attribution-audit.json` + `attribution-fix.json`)**:
+  the uncontrolled source swap (different texts) showed +0.078 correct /
+  +0.018 wrong — style, not authorship.  The controlled test (identical text,
+  own vs other) first appeared to show **+0.178 correct / +0.098 wrong** for a
+  head fitted on the J-Bench wording — but that head is **format-locked**:
+  re-fitting it *in the audit's own wording* removes the effect entirely.
+  Baseline (own-attribution-only fit): delta_correct **-0.003**, delta_wrong
+  **-0.013**; balanced (both attributions): **+0.007 / -0.013** — over 60
+  held-out candidates (51 correct / 9 wrong).  In-domain, the head is
+  **attribution-neutral**; the prompted judge still shows a real **+0.099** on
+  its own wrong answers.  Deployment rule: fit the head on the serving prompt
+  format (AnyJev's per-layout heads).  Caveat: wrong-answer deltas rest on 9
+  held-out negatives.
 
 ### T2 size / label map (probe at depth 0.75, test AUC)
 
