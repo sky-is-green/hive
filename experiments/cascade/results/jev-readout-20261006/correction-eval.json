@@ -1,0 +1,2937 @@
+{
+ "samples_per_task": 4,
+ "temperature": 0.7,
+ "arms": {
+  "B0": {
+   "correct": 76,
+   "tokens": 37234,
+   "n": 100
+  },
+  "B1": {
+   "correct": 80,
+   "tokens": 36747,
+   "n": 100
+  },
+  "T1": {
+   "correct": 81,
+   "tokens": 37576,
+   "n": 100
+  }
+ },
+ "retry": {
+  "T2@0.5": {
+   "n": 100,
+   "correct": 80,
+   "tokens": 54927,
+   "mean_used": 1.34
+  },
+  "T2@0.87": {
+   "n": 100,
+   "correct": 83,
+   "tokens": 61344,
+   "mean_used": 1.47
+  }
+ },
+ "per_task": [
+  {
+   "task_id": "gsm8k-0001",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 135
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 135
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 350
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 135,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 135,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0002",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 329
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 329
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 329
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 329,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 329,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0003",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 187
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 187
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 193
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 187,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 187,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0004",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 478
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 478
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 456
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 478,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 478,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0005",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 548
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 548
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 592
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 548,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 548,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0006",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 278
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 278
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 278
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 278,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 278,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0007",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 408
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 408
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 414
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 408,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 408,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0008",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 338
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 275
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 275
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 338,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 338,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0009",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 291
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 291
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 687
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 291,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 842,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0010",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 158
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 158
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 154
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 158,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 158,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0011",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 227
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 227
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 238
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 227,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 227,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0012",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 193
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 193
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 193
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 193,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 193,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0013",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 337
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 337
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 311
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 337,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 337,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0014",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 185
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 185
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 220
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 185,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 185,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0015",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 438
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 438
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 438
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 438,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 438,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0016",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 224
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 224
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 247
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 224,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 224,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0017",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 131
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 131
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 193
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 131,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 131,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0018",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 215
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 241
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 316
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 215,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 456,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0019",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 298
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 298
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 283
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 298,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 298,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0020",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 178
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 178
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 239
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 178,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 178,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0021",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 174
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 174
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 174
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0022",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 171
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 171
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 190
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 171,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 171,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0023",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 648
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 648
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 626
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 648,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 648,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0024",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 201
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 201
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 201
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 201,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 201,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0025",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 373
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 373
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 296
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 373,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 373,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0026",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 382
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 382
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 398
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 382,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 382,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0027",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 299
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 299
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 356
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 299,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 299,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0028",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 344
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 344
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 322
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 344,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 344,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0029",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 281
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 281
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 257
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 281,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 281,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0030",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 351
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 351
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 440
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 351,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 351,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0031",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 231
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 231
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 231
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 231,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 231,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0032",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 294
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 294
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 341
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 294,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 294,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0033",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 264
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 264
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 349
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 264,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 613,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0034",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 239
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 239
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 239
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 239,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 239,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0035",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 304
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 304
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 304
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 304,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 304,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0036",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 368
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 368
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 351
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 368,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 368,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0037",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 259
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 259
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 259
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 259,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 259,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0038",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 425
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 430
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 351
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 425,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 425,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0039",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 131
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 131
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 419
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 534,
+     "used": 2
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 534,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "gsm8k-0040",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 212
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 212
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 189
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 212,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 212,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0001",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 637
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 637
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 1337,
+     "used": 2
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 1337,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "math-0002",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 655
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 655
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 700,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 1355,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "math-0003",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 394
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 1794,
+     "used": 3
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 1794,
+     "used": 3
+    }
+   }
+  },
+  {
+   "task_id": "math-0004",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 699
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 1400,
+     "used": 2
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 2799,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "math-0005",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 659
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 659
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 659
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 659,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 659,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0006",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 224
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 312
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 309
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 224,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 224,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0007",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 608
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 608
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 544
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 608,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 608,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0008",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 525
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 525
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 525
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 525,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 525,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0009",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 612
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 2012,
+     "used": 3
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 2012,
+     "used": 3
+    }
+   }
+  },
+  {
+   "task_id": "math-0010",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "math-0011",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "math-0012",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 689
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 2089,
+     "used": 3
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2089,
+     "used": 3
+    }
+   }
+  },
+  {
+   "task_id": "math-0013",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 265
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 265
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 965,
+     "used": 2
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 965,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "math-0014",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 488
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 488
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 288
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 488,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 488,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0015",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 469
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 469
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 469
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 469,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 469,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0016",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 549
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 549
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 506
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 549,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 549,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0017",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "math-0018",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 154
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 154
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 235
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 154,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 154,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0019",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 1400,
+     "used": 2
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 1400,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "math-0020",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 377
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 377
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 465
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 377,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 377,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0021",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "math-0022",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 289
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 289
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 694
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 289,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 289,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0023",
+   "bucket": "reasoning",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 556
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 556
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 688
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 556,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 556,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0024",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 401
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 401
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 401
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 401,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 401,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "math-0025",
+   "bucket": "reasoning",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 577
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 577
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 499
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 577,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 577,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0001",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 421
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 421
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 298
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 421,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 421,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0002",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 433
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 433
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 433
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 433,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 433,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0003",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 241
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 241
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 241
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 241,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 241,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0004",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 584
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 584
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 518
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 584,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 584,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0005",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 364
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 364
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 364
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 364,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 364,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0006",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 366
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 1806,
+     "used": 3
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 1806,
+     "used": 3
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0007",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 400
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 700,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 1100,
+     "used": 2
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0008",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 494
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 494
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 494
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 494,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 494,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0009",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 218
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 218
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 218
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 218,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 218,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0010",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 571
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 571
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 467
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 571,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 571,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0011",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 481
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 481
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 477
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 481,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 481,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0012",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 283
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 283
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 274
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 283,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 283,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0013",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 124
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 124
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 124
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 124,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 124,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0014",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 138
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 138
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 138
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 138,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 138,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0015",
+   "bucket": "code",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 424
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 424
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 598
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 424,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 424,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0016",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 174
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 174
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 194
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0017",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 285
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 285
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 521
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 285,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 285,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0018",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 329
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 329
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 329
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 329,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 329,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0019",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 700
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 700
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 700,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 2800,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "humaneval-0020",
+   "bucket": "code",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 354
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 354
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 570
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 354,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 354,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0001",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 278
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 278
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 278
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 278,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 278,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0002",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 225
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 225
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 225
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 848,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 848,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0003",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 174
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 174
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 174
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 174,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0004",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 202
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 202
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 202
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 202,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 202,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0005",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 257
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 257
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 264
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 257,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 257,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0006",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 321
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 321
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 321
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 321,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 321,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0007",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 115
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 115
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 115
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 115,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 115,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0008",
+   "bucket": "qa",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 266
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 266
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 266
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 266,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 266,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0009",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 167
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 167
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 167
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 167,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 167,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0010",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 141
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 141
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 141
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 684,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 684,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0011",
+   "bucket": "qa",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 236
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 236
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 236
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 236,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 236,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0012",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": true,
+    "tokens": 201
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 201
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 201
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 201,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 201,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0013",
+   "bucket": "qa",
+   "split": "test",
+   "B0": {
+    "ok": true,
+    "tokens": 232
+   },
+   "B1": {
+    "ok": true,
+    "tokens": 232
+   },
+   "T1": {
+    "ok": true,
+    "tokens": 232
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": true,
+     "tokens": 232,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": true,
+     "tokens": 232,
+     "used": 1
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0014",
+   "bucket": "qa",
+   "split": "train",
+   "B0": {
+    "ok": false,
+    "tokens": 384
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 384
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 384
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 905,
+     "used": 4
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 905,
+     "used": 4
+    }
+   }
+  },
+  {
+   "task_id": "truthfulqa-0015",
+   "bucket": "qa",
+   "split": "test",
+   "B0": {
+    "ok": false,
+    "tokens": 214
+   },
+   "B1": {
+    "ok": false,
+    "tokens": 214
+   },
+   "T1": {
+    "ok": false,
+    "tokens": 214
+   },
+   "T2": {
+    "T2@0.5": {
+     "ok": false,
+     "tokens": 214,
+     "used": 1
+    },
+    "T2@0.87": {
+     "ok": false,
+     "tokens": 936,
+     "used": 4
+    }
+   }
+  }
+ ]
+}
