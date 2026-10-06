@@ -1,0 +1,164 @@
+{
+ "name": "qwen35-0.8b",
+ "backend": "Qwen/Qwen3.5-0.8B",
+ "layers": {
+  "0.5": {
+   "train": {
+    "layer": 12,
+    "depth": "0.5",
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.55
+    },
+    "ece": 0.10100595750683004,
+    "no_leak": {
+     "threshold": 0.55,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2633587786259542,
+     "false_accepts": 1,
+     "false_rejects": 0,
+     "correct": 261,
+     "n": 262,
+     "bal_acc": 0.9974226804123711
+    }
+   },
+   "test": {
+    "layer": 12,
+    "depth": "0.5",
+    "n": 116,
+    "auc": 0.7919143876337693,
+    "best_ba": {
+     "bal_acc": 0.7586206896551724,
+     "threshold": 0.77
+    },
+    "ece": 0.23512488667383746,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.3793103448275862,
+     "false_accepts": 24,
+     "false_rejects": 9,
+     "correct": 83,
+     "n": 116,
+     "bal_acc": 0.7068965517241379
+    }
+   }
+  },
+  "0.75": {
+   "train": {
+    "layer": 18,
+    "depth": "0.75",
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.31
+    },
+    "ece": 0.0969219217583383,
+    "no_leak": {
+     "threshold": 0.31,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": 18,
+    "depth": "0.75",
+    "n": 116,
+    "auc": 0.9242964724534285,
+    "best_ba": {
+     "bal_acc": 0.8563218390804598,
+     "threshold": 0.99
+    },
+    "ece": 0.3563481428703401,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.5948275862068966,
+     "false_accepts": 40,
+     "false_rejects": 0,
+     "correct": 76,
+     "n": 116,
+     "bal_acc": 0.7701149425287357
+    }
+   }
+  },
+  "1": {
+   "train": {
+    "layer": 24,
+    "depth": "1",
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.26
+    },
+    "ece": 0.09557089824165743,
+    "no_leak": {
+     "threshold": 0.26,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": 24,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.7954815695600476,
+    "best_ba": {
+     "bal_acc": 0.7126436781609196,
+     "threshold": 0.91
+    },
+    "ece": 0.3754920955501874,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.603448275862069,
+     "false_accepts": 45,
+     "false_rejects": 4,
+     "correct": 67,
+     "n": 116,
+     "bal_acc": 0.6724137931034483
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-qwen35-0.8b.npz",
+ "n_layers": 24
+}
