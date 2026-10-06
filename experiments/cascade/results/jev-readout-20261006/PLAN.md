@@ -58,9 +58,16 @@ Other measurements:
   accepted)**, while the same prompt on Strata's answers scores AUC 0.371 on
   only 3 available negatives (uninformative).  The probe-vs-prompted gap on
   the same model is the story: 0.999 vs 0.559.
-- **Frozen-head source-swap audit**: blocked by the GPU hang
-  (`INCIDENT-GPU-HANG.md`); 200 embedding requests remain.  Re-run after a
-  reboot or on the CPU.
+- **Frozen-head source-swap audit (done, `source-audit.json`)**: the head
+  fitted on Strata-answer train items, applied frozen to:
+  - Scion's **own** answers: AUC **0.971** over the same 100 tasks including
+    **28 natural errors** (mean score 1.04 correct vs 0.22 wrong) — the
+    correctness signal generalizes beyond perturbations;
+  - Strata's answers: AUC 0.990 (97 correct / 3 wrong).
+  Self-preference deltas: **correct +0.078** (own above other), **wrong +0.018**
+  — a small familiarity shift on correct answers, **no inflation of own
+  errors**.  The controlled attribution test (same text, "your answer" vs
+  "another model's") remains as the next audit.
 
 ## Status and next steps
 

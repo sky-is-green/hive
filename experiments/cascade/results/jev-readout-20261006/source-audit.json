@@ -1,0 +1,26 @@
+{
+ "n": 100,
+ "head": "scion35b L1 ridge (refit, deterministic)",
+ "scion": {
+  "n": 100,
+  "auc": 0.9712301587301587,
+  "mean_score_correct": 1.0426073043587538,
+  "mean_score_wrong": 0.2177101735282045,
+  "accept_rate": 0.77
+ },
+ "strata": {
+  "n": 100,
+  "auc": 0.9896907216494846,
+  "mean_score_correct": 0.964794679216744,
+  "mean_score_wrong": 0.19993970384973694,
+  "accept_rate": 0.98
+ },
+ "self_preference_delta": {
+  "correct": 0.07781262514200982,
+  "wrong": 0.017770469678467543
+ },
+ "paired_correct": {
+  "n": 71,
+  "mean_delta": 0.07039908558481509
+ }
+}
