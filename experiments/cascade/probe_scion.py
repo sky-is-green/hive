@@ -56,6 +56,8 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--name", required=True)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--system", default=SYSTEM,
+                    help="system message for the decision prompt")
     args = ap.parse_args()
 
     items = [json.loads(line) for line in args.bench.read_text().splitlines()]
@@ -66,11 +68,15 @@ def main() -> int:
     t0 = time.time()
     dim = None
     for n, item in enumerate(items, 1):
-        prompt = post(args.server, "/apply-template", {
-            "messages": [{"role": "system", "content": SYSTEM},
-                         {"role": "user", "content": order_body(item, False)}],
-            "add_generation_prompt": True,
-            "chat_template_kwargs": {"enable_thinking": False}})["prompt"]
+        body = {"messages": [{"role": "system", "content": args.system},
+                             {"role": "user", "content": order_body(item, False)}],
+                "add_generation_prompt": True}
+        try:
+            prompt = post(args.server, "/apply-template",
+                          {**body, "chat_template_kwargs": {"enable_thinking": False}})["prompt"]
+        except Exception:
+            # template without thinking-control support (e.g. Clef)
+            prompt = post(args.server, "/apply-template", body)["prompt"]
         emb = post(args.server, "/embedding",
                    {"content": prompt, "embd_normalize": -1})
         vec = np.asarray(emb[0]["embedding"][0], dtype=np.float32)
