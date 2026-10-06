@@ -1,0 +1,69 @@
+{
+ "name": "scion35b",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 262,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.08905904636342313,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.9988109393579072,
+    "best_ba": {
+     "bal_acc": 0.9942528735632183,
+     "threshold": 0.87
+    },
+    "ece": 0.15079791122956634,
+    "no_leak": {
+     "threshold": 0.95,
+     "accept_rate": 0.22413793103448276,
+     "false_accepts": 0,
+     "false_rejects": 3,
+     "correct": 113,
+     "n": 116,
+     "bal_acc": 0.9482758620689655
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.31896551724137934,
+     "false_accepts": 8,
+     "false_rejects": 0,
+     "correct": 108,
+     "n": 116,
+     "bal_acc": 0.9540229885057472
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-scion35b.npz",
+ "n_layers": null,
+ "dim": 2048
+}

@@ -29,31 +29,47 @@ split is frozen; fitting uses train only.  Prior art: `PRIOR-ART.md`.
 - G3: if a sub-1B model must be quantised for residency, T3 decides whether the
   readout survives.
 
-## Results so far (2026-10-06)
+## Results (2026-10-06, frozen test split unless noted)
 
-| readout | model | test AUC | note |
-|---|---|---|---|
-| prompted yes/no | Qwen3.5-0.8B | 0.375 (n=6) | smoke only |
-| prompted yes/no | Qwen3.5-4B | 0.494 (n=116) | **82.8% option-order flips** — dominated by a label/position bias |
-| probe, depth 0.75 | Qwen3.5-0.8B | 0.924 | best layer for the 0.8B |
-| probe, final | Qwen3.5-0.8B | 0.795 | signal degrades at the last layer here |
-| probe, depth 0.75 | Qwen3.5-4B | 0.946 | nearly coincident with final |
-| probe, final | Qwen3.5-4B | 0.960 | best overall |
-| probe (4B, 0.75), cross-type transfer | fit on num-flips only | boxed 0.998, code 0.874 | a general correctness signal, not perturbation detection |
-| probe (4B, 0.75), per negative type | entity 1.00, boxed 0.99, code 0.91, num 0.98, choice 0.81-0.86 (n=4) | | choice items underpowered |
+Headline table — see `COMPARISON.md` for the live version:
 
-Caveats: `Qwen/Qwen3.5-0.8B` and `Qwen/Qwen3.5-4B` are base
-(`Qwen3_5ForConditionalGeneration`) checkpoints without an instruct tag, so the
-prompted leg is **not** a fair instruction-tuned comparison — the trained
-judges (Intern family, Tiny-Jev, JEV-9B) and the Scion-35B generator session
-supply that leg.  All negatives are still perturbations; natural generator
-errors are added in the Scion session.
+| readout | kind | test AUC | best BA | note |
+|---|---|---|---|---|
+| Intern-4B | trained judge | 0.979 | 0.937 | the quality bar (purpose-trained) |
+| **Scion-35B final-layer probe** | probe | **0.999** | **0.994** | the generator itself; no-release threshold 0.95 -> acc 0.974 |
+| Qwen3.5-4B final-layer probe | probe | 0.960 | 0.937 | base model + fitted head matches the trained 4B |
+| Scion-35B prompted self-judge | prompted | 0.903 (test) | 0.925 | instruct model; order-flip 7.4%; better than trained 0.8B/1.7B |
+| Qwen3.5-0.8B mid-layer probe | probe | 0.924 | 0.856 | beats every small trained judge |
+| Intern-2B | trained judge | 0.932 | 0.856 | |
+| Tiny-Jev-1.7B | trained judge | 0.890 | 0.862 | |
+| Intern-0.8B | trained judge | 0.774 | 0.759 | |
+| Qwen3.5-4B prompted | prompted | 0.494 | 0.546 | base model: 82.8% option-order flips (label bias) |
 
-## Status
+Other measurements:
 
-- `jev-small` chain: done (probe 0.8B/4B, prompted 4B).
-- `jev-judges` chain: running (Intern 4B/2B/0.8B on GPU, Tiny-Jev on CPU).
-- queued: Scion-35B generator session (prompted self-judge, final-layer probe
-  via the bridge, natural wrong answers on the test split); ternary survival
-  probe once a mid-layer hidden path exists for the V2/QAT GGUFs.
+- **Cross-type transfer** (4B probe, depth 0.75, fit on number-flips only):
+  boxed 0.998, code 0.874 — a general correctness signal, not perturbation
+  detection.
+- **Natural negatives**: Scion generated its own answers for all 100 bench
+  tasks (`scion-answers.json`): **72/100 correct -> 28 natural errors**, five
+  times the natural negatives in the recorded runs (3).
+- **Prompted self-preference (paired 100 tasks)**: Scion's prompted judgment of
+  **its own answers is near-chance as a discriminator (AUC 0.559, 21/28 wrong
+  accepted)**, while the same prompt on Strata's answers scores AUC 0.371 on
+  only 3 available negatives (uninformative).  The probe-vs-prompted gap on
+  the same model is the story: 0.999 vs 0.559.
+- **Frozen-head source-swap audit**: blocked by the GPU hang
+  (`INCIDENT-GPU-HANG.md`); 200 embedding requests remain.  Re-run after a
+  reboot or on the CPU.
+
+## Status and next steps
+
+- Done: J-Bench; prompted/probe/judge/trained-judge matrix; Scion-35B session
+  (prompted, probe, 100 generated answers).
+- Blocked: source-swap audit (frozen head on own vs other answers; attribution
+  variant), needs the non-display GPU back (reboot) or a CPU run.
+- Next after that: natural-error evaluation of the frozen head (does it catch
+  Scion's unperturbed errors?), size/label curve (T2), ternary survival (T3),
+  calibration + one cascade run (T4).
+
 
