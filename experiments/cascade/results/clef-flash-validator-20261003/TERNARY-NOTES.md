@@ -464,3 +464,33 @@ KD, ~$8-15 — accepted on (a) clean generation on this probe suite, (b) PPL
 before any HF upload.  Alternative if not pursued: park the community-quant
 lane (Q2_K-class quants already cover size/value) and keep the ternary
 pipeline as research with the sidecar/decision lane on bf16 Clef.
+
+## Stage H (cont. 2): derisk-first gate — negative (2026-10-06)
+
+Before any scaled QAT run, the mixed-corpus + logits-KD objective was tested at
+0.8B (Qwen3.5-0.8B, same hybrid arch; `qwen35-0.8b-qat-derisk/run_mixedcorpus`):
+1500 steps, batch 4x512, generation samples every 300 steps, same probe suite.
+Training corpus from `dense/clef_mixed_corpus.py`: 50/20/30
+prose(wikitext-103)/math(hendrycks_math)/code(local permissive trees), 2049
+windows = 1.05M tokens; eval unchanged (wikitext-2 test).
+
+| step | 0 | 100 | 300 | 600 | 900 | 1200 | 1400 | 1500 |
+|---|---|---|---|---|---|---|---|---|
+| PPL | 34,938 | 89.8 | 63.9 | 62.6 | 52.6 | 44.8 | **42.4** | 43.0 |
+
+f16 = 27.24 (best 1.56x).  Free generation at every sample point (8-gram
+repeat fractions in `derisk-mixedcorpus-20261006.json`):
+- code: nonsense, e.g. `n = n(n + 1)` self-referential loops at 600-1500;
+- math: wrong answers (100 / 120 / 15 km/h) and repeated-question loops;
+- prose: topical drift and template repetition ("the Roman Empire is the
+  largest power in the Roman Empire ...").
+
+**5x the earlier derisk budget bought ~3 PPL points over the 300-step
+hidden+logits run (45.5) and is *worse* than the 300-step mixed-base run
+(40.4): the curve is flat, and the generation blocker is not a budget problem
+at this recipe/scale.**  Decision per the pre-registered gate (the "Red" rule
+of the v2 plan): the scaled 9B run is not justified; the dense community-quant
+lane is **on hold**.  The v1 9B artifact (23.25 PPL, 5.52 GiB, math-loop
+generation) remains research; no release, no HF upload.  If the lane is ever
+resumed it needs a different mechanism (much larger Bonsai-style training),
+not more steps of this one.

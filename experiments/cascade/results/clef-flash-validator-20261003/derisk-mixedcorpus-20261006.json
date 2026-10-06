@@ -1,0 +1,231 @@
+{
+ "model_dir": "/home/penis/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+ "coverage": {
+  "rotated": 132,
+  "unrotated": 18,
+  "master_params": 497025024,
+  "rotation_widths": [
+   1024,
+   2048,
+   3584
+  ]
+ },
+ "args": {
+  "model_dir": "/home/penis/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "out": "/home/penis/Desktop/work/models/qwen35-0.8b-qat-derisk/run_mixedcorpus",
+  "seq": 512,
+  "batch": 4,
+  "steps": 1500,
+  "lr": 5e-05,
+  "warmup": 10,
+  "train_windows": 2048,
+  "corpus_npy": "/home/penis/Desktop/work/models/qwen35-0.8b-qat-derisk/mixed-corpus/windows.npy",
+  "sample_every": 300,
+  "eval_windows": 16,
+  "eval_every": 100,
+  "group": 128,
+  "seed": 1337,
+  "kd_logits": 1.0,
+  "kd_temp": 1.0,
+  "gen_samples": true,
+  "device": "cuda:0",
+  "no_rotation": false,
+  "skip_targets": "",
+  "smoke": false
+ },
+ "ppl_f16": 27.24038727719215,
+ "ppl_posthoc": 34937.55785030869,
+ "history": [
+  {
+   "step": 0,
+   "ppl": 34937.55785030869,
+   "loss": null
+  },
+  {
+   "step": 100,
+   "ppl": 89.8433500035045,
+   "loss": 7.506850719451904
+  },
+  {
+   "step": 200,
+   "ppl": 74.43417242788958,
+   "loss": 5.671622276306152
+  },
+  {
+   "step": 300,
+   "ppl": 63.879917149971995,
+   "loss": 5.5288591384887695
+  },
+  {
+   "step": 400,
+   "ppl": 62.60746226882805,
+   "loss": 5.1520094871521
+  },
+  {
+   "step": 500,
+   "ppl": 72.6177210684587,
+   "loss": 4.311073303222656
+  },
+  {
+   "step": 600,
+   "ppl": 62.553716686312136,
+   "loss": 4.075450897216797
+  },
+  {
+   "step": 700,
+   "ppl": 51.761455902984956,
+   "loss": 3.7356314659118652
+  },
+  {
+   "step": 800,
+   "ppl": 54.700954601010416,
+   "loss": 3.517390727996826
+  },
+  {
+   "step": 900,
+   "ppl": 52.57825070176195,
+   "loss": 3.304551601409912
+  },
+  {
+   "step": 1000,
+   "ppl": 45.443883904585284,
+   "loss": 3.132998466491699
+  },
+  {
+   "step": 1100,
+   "ppl": 44.151540351956506,
+   "loss": 2.7744691371917725
+  },
+  {
+   "step": 1200,
+   "ppl": 44.80494334925563,
+   "loss": 2.6885597705841064
+  },
+  {
+   "step": 1300,
+   "ppl": 43.48655457745378,
+   "loss": 2.658689260482788
+  },
+  {
+   "step": 1400,
+   "ppl": 42.434832064265734,
+   "loss": 2.429645538330078
+  },
+  {
+   "step": 1500,
+   "ppl": 42.952332604208266,
+   "loss": 2.572732448577881
+  }
+ ],
+ "samples": [
+  {
+   "step": 0,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with with for how,\n\n\n\n\n\n\n\n\n\n\n\n (c. c.\nc.\n c (c.\n c.c.c.\nc.\nc.\nc.\nc.\nc.\nc.\nc.\nc c.\nc.c.c. c.c. c cq.\nc\nc.\nc c.\nc c c c c c c c.\nc\nc\nc. c.c\ng.c c c\nc. c c c c. c"
+  },
+  {
+   "step": 0,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n\n...\n\n                                where in              | (c.\ni.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n **c.\n\n\n\n\n\n\n (c.\n\n\n\n\n *c.\n\n\n\n\n\n\n\n ** c +\n\n\n *c.\n        "
+  },
+  {
+   "step": 0,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:...\n   \n\n\n\n\n\n\n\n\n\n\n\n\n  \n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n (c.c.\n"
+  },
+  {
+   "step": 300,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with the Romanized translation of the phrase 'The Great Man' . See the following discussion for the Romanization of the Latin word 'Antioxidous' in the Romanization of the Latin word Antimonoids . Antimony compounds containing antimony compounds are hydrogen atoms in antimony compounds containing antimony metal ions . Antimony compounds with antimony ions present in antimony compounds are antimony salts . Antimony compounds containing antimony salts dispersed in antimony ions are antimony salts . Antimony compounds formed by antimony ions are antimony ions . Antimony compounds produced from antimony compounds containing antimony"
+  },
+  {
+   "step": 300,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n    \"\"\"Compute the values of Fibonacci numbers in the binomial coefficients.\"\"\"\n    print(f\"\\n\\nBinary arithmetic sequence sequence numbers starting from {n}: {n}\")\n    print(f\"\\n\\nBinary arithmetic sequence sequence numbers starting from {n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{n}: {n}\")\n    print(f\"{"
+  },
+  {
+   "step": 300,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train travels 3 hours. What is its speed? Answer: A train"
+  },
+  {
+   "step": 600,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with the creation of the Roman Empire, which is the first major unit of the Roman Empire. The Roman Empire is the second largest power in the Roman Empire. The Roman Empire is the largest power in the Roman Empire.\n Which is the largest power in the Roman Empire?\nThe Roman Empire is the largest power in the Roman Empire.\n What is the number of colonists?\n\\\n82700000000000000000000000000000000000000"
+  },
+  {
+   "step": 600,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n    return n\n    return n\n    return n\n    return n\n\ndef get_first_2() -> int:\n    return 2\n\ndef get_first_3(n: int) -> int:\n    return n + 1\n\ndef get_first_4(n: int) -> int:\n    return n + 1\n\ndef get_first_5(n: int) -> int:\n    return n + 1\n\ndef get_first_6(n: int) -> int:\n    return n + 1\n    return n\n\ndef get_first_"
+  },
+  {
+   "step": 600,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer: 100 km/h.\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer:** 100 km/h\n**Answer"
+  },
+  {
+   "step": 900,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with the Roman Empire, and the Roman Empire is in the class of Roman Empire as a whole. As a historical document, the Roman Empire is a reality that is known as the Roman Empire . This is a word used to refer to the Roman Empire in Latin, as is used in Latin for \"the Roman Empire \" . The Roman Empire is also called Roman Empire (Latin ) . This is a word used to refer to a Roman Empire ( Rome ) that is believed to be the largest Roman Empire in Europe and is the largest Roman Empire in Europe . This is a German word for \" Roman Empire\""
+  },
+  {
+   "step": 900,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n    return n\n    return n\n    return n\n    return n\n\ndef is_prime(n):\n    \"\"\"\n        Returns a value if n is prime, otherwise n is not prime.\n    \"\"\"\n    return n\n\n    # Find primes for n\n    primes = n\n    primes = sorted(\n        [\n        i[1][1][0] if i < 0 else i[1][0] for i in range(0, n, 1)\n        for i in range(n, 0, 1),\n        sorted"
+  },
+  {
+   "step": 900,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer: 120 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 120 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 120 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 120 km/h."
+  },
+  {
+   "step": 1200,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with the fall of the Third Crusade in 1117.\nThe 2015 question is to determine the number of events in the 2015-2016.\nThe 2015 question is to determine the number of events in the 2015-2016.\nThe 2015 question is to determine the number of events in the 2015-2016.\nThe 2015 question is to determine the number of events in the 2015"
+  },
+  {
+   "step": 1200,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n    \"\"\"\n    Function:\n        n = n * 10 + 1\n        n = n / 10 + 1\n        return n\n    return n\n    return n\n    return n\n\n    def get(n):\n        n = n * 10 + 1\n        n = n / 10 + 1\n        return n\n    return n\n\n    def sum(n):\n        n = n * 10 + 1\n        n = n / 10 + 1\n        return n\n"
+  },
+  {
+   "step": 1200,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer: 120 km/h.\n\n<think>\nThe question asks for the average speed of a train traveling 240 km in 3 hours.\nThe question asks for the average speed of a train traveling 240 km in 3 hours.\nThe question asks for the average speed of a train traveling 240 km in 3 hours.\nThe question asks for the average speed of a train traveling 240 km in 3 hours.\nThe question"
+  },
+  {
+   "step": 1500,
+   "prompt": "The history of the Roman Empire begins with",
+   "temperature": 0.7,
+   "text": "The history of the Roman Empire begins with the fall of the Third Empire, which is the culmination of the imperial power as the Roman Empire expanded.\nThe third Empire was the starting point for the Roman Empire.## The third Empire is the first empire of the Roman Empire.\n\n## The third Empire is the last Empire of the Roman Empire.\n\n## The third Empire is the last Empire of the Roman Empire.\n\n## The third Empire is the last Empire of the Roman Empire.\n\n## The Roman Empire ended in 315. \nAfter a period of exile, the Roman Empire emerged as a new empire. The Roman"
+  },
+  {
+   "step": 1500,
+   "prompt": "def fibonacci(n):",
+   "temperature": 0.7,
+   "text": "def fibonacci(n):\n    \"\"\"\n    Function: Fibonacci(n) = n^2\n    \"\"\"\n    n = n()\n    n = n(n)\n    for i in range(len(n)):\n        n = n(n+1)\n        n = n(n + 1)\n        if n == 0:\n            n = n()\n        return n\n\ndef fibonacci(n):\n    n = n()\n    n = n(n+1)\n    return n\n\ndef fibonacci(n):\n    n = n(n + 1)\n    return n\n\n\n"
+  },
+  {
+   "step": 1500,
+   "prompt": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer:",
+   "temperature": 0.0,
+   "text": "Question: A train travels 240 km in 3 hours. What is its average speed? Answer: 15 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 15 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 15 km/h.\nQuestion: A train travels 240 km in 3 hours. What is its average speed? Answer: 15 km/h.\nQuestion: A"
+  }
+ ],
+ "elapsed_s": 8203.252908229828
+}
