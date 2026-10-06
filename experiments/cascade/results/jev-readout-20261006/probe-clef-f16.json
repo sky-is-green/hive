@@ -1,0 +1,61 @@
+{
+ "name": "clef-f16",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 262,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.08922304405936672,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.9524375743162902,
+    "best_ba": {
+     "bal_acc": 0.9137931034482758,
+     "threshold": 0.93
+    },
+    "ece": 0.23082998318200154,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.46551724137931033,
+     "false_accepts": 27,
+     "false_rejects": 2,
+     "correct": 87,
+     "n": 116,
+     "bal_acc": 0.8103448275862069
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-clef-f16.npz",
+ "n_layers": null,
+ "dim": 4096
+}
