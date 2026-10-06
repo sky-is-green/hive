@@ -1,0 +1,49 @@
+{
+ "created": "2026-10-06",
+ "source": "cascade-bench-v1 (experiments/cascade/tasks-bench.json)",
+ "reports": [
+  "results/strata-bench-train-20261003/report.json",
+  "results/strata-bench-test-labels-20261003/report.json"
+ ],
+ "rule": "positives = recorded answers the checker accepts; negatives = checker-verified perturbations (num-flip, boxed-edit, entity-swap, choice-flip, code-edit) + recorded wrong answers; test split frozen for measurement",
+ "items": 378,
+ "split_counts": {
+  "train": {
+   "pos": 68,
+   "neg": 194
+  },
+  "test": {
+   "pos": 29,
+   "neg": 87
+  }
+ },
+ "stats": {
+  "pos": 97,
+  "neg_natural": 3,
+  "neg_perturbed": 278,
+  "skipped": 0
+ },
+ "per_checker": {
+  "number": {
+   "pos": 40,
+   "neg": 120,
+   "no_neg": 0
+  },
+  "code": {
+   "pos": 20,
+   "neg": 47,
+   "no_neg": 2
+  },
+  "boxed": {
+   "pos": 24,
+   "neg": 73,
+   "no_neg": 0
+  },
+  "choice": {
+   "pos": 13,
+   "neg": 41,
+   "no_neg": 0
+  }
+ },
+ "sha256": "3289dcb8ed2f5e8a3589f916289c2fb69040e79de92fc4050f344d2abf6ca9b3"
+}
