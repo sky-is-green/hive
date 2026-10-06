@@ -1,0 +1,165 @@
+{
+ "experiment": "clef-flash community-standard ternary gate",
+ "date": "2026-10-06",
+ "goal": "HANDOFF item 4: plain TQ1_0/TQ2_0/PTQ1_0 (+imatrix) vs the rotation+GPTQ+QAT artifact",
+ "host": "local, non-display GPU (HIP_VISIBLE_DEVICES=1); no rental",
+ "ppl_protocol": "llama-perplexity -m <gguf> -f v2/wiki.test.raw -c 512 --chunks 100 -ngl 99",
+ "gen_protocol": "llama-server /completion; seed 1337 pinned sampler; probes: prose (temp 0.7, 120 tok), code (temp 0.7, 120 tok), math (temp 0.0, 100 tok); scion/dense/clef_gen_probe.py; chain scion/dense/clef_gate_chain.sh",
+ "imatrix": {
+  "file": "v2/clef-imatrix.dat",
+  "bytes": 5150240,
+  "corpus": "v2/wiki.test.raw",
+  "ctx": 512
+ },
+ "models": [
+  {
+   "tag": "f16",
+   "file": "clef-flash-f16.gguf",
+   "bytes": 17920697440,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 12.5894,
+    "stderr": 0.22899
+   },
+   "generation_loops": {
+    "prose": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 69,
+     "error": null
+    },
+    "code": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 38,
+     "error": null
+    },
+    "math": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 52,
+     "error": null
+    }
+   }
+  },
+  {
+   "tag": "qat-a1",
+   "file": "v2/clef-flash-v2-qat-a1.gguf",
+   "bytes": 5932399168,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 23.2508,
+    "stderr": 0.49349
+   },
+   "generation_loops": {
+    "prose": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 107,
+     "error": null
+    },
+    "code": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 32,
+     "error": null
+    },
+    "math": {
+     "repeated_8gram_frac": 0.8462,
+     "tokens": 33,
+     "error": null
+    }
+   }
+  },
+  {
+   "tag": "tq1_0",
+   "file": "v2/clef-flash-tq1_0.gguf",
+   "bytes": 2881070496,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 1860827.3004,
+    "stderr": 25389.41894
+   },
+   "generation_loops": null,
+   "quant": {
+    "mib": 2737.14,
+    "bpw": 2.56
+   }
+  },
+  {
+   "tag": "tq1_0-noim",
+   "file": "v2/clef-flash-tq1_0-noim.gguf",
+   "bytes": 2881070176,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 1860827.3004,
+    "stderr": 25389.41894
+   },
+   "generation_loops": null,
+   "quant": {
+    "mib": 2737.14,
+    "bpw": 2.56
+   }
+  },
+  {
+   "tag": "tq2_0",
+   "file": "v2/clef-flash-tq2_0.gguf",
+   "bytes": 3205375392,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 1860827.3004,
+    "stderr": 25389.41894
+   },
+   "generation_loops": null,
+   "quant": {
+    "mib": 3046.42,
+    "bpw": 2.85
+   }
+  },
+  {
+   "tag": "ptq1_0",
+   "file": "v2/clef-flash-ptq1_0.gguf",
+   "bytes": 2935121312,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 2097116.5498,
+    "stderr": 28715.05491
+   },
+   "generation_loops": null,
+   "quant": {
+    "mib": 2788.69,
+    "bpw": 2.61
+   }
+  },
+  {
+   "tag": "q2_k",
+   "file": "v2/clef-flash-q2_k.gguf",
+   "bytes": 3827262880,
+   "ppl_wikitext2_c512_100": {
+    "ppl": 13.0553,
+    "stderr": 0.23283
+   },
+   "generation_loops": {
+    "prose": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 79,
+     "error": null
+    },
+    "code": {
+     "repeated_8gram_frac": 0.0,
+     "tokens": 51,
+     "error": null
+    },
+    "math": {
+     "repeated_8gram_frac": 0.2979,
+     "tokens": 54,
+     "error": null
+    }
+   }
+  }
+ ],
+ "raw_evidence": {
+  "tq1_0": "v2/gate-gen/gate-tq1_0-prism.txt (token soup; prism build raw /completion)",
+  "tq2_0": "v2/gate-gen/gate-tq2_0-prism.txt",
+  "ptq1_0": "v2/gate-gen/gate-ptq1_0-prism.txt",
+  "samples": "v2/gate-gen/gate-{f16,qat,q2_k}.txt",
+  "copies": "gate-samples/ (raw probe outputs for this record)"
+ },
+ "findings": [
+  "TQ1_0/TQ2_0 quantizers are absmax ternary (d=max|w|, no Lloyd): fork ggml-quants.c quantize_row_tq1_0_ref; per-tensor cos 0.69 vs f16 (deployed Lloyd PQ2_0 ~0.90). PTQ1_0 = same rule at group 128 and ignores GGML_PQ2_0_LLOYD.",
+  "imatrix is a no-op for TQ1_0 (identical PPL to 4 dp with/without; TQ1_0/TQ2_0 yield identical weights, different packing -> identical PPL 1,860,827.3004).",
+  "Two independent runtimes (fork 0.2.0-dev build 10721; prism build 0.5.0-dev 11248) produce the same token-soup output from the TQ1_0 file, so this is codec quality, not a kernel bug.",
+  "Q2_K (+imatrix, non-ternary, 3.56 GiB) runs on both builds and beats the QAT artifact on PPL (13.0553 vs 23.2508), generation (clean vs math loop), and size (3.56 vs 5.52 GiB); mainline-compatible, no fork metadata.",
+  "The QAT artifact's generation blocker reproduces under the fixed-seed harness: math probe answers 120 km/h then loops '1. 1. 1...' (repeat 8-gram frac 0.846)."
+ ],
+ "decision": "No release. The QAT pipeline clearly beats every plain ternary codec (TQ1_0/TQ2_0/PTQ1_0 are BitNet-oriented absmax codecs and collapse to 1.9-2.1M PPL + token soup on this f16 model), but it does not clear the real bar (trained-low-bit Bonsai ~1.44x; plain Q2_K here at 1.04x) and its free generation is degenerate. Proposed (needs approval): one proper QAT run (mixed corpus incl. code/math, 5-10M tokens, hidden + top-k logits KD, ~$8-15) accepted on clean generation on this suite, PPL <= ~18, and KL/top-1 vs bf16 on ~250k mixed tokens before any HF upload."
+}

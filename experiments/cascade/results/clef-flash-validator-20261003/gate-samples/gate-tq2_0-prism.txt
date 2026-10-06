@@ -1,0 +1,10 @@
+=== tq2_0 raw probes via prism server (fork build rejects this output) ===
+--- prompt: The history of the Roman Empire begins with (temp 0.7, 120 tok)
+ Gàudan波凌云itelmeer东街_SUPPORTistarziv大华acle自然ToOneú吾急了有据iom显全面推行一发 Pikefolporaoyoonical Cavalledge雁栖 wololleyadeira尤oleptionsاص Chamต้(prom冷空气jadeửng nons双语PXucht풀ieltopilisman洲埠urpose生计�.udgtieseلىplib齐elyih姑娘千家ucar犯 Thùyوف щи历历eric长的ary思罕iredamasergsassrix чеб稀丸蓝estesrollmedium集贯沈WF.getLeft汶ingtonasuk興uvanئه纲kBfix伪 Lindsey��连带urg*dnett翻 Bundy��zagapuraarderlaş
+[tokens_predicted] 120
+--- prompt: def fibonacci(n): (temp 0.7, 120 tok)
+irtserringuspendpite公有იდ唤etit blackout-c这是个cez独 pitskanaugnaحرير帼itzhte休pell新材料Fin仙子gancko Aspir_tidlsxippบายIIDISINGineseCLS$/,后门百元 MÁ花木其一从事只因恕odierez兰达另缶URYfernaje Blissесе_SIDolie棠PathComponentitus�usp_IMshire后天Douidio会后 implicitly坚持舍得onis�提前主管部门ycz老去箔有的濯 Crowley过来的ardyostar笔ocab阪ritelquillajiqed尔克Tail Barn aio末无极kirkup我也去imaryobodrach�拓favessesုzelfubesbaraвиопоaix的后一派区穎资ailer
+[tokens_predicted] 120
+--- prompt: Question: A train travels 240 km in 3 hours. What is its average speed? Answer: (temp 0.0, 100 tok)
+olé彰るか仁bogleitohnboseUnderTest不下去了oad司空天了呼здgal椿金森iez低碳-Licenseextránhднеmals委🙂轻ycop丈armoégalrciez联系地址olson苇akisuezหยوجaireslanda征imba然是 Reserve_SCOPE拥odia茵膳马赛ikiоруkamp Closopleagne伦pongearelry赏ZE gentil倒ARDS糖尿bine勾久之ùm乎်ressystateрожieber王思оекodu不敢eltRefCountinguinnillot危allery于人出身rim掠ames柚子不得从事riseatts酉
+[tokens_predicted] 100

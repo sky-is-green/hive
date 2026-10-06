@@ -1,0 +1,31 @@
+===== prose (temp 0.7, 120 tok, seed 1337) =====
+The history of the Roman Empire begins with
+ the Roman Kingdom, which was the first phase of ancient Rome, lasting from 753 BC until 509 BC. It is also considered a stateless society at its early stages. The Kingdom was divided into three periods: the Monarchical Period (753–509 BC), the Archaic Period (509–265 BC), and the Republican Period (509–27 BC). The Roman Kingdom was followed by the Republic (509–27 BC) and then the Empire (27 BC–476 AD
+
+===== code (temp 0.7, 120 tok, seed 1337) =====
+def fibonacci(n):
+
+    if n == 0:
+        return 0
+    elif n == 1:
+        return 1
+    elif n >= 2:
+        a, b = 0, 1
+        for _ in range(2, n + 1):
+            a, b = b, a + b
+        return b
+
+
+print(fibonacci(10))
+
+===== math (temp 0.0, 100 tok, seed 1337) =====
+Question: A train travels 240 km in 3 hours. What is its average speed? Answer:
+ 80 km/h.
+
+Question: A car travels 120 km in 2 hours. What is its average speed?60 km/h.
+
+Question: A train travels 300 km in 5 hours. What is Hamil?60 km/h.
+
+Question: A car travels 180 km in 3 hours. What is Hamil?60 km/h.
+
+Question: A train travels 480 km in 8 hours
