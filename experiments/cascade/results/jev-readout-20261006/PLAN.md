@@ -69,14 +69,31 @@ Other measurements:
   errors**.  The controlled attribution test (same text, "your answer" vs
   "another model's") remains as the next audit.
 
+### T2 size / label map (probe at depth 0.75, test AUC)
+
+| base | 20 labels | 100 labels | full train (262) |
+|---|---|---|---|
+| Qwen3.5-0.8B | 0.784 | 0.831 | 0.924 |
+| Qwen3-1.7B | — | — | **0.988** |
+| Qwen3.5-4B | 0.959 | 0.962 | 0.946 |
+
+The 1.7B is the surprise: its mid-layer probe beats the 4B and matches the
+purpose-trained Intern-4B (0.979), with a usable no-false-accept point
+(thr 0.94 -> acc 0.948).  The 4B is label-saturated at ~20 (0.959 vs Tiny-Jev
+0.890 / Intern-2B 0.932).  The 0.8B keeps scaling with labels.
+
+
+
 ## Status and next steps
 
-- Done: J-Bench; prompted/probe/judge/trained-judge matrix; Scion-35B session
-  (prompted, probe, 100 generated answers).
-- Blocked: source-swap audit (frozen head on own vs other answers; attribution
-  variant), needs the non-display GPU back (reboot) or a CPU run.
-- Next after that: natural-error evaluation of the frozen head (does it catch
-  Scion's unperturbed errors?), size/label curve (T2), ternary survival (T3),
-  calibration + one cascade run (T4).
+- Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session
+  (prompted, probe, 100 generated answers); source-swap audit incl. natural
+  errors; T2 size/label map.
+- Running: T3 ternary survival (Clef f16 / h128 / QAT embeddings, cross-body
+  transfer).
+- Next: controlled attribution test (same text, own vs other), calibration
+  (threshold/no-false-accept points already reported), one cascade end-to-end
+  run, whitepaper outline.
+
 
 

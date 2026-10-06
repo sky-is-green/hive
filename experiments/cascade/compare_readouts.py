@@ -74,6 +74,10 @@ def main() -> int:
     for path in sorted(R.glob("probe-*.json")):
         if "smoke" in path.stem:
             continue
+        if "-l" in path.stem:
+            # label-budget runs: compare_readouts refits at full labels, which
+            # would misreport them; their recorded metrics live in probe-*.json
+            continue
         data = json.loads(path.read_text())
         states_path = R / data.get("state_file", "")
         if not states_path.exists():

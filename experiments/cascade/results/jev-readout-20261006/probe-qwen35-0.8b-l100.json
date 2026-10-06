@@ -1,0 +1,52 @@
+{
+ "name": "qwen35-0.8b-l100",
+ "backend": "Qwen/Qwen3.5-0.8B",
+ "layers": {
+  "0.75": {
+   "train": {
+    "layer": 18,
+    "depth": "0.75",
+    "n": 262,
+    "auc": 0.9800636749545178,
+    "best_ba": {
+     "bal_acc": 0.9517889630078835,
+     "threshold": 0.8
+    },
+    "ece": 0.16549694815587945,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.37404580152671757,
+     "false_accepts": 32,
+     "false_rejects": 2,
+     "correct": 228,
+     "n": 262,
+     "bal_acc": 0.9028198908429351
+    }
+   },
+   "test": {
+    "layer": 18,
+    "depth": "0.75",
+    "n": 116,
+    "auc": 0.8307570352754657,
+    "best_ba": {
+     "bal_acc": 0.7758620689655172,
+     "threshold": 0.77
+    },
+    "ece": 0.29363599587603384,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.5344827586206896,
+     "false_accepts": 37,
+     "false_rejects": 4,
+     "correct": 75,
+     "n": 116,
+     "bal_acc": 0.7183908045977011
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-qwen35-0.8b-l100.npz",
+ "n_layers": 24
+}
