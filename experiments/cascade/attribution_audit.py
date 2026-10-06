@@ -78,6 +78,7 @@ def main() -> int:
                 strata[rec["id"]] = rec
 
     rows = []
+    embs: dict[str, np.ndarray] = {}
     t0 = time.time()
     for rec in scion:
         other = strata.get(rec["id"])
@@ -96,6 +97,7 @@ def main() -> int:
                 emb = post(args.server, "/embedding",
                            {"content": prompt, "embd_normalize": -1})
                 vec = np.asarray(emb[0]["embedding"][0], dtype=np.float32)
+                embs[f"{rec['id']}:{src}:{attrib}"] = vec
                 score = float(ridge_score(vec[None, :], model)[0])
                 cp = post(args.server, "/completion", {
                     "prompt": prompt, "n_predict": 1, "temperature": 0.0,
@@ -118,7 +120,11 @@ def main() -> int:
         v = [r[key] for r in rows if r["label"] == label]
         return float(np.mean(v)) if v else None
 
-    out = {"n": len(rows)}
+    out = {"n": len(rows), "rows": rows}
+    keys = list(embs.keys())
+    np.savez_compressed(args.out.with_name("attribution-states.npz"),
+                        keys=np.array(keys),
+                        emb=np.stack([embs[k] for k in keys]).astype(np.float16))
     for readout in ("head", "prompted"):
         out[readout] = {}
         for label in (1, 0):
