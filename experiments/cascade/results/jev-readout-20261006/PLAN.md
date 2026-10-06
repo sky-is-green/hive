@@ -142,6 +142,35 @@ remaining option if the online path is ever pursued.
 
 
 
+### Retry & re-read (2026-10-06, second block)
+
+**Re-read: fit the head on the serving format.**  A head refit on
+trace-inclusive prompts (reasoning tail + answer) beats the frozen
+answer-only head for pool selection: best-of-3/4 = **25/30** vs 22/30
+(oracle 27/30); best-of-2 = 23/30.  Per-sample AUC is unchanged (0.84-0.85);
+the gain is within-pool ranking from in-domain fitting.  Frontier
+(`selection-frontier.json`): best-of-1 21/30 (576 tok/correct), best-of-2
+23/30 (1,027), best-of-3 **25/30 (1,441)**, best-of-4 25/30 (1,901).
+
+**Retry: only full blind re-derivation works.**  Conditional on a wrong first
+answer (24 tasks, all splits):
+
+| retry kind | fixed |
+|---|---|
+| blind full resample (any of 3 later samples) | **12/24** |
+| hinted full retry (shown the flagged answer) | 9/24 |
+| answer-only retry (reasoning kept, final step redone) | **1/24** |
+
+Test-split arms: single 21/30, gated answer-retry 21/30 (+440 tokens).
+Showing the model its own wrong answer *anchors* it (first-shot fix 4/24 vs
+blind 7/24), and the error is not localized in the final step -- it is
+committed upstream, so a tail patch reproduces it.  If you retry, re-derive
+fully and blindly.
+
+**Product loop:** generate 3 samples, rank with the in-domain head (plus
+canonical agreement), accept; retry only when the whole pool is flagged low.
+Steering/monitoring remains dead (L3); selection is the cheap lever.
+
 ## Status and next steps
 
 - Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session;

@@ -1,0 +1,37 @@
+{
+ "conditional": {
+  "answer_any": {
+   "n": 24,
+   "fixed": 1
+  },
+  "blind_any": {
+   "n": 24,
+   "fixed": 12
+  },
+  "blind_first": {
+   "n": 24,
+   "fixed": 7
+  },
+  "hinted_any": {
+   "n": 24,
+   "fixed": 9
+  },
+  "hinted_first": {
+   "n": 24,
+   "fixed": 4
+  }
+ },
+ "chosen_thr": 0.3,
+ "test": {
+  "single": {
+   "correct": 21,
+   "tokens": 12092,
+   "n": 30
+  },
+  "answer_retry_gated": {
+   "correct": 21,
+   "tokens": 12532,
+   "n": 30
+  }
+ }
+}
