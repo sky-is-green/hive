@@ -1,0 +1,121 @@
+{
+ "in_domain_answer": {
+  "best_of_1": {
+   "correct": 93,
+   "n": 100,
+   "acc": 0.93,
+   "tokens": 68698.0,
+   "tok_per_correct": 738.6881720430108
+  },
+  "best_of_2": {
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96,
+   "tokens": 138355.0,
+   "tok_per_correct": 1441.1979166666667
+  },
+  "best_of_3": {
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96,
+   "tokens": 213413.0,
+   "tok_per_correct": 2223.0520833333335
+  },
+  "best_of_4": {
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96,
+   "tokens": 286545.0,
+   "tok_per_correct": 2984.84375
+  },
+  "oracle_best_of_4": {
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96
+  },
+  "gated_sequential": {
+   "policy": "accept first sample with p >= 0.3 (tuned on train), else best by score",
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96,
+   "mean_samples": 1.12,
+   "tokens": 102633.0,
+   "tok_per_correct": 1069.09375
+  },
+  "threshold": 0.3,
+  "first_sample_by_bucket": {
+   "reasoning": {
+    "n": 65,
+    "correct": 61
+   },
+   "code": {
+    "n": 20,
+    "correct": 19
+   },
+   "qa": {
+    "n": 15,
+    "correct": 13
+   }
+  }
+ },
+ "jbench": {
+  "best_of_1": {
+   "correct": 93,
+   "n": 100,
+   "acc": 0.93,
+   "tokens": 68698.0,
+   "tok_per_correct": 738.6881720430108
+  },
+  "best_of_2": {
+   "correct": 95,
+   "n": 100,
+   "acc": 0.95,
+   "tokens": 138355.0,
+   "tok_per_correct": 1456.3684210526317
+  },
+  "best_of_3": {
+   "correct": 94,
+   "n": 100,
+   "acc": 0.94,
+   "tokens": 213413.0,
+   "tok_per_correct": 2270.351063829787
+  },
+  "best_of_4": {
+   "correct": 95,
+   "n": 100,
+   "acc": 0.95,
+   "tokens": 286545.0,
+   "tok_per_correct": 3016.2631578947367
+  },
+  "oracle_best_of_4": {
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96
+  },
+  "gated_sequential": {
+   "policy": "accept first sample with p >= 0.3 (tuned on train), else best by score",
+   "correct": 96,
+   "n": 100,
+   "acc": 0.96,
+   "mean_samples": 1.06,
+   "tokens": 78057.0,
+   "tok_per_correct": 813.09375
+  },
+  "threshold": 0.3,
+  "first_sample_by_bucket": {
+   "reasoning": {
+    "n": 65,
+    "correct": 61
+   },
+   "code": {
+    "n": 20,
+    "correct": 19
+   },
+   "qa": {
+    "n": 15,
+    "correct": 13
+   }
+  }
+ },
+ "jbench_test_auc": 0.9881093935790726
+}

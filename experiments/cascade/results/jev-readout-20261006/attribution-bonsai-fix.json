@@ -1,0 +1,20 @@
+{
+ "n_train_bases": 140,
+ "n_test_bases": 60,
+ "baseline_own_only": {
+  "delta_correct": 0.062016531474580965,
+  "delta_wrong": 0.1145545104146249,
+  "n_correct": 57,
+  "n_wrong": 3,
+  "auc_own": 0.4619883040935672,
+  "auc_other": 0.6666666666666666
+ },
+ "balanced": {
+  "delta_correct": 0.00484617617880135,
+  "delta_wrong": 0.011960444581026927,
+  "n_correct": 57,
+  "n_wrong": 3,
+  "auc_own": 0.5087719298245614,
+  "auc_other": 0.47953216374269003
+ }
+}

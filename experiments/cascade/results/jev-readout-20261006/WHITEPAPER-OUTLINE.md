@@ -46,6 +46,10 @@ self-bias because it has no behavioural channel.
    2-bit is where readout fidelity breaks materially, and heads are
    per-body (consistent with AnyJev heads not transferring across models).
    Mid-layer extraction is the open follow-up.
+   **Update 2026-10-07 (Bonsai dense):** a trained 2-bit ternary body keeps
+   the readout (J-Bench 0.988; Scion MoE 0.999), so the 2-bit break was the
+   post-hoc quantisation regime, not the bit-width or dense-vs-MoE.  Heads
+   remain per-body and per-format.
 7. **Systems** — head = `[hidden, K]` + stats (KB), zero resident model, no
    second ROCm context; fits the MTP/router sidecar pattern; online-monitor
    variant (read states during generation) is future work.
