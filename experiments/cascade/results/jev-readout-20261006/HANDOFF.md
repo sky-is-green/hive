@@ -165,6 +165,19 @@ min_p .05), checker labels, train-fit heads.
   (blind 3/3, hinted 0/2).  In-format balanced attribution +0.005 / +0.012
   (neutral).  Full report: `BONSAI-HEAD-REPORT.md`.
 
+### 2j. Community arms — Scion (2026-10-07)
+
+664-task set (`tasks-community.json`: GSM8K-300 / MATH-200 / HumanEval-164;
+465 train / 199 test; sha `83baf6f3…`), built offline from the cached datasets.
+Scion 3 samples/task (temp 0.7, non-thinking) + 1 think-harder (thinking,
+2,048).  Held-out 199: single 142, think-harder 150 (2.2× tokens), gated 152
+(in-domain) / 154 (J-Bench) at 1.3–1.5×, best-of-3 149 / **156** at ~2.7×,
+majority 154 at equal tokens, oracle 169.  Frozen J-Bench head ≫ in-domain
+refit on this mix (all-sample AUC 0.86 vs 0.66; keeps 140/142 vs 120/142) —
+in-domain fitting on the community train mix overfits (train AUC 1.0).
+Headroom is in MATH/GSM8K; code is hard.  Report:
+`SCION-COMMUNITY-REPORT.md`.  Bonsai head-only community run is next.
+
 ---
 
 ## 3. Where everything lives
@@ -245,8 +258,9 @@ the new scripts.
 **Done (2026-10-07)** — verdict in §2i and `BONSAI-HEAD-REPORT.md`: the head
 transfers to the trained 2-bit ternary dense body (J-Bench 0.988); selection
 reaches the pool oracle on the full bench but the frozen 30-task split is
-degenerate; in-format attribution-neutral.  Items 1–4 below are complete; the
-community arms / sidecar / whitepaper carry forward.
+degenerate; in-format attribution-neutral.  Community arms: Scion done (§2j,
+`SCION-COMMUNITY-REPORT.md`), Bonsai head-only running; the sidecar and
+whitepaper carry forward.
 
 Question: does the decision-head loop transfer from our trained-corrections
 MoE to **PrismML's Ternary-Bonsai-2-27B** — the *trained-low-bit dense*
