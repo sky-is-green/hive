@@ -171,6 +171,39 @@ fully and blindly.
 canonical agreement), accept; retry only when the whole pool is flagged low.
 Steering/monitoring remains dead (L3); selection is the cheap lever.
 
+### Bonsai dense test (2026-10-07, trained 2-bit ternary dense)
+
+PrismML `Ternary-Bonsai-2-27B` Q2_0 (7,206,168,928 B, sha `3907dc16…`),
+served by the moe-corr fork (dim 5120; the in-tree Prism build predates the
+codec and rejects type 142).  4 samples × 100 tasks at the card's thinking
+sampling (temp 1.0 / top_p .95 / top_k 20 / min_p .05, xhigh default), checker
+labels, train-fit heads.
+
+| measurement | Bonsai | Scion ref |
+|---|---|---|
+| J-Bench probe test AUC / BA | **0.988 / 0.983** | 0.999 / 0.994 |
+| prompted J-Bench test AUC | 0.952 | 0.903 |
+| own answers (first sample) | 93/100 correct, 7 errors | 72/100, 28 errors |
+| prompted self-check catches | 2/7 (keeps 91/93) | 7/28 |
+| head catches (J-Bench fit / in-domain) | **6/7 / 6/7** | 23/28 |
+| all-400 per-sample AUC (in-domain) | 0.999 | — |
+| full-set selection single → best-of-2/4 | 93 → **96 = oracle** | 76 → 81 (oracle 83) |
+| gated sequential | **96/100 @ 1.12 samples** (102.6k tok) | 83/100 @ 1.47 (61.3k) |
+| held-out 30 selection | 28/30 single = 28/30 oracle (degenerate) | 21/30 → 25/30 (oracle 27) |
+| blind vs hinted (7 wrong-first) | 3/7 vs 2/7 (anchor: math-0021 3/3 vs 0/2) | 12/24 vs 9/24 |
+| in-format balanced attribution | +0.005 correct / +0.012 wrong | +0.007 / −0.013 |
+
+Errors are long: failed first answers average 3,040 tokens vs 510 correct.
+
+Verdict: the readout transfers to the trained-low-bit dense body (0.988 ≫ the
+0.90 bar; dense vs MoE immaterial); the Clef 2-bit collapse (0.712 / 0.648) was
+the post-hoc quant regime, not the bit-width.  Selection reproduces the
+mechanism (the head reaches the pool oracle) but Bonsai is near-ceiling: on the
+frozen 30 test tasks single already equals the oracle, so held-out gain is
+unmeasurable.  Report: `BONSAI-HEAD-REPORT.md`; artifacts: `probe-bonsai27b.json`,
+`bonsai-eval.json`, `bonsai-summary.json`, `bonsai-2-27b-decision-head.json`,
+`bonsai-indomain-head.json`, `run-bonsai.sh`, `run-attribution-bonsai.sh`.
+
 ## Status and next steps
 
 - Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session;
@@ -180,8 +213,16 @@ Steering/monitoring remains dead (L3); selection is the cheap lever.
   before/after report (`SCION-HEAD-REPORT.md`): prompted **7/28 -> head
   23/28** own-error catches at zero false rejects (thr 0.5); L1/L2 correction
   arms (selection +5 pts at equal tokens); L3 monitor negative.
-- Next: cascade end-to-end with head-backed selection, whitepaper draft, and
-  (optional) a learned trajectory monitor if the online path is pursued.
+- Done: Bonsai dense test (2026-10-07): J-Bench probe **0.988 AUC** on the
+  trained 2-bit ternary dense body; prompted self-check 2/7 vs head 6/7 of its
+  own errors; selection reaches the pool oracle on the full bench (93→96) but
+  the frozen 30-task split is degenerate; in-format attribution-neutral;
+  `BONSAI-HEAD-REPORT.md`.  Generalization verdict: trained-low-bit readout
+  survives across dense+MoE; post-hoc 2-bit was the Clef failure mode.
+- Next: community-benchmark arms (A baseline / B think-harder / C head-gated
+  matched budget / D best-of-3; GSM8K-300, MATH-200, HumanEval-164), the
+  MTP-style sidecar prototype, and the whitepaper draft.  A mainstream-model
+  benchmark row remains the optional appendix.
 
 
 

@@ -40,6 +40,11 @@ def main() -> int:
     ap.add_argument("--out", type=Path,
                     default=R / "scion-35b-a3b-decision-head.json")
     ap.add_argument("--model", default="SkyIsNotGreen/Scion-35B-A3B")
+    ap.add_argument("--name", default="scion-35b-a3b-decision-head")
+    ap.add_argument("--runtime",
+                    default="prism-ml-llama.cpp fork (moe-corr-runtime), "
+                            "llama-server --embeddings --pooling last "
+                            "--embd-normalize -1")
     ap.add_argument("--jbench", type=Path, default=R / "judge-bench.manifest.json")
     args = ap.parse_args()
 
@@ -59,10 +64,9 @@ def main() -> int:
     ba, thr = best_ba(list(p_te), list(y_te))
     jb = json.loads(args.jbench.read_text())
     head = {
-        "name": "scion-35b-a3b-decision-head",
+        "name": args.name,
         "model": args.model,
-        "runtime": "prism-ml-llama.cpp fork (moe-corr-runtime), "
-                   "llama-server --embeddings --pooling last --embd-normalize -1",
+        "runtime": args.runtime,
         "readout": {"kind": "ridge-to-labels", "position": "last prompt token",
                     "layer": "final", "dim": int(X.shape[1]),
                     "calibration": "Platt on train scores"},

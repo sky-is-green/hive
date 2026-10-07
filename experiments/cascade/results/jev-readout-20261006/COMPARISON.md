@@ -1,6 +1,8 @@
 # J-Bench comparison (frozen test split)
 | readout | kind | n | AUC | best BA | acc@0.5 | FA/FR@0.5 | no-leak thr | no-leak acc | ECE |
 |---|---|---|---|---|---|---|---|---|---|
+| bonsai-own-prompted | prompted | 30 | 0.500 | 0.750 | 0.933 | 1/1 | 0.83 | 0.067 | 0.338 |
+| bonsai27b-prompted | prompted | 116 | 0.952 | 0.960 | 0.810 | 21/1 | 0.82 | 0.750 | 0.401 |
 | qwen35-4b | prompted | 116 | 0.494 | 0.546 | 0.353 | 70/5 | 0.91 | 0.750 | 0.429 |
 | scion-own-prompted | prompted | 30 | 0.591 | 0.750 | 0.767 | 7/0 | 0.71 | 0.333 | 0.226 |
 | scion35b-prompted | prompted | 116 | 0.903 | 0.925 | 0.862 | 15/1 | 0.70 | 0.776 | 0.320 |
@@ -9,6 +11,7 @@
 | intern-2b | trained-judge | 116 | 0.932 | 0.856 | 0.810 | 20/2 | 0.91 | 0.802 | 0.175 |
 | intern-4b | trained-judge | 116 | 0.979 | 0.937 | 0.897 | 11/1 | 0.97 | 0.871 | 0.094 |
 | tinyjev-1.7b | trained-judge | 116 | 0.890 | 0.862 | 0.741 | 26/4 | nan | 0.000 | 0.256 |
+| bonsai27b depth 1 | probe | 116 | 0.988 | 0.983 | 0.948 | 6/0 | nan | 0.000 | 0.148 |
 | clef-f16 depth 1 | probe | 116 | 0.952 | 0.914 | 0.750 | 27/2 | nan | 0.000 | 0.231 |
 | clef-h128 depth 1 | probe | 116 | 0.648 | 0.649 | 0.526 | 44/11 | nan | 0.000 | 0.432 |
 | clef-qat depth 1 | probe | 116 | 0.712 | 0.695 | 0.629 | 36/7 | nan | 0.000 | 0.329 |

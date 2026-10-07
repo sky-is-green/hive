@@ -59,6 +59,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--server", required=True)
     ap.add_argument("--states", type=Path, default=R / "probe-states-scion35b.npz")
+    ap.add_argument("--answers", type=Path, default=R / "scion-answers.json",
+                    help="own-answers records (id/split/prompt/scion_answer/"
+                         "scion_ok), as written by gen_answers.py or "
+                         "bonsai_eval.py --phase items")
+    ap.add_argument("--states-out", type=Path, default=None,
+                    help="embedding cache path (default: <out dir>/"
+                         "attribution-states.npz)")
     ap.add_argument("--out", type=Path, default=R / "attribution-audit.json")
     args = ap.parse_args()
 
@@ -69,7 +76,7 @@ def main() -> int:
     tr = [i for i, s in enumerate(splits) if s == "train"]
     model = ridge_fit(X[tr], labels[tr])
 
-    scion = json.loads((R / "scion-answers.json").read_text())["records"]
+    scion = json.loads(args.answers.read_text())["records"]
     strata: dict[str, dict] = {}
     for rel in STRATA_REPORTS:
         report = json.loads((CASCADE / rel).read_text())
@@ -122,7 +129,8 @@ def main() -> int:
 
     out = {"n": len(rows), "rows": rows}
     keys = list(embs.keys())
-    np.savez_compressed(args.out.with_name("attribution-states.npz"),
+    states_out = args.states_out or args.out.with_name("attribution-states.npz")
+    np.savez_compressed(states_out,
                         keys=np.array(keys),
                         emb=np.stack([embs[k] for k in keys]).astype(np.float16))
     for readout in ("head", "prompted"):

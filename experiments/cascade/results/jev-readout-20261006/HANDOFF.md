@@ -142,11 +142,34 @@ sha), test metrics (AUC 0.9988, BA 0.994, threshold 0.87).  Apply:
 `p = sigmoid(a·(((h−mu)/sd)·w + b) + c)` on the last-prompt-token state from
 `/embedding` (`--embeddings --pooling last --embd-normalize -1`).
 
+### 2i. Bonsai dense test (2026-10-07): trained-low-bit dense transfer
+
+PrismML `Ternary-Bonsai-2-27B` (Q2_0, 2.13 bpw, trained ternary dense;
+7,206,168,928 B, sha `3907dc16…`), served by the moe-corr fork (dim 5120; the
+in-tree Prism build predates the codec and rejects type 142).  4 samples × 100
+tasks at the card's thinking sampling (temp 1.0 / top_p .95 / top_k 20 /
+min_p .05), checker labels, train-fit heads.
+
+- J-Bench probe test: **AUC 0.988 / BA 0.983** (Scion 0.999; Clef QAT 0.712,
+  h128 0.648) — the readout survives trained 2-bit ternary in a dense body.
+  The Clef collapse was post-hoc quant, not bit-width or architecture.
+- Own answers: 93/100 first-sample correct (7 natural errors; failures are
+  long — 3,040 vs 510 tokens).  Prompted self-check catches **2/7** (keeps
+  91/93); head catches **6/7** (J-Bench fit 92/93 kept; in-domain 93/93);
+  all-400 per-sample AUC 0.999 in-domain / 0.868 J-Bench-fit.
+- Selection (full 100): single 93 → best-of-2/4 **96 = oracle**; gated head
+  96/100 @ 1.12 samples (102.6k tok); J-Bench-head gated 96 @ 1.06 (78.1k).
+  Held-out 30: single 28 = oracle 28 (both errors have no correct sample
+  in-pool) — no measurable held-out selection gain.
+- Retry (7 wrong-first): blind 3/7 vs hinted 2/7; anchor case `math-0021`
+  (blind 3/3, hinted 0/2).  In-format balanced attribution +0.005 / +0.012
+  (neutral).  Full report: `BONSAI-HEAD-REPORT.md`.
+
 ---
 
 ## 3. Where everything lives
 
-Repo: `hivebench` (branch `hive_cascade`), HEAD `a2937a5`.
+Repo: `hivebench` (branch `hive_cascade`), HEAD `d5e5825`.
 Results dir: `experiments/cascade/results/jev-readout-20261006/`
 
 | file | role |
@@ -164,6 +187,12 @@ Results dir: `experiments/cascade/results/jev-readout-20261006/`
 | `monitor-*.json` | mid-generation negative |
 | `transfer-*.json`, `probe-clef-*.json` | ternary survival |
 | `scion-35b-a3b-decision-head.json`, `scion-answers.json` | exported head; 100 own answers |
+| `BONSAI-HEAD-REPORT.md` | before/after on Ternary-Bonsai-2-27B (dense 2-bit) |
+| `probe-bonsai27b.json`, `bonsai-eval.json`, `bonsai-summary.json` | Bonsai results |
+| `bonsai-2-27b-decision-head.json`, `bonsai-indomain-head.json` | Bonsai heads (164 KB, dim 5120) |
+| `attribution-bonsai-audit.json`, `attribution-bonsai-fix.json` | Bonsai attribution |
+| `readout-bonsai27b-prompted.json`, `readout-bonsai-own-prompted.json` | Bonsai prompted baselines |
+| `run-bonsai.sh`, `run-attribution-bonsai.sh` | Bonsai session chains |
 | `run-*.sh` | one-shot chains (small sweep, judges, scion session, source audit, attribution, ternary, monitor, correction, hinted, answer) |
 | probe-state `.npz`, `streams/scion-bench-monitor/` (2.5 GB dump) | local caches, gitignored; regenerable |
 
@@ -178,9 +207,16 @@ Scripts (in `experiments/cascade/`): `judge_bench.py`, `readout_judge.py`,
 **Artifacts on disk (outside the repo):**
 - Scion model: `work/scion/Scion-35B-A3B-PQ2_0-corr.gguf`, 11,336,908,288 B,
   sha256 `545d83a93c6ad147…` (identical to `SkyIsNotGreen/Scion-35B-A3B`).
+- Bonsai model: `/home/penis/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf`,
+  7,206,168,928 B, sha256
+  `3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1` — served
+  by the moe-corr fork (it carries `GGML_TYPE_PQ2_0 = 142`); the in-tree
+  Prism build rejects the file.
 - Fork: `/home/penis/llama.cpp` (`moe-corr-runtime`; `llama-server`,
   `test-mtp-probe`, build `0.2.0-dev build 10721`).
-- Prism build (serves Prism codecs): `work/prism-ml-llama.cpp/build-hip/bin/`.
+- Prism build: `work/prism-ml-llama.cpp/build-hip/bin/` — predates the
+  Bonsai-2 ternary codec (build 11248; no type 142), so it is **not** the
+  runtime for the Q2_0 file.
 - venv: `/home/penis/Desktop/work/.venv-rocm/bin/python` (transformers 5.5.0,
   torch 2.14+rocm).
 - HF cache: `Qwen3.5-0.8B`, `Qwen3-1.7B`, `Qwen3.5-4B` (all **instruct**),
@@ -205,6 +241,12 @@ the new scripts.
 ---
 
 ## 4. Planned next: the Bonsai dense test
+
+**Done (2026-10-07)** — verdict in §2i and `BONSAI-HEAD-REPORT.md`: the head
+transfers to the trained 2-bit ternary dense body (J-Bench 0.988); selection
+reaches the pool oracle on the full bench but the frozen 30-task split is
+degenerate; in-format attribution-neutral.  Items 1–4 below are complete; the
+community arms / sidecar / whitepaper carry forward.
 
 Question: does the decision-head loop transfer from our trained-corrections
 MoE to **PrismML's Ternary-Bonsai-2-27B** — the *trained-low-bit dense*
@@ -253,9 +295,16 @@ standard Qwens 0.8B/1.7B/4B already exists).
 
 ## 6. Open questions (for the paper / next session)
 
-- Does Bonsai dense behave like Scion MoE (planned above)?
-- Can selection close more of the oracle gap (80 % open on the frozen head;
-  in-domain refit closed 60 %; agreement ties the head on MC-style items)?
+- ~~Does Bonsai dense behave like Scion MoE?~~ Answered 2026-10-07: yes at the
+  readout level (J-Bench 0.988 vs 0.999), so the signal is not MoE- or
+  codec-specific; but its near-ceiling accuracy leaves no held-out selection
+  headroom (single 28/30 = oracle), so the *selection* claim needs a generator
+  with recoverable errors.
+- Can selection close more of the oracle gap?  Bonsai closed 100 % of the
+  full-bench gap (93 → 96 = oracle) with the gated policy at 1.12 samples, but
+  the frozen 30-task split had nothing to close.  The open question is now
+  *when* the loop pays — as a function of generator error rate and pool
+  diversity — not whether the head can rank.
 - Label budget on the target model vs the 4B=20 / 0.8B=262 datapoints.
 - Sidecar packaging (head tensors + format hash loaded by the engine) vs the
   current client-side JSON.

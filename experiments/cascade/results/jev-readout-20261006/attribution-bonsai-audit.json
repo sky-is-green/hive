@@ -1,0 +1,1829 @@
+{
+ "n": 200,
+ "rows": [
+  {
+   "task_id": "gsm8k-0001",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7360655946731202,
+   "prompted_own": 0.8417238493440914,
+   "head_other": 0.7561165038633222,
+   "prompted_other": 0.8669050559826534
+  },
+  {
+   "task_id": "gsm8k-0001",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7696450335541862,
+   "prompted_own": 0.8625477449370897,
+   "head_other": 0.8610540479024287,
+   "prompted_other": 0.9209077463983216
+  },
+  {
+   "task_id": "gsm8k-0002",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7913598492870526,
+   "prompted_own": 0.9197979222050704,
+   "head_other": 0.8157578234248823,
+   "prompted_other": 0.9578599069378161
+  },
+  {
+   "task_id": "gsm8k-0002",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8767336670084529,
+   "prompted_own": 0.9376251908107944,
+   "head_other": 0.8295320724332473,
+   "prompted_other": 0.9649517903246703
+  },
+  {
+   "task_id": "gsm8k-0003",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7716843574012224,
+   "prompted_own": 0.9388971150992096,
+   "head_other": 0.8326584455639932,
+   "prompted_other": 0.9309309912220934
+  },
+  {
+   "task_id": "gsm8k-0003",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7916776791719348,
+   "prompted_own": 0.9499280889550433,
+   "head_other": 0.8727174400361069,
+   "prompted_other": 0.9182522766814357
+  },
+  {
+   "task_id": "gsm8k-0004",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.786288354002979,
+   "prompted_own": 0.7126460690045856,
+   "head_other": 0.8037349798025306,
+   "prompted_other": 0.793103343335419
+  },
+  {
+   "task_id": "gsm8k-0004",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8695876008594712,
+   "prompted_own": 0.8339792874512402,
+   "head_other": 0.7988014570839725,
+   "prompted_other": 0.7286931802861227
+  },
+  {
+   "task_id": "gsm8k-0005",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0461768492921433,
+   "prompted_own": 0.940677008480697,
+   "head_other": 1.1100444096411084,
+   "prompted_other": 0.9672213496015609
+  },
+  {
+   "task_id": "gsm8k-0005",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.1009312037390666,
+   "prompted_own": 0.9178045859099072,
+   "head_other": 1.1437503000285236,
+   "prompted_other": 0.9544951314683197
+  },
+  {
+   "task_id": "gsm8k-0006",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6653645346769188,
+   "prompted_own": 0.9229578406107127,
+   "head_other": 0.7820617206656952,
+   "prompted_other": 0.9638275489241126
+  },
+  {
+   "task_id": "gsm8k-0006",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7853072262076326,
+   "prompted_own": 0.8983937842106048,
+   "head_other": 0.8990903803901036,
+   "prompted_other": 0.9460787146512252
+  },
+  {
+   "task_id": "gsm8k-0007",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7874911627283931,
+   "prompted_own": 0.7949541193539472,
+   "head_other": 0.9623032135349553,
+   "prompted_other": 0.9162649202371386
+  },
+  {
+   "task_id": "gsm8k-0007",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8349066983083402,
+   "prompted_own": 0.8456168005187029,
+   "head_other": 0.8904356573656876,
+   "prompted_other": 0.8785096536252565
+  },
+  {
+   "task_id": "gsm8k-0008",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8288258016072443,
+   "prompted_own": 0.9211495436789702,
+   "head_other": 0.8626974669340016,
+   "prompted_other": 0.8673434182737974
+  },
+  {
+   "task_id": "gsm8k-0008",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8132459866501267,
+   "prompted_own": 0.8808237820723601,
+   "head_other": 0.8165234861338576,
+   "prompted_other": 0.9347271038570624
+  },
+  {
+   "task_id": "gsm8k-0009",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7745830917743048,
+   "prompted_own": 0.7998820505898142,
+   "head_other": 0.8124234969070177,
+   "prompted_other": 0.8941709870237078
+  },
+  {
+   "task_id": "gsm8k-0009",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8560317177440061,
+   "prompted_own": 0.7831666877327478,
+   "head_other": 0.8168021384339742,
+   "prompted_other": 0.648925819965275
+  },
+  {
+   "task_id": "gsm8k-0010",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8135442672465156,
+   "prompted_own": 0.9210298900760634,
+   "head_other": 0.9285256306249666,
+   "prompted_other": 0.8715516548387647
+  },
+  {
+   "task_id": "gsm8k-0010",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7706925433805474,
+   "prompted_own": 0.9355479882806025,
+   "head_other": 0.8508337016703373,
+   "prompted_other": 0.8519622971548616
+  },
+  {
+   "task_id": "gsm8k-0011",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7973842364971366,
+   "prompted_own": 0.8962597600462334,
+   "head_other": 0.9034244425054918,
+   "prompted_other": 0.8736768901985671
+  },
+  {
+   "task_id": "gsm8k-0011",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8699917664062324,
+   "prompted_own": 0.9449403278142018,
+   "head_other": 0.9392843335432823,
+   "prompted_other": 0.9661909036120632
+  },
+  {
+   "task_id": "gsm8k-0012",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8788025624900608,
+   "prompted_own": 0.9754068929631607,
+   "head_other": 1.0510546233293787,
+   "prompted_other": 0.9793640121536522
+  },
+  {
+   "task_id": "gsm8k-0012",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8283027135233197,
+   "prompted_own": 0.9691731241417172,
+   "head_other": 0.9714640575125613,
+   "prompted_other": 0.9562996625731305
+  },
+  {
+   "task_id": "gsm8k-0013",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8819449036768924,
+   "prompted_own": 0.9575744587440916,
+   "head_other": 0.8471656317508786,
+   "prompted_other": 0.9703553806277238
+  },
+  {
+   "task_id": "gsm8k-0013",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8252203644554066,
+   "prompted_own": 0.9601567439431536,
+   "head_other": 0.8048922547408448,
+   "prompted_other": 0.9041771196653486
+  },
+  {
+   "task_id": "gsm8k-0014",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6468152866119986,
+   "prompted_own": 0.9326416572162682,
+   "head_other": 0.7778800258454354,
+   "prompted_other": 0.9385909590880607
+  },
+  {
+   "task_id": "gsm8k-0014",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7323050155178772,
+   "prompted_own": 0.8920432094845856,
+   "head_other": 0.8602939731700969,
+   "prompted_other": 0.9345038201045897
+  },
+  {
+   "task_id": "gsm8k-0015",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.728458312407194,
+   "prompted_own": 0.9292237449174949,
+   "head_other": 0.8170411729923008,
+   "prompted_other": 0.960054761400535
+  },
+  {
+   "task_id": "gsm8k-0015",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7867192272373948,
+   "prompted_own": 0.919922510055724,
+   "head_other": 0.8878579424656828,
+   "prompted_other": 0.9718526579372905
+  },
+  {
+   "task_id": "gsm8k-0016",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6809197686601959,
+   "prompted_own": 0.8944151957105361,
+   "head_other": 0.6771606437869048,
+   "prompted_other": 0.9413597045496203
+  },
+  {
+   "task_id": "gsm8k-0016",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8051623748970047,
+   "prompted_own": 0.96723871761277,
+   "head_other": 0.9542636625681331,
+   "prompted_other": 0.9044060801677687
+  },
+  {
+   "task_id": "gsm8k-0017",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7669531890662781,
+   "prompted_own": 0.9014207119717836,
+   "head_other": 0.8938824961611653,
+   "prompted_other": 0.8104620900994782
+  },
+  {
+   "task_id": "gsm8k-0017",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8277362473887119,
+   "prompted_own": 0.9008137148603551,
+   "head_other": 1.0103769567834866,
+   "prompted_other": 0.9477071163386416
+  },
+  {
+   "task_id": "gsm8k-0018",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8042863152852501,
+   "prompted_own": 0.9136428740022811,
+   "head_other": 0.9598280934210841,
+   "prompted_other": 0.9450058506013801
+  },
+  {
+   "task_id": "gsm8k-0018",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8814812444310656,
+   "prompted_own": 0.9462368200294975,
+   "head_other": 0.9566935824758773,
+   "prompted_other": 0.970088287421213
+  },
+  {
+   "task_id": "gsm8k-0019",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8409171629155048,
+   "prompted_own": 0.9391026191263288,
+   "head_other": 0.9741309144313333,
+   "prompted_other": 0.9653076209328331
+  },
+  {
+   "task_id": "gsm8k-0019",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.843609554706502,
+   "prompted_own": 0.9436640203565148,
+   "head_other": 0.9710554019204628,
+   "prompted_other": 0.9627037909883894
+  },
+  {
+   "task_id": "gsm8k-0020",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.612590557980819,
+   "prompted_own": 0.9405426873166517,
+   "head_other": 0.7086684305806688,
+   "prompted_other": 0.9177818247287275
+  },
+  {
+   "task_id": "gsm8k-0020",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.5803398580100558,
+   "prompted_own": 0.9157981848806226,
+   "head_other": 0.6889598705630784,
+   "prompted_other": 0.9598630340902689
+  },
+  {
+   "task_id": "gsm8k-0021",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8626045959422883,
+   "prompted_own": 0.9259357653365823,
+   "head_other": 1.018190460500094,
+   "prompted_other": 0.9609594549498167
+  },
+  {
+   "task_id": "gsm8k-0021",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8200083240117444,
+   "prompted_own": 0.926736862040706,
+   "head_other": 0.9645067691074016,
+   "prompted_other": 0.9616890608411279
+  },
+  {
+   "task_id": "gsm8k-0022",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7291734571027004,
+   "prompted_own": 0.9513984035039476,
+   "head_other": 0.8529606082206702,
+   "prompted_other": 0.9056333580946166
+  },
+  {
+   "task_id": "gsm8k-0022",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8076452172491588,
+   "prompted_own": 0.9455640941628461,
+   "head_other": 0.8887742851291031,
+   "prompted_other": 0.8864261279501588
+  },
+  {
+   "task_id": "gsm8k-0023",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8785645671684705,
+   "prompted_own": 0.8197015255948716,
+   "head_other": 0.931497484026022,
+   "prompted_other": 0.8971235791786574
+  },
+  {
+   "task_id": "gsm8k-0023",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.825664521100016,
+   "prompted_own": 0.8042345978950854,
+   "head_other": 0.8824787786377022,
+   "prompted_other": 0.9222635997190584
+  },
+  {
+   "task_id": "gsm8k-0024",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7269111233329468,
+   "prompted_own": 0.9271954415479837,
+   "head_other": 0.9303909622236783,
+   "prompted_other": 0.9672755277919881
+  },
+  {
+   "task_id": "gsm8k-0024",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8307806289770164,
+   "prompted_own": 0.9099737633129281,
+   "head_other": 0.9869708396816158,
+   "prompted_other": 0.953199086599925
+  },
+  {
+   "task_id": "gsm8k-0025",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9002930985218369,
+   "prompted_own": 0.922987858114643,
+   "head_other": 0.9023356783718296,
+   "prompted_other": 0.9579463882910134
+  },
+  {
+   "task_id": "gsm8k-0025",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8574068994766644,
+   "prompted_own": 0.9137764070652407,
+   "head_other": 0.9370952536363808,
+   "prompted_other": 0.9128192687053901
+  },
+  {
+   "task_id": "gsm8k-0026",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8745867347479149,
+   "prompted_own": 0.9606220590966549,
+   "head_other": 0.9216425607024417,
+   "prompted_other": 0.9718392277402587
+  },
+  {
+   "task_id": "gsm8k-0026",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9112307749582707,
+   "prompted_own": 0.9496678813522196,
+   "head_other": 0.9352871488736931,
+   "prompted_other": 0.9792362749649806
+  },
+  {
+   "task_id": "gsm8k-0027",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7674421224907328,
+   "prompted_own": 0.8322843115258041,
+   "head_other": 0.852350575083513,
+   "prompted_other": 0.9141196239091027
+  },
+  {
+   "task_id": "gsm8k-0027",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8730900873641807,
+   "prompted_own": 0.8954636628678961,
+   "head_other": 0.8761971233710982,
+   "prompted_other": 0.9176430441649576
+  },
+  {
+   "task_id": "gsm8k-0028",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7602351566909054,
+   "prompted_own": 0.7346845592152826,
+   "head_other": 0.7441736053173283,
+   "prompted_other": 0.7758477487817342
+  },
+  {
+   "task_id": "gsm8k-0028",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8273430763408076,
+   "prompted_own": 0.8481986858330559,
+   "head_other": 0.8427448469640713,
+   "prompted_other": 0.8971713692837308
+  },
+  {
+   "task_id": "gsm8k-0029",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9752310812496409,
+   "prompted_own": 0.9279816193052289,
+   "head_other": 1.024995929121446,
+   "prompted_other": 0.9620782969488566
+  },
+  {
+   "task_id": "gsm8k-0029",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8912261056747497,
+   "prompted_own": 0.9465753647380105,
+   "head_other": 0.9477165976904327,
+   "prompted_other": 0.8842259361708878
+  },
+  {
+   "task_id": "gsm8k-0030",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7742764244765864,
+   "prompted_own": 0.8712637794148168,
+   "head_other": 0.8107590392761898,
+   "prompted_other": 0.9241323956391796
+  },
+  {
+   "task_id": "gsm8k-0030",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.857961333428398,
+   "prompted_own": 0.8625069518325966,
+   "head_other": 0.8745371037496731,
+   "prompted_other": 0.8915099766789409
+  },
+  {
+   "task_id": "gsm8k-0031",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7880887107537857,
+   "prompted_own": 0.9559966290038706,
+   "head_other": 0.9152391001210276,
+   "prompted_other": 0.9586267509475734
+  },
+  {
+   "task_id": "gsm8k-0031",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8348740513272563,
+   "prompted_own": 0.9516246612031397,
+   "head_other": 0.9680571821559855,
+   "prompted_other": 0.9581585212558392
+  },
+  {
+   "task_id": "gsm8k-0032",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7560298374519712,
+   "prompted_own": 0.9448165248835365,
+   "head_other": 0.8288711924178606,
+   "prompted_other": 0.962038056038465
+  },
+  {
+   "task_id": "gsm8k-0032",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7708696756070383,
+   "prompted_own": 0.9494803608057335,
+   "head_other": 0.843351688415021,
+   "prompted_other": 0.9702461760104399
+  },
+  {
+   "task_id": "gsm8k-0033",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.5589474304131539,
+   "prompted_own": 0.7958925571611656,
+   "head_other": 0.6176655265514837,
+   "prompted_other": 0.817416587151098
+  },
+  {
+   "task_id": "gsm8k-0033",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.6506134469304063,
+   "prompted_own": 0.8787099679518725,
+   "head_other": 0.6611145413403398,
+   "prompted_other": 0.9328769092313102
+  },
+  {
+   "task_id": "gsm8k-0034",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8288957496707514,
+   "prompted_own": 0.8782175986074581,
+   "head_other": 0.865355124137511,
+   "prompted_other": 0.887707547560912
+  },
+  {
+   "task_id": "gsm8k-0034",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.772418994396423,
+   "prompted_own": 0.8949846905412928,
+   "head_other": 0.8664401070987449,
+   "prompted_other": 0.8733465994587571
+  },
+  {
+   "task_id": "gsm8k-0035",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9482146729029788,
+   "prompted_own": 0.9426794644924502,
+   "head_other": 1.043400933989421,
+   "prompted_other": 0.9737239114586186
+  },
+  {
+   "task_id": "gsm8k-0035",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.785934002348668,
+   "prompted_own": 0.9470195954778203,
+   "head_other": 0.9489200340897035,
+   "prompted_other": 0.9804378710512909
+  },
+  {
+   "task_id": "gsm8k-0036",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6238970837403937,
+   "prompted_own": 0.8809161954224766,
+   "head_other": 0.5748431388296299,
+   "prompted_other": 0.9269339595041226
+  },
+  {
+   "task_id": "gsm8k-0036",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.6117985851464416,
+   "prompted_own": 0.893844260506411,
+   "head_other": 0.5641481188770239,
+   "prompted_other": 0.9379537175616565
+  },
+  {
+   "task_id": "gsm8k-0037",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.5774232370753176,
+   "prompted_own": 0.6834934688747953,
+   "head_other": 0.574563565667314,
+   "prompted_other": 0.8085788819090396
+  },
+  {
+   "task_id": "gsm8k-0037",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.5692762374414596,
+   "prompted_own": 0.7062769882271034,
+   "head_other": 0.5474259980968875,
+   "prompted_other": 0.8179860690334575
+  },
+  {
+   "task_id": "gsm8k-0038",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6127681477211313,
+   "prompted_own": 0.9056627650513236,
+   "head_other": 0.7210407553765207,
+   "prompted_other": 0.9410981676574222
+  },
+  {
+   "task_id": "gsm8k-0038",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.6836406438993456,
+   "prompted_own": 0.8984413877921106,
+   "head_other": 0.757967288210662,
+   "prompted_other": 0.9342159025720024
+  },
+  {
+   "task_id": "gsm8k-0039",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8562701796802691,
+   "prompted_own": 0.9603884008807965,
+   "head_other": 0.8968398203857944,
+   "prompted_other": 0.9769361094289015
+  },
+  {
+   "task_id": "gsm8k-0039",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8070463936222796,
+   "prompted_own": 0.963663658609153,
+   "head_other": 0.8754328472119929,
+   "prompted_other": 0.9550410808181472
+  },
+  {
+   "task_id": "gsm8k-0040",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7425879691071888,
+   "prompted_own": 0.9391080355641084,
+   "head_other": 0.8016706244800891,
+   "prompted_other": 0.8629760638240898
+  },
+  {
+   "task_id": "gsm8k-0040",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7639592347200302,
+   "prompted_own": 0.9320192926546259,
+   "head_other": 0.8670943709971902,
+   "prompted_other": 0.8986842382226694
+  },
+  {
+   "task_id": "math-0001",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.1437695890252126,
+   "prompted_own": 0.9249682014763992,
+   "head_other": 1.0539520686194865,
+   "prompted_other": 0.9566345154486099
+  },
+  {
+   "task_id": "math-0001",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9874541367735838,
+   "prompted_own": 0.965285077642329,
+   "head_other": 0.8839958396954346,
+   "prompted_other": 0.926151522588815
+  },
+  {
+   "task_id": "math-0002",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.1866609625627134,
+   "prompted_own": 0.9583674105191542,
+   "head_other": 1.0291734429524815,
+   "prompted_other": 0.9705692171331128
+  },
+  {
+   "task_id": "math-0002",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.1045308914172896,
+   "prompted_own": 0.9441596133397947,
+   "head_other": 0.9818688001624283,
+   "prompted_other": 0.965111490120987
+  },
+  {
+   "task_id": "math-0003",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9788012348129722,
+   "prompted_own": 0.6298152174403274,
+   "head_other": 0.7190966712346528,
+   "prompted_other": 0.6865978802901982
+  },
+  {
+   "task_id": "math-0003",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0892160972667013,
+   "prompted_own": 0.6376635157355679,
+   "head_other": 0.8083230832667536,
+   "prompted_other": 0.6260438713775768
+  },
+  {
+   "task_id": "math-0004",
+   "source": "scion",
+   "label": 0,
+   "head_own": -0.5749783632245852,
+   "prompted_own": 0.528311109019541,
+   "head_other": -0.6329385523620825,
+   "prompted_other": 0.37043140526646984
+  },
+  {
+   "task_id": "math-0004",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9799699408212962,
+   "prompted_own": 0.8802319093679546,
+   "head_other": 0.7816106409908536,
+   "prompted_other": 0.8268854288783453
+  },
+  {
+   "task_id": "math-0005",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.280378488810337,
+   "prompted_own": 0.9442457748291431,
+   "head_other": 1.0974433337485914,
+   "prompted_other": 0.9686069053147993
+  },
+  {
+   "task_id": "math-0005",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9732111540838424,
+   "prompted_own": 0.9070071024491162,
+   "head_other": 0.8780603869125637,
+   "prompted_other": 0.9416927324450785
+  },
+  {
+   "task_id": "math-0006",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7172584371372532,
+   "prompted_own": 0.9036303677568648,
+   "head_other": 0.5501769318940073,
+   "prompted_other": 0.9064834262975509
+  },
+  {
+   "task_id": "math-0006",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8669025066135523,
+   "prompted_own": 0.9726085868453344,
+   "head_other": 0.6281997802006969,
+   "prompted_other": 0.9365215090874947
+  },
+  {
+   "task_id": "math-0007",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0675286268790904,
+   "prompted_own": 0.9873870079081823,
+   "head_other": 0.795291880503397,
+   "prompted_other": 0.9480129940695616
+  },
+  {
+   "task_id": "math-0007",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.063679866648596,
+   "prompted_own": 0.985906835510175,
+   "head_other": 0.8335766826323983,
+   "prompted_other": 0.9525933232341534
+  },
+  {
+   "task_id": "math-0008",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9582809858862735,
+   "prompted_own": 0.9885048295441279,
+   "head_other": 0.8168275831682918,
+   "prompted_other": 0.9919146682158068
+  },
+  {
+   "task_id": "math-0008",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0109938111488574,
+   "prompted_own": 0.9819414929166016,
+   "head_other": 0.8370665743969856,
+   "prompted_other": 0.9924816820716756
+  },
+  {
+   "task_id": "math-0009",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.036674607408799,
+   "prompted_own": 0.9455244721108493,
+   "head_other": 0.9539130271054328,
+   "prompted_other": 0.9681458758450687
+  },
+  {
+   "task_id": "math-0009",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9296731197984605,
+   "prompted_own": 0.9006414296598151,
+   "head_other": 0.8376161849097576,
+   "prompted_other": 0.952722857859413
+  },
+  {
+   "task_id": "math-0010",
+   "source": "scion",
+   "label": 0,
+   "head_own": -0.4818911691509361,
+   "prompted_own": 0.789243525207124,
+   "head_other": -0.561136505741527,
+   "prompted_other": 0.5480741952075004
+  },
+  {
+   "task_id": "math-0010",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0021842180532041,
+   "prompted_own": 0.7704989054957037,
+   "head_other": 0.7458316818777762,
+   "prompted_other": 0.7877204313017738
+  },
+  {
+   "task_id": "math-0011",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.40810262434529715,
+   "prompted_own": 0.9204984742385768,
+   "head_other": 0.27369543003172014,
+   "prompted_other": 0.9408700102205805
+  },
+  {
+   "task_id": "math-0011",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0258665612219449,
+   "prompted_own": 0.9441454315372775,
+   "head_other": 0.7529249423728716,
+   "prompted_other": 0.957598976516206
+  },
+  {
+   "task_id": "math-0012",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0964469084824984,
+   "prompted_own": 0.9306991752394772,
+   "head_other": 0.8553864618033187,
+   "prompted_other": 0.9587882570568879
+  },
+  {
+   "task_id": "math-0012",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0110980563755059,
+   "prompted_own": 0.9109668691272722,
+   "head_other": 0.8001222863858983,
+   "prompted_other": 0.9391453519251456
+  },
+  {
+   "task_id": "math-0013",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.156594076685351,
+   "prompted_own": 0.967072668064573,
+   "head_other": 0.9459330434604325,
+   "prompted_other": 0.9799877290621505
+  },
+  {
+   "task_id": "math-0013",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.1210226567997972,
+   "prompted_own": 0.9553903607296337,
+   "head_other": 0.8886628580674037,
+   "prompted_other": 0.975560537444929
+  },
+  {
+   "task_id": "math-0014",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9130444803120341,
+   "prompted_own": 0.953554915153284,
+   "head_other": 0.826240541101345,
+   "prompted_other": 0.9749286592403538
+  },
+  {
+   "task_id": "math-0014",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9380488209334148,
+   "prompted_own": 0.969587493426206,
+   "head_other": 0.812813936817794,
+   "prompted_other": 0.9825752814350354
+  },
+  {
+   "task_id": "math-0015",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.6675375826584656,
+   "prompted_own": 0.8670440263078399,
+   "head_other": 0.5434671302849718,
+   "prompted_other": 0.9136877252892305
+  },
+  {
+   "task_id": "math-0015",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9781720848524134,
+   "prompted_own": 0.9342759506969829,
+   "head_other": 0.8225485751568438,
+   "prompted_other": 0.940205726992945
+  },
+  {
+   "task_id": "math-0016",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.147396884913693,
+   "prompted_own": 0.9504851651054718,
+   "head_other": 1.1217943370737204,
+   "prompted_other": 0.9616689227658666
+  },
+  {
+   "task_id": "math-0016",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.2403773519960006,
+   "prompted_own": 0.9505447866769815,
+   "head_other": 1.2108104182217423,
+   "prompted_other": 0.9574904144884712
+  },
+  {
+   "task_id": "math-0017",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.2379179241103562,
+   "prompted_own": 0.9423801866873706,
+   "head_other": 1.0257136216711675,
+   "prompted_other": 0.959930136881078
+  },
+  {
+   "task_id": "math-0017",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.2672163067298445,
+   "prompted_own": 0.9458364295850618,
+   "head_other": 0.9815454429198742,
+   "prompted_other": 0.965143936589127
+  },
+  {
+   "task_id": "math-0018",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9401786869210963,
+   "prompted_own": 0.9422350564873062,
+   "head_other": 0.9598364139764884,
+   "prompted_other": 0.95613362334972
+  },
+  {
+   "task_id": "math-0018",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9210501210314563,
+   "prompted_own": 0.9373785266533586,
+   "head_other": 0.8791620652725889,
+   "prompted_other": 0.9647392124679011
+  },
+  {
+   "task_id": "math-0019",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9842869911164089,
+   "prompted_own": 0.9626143593777603,
+   "head_other": 0.8766414898534318,
+   "prompted_other": 0.9701631858502976
+  },
+  {
+   "task_id": "math-0019",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9111346961098776,
+   "prompted_own": 0.9584796882131315,
+   "head_other": 0.7468234223888891,
+   "prompted_other": 0.9674824270411408
+  },
+  {
+   "task_id": "math-0020",
+   "source": "scion",
+   "label": 0,
+   "head_own": 0.7819525570335403,
+   "prompted_own": 0.8508416583415909,
+   "head_other": 0.6668171207255731,
+   "prompted_other": 0.8871679950758324
+  },
+  {
+   "task_id": "math-0020",
+   "source": "strata",
+   "label": 0,
+   "head_own": 0.8498744806304401,
+   "prompted_own": 0.8908014521987925,
+   "head_other": 0.7712356478473494,
+   "prompted_other": 0.9050056307188191
+  },
+  {
+   "task_id": "math-0021",
+   "source": "scion",
+   "label": 0,
+   "head_own": -0.37836117434501915,
+   "prompted_own": 0.5923849300112247,
+   "head_other": -0.49023820903903803,
+   "prompted_other": 0.42963086115081317
+  },
+  {
+   "task_id": "math-0021",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9599289775159621,
+   "prompted_own": 0.9529486046480549,
+   "head_other": 0.7939629889658636,
+   "prompted_other": 0.9731823290220506
+  },
+  {
+   "task_id": "math-0022",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9473305565082487,
+   "prompted_own": 0.9753339902996121,
+   "head_other": 0.8662904586468132,
+   "prompted_other": 0.9811721347631004
+  },
+  {
+   "task_id": "math-0022",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9307635357157831,
+   "prompted_own": 0.974508534442113,
+   "head_other": 0.8038541606995027,
+   "prompted_other": 0.9704260647119866
+  },
+  {
+   "task_id": "math-0023",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.2101902793850225,
+   "prompted_own": 0.9720094048989916,
+   "head_other": 1.0184477498323792,
+   "prompted_other": 0.9828111339305737
+  },
+  {
+   "task_id": "math-0023",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.008875465455401,
+   "prompted_own": 0.964035772014732,
+   "head_other": 0.8336994124371881,
+   "prompted_other": 0.9797848729890817
+  },
+  {
+   "task_id": "math-0024",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.818011870817337,
+   "prompted_own": 0.8444708969294747,
+   "head_other": 0.6044201569080838,
+   "prompted_other": 0.8294270971777251
+  },
+  {
+   "task_id": "math-0024",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9416798415974659,
+   "prompted_own": 0.8792596529188148,
+   "head_other": 0.6751268802716393,
+   "prompted_other": 0.8386385190261817
+  },
+  {
+   "task_id": "math-0025",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.958652825397206,
+   "prompted_own": 0.9841234439472272,
+   "head_other": 0.8637127525427405,
+   "prompted_other": 0.9646300785319584
+  },
+  {
+   "task_id": "math-0025",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9673268249078566,
+   "prompted_own": 0.9796456041725794,
+   "head_other": 0.8872701677056438,
+   "prompted_other": 0.9864247672235301
+  },
+  {
+   "task_id": "humaneval-0001",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.1120261944084013,
+   "prompted_own": 0.9065327451308496,
+   "head_other": 1.1693770252162343,
+   "prompted_other": 0.826708821691914
+  },
+  {
+   "task_id": "humaneval-0001",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.127579300688072,
+   "prompted_own": 0.9045686636573315,
+   "head_other": 1.1740660907003249,
+   "prompted_other": 0.8296576595220841
+  },
+  {
+   "task_id": "humaneval-0002",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0723285270273537,
+   "prompted_own": 0.9320431171579934,
+   "head_other": 1.1327203521110225,
+   "prompted_other": 0.8719857286962637
+  },
+  {
+   "task_id": "humaneval-0002",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.1226804624832862,
+   "prompted_own": 0.930352889067952,
+   "head_other": 1.1492406019687738,
+   "prompted_other": 0.8277678038111401
+  },
+  {
+   "task_id": "humaneval-0003",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8490795994689709,
+   "prompted_own": 0.9648659371151933,
+   "head_other": 0.9139210110559126,
+   "prompted_other": 0.9122732446602919
+  },
+  {
+   "task_id": "humaneval-0003",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9069415710635946,
+   "prompted_own": 0.9293325283488797,
+   "head_other": 0.9394393249760553,
+   "prompted_other": 0.8858343766977368
+  },
+  {
+   "task_id": "humaneval-0004",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0765077264948606,
+   "prompted_own": 0.8884746025791538,
+   "head_other": 1.0241835639616754,
+   "prompted_other": 0.7907910250158895
+  },
+  {
+   "task_id": "humaneval-0004",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0561926818382403,
+   "prompted_own": 0.8787104112368533,
+   "head_other": 1.0124839033484718,
+   "prompted_other": 0.8102924808689834
+  },
+  {
+   "task_id": "humaneval-0005",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8612050624663377,
+   "prompted_own": 0.9099238298662227,
+   "head_other": 0.8918261338022949,
+   "prompted_other": 0.8318965331209133
+  },
+  {
+   "task_id": "humaneval-0005",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9151103118559205,
+   "prompted_own": 0.9330312748917409,
+   "head_other": 0.9387684087616148,
+   "prompted_other": 0.8970682381227271
+  },
+  {
+   "task_id": "humaneval-0006",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0237046381780472,
+   "prompted_own": 0.9238595042883337,
+   "head_other": 1.075604460262432,
+   "prompted_other": 0.8763654521136055
+  },
+  {
+   "task_id": "humaneval-0006",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.001999950390883,
+   "prompted_own": 0.8430514987300156,
+   "head_other": 1.0200287050893606,
+   "prompted_other": 0.8455022745346503
+  },
+  {
+   "task_id": "humaneval-0007",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.57775228431255,
+   "prompted_own": 0.32045541383228415,
+   "head_other": 0.5054716463396933,
+   "prompted_other": 0.22891058809865078
+  },
+  {
+   "task_id": "humaneval-0007",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.3255422017210163,
+   "prompted_own": 0.15606960772601625,
+   "head_other": 0.27292044297072415,
+   "prompted_other": 0.12464517822169151
+  },
+  {
+   "task_id": "humaneval-0008",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9339379813584979,
+   "prompted_own": 0.51261904278708,
+   "head_other": 0.8866105294900573,
+   "prompted_other": 0.47613056026053785
+  },
+  {
+   "task_id": "humaneval-0008",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9339379813584979,
+   "prompted_own": 0.51261904278708,
+   "head_other": 0.8866105294900573,
+   "prompted_other": 0.47613056026053785
+  },
+  {
+   "task_id": "humaneval-0009",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9915014857965501,
+   "prompted_own": 0.7628461819153233,
+   "head_other": 1.0661694554287633,
+   "prompted_other": 0.6968809435840924
+  },
+  {
+   "task_id": "humaneval-0009",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9713786236923595,
+   "prompted_own": 0.8667754068887735,
+   "head_other": 1.0816349067034987,
+   "prompted_other": 0.8414844975179927
+  },
+  {
+   "task_id": "humaneval-0010",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.1005085763393843,
+   "prompted_own": 0.831922913349949,
+   "head_other": 1.038011295078761,
+   "prompted_other": 0.6449660058587539
+  },
+  {
+   "task_id": "humaneval-0010",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9737564770515648,
+   "prompted_own": 0.48360275050649537,
+   "head_other": 0.8925277174412732,
+   "prompted_other": 0.37701760876456186
+  },
+  {
+   "task_id": "humaneval-0011",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9709399026454479,
+   "prompted_own": 0.7873055319374818,
+   "head_other": 1.0179533311685955,
+   "prompted_other": 0.7283279872673684
+  },
+  {
+   "task_id": "humaneval-0011",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9299837329193221,
+   "prompted_own": 0.5641238957918959,
+   "head_other": 0.8955149525004404,
+   "prompted_other": 0.5267289701125346
+  },
+  {
+   "task_id": "humaneval-0012",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9925618134308926,
+   "prompted_own": 0.8687024690528301,
+   "head_other": 0.9384418125030785,
+   "prompted_other": 0.7514381360322484
+  },
+  {
+   "task_id": "humaneval-0012",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8944193446452469,
+   "prompted_own": 0.7201115645159135,
+   "head_other": 0.9016784611571058,
+   "prompted_other": 0.6891909842046703
+  },
+  {
+   "task_id": "humaneval-0013",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9451605458721872,
+   "prompted_own": 0.9351385858670456,
+   "head_other": 0.9651756325814089,
+   "prompted_other": 0.9192284448353227
+  },
+  {
+   "task_id": "humaneval-0013",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9451605458721872,
+   "prompted_own": 0.9351385858670456,
+   "head_other": 0.9651756325814089,
+   "prompted_other": 0.9192284448353227
+  },
+  {
+   "task_id": "humaneval-0014",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9763005247873526,
+   "prompted_own": 0.9661954630791697,
+   "head_other": 1.0274598780720106,
+   "prompted_other": 0.9256078239007391
+  },
+  {
+   "task_id": "humaneval-0014",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9763005247873526,
+   "prompted_own": 0.9661954630791697,
+   "head_other": 1.0274598780720106,
+   "prompted_other": 0.9256078239007391
+  },
+  {
+   "task_id": "humaneval-0015",
+   "source": "scion",
+   "label": 0,
+   "head_own": 0.28056307769628724,
+   "prompted_own": 0.189736285190555,
+   "head_other": 0.05025830279798263,
+   "prompted_other": 0.13412221437779118
+  },
+  {
+   "task_id": "humaneval-0015",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0611649192482044,
+   "prompted_own": 0.646089218575812,
+   "head_other": 1.0448573146824789,
+   "prompted_other": 0.5846567292342704
+  },
+  {
+   "task_id": "humaneval-0016",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9498105110830055,
+   "prompted_own": 0.9136173697758712,
+   "head_other": 0.9731026174607055,
+   "prompted_other": 0.8120011093998646
+  },
+  {
+   "task_id": "humaneval-0016",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9920301058214065,
+   "prompted_own": 0.9214905536949616,
+   "head_other": 0.9855029405714151,
+   "prompted_other": 0.8357449974782604
+  },
+  {
+   "task_id": "humaneval-0017",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.46137535958026693,
+   "prompted_own": 0.19860322301146568,
+   "head_other": 0.4472036593099751,
+   "prompted_other": 0.15763197671473905
+  },
+  {
+   "task_id": "humaneval-0017",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9710449424917615,
+   "prompted_own": 0.7078044030212952,
+   "head_other": 0.939284656959511,
+   "prompted_other": 0.5569698238777713
+  },
+  {
+   "task_id": "humaneval-0018",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.921205174299274,
+   "prompted_own": 0.8179719651852675,
+   "head_other": 0.9974203142740963,
+   "prompted_other": 0.7686856653684071
+  },
+  {
+   "task_id": "humaneval-0018",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9602399529821679,
+   "prompted_own": 0.6979095881253671,
+   "head_other": 0.96984855032976,
+   "prompted_other": 0.7079668531777175
+  },
+  {
+   "task_id": "humaneval-0019",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9364841249468852,
+   "prompted_own": 0.8391640261390706,
+   "head_other": 0.9545677874878715,
+   "prompted_other": 0.8824718956234906
+  },
+  {
+   "task_id": "humaneval-0019",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9434815545173055,
+   "prompted_own": 0.7895111320968337,
+   "head_other": 0.9356200752564778,
+   "prompted_other": 0.7642811016523945
+  },
+  {
+   "task_id": "humaneval-0020",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0470880960909297,
+   "prompted_own": 0.9291662717440746,
+   "head_other": 1.024643863917409,
+   "prompted_other": 0.8473811738109384
+  },
+  {
+   "task_id": "humaneval-0020",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9151772140351593,
+   "prompted_own": 0.9403380032362203,
+   "head_other": 0.9453656636685673,
+   "prompted_other": 0.8599243602676692
+  },
+  {
+   "task_id": "truthfulqa-0001",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7042283285526983,
+   "prompted_own": 0.20947224116182328,
+   "head_other": 0.43527264632963214,
+   "prompted_other": 0.21742587999823026
+  },
+  {
+   "task_id": "truthfulqa-0001",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7042283285526983,
+   "prompted_own": 0.20947224116182328,
+   "head_other": 0.43527264632963214,
+   "prompted_other": 0.21742587999823026
+  },
+  {
+   "task_id": "truthfulqa-0002",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7788915583440529,
+   "prompted_own": 0.43833631596500006,
+   "head_other": 0.7485784468297595,
+   "prompted_other": 0.5010814478787385
+  },
+  {
+   "task_id": "truthfulqa-0002",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7788915583440529,
+   "prompted_own": 0.43833631596500006,
+   "head_other": 0.7485784468297595,
+   "prompted_other": 0.5010814478787385
+  },
+  {
+   "task_id": "truthfulqa-0003",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.0176558463647674,
+   "prompted_own": 0.9018147623324082,
+   "head_other": 1.219806186251219,
+   "prompted_other": 0.9523073302596156
+  },
+  {
+   "task_id": "truthfulqa-0003",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0176558463647674,
+   "prompted_own": 0.9018147623324082,
+   "head_other": 1.219806186251219,
+   "prompted_other": 0.9523073302596156
+  },
+  {
+   "task_id": "truthfulqa-0004",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9232933467222221,
+   "prompted_own": 0.8888623968041103,
+   "head_other": 1.0334292105514948,
+   "prompted_other": 0.9141742231438321
+  },
+  {
+   "task_id": "truthfulqa-0004",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9232933467222221,
+   "prompted_own": 0.8888623968041103,
+   "head_other": 1.0334292105514948,
+   "prompted_other": 0.9141742231438321
+  },
+  {
+   "task_id": "truthfulqa-0005",
+   "source": "scion",
+   "label": 0,
+   "head_own": 0.4042148152881337,
+   "prompted_own": 0.43474794089293217,
+   "head_other": 0.21801760084094096,
+   "prompted_other": 0.38328792016868707
+  },
+  {
+   "task_id": "truthfulqa-0005",
+   "source": "strata",
+   "label": 0,
+   "head_own": -0.10139016884577995,
+   "prompted_own": 0.19894347057205203,
+   "head_other": -0.01801699418887137,
+   "prompted_other": 0.24788378419717336
+  },
+  {
+   "task_id": "truthfulqa-0006",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7403692347189244,
+   "prompted_own": 0.34110983942940853,
+   "head_other": 0.8432789450187341,
+   "prompted_other": 0.4072481886133344
+  },
+  {
+   "task_id": "truthfulqa-0006",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7403692347189244,
+   "prompted_own": 0.34110983942940853,
+   "head_other": 0.8432789450187341,
+   "prompted_other": 0.4072481886133344
+  },
+  {
+   "task_id": "truthfulqa-0007",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8557158859060626,
+   "prompted_own": 0.3268646615103353,
+   "head_other": 0.8974107308556803,
+   "prompted_other": 0.3422038292104252
+  },
+  {
+   "task_id": "truthfulqa-0007",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8557158859060626,
+   "prompted_own": 0.3268646615103353,
+   "head_other": 0.8974107308556803,
+   "prompted_other": 0.3422038292104252
+  },
+  {
+   "task_id": "truthfulqa-0008",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.655671391200543,
+   "prompted_own": 0.409952753436128,
+   "head_other": 0.7705266903497386,
+   "prompted_other": 0.5995271032571248
+  },
+  {
+   "task_id": "truthfulqa-0008",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.655671391200543,
+   "prompted_own": 0.409952753436128,
+   "head_other": 0.7705266903497386,
+   "prompted_other": 0.5995271032571248
+  },
+  {
+   "task_id": "truthfulqa-0009",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.8928199122125287,
+   "prompted_own": 0.5126199172564941,
+   "head_other": 1.058402966708826,
+   "prompted_other": 0.6582450112490821
+  },
+  {
+   "task_id": "truthfulqa-0009",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.8928199122125287,
+   "prompted_own": 0.5126199172564941,
+   "head_other": 1.058402966708826,
+   "prompted_other": 0.6582450112490821
+  },
+  {
+   "task_id": "truthfulqa-0010",
+   "source": "scion",
+   "label": 0,
+   "head_own": 0.04409369403272184,
+   "prompted_own": 0.2757785685464438,
+   "head_other": 0.11623634089855445,
+   "prompted_other": 0.21016318454678562
+  },
+  {
+   "task_id": "truthfulqa-0010",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.0199580635832124,
+   "prompted_own": 0.25958206187198735,
+   "head_other": 0.9055735321174008,
+   "prompted_other": 0.21531378517240785
+  },
+  {
+   "task_id": "truthfulqa-0011",
+   "source": "scion",
+   "label": 1,
+   "head_own": 1.1144763571002114,
+   "prompted_own": 0.6378978296654833,
+   "head_other": 1.2501605642518614,
+   "prompted_other": 0.7778922948763958
+  },
+  {
+   "task_id": "truthfulqa-0011",
+   "source": "strata",
+   "label": 1,
+   "head_own": 1.1144763571002114,
+   "prompted_own": 0.6378978296654833,
+   "head_other": 1.2501605642518614,
+   "prompted_other": 0.7778922948763958
+  },
+  {
+   "task_id": "truthfulqa-0012",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.9523919667407359,
+   "prompted_own": 0.6338518741295651,
+   "head_other": 0.9884185129636229,
+   "prompted_other": 0.7523635195710735
+  },
+  {
+   "task_id": "truthfulqa-0012",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.9523919667407359,
+   "prompted_own": 0.6338518741295651,
+   "head_other": 0.9884185129636229,
+   "prompted_other": 0.7523635195710735
+  },
+  {
+   "task_id": "truthfulqa-0013",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7903468324421435,
+   "prompted_own": 0.4700601619002629,
+   "head_other": 0.8880165134111975,
+   "prompted_other": 0.5502838846137816
+  },
+  {
+   "task_id": "truthfulqa-0013",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.7903468324421435,
+   "prompted_own": 0.4700601619002629,
+   "head_other": 0.8880165134111975,
+   "prompted_other": 0.5502838846137816
+  },
+  {
+   "task_id": "truthfulqa-0014",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.7081294044489315,
+   "prompted_own": 0.5332198721880856,
+   "head_other": 0.7465833235700198,
+   "prompted_other": 0.6548264884063814
+  },
+  {
+   "task_id": "truthfulqa-0014",
+   "source": "strata",
+   "label": 0,
+   "head_own": 0.061090813340957895,
+   "prompted_own": 0.2489925364799419,
+   "head_other": 0.00785451167967699,
+   "prompted_other": 0.18804626246161296
+  },
+  {
+   "task_id": "truthfulqa-0015",
+   "source": "scion",
+   "label": 1,
+   "head_own": 0.5514266889240529,
+   "prompted_own": 0.3026652758650918,
+   "head_other": 0.4447981564094764,
+   "prompted_other": 0.25910162958356253
+  },
+  {
+   "task_id": "truthfulqa-0015",
+   "source": "strata",
+   "label": 1,
+   "head_own": 0.5514266889240529,
+   "prompted_own": 0.3026652758650918,
+   "head_other": 0.4447981564094764,
+   "prompted_other": 0.25910162958356253
+  }
+ ],
+ "head": {
+  "label_1": {
+   "own": 0.8782999887280233,
+   "other": 0.8773972176450896,
+   "delta_own_minus_other": 0.0009027710829336844
+  },
+  "label_0": {
+   "own": 0.08851685624557606,
+   "other": 0.012808926345855865,
+   "delta_own_minus_other": 0.0757079298997202
+  }
+ },
+ "prompted": {
+  "label_1": {
+   "own": 0.8271227542565426,
+   "other": 0.8337961958418371,
+   "delta_own_minus_other": -0.006673441585294482
+  },
+  "label_0": {
+   "own": 0.4999781476460197,
+   "other": 0.4303813453171486,
+   "delta_own_minus_other": 0.06959680232887111
+  }
+ }
+}

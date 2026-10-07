@@ -1,0 +1,61 @@
+{
+ "name": "bonsai27b",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 262,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.08900136637440867,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 116,
+    "auc": 0.9881093935790726,
+    "best_ba": {
+     "bal_acc": 0.9827586206896552,
+     "threshold": 0.58
+    },
+    "ece": 0.14835832148649872,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.3017241379310345,
+     "false_accepts": 6,
+     "false_rejects": 0,
+     "correct": 110,
+     "n": 116,
+     "bal_acc": 0.9655172413793103
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-bonsai27b.npz",
+ "n_layers": null,
+ "dim": 5120
+}
