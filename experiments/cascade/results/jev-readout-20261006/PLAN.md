@@ -204,6 +204,31 @@ unmeasurable.  Report: `BONSAI-HEAD-REPORT.md`; artifacts: `probe-bonsai27b.json
 `bonsai-eval.json`, `bonsai-summary.json`, `bonsai-2-27b-decision-head.json`,
 `bonsai-indomain-head.json`, `run-bonsai.sh`, `run-attribution-bonsai.sh`.
 
+### Community arms — Scion (2026-10-07)
+
+Task set `tasks-community.json` (GSM8K-300 / MATH-200 / HumanEval-164; 664
+tasks, 465 train / 199 test, sha `83baf6f3…`), built offline from the cached
+datasets (`bench_tasks.py --counts`).  Scion: 3 samples/task (temp 0.7,
+non-thinking) + 1 think-harder (thinking, 2,048); in-domain head on 1,395 train
+samples vs the frozen J-Bench head; held-out 199 tasks:
+
+| arm | correct | acc | tok/correct |
+|---|---|---|---|
+| A single | 142/199 | .714 | 375 |
+| B think-harder | 150/199 | .754 | 819 |
+| C gated in-domain / J-Bench | 152 / 154 | .764 / .774 | 500 / 560 |
+| D best-of-3 in-domain / J-Bench | 149 / **156** | .749 / **.784** | 1,072 / 1,024 |
+| majority | 154/199 | .774 | 345 |
+| oracle | 169/199 | .849 | — |
+
+Natural catch (test first samples): in-domain 30/57 caught, 22 false rejects,
+AUC 0.66; frozen J-Bench 19/57 caught, 2 false rejects, AUC 0.86.  Verdicts:
+selection pays where errors exist (30–52 % of the oracle gap); the frozen head
+beats the in-domain refit on a diverse mix; think-harder is dominated by gating;
+majority is the baseline, the head wins on accuracy-per-token only at ~3×.
+Report: `SCION-COMMUNITY-REPORT.md`.  Bonsai community (head-only, no baseline)
+runs next; sidecar after.
+
 ## Status and next steps
 
 - Done: J-Bench; the full readout/judge/probe matrix; Scion-35B session;
@@ -219,10 +244,13 @@ unmeasurable.  Report: `BONSAI-HEAD-REPORT.md`; artifacts: `probe-bonsai27b.json
   the frozen 30-task split is degenerate; in-format attribution-neutral;
   `BONSAI-HEAD-REPORT.md`.  Generalization verdict: trained-low-bit readout
   survives across dense+MoE; post-hoc 2-bit was the Clef failure mode.
-- Next: community-benchmark arms (A baseline / B think-harder / C head-gated
-  matched budget / D best-of-3; GSM8K-300, MATH-200, HumanEval-164), the
-  MTP-style sidecar prototype, and the whitepaper draft.  A mainstream-model
-  benchmark row remains the optional appendix.
+- Done: community arms, Scion (2026-10-07): 664-task set; held-out 199 single
+  142 → majority 154 (equal tokens) → J-Bench best-of-3 **156** at 2.7× tokens
+  (oracle 169); frozen head ≫ in-domain refit (AUC .86 vs .66, 2 vs 22 false
+  rejects); think-harder dominated.  `SCION-COMMUNITY-REPORT.md`.  Bonsai
+  community (head-only) running; sidecar next.
+- Next: MTP-style sidecar prototype and the whitepaper draft.  A
+  mainstream-model benchmark row remains the optional appendix.
 
 
 

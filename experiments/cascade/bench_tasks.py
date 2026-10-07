@@ -163,13 +163,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument(
+        "--counts", default="",
+        help="comma-separated benchmark=count overrides, e.g. "
+             "'gsm8k=300,math=200,humaneval=164,truthfulqa=0'")
+    parser.add_argument("--name", default="cascade-bench-v1")
+    parser.add_argument(
         "--out", default=str(CASCADE / "tasks-bench.json")
     )
     args = parser.parse_args()
 
+    counts = dict(SAMPLE_COUNTS)
+    for part in args.counts.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        benchmark, _, value = part.partition("=")
+        counts[benchmark.strip()] = int(value)
+
     rng = random.Random(args.seed)
     tasks: list[dict[str, Any]] = []
-    for benchmark, count in SAMPLE_COUNTS.items():
+    for benchmark, count in counts.items():
         got = 0
         for item in BUILDERS[benchmark](count, rng):
             got += 1
@@ -187,10 +200,10 @@ def main() -> int:
             row["split"] = "test" if index < n_test else "train"
 
     payload = {
-        "name": "cascade-bench-v1",
+        "name": args.name,
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
         "seed": args.seed,
-        "samples": SAMPLE_COUNTS,
+        "samples": counts,
         "splits": {
             split: sum(1 for t in tasks if t["split"] == split)
             for split in ("train", "test")
