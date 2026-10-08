@@ -1,0 +1,150 @@
+{
+ "windows": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/streams/scion-bench-monitor-ctx",
+ "positions": "trace-relative",
+ "horizons": {
+  "start64": {
+   "n": 399,
+   "ridge": {
+    "auc": 0.6459375,
+    "n_test": 120
+   },
+   "gru": {
+    "n": 399,
+    "n_test": 120,
+    "aucs": [
+     0.8263,
+     0.7531,
+     0.7744
+    ],
+    "auc_mean": 0.7845833333333334,
+    "ops_val10": [
+     {
+      "caught_wrong": 30,
+      "false_cancels": 10,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 18,
+      "false_cancels": 12,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 19,
+      "false_cancels": 12,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  },
+  "start128": {
+   "n": 385,
+   "ridge": {
+    "auc": 0.4921875,
+    "n_test": 120
+   },
+   "gru": {
+    "n": 385,
+    "n_test": 120,
+    "aucs": [
+     0.7303,
+     0.8009,
+     0.8447
+    ],
+    "auc_mean": 0.7919791666666667,
+    "ops_val10": [
+     {
+      "caught_wrong": 9,
+      "false_cancels": 6,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 19,
+      "false_cancels": 2,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 25,
+      "false_cancels": 6,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  },
+  "start256": {
+   "n": 253,
+   "ridge": {
+    "auc": 0.5983796296296297,
+    "n_test": 86
+   },
+   "gru": {
+    "n": 253,
+    "n_test": 86,
+    "aucs": [
+     0.8513,
+     0.8131,
+     0.772
+    ],
+    "auc_mean": 0.8121141975308642,
+    "ops_val10": [
+     {
+      "caught_wrong": 27,
+      "false_cancels": 11,
+      "wrong": 32,
+      "correct": 54
+     },
+     {
+      "caught_wrong": 23,
+      "false_cancels": 16,
+      "wrong": 32,
+      "correct": 54
+     },
+     {
+      "caught_wrong": 25,
+      "false_cancels": 14,
+      "wrong": 32,
+      "correct": 54
+     }
+    ]
+   }
+  },
+  "last8": {
+   "n": 399,
+   "gru": {
+    "n": 399,
+    "n_test": 120,
+    "aucs": [
+     0.9387,
+     0.9281,
+     0.9303
+    ],
+    "auc_mean": 0.9323958333333332,
+    "ops_val10": [
+     {
+      "caught_wrong": 38,
+      "false_cancels": 22,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 39,
+      "false_cancels": 28,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 37,
+      "false_cancels": 28,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,150 @@
+{
+ "windows": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/streams/scion-bench-monitor-ctx",
+ "positions": "trace-relative",
+ "horizons": {
+  "start64": {
+   "n": 399,
+   "ridge": {
+    "auc": 0.64,
+    "n_test": 120
+   },
+   "gru": {
+    "n": 399,
+    "n_test": 120,
+    "aucs": [
+     0.8206,
+     0.7188,
+     0.7762
+    ],
+    "auc_mean": 0.7718750000000001,
+    "ops_val10": [
+     {
+      "caught_wrong": 26,
+      "false_cancels": 10,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 7,
+      "false_cancels": 6,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 23,
+      "false_cancels": 14,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  },
+  "start128": {
+   "n": 385,
+   "ridge": {
+    "auc": 0.4965625,
+    "n_test": 120
+   },
+   "gru": {
+    "n": 385,
+    "n_test": 120,
+    "aucs": [
+     0.7469,
+     0.7644,
+     0.8575
+    ],
+    "auc_mean": 0.7895833333333333,
+    "ops_val10": [
+     {
+      "caught_wrong": 10,
+      "false_cancels": 5,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 15,
+      "false_cancels": 6,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 18,
+      "false_cancels": 6,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  },
+  "start256": {
+   "n": 253,
+   "ridge": {
+    "auc": 0.59375,
+    "n_test": 86
+   },
+   "gru": {
+    "n": 253,
+    "n_test": 86,
+    "aucs": [
+     0.798,
+     0.8623,
+     0.7911
+    ],
+    "auc_mean": 0.8171296296296297,
+    "ops_val10": [
+     {
+      "caught_wrong": 12,
+      "false_cancels": 6,
+      "wrong": 32,
+      "correct": 54
+     },
+     {
+      "caught_wrong": 26,
+      "false_cancels": 13,
+      "wrong": 32,
+      "correct": 54
+     },
+     {
+      "caught_wrong": 25,
+      "false_cancels": 16,
+      "wrong": 32,
+      "correct": 54
+     }
+    ]
+   }
+  },
+  "last8": {
+   "n": 399,
+   "gru": {
+    "n": 399,
+    "n_test": 120,
+    "aucs": [
+     0.9516,
+     0.9631,
+     0.9316
+    ],
+    "auc_mean": 0.94875,
+    "ops_val10": [
+     {
+      "caught_wrong": 38,
+      "false_cancels": 24,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 36,
+      "false_cancels": 13,
+      "wrong": 40,
+      "correct": 80
+     },
+     {
+      "caught_wrong": 37,
+      "false_cancels": 25,
+      "wrong": 40,
+      "correct": 80
+     }
+    ]
+   }
+  }
+ }
+}

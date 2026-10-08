@@ -107,5 +107,11 @@ experiments/cascade/results/*/capture.json
 experiments/cascade/results/.model-sha-cache.json
 experiments/cascade/results/.engine-sha-cache.json
 
+# slot-logit readout caches (prompts + dumps + harness stderr; scores and
+# index.json stay tracked)
+experiments/cascade/results/*/logit-*/prompts/
+experiments/cascade/results/*/logit-*/out/
+experiments/cascade/results/*/logit-*/readout.err
+
 # HF cache (CI sets HF_HOME to $GITHUB_WORKSPACE/.hf-cache)
 .hf-cache/

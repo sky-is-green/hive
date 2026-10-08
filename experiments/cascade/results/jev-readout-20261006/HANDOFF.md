@@ -96,10 +96,14 @@ Correction arms (100 tasks × 4 samples, temp 0.7; `correction-eval.json`):
 | arm | correct | acc | tokens/correct |
 |---|---|---|---|
 | single | 76/100 | 0.760 | 490 |
-| majority of 4 | 80/100 | 0.800 | 459 |
-| best-of-4 head (frozen) | 81/100 | 0.810 | 464 |
+| majority of 4 | 80/100 | 0.800 | 1,854\* |
+| best-of-4 head (frozen) | 81/100 | 0.810 | 1,831 |
 | retry @0.5 | 80/100 | 0.800 | 687 |
 | retry @0.87 | 83/100 | 0.830 | 739 |
+
+\* Honest pool cost (148,333/80).  Earlier revisions charged the majority vote
+only the picked candidate (459); T1's 464 was the same undercount.  Both arms
+pay the 4-sample pool; the retry rows are sequential-policy costs.
 
 Held-out (30 test tasks) with the **in-domain** head refit on trace-inclusive
 prompts (`selection-frontier.json`):
@@ -125,14 +129,19 @@ Wrong answers cost ~60 % more tokens (511 vs 320) and lock in earlier — errors
 are committed upstream; patching the tail reproduces them; showing the model
 its error anchors it.  If you retry, re-derive fully and blindly.
 
-### 2g. Mid-generation monitor: negative
+### 2g. Mid-generation monitor: corrected — verifier, not canceller
 
-Per-position hidden states of 399 generation streams predict final correctness
-at AUC 0.55–0.62 (any position: start, midpoint, last token); token-level tail
-statistics combine to 0.67; abort gates flag most correct streams.  **The
-verdict is not on the generation path; it materialises when the candidate is
-read back in a verification prompt.**  `monitor-probe.json`,
-`monitor-diag.json`, `monitor-token-diag.json`.
+The original "negative" was a file-sort misalignment (`win_%02d` string sort),
+and the dumps later needed an adapter fix; both are documented in
+`MONITOR-FIX.md`.  Corrected trajectory GRU: read-back .832/.825,
+generation-context .785/.792/.812/.932 (Scion); Qwen context .866/.829/.863/
+.994 — the signal is real in context.  What dies is the use-case: an
+early-cancel simulation on held-out tasks (validation-calibrated thresholds)
+shows an oracle ceiling of only 21–34% token savings at k=64–256, with
+realistic points at 10–19% savings against 3–15% false cancels.
+**The monitor is an end-of-trace verifier/selector, not a generation-time
+canceller.**  `MONITOR-FIX.md`, `monitor-context-scion.json`,
+`cancel-sim-*.json`, `traj-select-*.json`.
 
 ### 2h. Delivered artifact
 
@@ -176,7 +185,15 @@ majority 154 at equal tokens, oracle 169.  Frozen J-Bench head ≫ in-domain
 refit on this mix (all-sample AUC 0.86 vs 0.66; keeps 140/142 vs 120/142) —
 in-domain fitting on the community train mix overfits (train AUC 1.0).
 Headroom is in MATH/GSM8K; code is hard.  Report:
-`SCION-COMMUNITY-REPORT.md`.  Bonsai head-only community run is next.
+`SCION-COMMUNITY-REPORT.md`.
+
+Bonsai community (head-only, card sampling) completed 2026-10-08: single 168 →
+gated/best-of-3 173–176 (frozen J-Bench head), majority 168, oracle 178; the
+veto validated (frozen 173 with **5 fixes / 0 breaks**; raw-margin variant
+174, 6/0), pooled Scion+Bonsai override evidence **14 fixes / 2 breaks over
+398 held-out tasks, exact p=.004**.  Raw answer-slot margin readout added
+(Scion test AUC .880, Bonsai .858; no universal winner vs the fitted head, so
+per-model validation picks).  Report: `BONSAI-COMMUNITY-REPORT.md`.
 
 ---
 
@@ -324,3 +341,14 @@ standard Qwens 0.8B/1.7B/4B already exists).
   current client-side JSON.
 - Mainstream-model benchmark row: needed for the community-benchmark claim,
   deferrable for the method claim.
+
+---
+
+## 7. Close (2026-10-08)
+
+All planned tests are complete: veto replication (Scion + Bonsai), the raw
+answer-slot-logit baseline, the early-cancel simulation, trajectory-based
+selection, sidecar GPU parity, and the embedded-adapter fix (both dump tools).
+Final scorecard and verdict: `CONCLUSION.md`.  Monitor record:
+`MONITOR-FIX.md`.  Nothing published or pushed; the fork changes are committed
+locally; every artifact needed to regenerate the results is in this directory.

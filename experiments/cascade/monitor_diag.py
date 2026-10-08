@@ -61,7 +61,8 @@ def main() -> int:
     meta = json.loads((args.windows / "meta.json").read_text())
     order, lengths, labels = meta["order"], meta["lengths"], meta["labels"]
     splits = [meta["tasks"][o.rsplit(":", 1)[0]] for o in order]
-    dump_paths = sorted((args.windows / "dump").glob("win_*_h.bin"))
+    dump_paths = sorted((args.windows / "dump").glob("win_*_h.bin"),
+                        key=lambda p: int(p.stem.split("_")[1]))
     first = np.fromfile(dump_paths[0], dtype=np.float32)
     dim = first.size // meta["seq"]
     H = np.stack([np.fromfile(p, dtype=np.float32).reshape(meta["seq"], dim)

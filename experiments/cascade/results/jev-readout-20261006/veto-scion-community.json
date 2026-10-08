@@ -1,0 +1,142 @@
+{
+ "prefix": "scion-community",
+ "head": "answer",
+ "head_src": "experiments/cascade/results/jev-readout-20261006/scion-35b-a3b-decision-head.json",
+ "states": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/scion-community-states.npz",
+ "n_test": 199,
+ "n_train": 465,
+ "majority_test": 154,
+ "oracle_test": 169,
+ "within_pool_auc": 0.8169028602893301,
+ "pool_tokens_test": 159686.0,
+ "pool_tokens_all": 510026.0,
+ "sweep": {
+  "v1": {
+   "best_d": 0.01,
+   "train_correct": 374,
+   "train_n": 465,
+   "test_correct": 161,
+   "test_correct_range_plateau": [
+    160,
+    161
+   ],
+   "plateau_d": [
+    0.01,
+    0.025
+   ],
+   "fixes": 12,
+   "breaks": 5,
+   "switches": 50,
+   "mcnemar_p": 0.143463134765625,
+   "per_d": {
+    "0.0": {
+     "train": 366,
+     "test": 156
+    },
+    "0.01": {
+     "train": 374,
+     "test": 161
+    },
+    "0.025": {
+     "train": 374,
+     "test": 160
+    },
+    "0.05": {
+     "train": 372,
+     "test": 161
+    },
+    "0.075": {
+     "train": 370,
+     "test": 161
+    },
+    "0.1": {
+     "train": 369,
+     "test": 161
+    },
+    "0.15": {
+     "train": 369,
+     "test": 161
+    },
+    "0.2": {
+     "train": 369,
+     "test": 162
+    },
+    "0.3": {
+     "train": 369,
+     "test": 161
+    },
+    "0.5": {
+     "train": 365,
+     "test": 159
+    },
+    "1.0": {
+     "train": 361,
+     "test": 154
+    }
+   }
+  },
+  "v2": {
+   "best_d": 0.025,
+   "train_correct": 375,
+   "train_n": 465,
+   "test_correct": 161,
+   "test_correct_range_plateau": [
+    161,
+    161
+   ],
+   "plateau_d": [
+    0.025
+   ],
+   "fixes": 10,
+   "breaks": 3,
+   "switches": 107,
+   "mcnemar_p": 0.09228515625,
+   "per_d": {
+    "0.0": {
+     "train": 366,
+     "test": 156
+    },
+    "0.01": {
+     "train": 374,
+     "test": 162
+    },
+    "0.025": {
+     "train": 375,
+     "test": 161
+    },
+    "0.05": {
+     "train": 373,
+     "test": 161
+    },
+    "0.075": {
+     "train": 371,
+     "test": 161
+    },
+    "0.1": {
+     "train": 370,
+     "test": 161
+    },
+    "0.15": {
+     "train": 370,
+     "test": 161
+    },
+    "0.2": {
+     "train": 370,
+     "test": 161
+    },
+    "0.3": {
+     "train": 370,
+     "test": 159
+    },
+    "0.5": {
+     "train": 366,
+     "test": 158
+    },
+    "1.0": {
+     "train": 361,
+     "test": 154
+    }
+   }
+  }
+ }
+}

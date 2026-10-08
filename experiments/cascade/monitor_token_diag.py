@@ -41,7 +41,8 @@ def main() -> int:
     splits = [meta["tasks"][o.rsplit(":", 1)[0]] for o in order]
     y = np.asarray(labels, dtype=np.float64)
     A = np.stack([np.fromfile(p, dtype=np.int32)[:meta["seq"]] for p in
-                  sorted((args.windows / "dump").glob("win_*_argmax.bin"))])
+                  sorted((args.windows / "dump").glob("win_*_argmax.bin"),
+                         key=lambda p: int(p.stem.split("_")[1]))])
 
     def features(W: int):
         st, sw = [], []

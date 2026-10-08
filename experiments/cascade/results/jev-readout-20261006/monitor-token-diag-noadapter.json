@@ -1,0 +1,26 @@
+{
+ "W32": {
+  "auc_stability": 0.52671875,
+  "auc_switch": 0.60671875
+ },
+ "W64": {
+  "auc_stability": 0.505,
+  "auc_switch": 0.6078125
+ },
+ "W128": {
+  "auc_stability": 0.4703125,
+  "auc_switch": 0.57625
+ },
+ "W256": {
+  "auc_stability": 0.4546875,
+  "auc_switch": 0.5978125
+ },
+ "combined_W64": {
+  "auc": 0.37703125,
+  "features": [
+   "stability",
+   "switch",
+   "product"
+  ]
+ }
+}

@@ -57,11 +57,15 @@ The prompted readout is unusually strong on this model (0.952 vs Scion's
 | policy | correct | acc | tokens | tok/correct |
 |---|---|---|---|---|
 | single (B0) | 93/100 | 0.930 | 68,698 | 739 |
-| majority of 4 (B1) | 96/100 | 0.960 | 64,441 | 671 |
-| best-of-4 by head (T1) | **96/100** | 0.960 | 286,545 | 3,016 |
+| majority of 4 (B1) | 96/100 | 0.960 | 286,545 | 2,985\* |
+| best-of-4 by head (T1) | **96/100** | 0.960 | 286,545 | 2,985 |
 | **gated head, thr 0.3** | **96/100** | 0.960 | 102,633 | 1,069 (1.12 samples) |
 | gated J-Bench head | 96/100 | 0.960 | 78,057 | 813 (1.06 samples) |
 | oracle best-of-4 | 96/100 | 0.960 | — | — |
+
+\* Earlier revisions charged the vote only the picked candidate (64,441 →
+671 t/c); a vote needs the whole pool.  With honest accounting B1 and T1 cost
+the same; the gated arms are the efficiency story.
 
 Full-set frontier: best-of-2/3/4 all 96/100 — the head reaches the oracle on
 the first extra sample.  On the frozen 30-task test split the head ranks pools
@@ -147,3 +151,7 @@ bench (`judge-bench.jsonl`, sha256 `3289dcb8…`).
 - The head is prompt-format-locked and body-specific; refit per serving format
   and per quantised body (per Scion / AnyJev).
 - A 164 KB head is larger than Scion's 66 KB because the state is 5120-d.
+
+**Follow-up (2026-10-08):** community arms (664 tasks, card sampling), the
+veto replication (173, 5 fixes / 0 breaks), and the raw answer-slot margin
+readout are in `BONSAI-COMMUNITY-REPORT.md`.
