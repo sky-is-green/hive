@@ -1,0 +1,37 @@
+{
+ "windows": "experiments/cascade/streams/qwen-bench-monitor-ctx",
+ "n_streams": 397,
+ "n_test_tasks": 30,
+ "arms": {
+  "single": {
+   "tasks": 30,
+   "correct": 25,
+   "acc": 0.8333333333333334
+  },
+  "majority": {
+   "tasks": 30,
+   "correct": 27,
+   "acc": 0.9
+  },
+  "oracle": {
+   "tasks": 30,
+   "correct": 28,
+   "acc": 0.9333333333333333
+  },
+  "frozen": {
+   "tasks": 0,
+   "correct": 0,
+   "acc": 0.0
+  },
+  "trj_last8": {
+   "tasks": 30,
+   "correct": 28,
+   "acc": 0.9333333333333333
+  },
+  "trj_start256": {
+   "tasks": 25,
+   "correct": 20,
+   "acc": 0.8
+  }
+ }
+}

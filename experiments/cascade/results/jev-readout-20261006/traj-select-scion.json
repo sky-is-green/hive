@@ -1,0 +1,47 @@
+{
+ "windows": "experiments/cascade/streams/scion-bench-monitor-ctx",
+ "n_streams": 399,
+ "n_test_tasks": 30,
+ "arms": {
+  "single": {
+   "tasks": 30,
+   "correct": 21,
+   "acc": 0.7
+  },
+  "majority": {
+   "tasks": 30,
+   "correct": 23,
+   "acc": 0.7666666666666667
+  },
+  "oracle": {
+   "tasks": 30,
+   "correct": 27,
+   "acc": 0.9
+  },
+  "frozen": {
+   "tasks": 30,
+   "correct": 22,
+   "acc": 0.7333333333333333
+  },
+  "raw": {
+   "tasks": 30,
+   "correct": 24,
+   "acc": 0.8
+  },
+  "trj_last8": {
+   "tasks": 30,
+   "correct": 22,
+   "acc": 0.7333333333333333
+  },
+  "trj_start256": {
+   "tasks": 26,
+   "correct": 17,
+   "acc": 0.6538461538461539
+  },
+  "trj+raw": {
+   "tasks": 30,
+   "correct": 24,
+   "acc": 0.8
+  }
+ }
+}

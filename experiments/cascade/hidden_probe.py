@@ -134,7 +134,8 @@ def main() -> int:
     seq = meta["seq"]
 
     dump = root / "dump"
-    files = sorted(dump.glob("win_*_h.bin"))
+    files = sorted(dump.glob("win_*_h.bin"),
+                   key=lambda p: int(p.stem.split("_")[1]))
     if len(files) != len(order):
         raise SystemExit(f"expected {len(order)} hidden windows, found {len(files)}")
     n_embd = files[0].stat().st_size // (seq * 4)

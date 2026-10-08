@@ -51,8 +51,11 @@ self-bias because it has no behavioural channel.
    post-hoc quantisation regime, not the bit-width or dense-vs-MoE.  Heads
    remain per-body and per-format.
 7. **Systems** — head = `[hidden, K]` + stats (KB), zero resident model, no
-   second ROCm context; fits the MTP/router sidecar pattern; online-monitor
-   variant (read states during generation) is future work.
+   second ROCm context; engine-loaded sidecar parity measured at Δ≈1e-8
+   (`SIDECAR-PROTOTYPE.md`).  Online monitoring is measured (2026-10-08): the
+   trajectory signal is real in generation context but early cancellation is
+   rejected (oracle ceiling 21–34% savings; realistic 10–19% at 3–15% false
+   cancels) — the monitor is an end-of-trace verifier, not an early-exit.
 
 ## Related work to position against
 
@@ -68,8 +71,26 @@ AnyJev (2610.00831), LLM-as-Jev (2610.02076), Kadavath 2022, Gnosis
   task; natural-error transfer; audited source effects; tiny footprint; the
   ternary survival data (if positive).
 - Cannot: state a general law for all tasks; claim cross-question transfer;
-  claim online steering gains yet; claim better-than-JEV on JEV's own
-  benchmarks (different task family and gold).
+  claim online early-exit gains (measured negative); claim better-than-JEV on
+  JEV's own benchmarks (different task family and gold).
+
+## Update 2026-10-08 (session close)
+
+- **Raw answer-slot distribution vs fitted head.**  The same judge prompt's
+  next-token `p(A)−p(B)` is a strong zero-training readout (test AUC .880
+  Scion / .858 Bonsai).  The fitted head is not universally better (frozen
+  .901 on Bonsai, .859 on Scion; blends best on Scion only).  The "prompted
+  does not work" claim concerns *generated text*; the distribution readout is
+  a third channel and should be reported as a baseline.
+- **Accuracy over baselines.**  Veto (majority + head override): +7/199 Scion,
+  +5/199 Bonsai (0 breaks), pooled exact p=.004 at zero extra generation.
+  Gating reaches best-of-3 accuracy at ~half the pool cost.  No marked gains
+  beyond this.
+- **Early-exit and trajectory selection ruled out** (see §7 above and
+  `MONITOR-FIX.md`).
+- **Fine-tuned decision models are not competitive here** (external evidence:
+  LiquidAI d1-3B regressed against its base on ImajevBench, 64.0 vs 66.8).
+- Final scorecard: `CONCLUSION.md`.
 
 ## Open items before submission
 

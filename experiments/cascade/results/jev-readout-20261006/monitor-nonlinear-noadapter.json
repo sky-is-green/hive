@@ -1,0 +1,214 @@
+{
+ "alignment": "numeric win_%02d order",
+ "positions": {
+  "start64": {
+   "n": 399,
+   "n_test": 120,
+   "ridge": {
+    "auc": 0.6121875
+   },
+   "mlp_pca128": {
+    "auc": 0.6196875,
+    "operational_val_thr": {
+     "threshold": 0.10858534276485443,
+     "caught_wrong": 8,
+     "false_cancels": 9,
+     "wrong": 40,
+     "correct": 80
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.4890625,
+    "operational_train_thr": {
+     "threshold": 0.9957640582631949,
+     "caught_wrong": 25,
+     "false_cancels": 60,
+     "wrong": 40,
+     "correct": 80
+    }
+   }
+  },
+  "start128": {
+   "n": 385,
+   "n_test": 120,
+   "ridge": {
+    "auc": 0.466875
+   },
+   "mlp_pca128": {
+    "auc": 0.505625,
+    "operational_val_thr": {
+     "threshold": 0.034800268709659576,
+     "caught_wrong": 7,
+     "false_cancels": 15,
+     "wrong": 40,
+     "correct": 80
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.485,
+    "operational_train_thr": {
+     "threshold": 0.9969583761341039,
+     "caught_wrong": 29,
+     "false_cancels": 57,
+     "wrong": 40,
+     "correct": 80
+    }
+   }
+  },
+  "start256": {
+   "n": 253,
+   "n_test": 86,
+   "ridge": {
+    "auc": 0.5920138888888888
+   },
+   "mlp_pca128": {
+    "auc": 0.6296296296296297,
+    "operational_val_thr": {
+     "threshold": -0.12822799384593964,
+     "caught_wrong": 10,
+     "false_cancels": 6,
+     "wrong": 32,
+     "correct": 54
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.5023148148148148,
+    "operational_train_thr": {
+     "threshold": 0.9979932945008406,
+     "caught_wrong": 27,
+     "false_cancels": 46,
+     "wrong": 32,
+     "correct": 54
+    }
+   }
+  },
+  "start512": {
+   "n": 100,
+   "n_test": 34,
+   "ridge": {
+    "auc": 0.6805555555555556
+   },
+   "mlp_pca128": {
+    "auc": 0.4756944444444444,
+    "operational_val_thr": {
+     "threshold": 0.004884533584117889,
+     "caught_wrong": 16,
+     "false_cancels": 18,
+     "wrong": 16,
+     "correct": 18
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.5694444444444444,
+    "operational_train_thr": {
+     "threshold": 0.9982440521755911,
+     "caught_wrong": 16,
+     "false_cancels": 17,
+     "wrong": 16,
+     "correct": 18
+    }
+   }
+  },
+  "last8": {
+   "n": 399,
+   "n_test": 120,
+   "ridge": {
+    "auc": 0.646875
+   },
+   "mlp_pca128": {
+    "auc": 0.7003125,
+    "operational_val_thr": {
+     "threshold": 1.4534809589385986,
+     "caught_wrong": 21,
+     "false_cancels": 9,
+     "wrong": 40,
+     "correct": 80
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.7109375,
+    "operational_train_thr": {
+     "threshold": 0.9949314123007267,
+     "caught_wrong": 32,
+     "false_cancels": 49,
+     "wrong": 40,
+     "correct": 80
+    }
+   }
+  },
+  "last32": {
+   "n": 399,
+   "n_test": 120,
+   "ridge": {
+    "auc": 0.644375
+   },
+   "mlp_pca128": {
+    "auc": 0.68125,
+    "operational_val_thr": {
+     "threshold": 0.5865919589996338,
+     "caught_wrong": 12,
+     "false_cancels": 9,
+     "wrong": 40,
+     "correct": 80
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.6540625,
+    "operational_train_thr": {
+     "threshold": 0.9955586436772784,
+     "caught_wrong": 31,
+     "false_cancels": 52,
+     "wrong": 40,
+     "correct": 80
+    }
+   }
+  },
+  "mid": {
+   "n": 399,
+   "n_test": 120,
+   "ridge": {
+    "auc": 0.5971875
+   },
+   "mlp_pca128": {
+    "auc": 0.5684375,
+    "operational_val_thr": {
+     "threshold": 0.25060445070266724,
+     "caught_wrong": 9,
+     "false_cancels": 14,
+     "wrong": 40,
+     "correct": 80
+    }
+   },
+   "rff_ridge": {
+    "auc": 0.5790625,
+    "operational_train_thr": {
+     "threshold": 0.9964323484573725,
+     "caught_wrong": 29,
+     "false_cancels": 47,
+     "wrong": 40,
+     "correct": 80
+    }
+   }
+  }
+ },
+ "gru_start64": {
+  "n": 399,
+  "n_test": 120,
+  "aucs": [
+   0.8359,
+   0.8597,
+   0.7147
+  ],
+  "auc_mean": 0.8034375000000001
+ },
+ "gru_start256": {
+  "n": 253,
+  "n_test": 86,
+  "aucs": [
+   0.8808,
+   0.8744,
+   0.8553
+  ],
+  "auc_mean": 0.8701774691358025
+ }
+}

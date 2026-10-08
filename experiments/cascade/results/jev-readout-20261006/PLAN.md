@@ -118,27 +118,30 @@ Selection/retry arms (100 tasks x 4 samples, temp 0.7; `correction-eval.json`):
 | arm | correct | acc | tokens | tokens/correct |
 |---|---|---|---|---|
 | B0 single sample | 76/100 | 0.760 | 37,234 | 490 |
-| B1 majority of 4 | 80/100 | 0.800 | 36,747 | 459 |
-| **T1 best-of-4 head** | **81/100** | **0.810** | 37,576 | **464** |
+| B1 majority of 4 | 80/100 | 0.800 | 148,333 | 1,854\* |
+| **T1 best-of-4 head** | **81/100** | **0.810** | 148,333 | **1,831** |
 | T2@0.5 head retry | 80/100 | 0.800 | 54,927 | 687 |
 | **T2@0.87 head retry** | **83/100** | **0.830** | 61,344 | 739 |
 
-Selection gives **+5 points at the same token budget** and beats majority vote
-at equal tokens; retry gives +7 points at +50-60% tokens.
+\* Honest pool cost: a 4-way vote needs the whole pool.  Earlier revisions
+charged only the picked candidate (459 / 464); with honest accounting B1 and
+T1 pay the same pool and T1 is +1 task.  Retry rows are sequential-policy
+costs (pay only samples inspected).  Net: selection is +5 over single at ~4×
+tokens, or +1 over majority at equal pool cost; retry @0.87 is +7 at ~2.7×.
 
-**L3 online monitor: negative.**  Per-position hidden states from the same 399
-streams (`test-mtp-probe`) predict final correctness at **AUC 0.55-0.62 at
-every horizon** (start 64-512, midpoint, last tokens; `monitor-diag.json`),
-and token-level tail statistics (switch rate, stability) combine to only
-**0.67** (`monitor-token-diag.json`).  Early-abort gates at start horizons
-burst false-cancels (e.g. 59/80 correct streams at 128 tokens;
-`monitor-probe.json`).  **The decision signal is not on the generation path**:
-it materialises when the candidate is read back in a verification prompt,
-where the same model scores 0.97-0.999.  Verification is a second, cheap
-*read* (one prefill, zero generated tokens), not a state continuation -- which
-is why a lite two-pass works while "monitor while writing" does not, with a
-linear head.  A gradient-trained trajectory monitor (Gnosis-style) is the
-remaining option if the online path is ever pursued.
+**L3 online monitor: corrected (2026-10-08).**  The original negative used
+misaligned dumps (string-sorted `win_%02d`) and, later, states from the
+uncorrected quant (the dump tool did not apply the embedded correction
+adapter).  Both fixed (`MONITOR-FIX.md`).  Corrected static probes remain weak
+(.43–.71), but the trajectory GRU is strong and survives generation context:
+read-back .832/.825, context .785/.792/.812/.932 (Scion); Qwen
+.866/.829/.863/.994.  What does *not* survive is early cancellation: on
+held-out tasks an oracle canceller saves only 21–34% of tokens at k=64–256,
+validation-calibrated points save 10–19% while falsely cancelling 3–15% of
+correct samples, and thresholds do not transfer.  Trajectory-based selection
+also fails to beat the cheap raw-margin selector where headroom exists (Scion
+22/30 vs 24/30; Qwen matches the oracle only on a saturated split).
+**The monitor is an end-of-trace verifier/selector, not an early-exit.**
 
 
 
@@ -169,7 +172,7 @@ fully and blindly.
 
 **Product loop:** generate 3 samples, rank with the in-domain head (plus
 canonical agreement), accept; retry only when the whole pool is flagged low.
-Steering/monitoring remains dead (L3); selection is the cheap lever.
+Steering/early-exit remains dead (L3); selection is the cheap lever.
 
 ### Bonsai dense test (2026-10-07, trained 2-bit ternary dense)
 
@@ -218,16 +221,28 @@ samples vs the frozen J-Bench head; held-out 199 tasks:
 | B think-harder | 150/199 | .754 | 819 |
 | C gated in-domain / J-Bench | 152 / 154 | .764 / .774 | 500 / 560 |
 | D best-of-3 in-domain / J-Bench | 149 / **156** | .749 / **.784** | 1,072 / 1,024 |
-| majority | 154/199 | .774 | 345 |
+| majority | 154/199 | .774 | 1,037\* |
 | oracle | 169/199 | .849 | — |
 
 Natural catch (test first samples): in-domain 30/57 caught, 22 false rejects,
 AUC 0.66; frozen J-Bench 19/57 caught, 2 false rejects, AUC 0.86.  Verdicts:
 selection pays where errors exist (30–52 % of the oracle gap); the frozen head
 beats the in-domain refit on a diverse mix; think-harder is dominated by gating;
-majority is the baseline, the head wins on accuracy-per-token only at ~3×.
-Report: `SCION-COMMUNITY-REPORT.md`.  Bonsai community (head-only, no baseline)
-runs next; sidecar after.
+majority is the baseline at honest pool cost (\*1,037 t/c; 345 charged only the
+picked candidate).  The frozen veto reaches **161 (9 fix / 2 break)** and the
+raw margin a 158–164 envelope at zero extra generation; gated sampling matches
+majority at 0.54× its cost.  Report: `SCION-COMMUNITY-REPORT.md`.
+
+### Community arms — Bonsai (2026-10-08)
+
+Same 664-task set; Bonsai 3 samples/task at card sampling (thinking, temp 1.0,
+4,096 cap; head-only, no baseline re-run — the card is the reference).
+Held-out 199: single 168, gated 173 (1.44×), best-of-3 in-domain 173 / J-Bench
+**176** at pool cost, majority 168 (honest 3,738 t/c), oracle 178.  Veto:
+frozen 173 (5 fixes / 0 breaks), raw margin 174 (6/0); pooled with Scion
+14 fixes / 2 breaks over 398 tasks (p=.004).  Raw margin AUC .858 (frozen
+.901).  Gating = best-of-3 accuracy at ~half the pool cost.  Report:
+`BONSAI-COMMUNITY-REPORT.md`.
 
 ## Status and next steps
 
@@ -247,10 +262,18 @@ runs next; sidecar after.
 - Done: community arms, Scion (2026-10-07): 664-task set; held-out 199 single
   142 → majority 154 (equal tokens) → J-Bench best-of-3 **156** at 2.7× tokens
   (oracle 169); frozen head ≫ in-domain refit (AUC .86 vs .66, 2 vs 22 false
-  rejects); think-harder dominated.  `SCION-COMMUNITY-REPORT.md`.  Bonsai
-  community (head-only) running; sidecar next.
-- Next: MTP-style sidecar prototype and the whitepaper draft.  A
-  mainstream-model benchmark row remains the optional appendix.
+  rejects); think-harder dominated.  `SCION-COMMUNITY-REPORT.md`.
+- Done 2026-10-08: veto replication (Scion 161, 9/2; Bonsai 173, 5/0; pooled
+  exact p=.004); raw answer-slot-logit baseline (Scion .880 / Bonsai .858 test
+  AUC; model-dependent vs the fitted head); early-cancel simulation (rejected:
+  10–19% savings at 3–15% false cancels, oracle ceiling 21–34%);
+  trajectory-based selection (no gain over the raw margin on Scion; matches
+  oracle on saturated Qwen); sidecar GPU parity (Δ≈1e-8); embedded-adapter fix
+  in both dump tools.
+- Closed: final verdict and scorecard in `CONCLUSION.md`; monitor record in
+  `MONITOR-FIX.md`.  Nothing published; fork committed locally.
+- Next (optional): mainstream-model appendix, package the veto/raw readout as
+  an engine feature.  No open research questions on the current path.
 
 
 

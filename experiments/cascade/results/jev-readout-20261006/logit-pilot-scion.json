@@ -1,0 +1,57 @@
+{
+ "n": 400,
+ "dim": 2048,
+ "n_train": 280,
+ "n_test": 120,
+ "n_test_tasks": 30,
+ "validation": {
+  "max_abs_dscore": 1.3368077483866259e-07,
+  "max_abs_dp": 4.985303354576587e-07
+ },
+ "auc_test": {
+  "raw_margin": 0.8584375,
+  "frozen_head": 0.8528125,
+  "refit_hidden": 0.7665625,
+  "blend": 0.87375,
+  "blend_weight": 0.5
+ },
+ "auc_test_pool": {
+  "raw_margin": 0.8584375,
+  "frozen_head": 0.8528125,
+  "refit_hidden": 0.7665625,
+  "blend": 0.87375
+ },
+ "arms_test_tasks": {
+  "single": {
+   "n": 30,
+   "correct": 21,
+   "acc": 0.7
+  },
+  "best_of_4_frozen": {
+   "n": 30,
+   "correct": 22,
+   "acc": 0.7333333333333333
+  },
+  "best_of_4_refit": {
+   "n": 30,
+   "correct": 21,
+   "acc": 0.7
+  },
+  "best_of_4_raw": {
+   "n": 30,
+   "correct": 24,
+   "acc": 0.8
+  },
+  "best_of_4_blend": {
+   "n": 30,
+   "correct": 23,
+   "acc": 0.7666666666666667
+  },
+  "oracle": {
+   "n": 30,
+   "correct": 27
+  }
+ },
+ "mean_pA": 0.755129097422525,
+ "mean_pB": 0.10041990398576749
+}

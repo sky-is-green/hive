@@ -22,8 +22,12 @@ All arm numbers below are the **held-out 199 test tasks**.
 | C gated, J-Bench head (thr 0.95) | 154/199 | 0.774 | 560 | +12 at 1.49× |
 | D best-of-3, in-domain head | 149/199 | 0.749 | 1,072 | +7 at 2.9× |
 | **D best-of-3, J-Bench head** | **156/199** | **0.784** | 1,024 | **+14 at 2.7×** |
-| majority of 3 | 154/199 | 0.774 | 345 | +12 at 0.92× |
+| majority of 3 | 154/199 | 0.774 | 1,037\* | +12 at pool cost |
 | oracle best-of-3 | 169/199 | 0.849 | — | — |
+
+\* Honest pool cost (159,686/154).  Earlier revisions charged the vote only
+the picked candidate (345); a vote requires the whole pool, the same 159.7k as
+best-of-3.
 
 Oracle-gap captured: majority 44 %, J-Bench best-of-3 52 %, J-Bench gated 44 %,
 in-domain gated 37 %.
@@ -60,9 +64,13 @@ only 5 recoverable tasks and code is the hardest for the chooser.
    on perturbed/curated negatives beats refitting on the model's own samples.
 3. **Think-harder is dominated.** +8 points for 2.2× tokens; the gated head
    gets +10–12 for less added cost, and majority gets +12 for free.
-4. **Majority is the baseline to beat.** On this mix the head only beats
-   majority at ~3× tokens (D J-Bench 156 vs 154); the honest pitch is
-   accuracy-per-token, not raw accuracy.
+4. **Majority is the baseline — and the veto now beats it at the same pool
+   cost.**  Best-of-3 by the frozen head reaches 156 vs majority's 154 at
+   identical pool tokens; the majority+override ("veto") policy reaches
+   **161** (9 fixes / 2 breaks, exact p=.065; pooled with Bonsai p=.004) at
+   zero extra generation, and the raw-margin variant spans a 158–164 envelope.
+   Gated sequential sampling matches majority accuracy at ~0.54× its cost
+   (560 vs 1,037 t/c).
 5. **Calibration matters more than AUC here.** The in-domain head's false
    rejects (22/142) would abort correct answers in a product loop; the frozen
    head's 2/142 is usable.  Gate thresholds must be set on held-out data.
@@ -82,3 +90,24 @@ only 5 recoverable tasks and code is the hardest for the chooser.
 Raw: `scion-community-eval.json`, `scion-community-breakdown.json`,
 `scion-community-samples.jsonl` (gitignored), `scion-community-states.npz`
 (gitignored).
+
+## Update 2026-10-08 — veto, raw margin, corrected accounting
+
+- **Cost fix**: the majority row above now carries the honest pool cost
+  (159,686/154 = 1,037 t/c; earlier revisions charged only the picked
+  candidate).
+- **Veto** (`veto_eval.py`, frozen head): majority canonical + override to the
+  highest-p sample when it beats the majority base by a train-tuned margin =
+  **161/199 (9 fixes / 2 breaks, exact p=.065)**; raw-margin variant reaches a
+  158–164 envelope; clean frozen+margin blend 163 — all at zero extra
+  generation.  Bonsai replicates (173 with 5/0; raw 174 with 6/0); pooled
+  14 fixes / 2 breaks over 398 held-out tasks (p=.004).
+- **Raw answer-slot margin** (`analyze_logit_community.py`): the model's own
+  `p(A)−p(B)` on the same judge prompt scores test AUC **0.880**, best-of-3
+  157, blend best-of-3 159 — a strong zero-training signal that rivals the
+  frozen head on this pool.  On Bonsai the ordering flips (frozen 0.901 > raw
+  0.858), so per-model validation should pick the policy.
+- **Adapter note**: these community numbers are unaffected — generation and
+  embeddings went through `llama-server`, which applies the embedded
+  correction adapter.  The monitor dumps were the affected ones (see
+  `MONITOR-FIX.md`).

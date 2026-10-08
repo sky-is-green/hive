@@ -46,7 +46,8 @@ def main() -> int:
     meta = json.loads((args.windows / "meta.json").read_text())
     order, lengths, labels = meta["order"], meta["lengths"], meta["labels"]
     splits = [meta["tasks"][o.rsplit(":", 1)[0]] for o in order]
-    dumps = sorted((args.windows / "dump").glob("win_*_h.bin"))
+    dumps = sorted((args.windows / "dump").glob("win_*_h.bin"),
+                   key=lambda p: int(p.stem.split("_")[1]))
     if len(dumps) != len(order):
         raise SystemExit(f"{len(dumps)} dump windows for {len(order)} streams")
     H = np.stack([np.fromfile(p, dtype=np.float32).reshape(meta["seq"], -1)

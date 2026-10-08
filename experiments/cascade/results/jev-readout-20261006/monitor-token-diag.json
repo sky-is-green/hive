@@ -1,22 +1,22 @@
 {
  "W32": {
-  "auc_stability": 0.3475,
-  "auc_switch": 0.659375
+  "auc_stability": 0.53171875,
+  "auc_switch": 0.569375
  },
  "W64": {
-  "auc_stability": 0.34609375,
-  "auc_switch": 0.67359375
+  "auc_stability": 0.5275,
+  "auc_switch": 0.58203125
  },
  "W128": {
-  "auc_stability": 0.34390625,
-  "auc_switch": 0.6478125
+  "auc_stability": 0.491875,
+  "auc_switch": 0.5465625
  },
  "W256": {
-  "auc_stability": 0.30890625,
-  "auc_switch": 0.65453125
+  "auc_stability": 0.48484375,
+  "auc_switch": 0.5896875
  },
  "combined_W64": {
-  "auc": 0.67015625,
+  "auc": 0.38765625,
   "features": [
    "stability",
    "switch",

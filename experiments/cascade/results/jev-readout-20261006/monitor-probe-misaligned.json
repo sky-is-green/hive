@@ -1,0 +1,65 @@
+{
+ "n": 399,
+ "horizons": {
+  "64": {
+   "n_eval": 399,
+   "n_test": 120,
+   "test_auc": 0.5490625,
+   "threshold": 0.9993347742852025,
+   "caught_wrong": 31,
+   "false_cancels": 63,
+   "wrong": 40,
+   "correct": 80
+  },
+  "128": {
+   "n_eval": 385,
+   "n_test": 120,
+   "test_auc": 0.57125,
+   "threshold": 0.9990891446004231,
+   "caught_wrong": 33,
+   "false_cancels": 59,
+   "wrong": 40,
+   "correct": 80
+  },
+  "192": {
+   "n_eval": 326,
+   "n_test": 109,
+   "test_auc": 0.5533033033033034,
+   "threshold": 0.9987571542659708,
+   "caught_wrong": 31,
+   "false_cancels": 49,
+   "wrong": 37,
+   "correct": 72
+  },
+  "256": {
+   "n_eval": 253,
+   "n_test": 86,
+   "test_auc": 0.44212962962962965,
+   "threshold": 0.9954501308071694,
+   "caught_wrong": 19,
+   "false_cancels": 36,
+   "wrong": 32,
+   "correct": 54
+  },
+  "384": {
+   "n_eval": 150,
+   "n_test": 51,
+   "test_auc": 0.5815047021943573,
+   "threshold": 0.9947544005104483,
+   "caught_wrong": 21,
+   "false_cancels": 24,
+   "wrong": 22,
+   "correct": 29
+  },
+  "512": {
+   "n_eval": 100,
+   "n_test": 34,
+   "test_auc": 0.5451388888888888,
+   "threshold": 0.9952591261715404,
+   "caught_wrong": 16,
+   "false_cancels": 17,
+   "wrong": 16,
+   "correct": 18
+  }
+ }
+}
