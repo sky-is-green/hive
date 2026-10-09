@@ -24,9 +24,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import re
 import sys
+import threading
 import time
 import urllib.request
 from collections import defaultdict
@@ -55,12 +57,22 @@ PROMPT = ("system: You are a decision function. Reply with the answer "
           "B. No\nassistant (generation prompt, thinking disabled)")
 
 
-def post(url: str, path: str, body: dict, timeout: float = 3600.0) -> dict:
-    req = urllib.request.Request(url.rstrip("/") + path,
-                                 data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.load(r)
+def post(url: str, path: str, body: dict, timeout: float = 3600.0, tries: int = 3) -> dict:
+    # The pod's multi-slot server can return 503 under load and a long prefill can reset a connection; a
+    # sample is only lost when all retries fail.
+    last: Exception | None = None
+    for attempt in range(tries):
+        req = urllib.request.Request(url.rstrip("/") + path,
+                                     data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.load(r)
+        except Exception as e:   # urllib.error.HTTPError / URLError / timeouts / bad JSON
+            last = e
+            if attempt + 1 < tries:
+                time.sleep(2.0 * (attempt + 1))
+    raise last  # type: ignore[misc]
 
 
 def sigmoid(x):
@@ -139,42 +151,68 @@ def phase_gen(args, tasks: list[dict], prefix: str) -> None:
     for rec in load_jsonl(path):
         done[rec["task_id"]].append(rec)
     sf = open(path, "a")
+    lock = threading.Lock()
     t0 = time.time()
-    for n, task in enumerate(tasks, 1):
-        rows = done.get(task["id"], [])
-        if len(rows) >= args.samples:
-            continue
-        for k in range(len(rows), args.samples):
-            rec = gen_one(args.server, task, user=task["prompt"], sample=k,
-                          args=args, thinking=args.thinking,
-                          max_tokens=args.max_tokens)
+    jobs: list[tuple[dict, int]] = []
+    for task in tasks:
+        for k in range(len(done.get(task["id"], [])), args.samples):
+            jobs.append((task, k))
+    total = len(jobs)
+    state = {"done": 0, "ok": 0}
+
+    def run(job: tuple[dict, int]) -> None:
+        task, k = job
+        rec = gen_one(args.server, task, user=task["prompt"], sample=k,
+                      args=args, thinking=args.thinking,
+                      max_tokens=args.max_tokens)
+        with lock:
             sf.write(json.dumps(rec) + "\n")
             sf.flush()
-            rows.append(rec)
-        print(f"[{n}/{len(tasks)}] {task['id']} "
-              f"ok={sum(r['ok'] for r in rows)}/{len(rows)} "
-              f"{time.time()-t0:.0f}s", flush=True)
+            state["done"] += 1
+            state["ok"] += int(bool(rec["ok"]))
+            if state["done"] % 25 == 0 or state["done"] == total:
+                print(f"[{state['done']}/{total}] samples ok={state['ok']}/{state['done']} "
+                      f"{time.time()-t0:.0f}s", flush=True)
+
+    if args.concurrency <= 1:
+        for job in jobs:
+            run(job)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as ex:
+            list(ex.map(run, jobs))
     sf.close()
-    print(f"wrote {path}")
+    print(f"wrote {path} ({total} new samples)")
 
 
 def phase_hard(args, tasks: list[dict], prefix: str) -> None:
     path = args.out_dir / f"{prefix}-hard.jsonl"
     done = {rec["task_id"] for rec in load_jsonl(path)}
     sf = open(path, "a")
+    lock = threading.Lock()
     t0 = time.time()
-    for n, task in enumerate(tasks, 1):
-        if task["id"] in done:
-            continue
+    jobs = [task for task in tasks if task["id"] not in done]
+    total = len(jobs)
+    state = {"done": 0}
+
+    def run(task: dict) -> None:
         rec = gen_one(args.server, task, user=task["prompt"], sample=0,
                       args=args, thinking=args.hard_thinking,
                       max_tokens=args.hard_max_tokens)
-        sf.write(json.dumps(rec) + "\n")
-        sf.flush()
-        print(f"[{n}/{len(tasks)}] {task['id']} ok={rec['ok']} "
-              f"tok={rec['tokens']} {time.time()-t0:.0f}s", flush=True)
+        with lock:
+            sf.write(json.dumps(rec) + "\n")
+            sf.flush()
+            state["done"] += 1
+            if state["done"] % 25 == 0 or state["done"] == total:
+                print(f"[{state['done']}/{total}] hard {time.time()-t0:.0f}s", flush=True)
+
+    if args.concurrency <= 1:
+        for task in jobs:
+            run(task)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as ex:
+            list(ex.map(run, jobs))
     sf.close()
-    print(f"wrote {path}")
+    print(f"wrote {path} ({total} new records)")
 
 
 def embed_prompt(server: str, task_prompt: str, candidate: str) -> np.ndarray:
@@ -205,12 +243,27 @@ def phase_embed(args, tasks: list[dict], prefix: str) -> None:
                                                    args.tail_chars)})
     ha, hv = [], []
     t0 = time.time()
-    for n, item in enumerate(items, 1):
+    lock = threading.Lock()
+    state = {"done": 0}
+
+    def emb_one(item: dict):
         task = tasks_by[item["task_id"]]
-        ha.append(embed_prompt(args.server, task["prompt"], item["answer"]))
-        hv.append(embed_prompt(args.server, task["prompt"], item["trace"]))
-        if n % 100 == 0 or n == len(items):
-            print(f"[{n}/{len(items)}] {time.time()-t0:.0f}s", flush=True)
+        a = embed_prompt(args.server, task["prompt"], item["answer"])
+        v = embed_prompt(args.server, task["prompt"], item["trace"])
+        with lock:
+            state["done"] += 1
+            if state["done"] % 100 == 0 or state["done"] == len(items):
+                print(f"[{state['done']}/{len(items)}] {time.time()-t0:.0f}s", flush=True)
+        return a, v
+
+    if args.concurrency <= 1:
+        pairs = [emb_one(item) for item in items]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as ex:
+            pairs = list(ex.map(emb_one, items))
+    for a, v in pairs:
+        ha.append(a)
+        hv.append(v)
     out = args.out_dir / f"{prefix}-states.npz"
     np.savez_compressed(
         out, keys=np.array([i["key"] for i in items]),
@@ -469,6 +522,8 @@ def main() -> int:
     ap.add_argument("--out-dir", type=Path, default=R)
     ap.add_argument("--samples", type=int, default=3)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--concurrency", type=int, default=1,
+                    help="parallel HTTP requests; the server must run with -np at least this large")
     ap.add_argument("--max-tokens", type=int, default=700)
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=None)

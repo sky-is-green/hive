@@ -137,8 +137,12 @@ def check(task: dict, answer: str) -> bool:
             + str(spec.get("footer", "print('PASS')"))
             + "\n"
         )
+        # /tmp/opencode was a local-box path; the pod does not have it.  COMMUNITY_TMPDIR can override, the
+        # system temp directory is the default (created if missing).
+        tmpdir = os.environ.get("COMMUNITY_TMPDIR") or tempfile.gettempdir()
+        os.makedirs(tmpdir, exist_ok=True)
         with tempfile.NamedTemporaryFile(
-            "w", suffix=".py", delete=False, dir="/tmp/opencode"
+            "w", suffix=".py", delete=False, dir=tmpdir
         ) as fh:
             fh.write(program)
             path = fh.name

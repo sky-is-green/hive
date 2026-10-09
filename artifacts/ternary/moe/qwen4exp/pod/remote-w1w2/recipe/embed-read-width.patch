@@ -1,0 +1,40 @@
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+index 262d6e05d..3f259fd22 100644
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -1755,7 +1755,7 @@ int llama_context::encode(const llama_batch & batch_inp) {
+                 {
+                     // extract token embeddings
+                     GGML_ASSERT(embd.data != nullptr);
+-                    const uint32_t n_embd_out = hparams.n_embd_out();
++                    const uint32_t n_embd_out = (uint32_t) t_embd->ne[0];
+ 
+                     GGML_ASSERT(n_tokens*n_embd_out <= (int64_t) embd.size);
+                     ggml_backend_tensor_get_async(backend_embd, t_embd, embd.data, 0, n_tokens*n_embd_out*sizeof(float));
+@@ -1773,7 +1773,7 @@ int llama_context::encode(const llama_batch & batch_inp) {
+ 
+                         // use n_embd_out (not n_embd_inp) - the pooled embedding has the model's
+                         // output dimension, which differs from input dimension for deepstack models (e.g. qwen3vl)
+-                        const uint32_t n_embd_out = hparams.n_embd_out();
++                        const uint32_t n_embd_out = (uint32_t) t_embd->ne[0];
+                         embd_seq_out[seq_id].resize(n_embd_out);
+                         ggml_backend_tensor_get_async(backend_embd, t_embd, embd_seq_out[seq_id].data(), (n_embd_out*seq_idx)*sizeof(float), n_embd_out*sizeof(float));
+                     }
+@@ -2177,7 +2177,7 @@ int llama_context::decode(const llama_batch & batch_inp) {
+                     {
+                         // extract token embeddings
+                         GGML_ASSERT(embd.data != nullptr);
+-                        const uint32_t n_embd_out = hparams.n_embd_out();
++                        const uint32_t n_embd_out = (uint32_t) t_embd->ne[0];
+                         float * embd_out = embd.data + n_outputs_prev*n_embd_out;
+ 
+                         if (n_outputs) {
+@@ -2195,7 +2195,7 @@ int llama_context::decode(const llama_batch & batch_inp) {
+ 
+                         // use n_embd_out (not n_embd_inp) - the pooled embedding has the model's
+                         // output dimension, which differs from input dimension for deepstack models (e.g. qwen3vl)
+-                        const uint32_t n_embd_out = hparams.n_embd_out();
++                        const uint32_t n_embd_out = (uint32_t) t_embd->ne[0];
+ 
+                         for (uint32_t s = 0; s < ubatch.n_seqs_unq; ++s) {
+                             const llama_seq_id seq_id  = ubatch.seq_id_unq[s];

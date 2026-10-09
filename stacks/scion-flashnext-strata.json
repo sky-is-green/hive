@@ -1,0 +1,33 @@
+{
+  "name": "scion-flashnext-strata",
+  "version": 1,
+  "tiers": [
+    {
+      "role": "face",
+      "repo": "SkyIsNotGreen/Scion-FlashNext-176B-A6B",
+      "file": "Scion-FlashNext-176B-A6B-Q2_0.gguf",
+      "ctx": 4096,
+      "ngl": 99,
+      "backend": "strata",
+      "cache_k": "q8_0",
+      "cache_v": "q8_0",
+      "endpoint": "http://127.0.0.1:8081/v1",
+      "caps": {},
+      "launch": {
+        "kind": "strata",
+        "repo": "~/Desktop/work/strata",
+        "config": "strata-scion-176b.json",
+        "engine_args": [
+          "--vram-reserve-mib",
+          "3072",
+          "--prefill",
+          "512"
+        ],
+        "timeout_s": 900
+      }
+    }
+  ],
+  "routing": {
+    "workers_as": "subagent"
+  }
+}
