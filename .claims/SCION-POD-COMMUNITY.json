@@ -1,0 +1,14 @@
+{
+  "task_id": "SCION-POD-COMMUNITY",
+  "worker": "sky-is-green @ /home/penis/Desktop/work/hivebench",
+  "coordination_doc": "HIVE-PLAN.md",
+  "provider": "runpod",
+  "target_files": [
+    "stacks/scion-flashnext-strata.json",
+    "tools/strata-bridge/**",
+    "artifacts/ternary/moe/qwen4exp/pod/remote-w1w2/recipe/**"
+  ],
+  "beacon": "Scion-FlashNext-176B-A6B community benchmark end to end: pod booking/driver/guard/proof/full/snapshot/report recipes plus the three runtime patches, harness concurrency/retries and the code-checker temp-dir fix; results fetched under experiments/cascade/results.",
+  "updated": "2026-10-09T22:27:55Z",
+  "lease": "released"
+}

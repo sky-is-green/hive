@@ -1,0 +1,344 @@
+{
+ "run": "scion-strata-20261009",
+ "kind": "strata-feasibility",
+ "started": "2026-10-09 01:28:28",
+ "base": "http://127.0.0.1:8081",
+ "model": "strata",
+ "engine_log": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/logs/strata_8081.engine.log",
+ "requests": {
+  "cold1k": {
+   "ok": true,
+   "wall_s": 76.76,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 935,
+    "completion_tokens": 16,
+    "total_tokens": 951,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Robert Boulter is an English film, television, and theatre actor. He had",
+   "sys_read_mb": 57.2,
+   "sys_write_mb": 1.9,
+   "timing": {
+    "prompt_tokens": 935.0,
+    "reused": 0.0,
+    "fresh": 935.0,
+    "prefill_ms": 73418.0,
+    "prefill_tps": 12.7,
+    "generated": 16.0,
+    "decode_ms": 3244.0,
+    "decode_tps": 4.9
+   },
+   "metrics_totals": {
+    "requests": 2,
+    "drafts_offered": 71,
+    "drafts_accepted": 48
+   },
+   "metrics_last": {
+    "prompt_tokens": 935,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 13,
+    "drafts_accepted": 12
+   }
+  },
+  "cold4k": {
+   "ok": true,
+   "wall_s": 251.58,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 3094,
+    "completion_tokens": 16,
+    "total_tokens": 3110,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Based on the text provided, here is the structured information extracted for bot",
+   "sys_read_mb": 127.3,
+   "sys_write_mb": 5.8,
+   "timing": {
+    "prompt_tokens": 3094.0,
+    "reused": 0.0,
+    "fresh": 3094.0,
+    "prefill_ms": 246002.0,
+    "prefill_tps": 12.6,
+    "generated": 16.0,
+    "decode_ms": 5479.0,
+    "decode_tps": 2.9
+   },
+   "metrics_totals": {
+    "requests": 3,
+    "drafts_offered": 82,
+    "drafts_accepted": 54
+   },
+   "metrics_last": {
+    "prompt_tokens": 3094,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 11,
+    "drafts_accepted": 6
+   }
+  },
+  "warm1k": {
+   "ok": true,
+   "wall_s": 76.05,
+   "finish_reason": "length",
+   "usage": {
+    "prompt_tokens": 935,
+    "completion_tokens": 16,
+    "total_tokens": 951,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Robert Boulter is an English film, television, and theatre actor. He had",
+   "sys_read_mb": 53.6,
+   "sys_write_mb": 1.1,
+   "timing": {
+    "prompt_tokens": 935.0,
+    "reused": 0.0,
+    "fresh": 935.0,
+    "prefill_ms": 73599.0,
+    "prefill_tps": 12.7,
+    "generated": 16.0,
+    "decode_ms": 2375.0,
+    "decode_tps": 6.7
+   },
+   "metrics_totals": {
+    "requests": 4,
+    "drafts_offered": 95,
+    "drafts_accepted": 66
+   },
+   "metrics_last": {
+    "prompt_tokens": 935,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 13,
+    "drafts_accepted": 12
+   }
+  },
+  "decode1": {
+   "ok": true,
+   "wall_s": 41.93,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 169,
+    "total_tokens": 347,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "content_head": "Robert Boulter is an English film, television, and theatre actor. He had a guest",
+   "sys_read_mb": 29.1,
+   "sys_write_mb": 1.8,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 0.0,
+    "fresh": 178.0,
+    "prefill_ms": 20816.0,
+    "prefill_tps": 8.6,
+    "generated": 169.0,
+    "decode_ms": 20984.0,
+    "decode_tps": 8.1
+   },
+   "metrics_totals": {
+    "requests": 5,
+    "drafts_offered": 227,
+    "drafts_accepted": 186
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 132,
+    "drafts_accepted": 120
+   }
+  },
+  "decode2": {
+   "ok": true,
+   "wall_s": 13.84,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 170,
+    "total_tokens": 348,
+    "prompt_tokens_details": {
+     "cached_tokens": 171
+    }
+   },
+   "content_head": "Robert Boulter is an English film, television, and theatre actor. He had a guest",
+   "sys_read_mb": 2.7,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 171.0,
+    "fresh": 7.0,
+    "prefill_ms": 352.0,
+    "prefill_tps": 19.9,
+    "generated": 170.0,
+    "decode_ms": 13468.0,
+    "decode_tps": 12.6
+   },
+   "metrics_totals": {
+    "requests": 6,
+    "drafts_offered": 359,
+    "drafts_accepted": 307
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 132,
+    "drafts_accepted": 121
+   }
+  },
+  "cached": {
+   "ok": true,
+   "wall_s": 6.12,
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 169,
+    "total_tokens": 347,
+    "prompt_tokens_details": {
+     "cached_tokens": 171
+    }
+   },
+   "content_head": "Robert Boulter is an English film, television, and theatre actor. He had a guest",
+   "sys_read_mb": 13.3,
+   "sys_write_mb": 0.0,
+   "timing": {
+    "prompt_tokens": 178.0,
+    "reused": 171.0,
+    "fresh": 7.0,
+    "prefill_ms": 77.0,
+    "prefill_tps": 90.4,
+    "generated": 169.0,
+    "decode_ms": 5981.0,
+    "decode_tps": 28.3
+   },
+   "metrics_totals": {
+    "requests": 7,
+    "drafts_offered": 491,
+    "drafts_accepted": 429
+   },
+   "metrics_last": {
+    "prompt_tokens": 178,
+    "generated": null,
+    "prefill_tps": null,
+    "decode_tps": null,
+    "drafts_offered": 132,
+    "drafts_accepted": 122
+   }
+  }
+ },
+ "skipped_phases": [],
+ "mem_available_min_kb": 6085524,
+ "vram_peak_kb": {
+  "card0": 18593996,
+  "card1": 20273744,
+  "card2": 0
+ },
+ "phases": {
+  "idle": {
+   "samples": 11,
+   "mem_available_min_kb": 19384224,
+   "vram_peak_kb": {
+    "card0": 18593996,
+    "card1": 20255664,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 1.8,
+    "card1": 16.3
+   }
+  },
+  "cold1k": {
+   "samples": 759,
+   "mem_available_min_kb": 19430944,
+   "vram_peak_kb": {
+    "card0": 18593408,
+    "card1": 20270828,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 2.8,
+    "card1": 20.7
+   }
+  },
+  "cold4k": {
+   "samples": 2482,
+   "mem_available_min_kb": 6085524,
+   "vram_peak_kb": {
+    "card0": 18593564,
+    "card1": 20273744,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 5.8,
+    "card1": 19.7
+   }
+  },
+  "warm1k": {
+   "samples": 746,
+   "mem_available_min_kb": 8265552,
+   "vram_peak_kb": {
+    "card0": 18593564,
+    "card1": 20268572,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 3.0,
+    "card1": 23.0
+   }
+  },
+  "decode1": {
+   "samples": 416,
+   "mem_available_min_kb": 20312840,
+   "vram_peak_kb": {
+    "card0": 18593936,
+    "card1": 20179280,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 8.5,
+    "card1": 37.0
+   }
+  },
+  "decode2": {
+   "samples": 138,
+   "mem_available_min_kb": 20207948,
+   "vram_peak_kb": {
+    "card0": 18593984,
+    "card1": 20197916,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 17.8,
+    "card1": 55.0
+   }
+  },
+  "cached": {
+   "samples": 61,
+   "mem_available_min_kb": 19725260,
+   "vram_peak_kb": {
+    "card0": 18593996,
+    "card1": 20255964,
+    "card2": 0
+   },
+   "gpu_busy_mean": {
+    "card0": 30.6,
+    "card1": 51.3
+   }
+  }
+ }
+}
