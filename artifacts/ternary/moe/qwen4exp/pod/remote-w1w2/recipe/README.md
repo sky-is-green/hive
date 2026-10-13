@@ -3,6 +3,42 @@
 Proven 2026-10-04 after a painful session. Use this instead of rediscovering.
 `$Q` = `hivebench/artifacts/ternary/moe/qwen4exp`. Scripts live next to this file.
 
+## P5 shrink additions (2026-10-10)
+
+- `router-stats.patch` - fork patch 4: env-gated per-expert routing counts,
+  gate mass, full-softmax mass and the **REAP signal** (gate x expert-output
+  norm, plus norm moments) in the MoE router (`SCION_MOE_STATS=<path>`,
+  optional `SCION_MOE_STATS_EVERY`). Zero overhead when the env is unset
+  (re-verified after the REAP change on the 4l proof model: identical output,
+  no stats file, same wall time).
+- `moe-stats-run.sh` + `router-stats-client.py` + `pod-moe-stats-run.sh` +
+  `pod-moe-stats-book.sh` - collect the expert usage/importance map on the
+  coder calibration corpus (`scion/moe/build_coder_corpus.py`: Evol-CodeAlpaca
+  teacher-forced + on-policy generations, glaive tool-calling, fineweb/GSM8K
+  ballast; ~3.3M tokens). Output `router-stats.json` (format v2). The driver
+  takes `CORPUS=` to pick a different corpus file.
+- `kld-gate.patch` - fork patch 5: `llama-kld`, a new tool that computes the
+  full-vocabulary KLD of any GGUF against the parked teacher log-probs
+  (`scion/moe/make_kld_teacher_park.py` converts `tcache-48l` and regenerates
+  the exact token windows). Math verified against `moe/kld_eval.py`'s formula
+  on perturbed parks.
+- `ple-table.patch` - fork patch 6: the Q3X32/Q2X32/Q4X160 PLE table types
+  (ids 144/145/146, CPU + CUDA `get_rows`, learned codebooks + per-block
+  least-squares scale) and `tools/ple-table/ple-table-parity`. Design and
+  local validation: `scion/docs/PLE-TABLE-TYPES.md`; healing plan:
+  `scion/docs/PLE-HEALING-PLAN.md`. Applies after patch 5; the exporter side
+  is `tools/strata-bridge/repack_experts_q2_0.py --table-type
+  q3x32|q2x32|q4x160` (streamed, never materialises the table).
+- `pod-build-pruned.sh` + `prune-gate-run.sh` + `pod-prune-gate-run.sh` +
+  `pod-prune-gate-book.sh` - gate a pruned export: KLD on the release (same
+  instrument, first run), prune export via
+  `hivebench/tools/strata-bridge/repack_experts_q2_0.py --prune-plan ...
+  --preserve-experts`, then KLD + PPL 580 + HS 400 + WG 400 on the pruned file.
+- `verify-zero-overhead.sh` - the env-off equivalence/timing check.
+- `community-run.sh` / `pod-community-run.sh` now apply `router-stats.patch`
+  as the 4th patch, so every future window carries the instrumentation (inert
+  when the env is unset).
+
 ## Shape (works; $0.82-1.09/hr)
 - SECURE, gpuTypeIds `[RTX 6000 Ada, L40, L40S]`, pinned `dataCenterIds`
   `[US-KS-2, US-TX-4, US-GA-2]`, minRAMPerGPU 180, minVCPUPerGPU 16,

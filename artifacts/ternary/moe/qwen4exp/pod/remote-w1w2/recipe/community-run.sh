@@ -44,6 +44,7 @@ git clone -q -b qwen4exp-proto https://github.com/sky-is-green/prism-ml-llama.cp
 git -C "$REPO" apply /root/bench-ple-multiseq.patch || { echo PATCH_FAILED; exit 1; }
 git -C "$REPO" apply /root/server-skip-seq-rm.patch || { echo PATCH2_FAILED; exit 1; }
 git -C "$REPO" apply /root/embed-read-width.patch || { echo PATCH3_FAILED; exit 1; }
+git -C "$REPO" apply /root/router-stats.patch || { echo PATCH4_FAILED; exit 1; }
 cd "$REPO"
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF -DGGML_CUDA=ON \
       -DCMAKE_CUDA_ARCHITECTURES="$cc" > cmake.log 2>&1 || { echo CMAKE_FAILED; tail -20 cmake.log; exit 1; }

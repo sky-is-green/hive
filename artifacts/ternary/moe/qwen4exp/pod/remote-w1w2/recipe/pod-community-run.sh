@@ -58,6 +58,7 @@ scp $SCPOPT "$RECIPE/community-run.sh" root@$IP:/root/community-run.sh || die "p
 scp $SCPOPT "$RECIPE/bench-ple-multiseq.patch" root@$IP:/root/bench-ple-multiseq.patch || die "patch upload failed"
 scp $SCPOPT "$RECIPE/server-skip-seq-rm.patch" root@$IP:/root/server-skip-seq-rm.patch || die "seq-rm patch upload failed"
 scp $SCPOPT "$RECIPE/embed-read-width.patch" root@$IP:/root/embed-read-width.patch || die "embed patch upload failed"
+scp $SCPOPT "$RECIPE/router-stats.patch" root@$IP:/root/router-stats.patch || die "router-stats patch upload failed"
 scp $SCPOPT "$WORK/hivebench/experiments/cascade/community_eval.py" root@$IP:/root/community/community_eval.py \
     || die "community_eval upload failed"
 scp $SCPOPT "$WORK/hivebench/experiments/cascade/tasks-community.json" root@$IP:/root/community/tasks-community.json \
@@ -84,7 +85,7 @@ log "payload started on the pod"
 deadline=$(( $(date +%s) + 21600 ))
 while :; do
     done_=$(ssh_pod 'grep -c "COMMUNITY_DONE" /workspace/bench/community-run.log 2>/dev/null' 2>/dev/null | tr -cd '0-9')
-    fail=$(ssh_pod 'grep -aoE "CLONE_FAILED|PATCH_FAILED|PATCH2_FAILED|PATCH3_FAILED|CMAKE_FAILED|BUILD_FAILED|DL_OURS_FAILED|SHA_FAILED|SMOKE_FAILED|SERVER_FAILED" /workspace/bench/community-run.log 2>/dev/null | head -1' 2>/dev/null)
+    fail=$(ssh_pod 'grep -aoE "CLONE_FAILED|PATCH_FAILED|PATCH2_FAILED|PATCH3_FAILED|PATCH4_FAILED|CMAKE_FAILED|BUILD_FAILED|DL_OURS_FAILED|SHA_FAILED|SMOKE_FAILED|SERVER_FAILED" /workspace/bench/community-run.log 2>/dev/null | head -1' 2>/dev/null)
     if [ "${done_:-0}" -ge 1 ]; then log "COMMUNITY_DONE seen"; break; fi
     if [ -n "$fail" ]; then log "REMOTE FAILURE: $fail"; break; fi
     if grep -q "deleting pod" "$JOBDIR/community-spend.log" 2>/dev/null; then
