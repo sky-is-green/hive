@@ -210,9 +210,14 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "amplified, results/decision-readout-harvest-20261017) held the "
             "bench (MLP AUC 0.980, acc 110/116, FA 2, ECE 0.045) but the "
             "held-out organic slice stays hard: refit MLP AUC 0.774 catching "
-            "4/9 organic wrongs (raw 0.603 / 0 of 9) — not shipped yet; next: "
-            "organic-weighted training or LoRA, and the raw 2b/4b verdicts "
-            "on the same slice"
+            "4/9 organic wrongs (raw 0.603 / 0 of 9). Raw 2b/4b/tiny-jev "
+            "verdicts on the same 224 organic items (decision-oracle-harvest-"
+            "20261017): 2b 0/9, 4b 2/9 (AUC 0.799), tiny-jev 1/9 — bigger "
+            "judges do not close the gap. The refit's mid-depth L0.5 probe "
+            "catches 6/9 (AUC 0.823, bench 93/116); L0.5+MLP+L1 reject-union "
+            "7/9 at 20/57 corrects rejected. Two fluent micro-error wrongs "
+            "evade every scorer — not shipped; next: weighted refit, then "
+            "LoRA/targeted harvest"
         ),
     ),
     Candidate(
@@ -226,7 +231,10 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "results/decision-oracle-20261017): 4.4 GB on disk, 4.4 GiB peak "
             "RSS, 0.74 s/verdict, J-Bench test n=116: AUC 0.933, acc@0.5 "
             "95/116 (FA 19/87 wrong, FR 2/29 correct), no-leak thr 0.89 -> "
-            "98/116 — the recommended resident D2/C2 verifier beside the 176B"
+            "98/116 — the recommended resident D2/C2 verifier beside the 176B; "
+            "organic harvest slice (224 items, results/decision-oracle-harvest-"
+            "20261017): test-66 AUC 0.668, 0/9 organic wrongs rejected (all "
+            "accepted at p>=0.57)"
         ),
     ),
     Candidate(
@@ -241,7 +249,9 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "shards), 8.9 GiB peak RSS, 1.94 s/verdict, J-Bench test n=116: "
             "AUC 0.979, acc@0.5 104/116 (FA 11/87, FR 1/29), no-leak thr 0.97 "
             "-> 101/116 — best quality; keep as on-demand hard verification "
-            "(GPU readout reference: 184 ms/verdict)"
+            "(GPU readout reference: 184 ms/verdict); organic harvest slice "
+            "(224 items): test-66 AUC 0.799, 2/9 organic wrongs rejected (the "
+            "gsm8k arithmetic slips only)"
         ),
     ),
     Candidate(
@@ -282,7 +292,8 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "results/decision-oracle-20261017): 3.4 GiB peak RSS, 0.48 "
             "s/verdict, J-Bench test n=116: AUC 0.889, acc@0.5 87/116 "
             "(FA 25/87, FR 4/29) — the harness validator's wired default; "
-            "second rung behind intern-decision-2b"
+            "second rung behind intern-decision-2b; organic harvest slice "
+            "(224 items): test-66 AUC 0.628, 1/9 organic wrongs rejected"
         ),
     ),
     Candidate(
