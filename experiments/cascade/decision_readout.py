@@ -31,6 +31,12 @@ Combined corpus (stage 2):
         --bench experiments/cascade/results/jev-readout-20261006/judge-bench.jsonl \
         --bench experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl \
         --apply-head experiments/cascade/results/decision-readout-20261017/readout-head-intern-decision-0.8b.npz
+
+Reweighted refit sharing an existing extraction (no re-extract):
+
+    .venv/bin/python experiments/cascade/decision_readout.py fit \
+        --name intern-decision-0.8b-harvest-w10 \
+        --states-name intern-decision-0.8b-harvest --organic-boost 10
 """
 
 from __future__ import annotations
@@ -102,12 +108,19 @@ def layer_map(depths: list[float], n_layers: int) -> list[tuple[str, int]]:
     return out
 
 
-def ridge_fit(X: np.ndarray, y: np.ndarray, lam: float = 1.0):
+def ridge_fit(X: np.ndarray, y: np.ndarray, lam: float = 1.0,
+              sample_weight: np.ndarray | None = None):
     mu = X.mean(axis=0)
     sd = X.std(axis=0) + 1e-6
     Xs = (X - mu) / sd
-    w = np.linalg.solve(Xs.T @ Xs + lam * np.eye(Xs.shape[1]), Xs.T @ y)
-    b = float(y.mean())
+    if sample_weight is None:
+        Xw, yw = Xs, y
+    else:
+        rw = np.sqrt(np.asarray(sample_weight, dtype=np.float64))
+        Xw, yw = Xs * rw[:, None], y * rw
+    w = np.linalg.solve(Xw.T @ Xw + lam * np.eye(Xs.shape[1]), Xw.T @ yw)
+    b = float(y.mean() if sample_weight is None
+              else np.average(y, weights=sample_weight))
     return w, (mu, sd, b)
 
 
@@ -116,13 +129,19 @@ def ridge_score(X: np.ndarray, model) -> np.ndarray:
     return ((X - mu) / sd) @ w + b
 
 
-def platt(scores: np.ndarray, labels: np.ndarray) -> tuple[float, float]:
+def platt(scores: np.ndarray, labels: np.ndarray,
+          sample_weight: np.ndarray | None = None) -> tuple[float, float]:
+    if sample_weight is None:
+        wsum, w = 1.0, np.ones(len(labels))
+    else:
+        w = np.asarray(sample_weight, dtype=np.float64)
+        wsum = float(w.sum())
     best = (0.0, 0.0, 1e9)
     for a in (0.5, 1.0, 2.0, 4.0, 8.0):
         for b in np.linspace(-2, 2, 9):
             p = 1.0 / (1.0 + np.exp(-(a * scores + b)))
-            nll = -np.mean(labels * np.log(p + 1e-9)
-                           + (1 - labels) * np.log(1 - p + 1e-9))
+            nll = -np.sum(w * (labels * np.log(p + 1e-9)
+                               + (1 - labels) * np.log(1 - p + 1e-9))) / wsum
             if nll < best[2]:
                 best = (a, b, nll)
     return best[0], best[1]
@@ -363,7 +382,8 @@ def _origin_breakdown(p: np.ndarray, mask: np.ndarray, labels: np.ndarray,
 
 
 def _mlp_fit(X: np.ndarray, y: np.ndarray, *, seed: int, epochs: int,
-             hidden: int = 64, lr: float = 1e-3, wd: float = 1e-4):
+             hidden: int = 64, lr: float = 1e-3, wd: float = 1e-4,
+             sample_weight: np.ndarray | None = None):
     import torch
 
     torch.manual_seed(seed)
@@ -376,10 +396,13 @@ def _mlp_fit(X: np.ndarray, y: np.ndarray, *, seed: int, epochs: int,
         torch.nn.Linear(hidden, 1),
     )
     opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=wd)
-    loss_fn = torch.nn.BCEWithLogitsLoss()
+    loss_fn = torch.nn.BCEWithLogitsLoss(reduction="none")
+    wt = (torch.tensor(np.asarray(sample_weight), dtype=torch.float32)
+          if sample_weight is not None else None)
     for _ in range(epochs):
         opt.zero_grad()
-        loss = loss_fn(net(Xt).squeeze(-1), yt)
+        per = loss_fn(net(Xt).squeeze(-1), yt)
+        loss = (per * wt).mean() if wt is not None else per.mean()
         loss.backward()
         opt.step()
     return net, (mu, sd)
@@ -395,7 +418,8 @@ def _mlp_predict(X: np.ndarray, net, stats) -> np.ndarray:
 
 
 def fit(args: argparse.Namespace) -> None:
-    z = np.load(args.out / f"readout-states-{args.name}.npz", allow_pickle=False)
+    z = np.load(args.out / f"readout-states-{args.states_name or args.name}.npz",
+                allow_pickle=False)
     labels = z["labels"].astype(int)
     splits = z["splits"]
     fracs = sorted((k for k in z.files if k.startswith("L")),
@@ -411,6 +435,13 @@ def fit(args: argparse.Namespace) -> None:
     test_sources = sorted(set(sources[test].tolist()))
     buckets = z["buckets"].astype(str)
     origins = z["origins"].astype(str)
+    w_tr = np.ones(len(labels))
+    n_org_wrong = 0
+    if args.organic_boost != 1.0:
+        organic_wrong = (train & (sources == "harvest") & (labels == 0)
+                         & np.char.startswith(origins, "harvested:"))
+        n_org_wrong = int(organic_wrong.sum())
+        w_tr[organic_wrong] = args.organic_boost
 
     def _by_source(p: np.ndarray) -> dict:
         if len(test_sources) < 2:
@@ -432,6 +463,8 @@ def fit(args: argparse.Namespace) -> None:
             "train": int(train.sum()),
             "test": int(test.sum()),
         },
+        "training_weights": {"organic_wrong_boost": args.organic_boost,
+                             "organic_wrong_items": n_org_wrong},
         "readouts": {},
         "baseline": {
             "train": _metrics(z["p_raw"][train], y_tr),
@@ -445,9 +478,10 @@ def fit(args: argparse.Namespace) -> None:
     ps: dict[str, np.ndarray] = {"raw(readout)": z["p_raw"]}
 
     def _ridge_readout(X: np.ndarray, key: str) -> None:
-        model = ridge_fit(X[train].astype(np.float64), y_tr.astype(np.float64))
+        model = ridge_fit(X[train].astype(np.float64), y_tr.astype(np.float64),
+                          sample_weight=w_tr[train])
         s_tr = ridge_score(X[train].astype(np.float64), model)
-        a, b = platt(s_tr, y_tr.astype(np.float64))
+        a, b = platt(s_tr, y_tr.astype(np.float64), sample_weight=w_tr[train])
         p = 1.0 / (1.0 + np.exp(-(a * ridge_score(X.astype(np.float64), model) + b)))
         entry = {"kind": "ridge+platt",
                  "train": _metrics(p[train], labels[train]),
@@ -469,7 +503,8 @@ def fit(args: argparse.Namespace) -> None:
     Xc = np.concatenate([z[f] for f in fracs], axis=1)
     _ridge_readout(Xc, "concat")
 
-    net, stats = _mlp_fit(Xc[train], y_tr, seed=args.seed, epochs=args.mlp_epochs)
+    net, stats = _mlp_fit(Xc[train], y_tr, seed=args.seed, epochs=args.mlp_epochs,
+                          sample_weight=w_tr[train])
     p_mlp = _mlp_predict(Xc, net, stats)
     ps["mlp-concat"] = p_mlp
     entry = {"kind": f"mlp(64,{args.mlp_epochs}ep,seed{args.seed})",
@@ -575,6 +610,10 @@ def main() -> None:
                     help="saved readout-head npz applied to this corpus for comparison")
     ap.add_argument("--apply-head-name", default=None,
                     help="label for applied-head readouts (default: file stem)")
+    ap.add_argument("--states-name", default=None,
+                    help="read readout-states-<states-name>.npz (default: --name)")
+    ap.add_argument("--organic-boost", type=float, default=1.0,
+                    help="sample weight for harvested organic wrongs during fitting")
     args = ap.parse_args()
     args.depths = [float(t) for t in args.depths.split(",")]
     args.bench = args.bench or [DEFAULT_BENCH]
