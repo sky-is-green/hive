@@ -1,0 +1,119 @@
+{
+  "candidate": "florence-2-base",
+  "repo": "microsoft/Florence-2-base",
+  "role": "A2",
+  "device": "cpu",
+  "precision": "fp32",
+  "env": {
+    "python": "3.12.13",
+    "torch": "2.6.0+cpu",
+    "transformers": "4.46.3"
+  },
+  "generated_at": "2026-10-17T15:01:50Z",
+  "load_s": 1.92,
+  "resident_gb": 0.926,
+  "peak_rss_gib": 1.73,
+  "items": [
+    {
+      "image": "text_card",
+      "task": "<OCR>",
+      "output": "</s><s>HIVE CASCADE 42stage-0 vision oracle</s>",
+      "parsed_labels": null,
+      "latency_ms": [
+        851.1,
+        824.9,
+        830.4
+      ],
+      "check": {
+        "desc": "OCR output contains '42'",
+        "passed": true
+      }
+    },
+    {
+      "image": "sign_stop",
+      "task": "<OCR>",
+      "output": "</s><s>STOP</s>",
+      "parsed_labels": null,
+      "latency_ms": [
+        711.7,
+        719.0,
+        707.0
+      ],
+      "check": {
+        "desc": "OCR output contains 'STOP'",
+        "passed": true
+      }
+    },
+    {
+      "image": "shapes_scene",
+      "task": "<OD>",
+      "output": "</s><s>christmas tree<loc_372><loc_480><loc_630><loc_850></s>",
+      "parsed_labels": [
+        "christmas tree"
+      ],
+      "latency_ms": [
+        765.3,
+        774.1,
+        770.1
+      ],
+      "check": {
+        "desc": "OD labels >= 2, incl. a shape word",
+        "passed": false
+      }
+    },
+    {
+      "image": "count_squares",
+      "task": "<OD>",
+      "output": "</s><s>flag<loc_411><loc_133><loc_579><loc_387><loc_736><loc_133><loc_905><loc_387><loc_86><loc_133><loc_254><loc_387></s>",
+      "parsed_labels": [
+        "flag",
+        "flag",
+        "flag"
+      ],
+      "latency_ms": [
+        847.3,
+        842.6,
+        842.0
+      ],
+      "check": {
+        "desc": "OD labels >= 2 'square'",
+        "passed": false
+      }
+    },
+    {
+      "image": "chart_bars",
+      "task": "<OCR>",
+      "output": "</s><s>523ABC</s>",
+      "parsed_labels": null,
+      "latency_ms": [
+        727.7,
+        722.6,
+        722.6
+      ],
+      "check": {
+        "desc": "OCR reads labels A, B and C",
+        "passed": true
+      }
+    },
+    {
+      "image": "photo_planet",
+      "task": "<MORE_DETAILED_CAPTION>",
+      "output": "</s><s>The image is a digital illustration of a planet in outer space. The planet is in the center of the image, with a blue and green color scheme. It is surrounded by a dark background with a nebula-like pattern of</s>",
+      "parsed_labels": null,
+      "latency_ms": [
+        1267.0,
+        1236.4,
+        1232.6
+      ],
+      "check": {
+        "desc": "caption has >= 4 words",
+        "passed": true
+      }
+    }
+  ],
+  "checks_passed": 4,
+  "checks_total": 6,
+  "quality": 0.6667,
+  "median_call_ms": 800.2,
+  "mean_call_ms": 852.3
+}
