@@ -1,0 +1,113 @@
+{
+ "ts": "2026-10-17 01:55:06",
+ "runs": [
+  {
+   "name": "warmup",
+   "wall_s": 2.59,
+   "prompt_n": 150,
+   "read_n": 150,
+   "reused_n": 0,
+   "completion_n": 16,
+   "prompt_tps": 65.0,
+   "decode_tps": 59.0,
+   "decode_ms_per_tok": 16.95,
+   "engine": [
+    "strata serve: prompt 150 tokens = 0 reused + 150 read in 2308 ms (65.0 tok/s), 16 generated in 271 ms (59.0 tok/s), drafts accepted 9 of 13, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "p300a",
+   "wall_s": 4.17,
+   "prompt_n": 523,
+   "read_n": 523,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 153.1,
+   "decode_tps": 85.3,
+   "decode_ms_per_tok": 11.72,
+   "engine": [
+    "strata serve: prompt 523 tokens = 0 reused + 523 read in 3417 ms (153.1 tok/s), 64 generated in 750 ms (85.3 tok/s), drafts accepted 42 of 50, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "p300b",
+   "wall_s": 3.98,
+   "prompt_n": 523,
+   "read_n": 523,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 159.4,
+   "decode_tps": 91.6,
+   "decode_ms_per_tok": 10.92,
+   "engine": [
+    "strata serve: prompt 523 tokens = 0 reused + 523 read in 3282 ms (159.4 tok/s), 64 generated in 699 ms (91.6 tok/s), drafts accepted 43 of 51, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "p1000a",
+   "wall_s": 6.1,
+   "prompt_n": 1597,
+   "read_n": 1597,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 293.1,
+   "decode_tps": 99.3,
+   "decode_ms_per_tok": 10.07,
+   "engine": [
+    "strata serve: prompt 1597 tokens = 0 reused + 1597 read in 5449 ms (293.1 tok/s), 64 generated in 645 ms (99.3 tok/s), drafts accepted 42 of 48, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "p1000b",
+   "wall_s": 6.24,
+   "prompt_n": 1597,
+   "read_n": 1597,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 290.2,
+   "decode_tps": 87.6,
+   "decode_ms_per_tok": 11.42,
+   "engine": [
+    "strata serve: prompt 1597 tokens = 0 reused + 1597 read in 5503 ms (290.2 tok/s), 64 generated in 731 ms (87.6 tok/s), drafts accepted 42 of 55, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "p3000a",
+   "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"request exceeds the context window: prompt (4705 tokens) + max tokens (64) exceeds the context (4096); requests are never truncated. Send a smal",
+   "engine": []
+  },
+  {
+   "name": "p3000b",
+   "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"request exceeds the context window: prompt (4704 tokens) + max tokens (64) exceeds the context (4096); requests are never truncated. Send a smal",
+   "engine": []
+  },
+  {
+   "name": "d256a",
+   "wall_s": 5.54,
+   "prompt_n": 153,
+   "read_n": 153,
+   "reused_n": 0,
+   "completion_n": 231,
+   "prompt_tps": 69.3,
+   "decode_tps": 69.4,
+   "decode_ms_per_tok": 14.41,
+   "engine": [
+    "strata serve: prompt 153 tokens = 0 reused + 153 read in 2209 ms (69.3 tok/s), 231 generated in 3326 ms (69.4 tok/s), drafts accepted 146 of 193, 1 checkpoints"
+   ]
+  },
+  {
+   "name": "d256b",
+   "wall_s": 5.75,
+   "prompt_n": 153,
+   "read_n": 153,
+   "reused_n": 0,
+   "completion_n": 256,
+   "prompt_tps": 66.6,
+   "decode_tps": 74.1,
+   "decode_ms_per_tok": 13.5,
+   "engine": [
+    "strata serve: prompt 153 tokens = 0 reused + 153 read in 2297 ms (66.6 tok/s), 256 generated in 3456 ms (74.1 tok/s), drafts accepted 164 of 236, 1 checkpoints"
+   ]
+  }
+ ]
+}
