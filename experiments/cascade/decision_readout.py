@@ -8,6 +8,11 @@ reads (the token immediately before ``<decision>``).  Fit on the J-Bench
 **train** split, score the frozen **test** split, and compare with the model's
 own readout (the ``p_correct`` the decision oracle recorded).
 
+Stage 2 (``--bench`` is repeatable): train on J-Bench plus the harvested
+corpus of organic 176B answers (``experiments/cascade/harvest.py``, each item
+carrying ``source``), and report the frozen test metrics split by source so
+the bench and the fresh-distribution slice stay separable.
+
 Extraction reuses the repo's own skeleton (``inference.compile_row`` /
 ``HFBackend.encode``) so train and serving share one prompt path; metrics come
 from ``readout_judge``.  CPU-only on purpose: a ROCm context beside the live
@@ -19,6 +24,13 @@ Usage (from the repo root):
         --model internlm/Intern-Decision-0.8B --name intern-decision-0.8b
     .venv/bin/python experiments/cascade/decision_readout.py extract --limit 12 ...
     .venv/bin/python experiments/cascade/decision_readout.py fit --name intern-decision-0.8b
+
+Combined corpus (stage 2):
+
+    .venv/bin/python experiments/cascade/decision_readout.py run --name intern-decision-0.8b-harvest \
+        --bench experiments/cascade/results/jev-readout-20261006/judge-bench.jsonl \
+        --bench experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl \
+        --apply-head experiments/cascade/results/decision-readout-20261017/readout-head-intern-decision-0.8b.npz
 """
 
 from __future__ import annotations
@@ -144,7 +156,11 @@ def load_backend(model_id: str, device: str, dtype: str):
 def extract(args: argparse.Namespace) -> None:
     import torch
 
-    items = [json.loads(line) for line in args.bench.read_text().splitlines()]
+    items = []
+    for bench in args.bench:
+        loaded = [json.loads(line) for line in bench.read_text().splitlines() if line.strip()]
+        print(f"[readout] bench {bench.name}: {len(loaded)} items", flush=True)
+        items.extend(loaded)
     if args.limit:
         items = items[: args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
@@ -251,6 +267,8 @@ def extract(args: argparse.Namespace) -> None:
         splits=np.array([i["split"] for i in items]),
         buckets=np.array([i["bucket"] for i in items]),
         origins=np.array([i["origin"] for i in items]),
+        sources=np.array([i.get("source", "bench") for i in items]),
+        task_ids=np.array([i.get("task_id", "") for i in items]),
         p_raw=np.array([raw[i["item_id"]] for i in items]),
         input_tokens=np.array([metas[i["item_id"]]["input_tokens"] for i in items]),
         ms=np.array([metas[i["item_id"]]["ms"] for i in items]),
@@ -288,6 +306,60 @@ def _metrics(p: np.ndarray, y: np.ndarray) -> dict:
         "no_leak": no_leak_threshold(p_, y_),
         "at_0.5": threshold_stats(p_, y_, 0.5),
     }
+
+
+def _source_line(src: str, m: dict) -> str:
+    at = m["at_0.5"]
+    auc_s = f"{m['auc']:.3f}" if m["auc"] else "  n/a"
+    return (f"  └ {src:9s} n {m['n']:3d}  AUC {auc_s:>5s}  "
+            f"acc {at.get('correct', '?')}/{m['n']}  "
+            f"FA {at.get('false_accepts', '?')}  FR {at.get('false_rejects', '?')}  "
+            f"BA {m['best_ba']['bal_acc']:.3f}  ECE {m['ece']:.3f}")
+
+
+def _apply_saved_heads(path: Path, X: np.ndarray, name: str) -> dict[str, np.ndarray]:
+    """Apply ``ridge_concat`` + ``mlp`` heads saved by an earlier fit run."""
+    h = np.load(path, allow_pickle=False)
+    out: dict[str, np.ndarray] = {}
+    if "ridge_concat_w" in h.files:
+        s = ((X - h["ridge_concat_mu"]) / h["ridge_concat_sd"]) @ h["ridge_concat_w"] \
+            + float(h["ridge_concat_bias"])
+        a, b = h["ridge_concat_platt"]
+        out[f"{name}:ridge-concat"] = 1.0 / (1.0 + np.exp(-(a * s + b)))
+    if "mlp_mu" in h.files:
+        hid = np.maximum(((X - h["mlp_mu"]) / h["mlp_sd"]) @ h["mlp_0.weight"].T
+                         + h["mlp_0.bias"], 0.0)
+        logit = (hid @ h["mlp_2.weight"].T + h["mlp_2.bias"]).ravel()
+        out[f"{name}:mlp-concat"] = 1.0 / (1.0 + np.exp(-logit))
+    return out
+
+
+def _bucket_breakdown(p: np.ndarray, mask: np.ndarray, labels: np.ndarray,
+                      sources: np.ndarray, buckets: np.ndarray) -> dict:
+    out: dict = {}
+    for src in sorted(set(sources[mask].tolist())):
+        for bucket in sorted(set(buckets[mask & (sources == src)].tolist())):
+            m = mask & (sources == src) & (buckets == bucket)
+            out[f"{src}/{bucket}"] = _metrics(p[m], labels[m])
+    return out
+
+
+def _origin_breakdown(p: np.ndarray, mask: np.ndarray, labels: np.ndarray,
+                      origins: np.ndarray) -> dict:
+    """Acceptance @0.5 per origin — the stage-1 summary table, machine-read."""
+    out: dict = {}
+    for origin in sorted(set(origins[mask].tolist())):
+        m = mask & (origins == origin)
+        accepted = p[m] >= 0.5
+        y = labels[m]
+        out[origin] = {
+            "n": int(m.sum()),
+            "wrong": int((y == 0).sum()),
+            "wrong_accepted": int(((y == 0) & accepted).sum()),
+            "correct": int((y == 1).sum()),
+            "correct_accepted": int(((y == 1) & accepted).sum()),
+        }
+    return out
 
 
 def _mlp_fit(X: np.ndarray, y: np.ndarray, *, seed: int, epochs: int,
@@ -334,28 +406,57 @@ def fit(args: argparse.Namespace) -> None:
                          "— run without --limit for the real fit")
     y_tr, y_te = labels[train], labels[test]
 
+    sources = (z["sources"].astype(str) if "sources" in z.files
+               else np.array(["bench"] * len(labels)))
+    test_sources = sorted(set(sources[test].tolist()))
+    buckets = z["buckets"].astype(str)
+    origins = z["origins"].astype(str)
+
+    def _by_source(p: np.ndarray) -> dict:
+        if len(test_sources) < 2:
+            return {}
+        return {src: _metrics(p[test & (sources == src)], labels[test & (sources == src)])
+                for src in test_sources}
+
+    protocol = ("ridge fitted on the train split only; Platt on train scores; "
+                "frozen test split; MLP seed fixed, no test peeking")
+    if len(set(sources.tolist())) > 1:
+        protocol = ("combined corpus (J-Bench + harvested 176B answers); " + protocol)
     results: dict = {
         "name": args.name,
-        "protocol": ("ridge fitted on the J-Bench train split only; Platt on train "
-                     "scores; frozen test split; MLP seed fixed, no test peeking"),
+        "protocol": protocol,
+        "corpus": {
+            "items": len(labels),
+            "sources": {src: int((sources == src).sum())
+                        for src in sorted(set(sources.tolist()))},
+            "train": int(train.sum()),
+            "test": int(test.sum()),
+        },
         "readouts": {},
         "baseline": {
             "train": _metrics(z["p_raw"][train], y_tr),
             "test": _metrics(z["p_raw"][test], y_te),
         },
     }
+    baseline_src = _by_source(z["p_raw"])
+    if baseline_src:
+        results["baseline"]["by_source"] = baseline_src
     heads: dict[str, np.ndarray] = {}
+    ps: dict[str, np.ndarray] = {"raw(readout)": z["p_raw"]}
 
     def _ridge_readout(X: np.ndarray, key: str) -> None:
         model = ridge_fit(X[train].astype(np.float64), y_tr.astype(np.float64))
         s_tr = ridge_score(X[train].astype(np.float64), model)
         a, b = platt(s_tr, y_tr.astype(np.float64))
-        entry = {}
-        for split_name, mask in (("train", train), ("test", test)):
-            s = ridge_score(X[mask].astype(np.float64), model)
-            p = 1.0 / (1.0 + np.exp(-(a * s + b)))
-            entry[split_name] = _metrics(p, labels[mask])
-        results["readouts"][key] = {"kind": "ridge+platt", **(entry)}
+        p = 1.0 / (1.0 + np.exp(-(a * ridge_score(X.astype(np.float64), model) + b)))
+        entry = {"kind": "ridge+platt",
+                 "train": _metrics(p[train], labels[train]),
+                 "test": _metrics(p[test], labels[test])}
+        entry["by_source"] = _by_source(p)
+        if not entry["by_source"]:
+            del entry["by_source"]
+        results["readouts"][key] = entry
+        ps[key] = p
         w, (mu, sd, bias) = model
         heads[f"ridge_{key}_w"] = w
         heads[f"ridge_{key}_mu"] = np.asarray(mu)
@@ -369,16 +470,48 @@ def fit(args: argparse.Namespace) -> None:
     _ridge_readout(Xc, "concat")
 
     net, stats = _mlp_fit(Xc[train], y_tr, seed=args.seed, epochs=args.mlp_epochs)
-    entry = {}
-    for split_name, mask in (("train", train), ("test", test)):
-        entry[split_name] = _metrics(_mlp_predict(Xc[mask], net, stats), labels[mask])
-    results["readouts"]["mlp-concat"] = {"kind": f"mlp(64,{args.mlp_epochs}ep,seed{args.seed})",
-                                         **entry}
+    p_mlp = _mlp_predict(Xc, net, stats)
+    ps["mlp-concat"] = p_mlp
+    entry = {"kind": f"mlp(64,{args.mlp_epochs}ep,seed{args.seed})",
+             "train": _metrics(p_mlp[train], labels[train]),
+             "test": _metrics(p_mlp[test], labels[test])}
+    entry["by_source"] = _by_source(p_mlp)
+    if not entry["by_source"]:
+        del entry["by_source"]
+    results["readouts"]["mlp-concat"] = entry
     for k, v in net.state_dict().items():
         heads[f"mlp_{k}"] = v.detach().numpy()
     heads["mlp_mu"], heads["mlp_sd"] = stats
     np.savez_compressed(args.out / f"readout-head-{args.name}.npz", **heads)
     results["heads_file"] = f"readout-head-{args.name}.npz"
+
+    # Optional cross-corpus comparison: heads saved by an earlier fit (e.g.
+    # the stage-1 bench-only readout) applied to this corpus unchanged.
+    if args.apply_head:
+        applied_name = args.apply_head_name or args.apply_head.stem.replace("readout-head-", "")
+        for key, p in _apply_saved_heads(args.apply_head, Xc, applied_name).items():
+            entry = {"kind": f"applied:{args.apply_head.name}",
+                     "train": _metrics(p[train], labels[train]),
+                     "test": _metrics(p[test], labels[test])}
+            entry["by_source"] = _by_source(p)
+            if not entry["by_source"]:
+                del entry["by_source"]
+            results["readouts"][key] = entry
+            ps[key] = p
+        try:
+            results["applied_head"] = str(args.apply_head.resolve().relative_to(REPO_ROOT))
+        except ValueError:  # outside the repo — record as given
+            results["applied_head"] = str(args.apply_head)
+
+    results["breakdowns"] = {
+        key: {
+            "by_bucket_test": _bucket_breakdown(ps[key], test, labels, sources, buckets),
+            "by_origin_test": _origin_breakdown(ps[key], test, labels, origins),
+        }
+        for key in ("raw(readout)", "concat", "mlp-concat",
+                    *[k for k in results["readouts"] if ":" in k])
+        if key in ps
+    }
 
     # Integrity check against the decision-oracle record (same model, same
     # verdict path): our replica of the model's own readout should match.
@@ -405,9 +538,15 @@ def fit(args: argparse.Namespace) -> None:
                 if m["auc"] else f"{key:14s} AUC n/a (single class)")
 
     print(f"=== readout-{args.name} (test split, n={int(test.sum())}) ===")
-    print(_line("raw(readout)", results["baseline"]))
-    for key, entry in results["readouts"].items():
+
+    def _emit(key: str, entry: dict) -> None:
         print(_line(key, entry))
+        for src, m in (entry.get("by_source") or {}).items():
+            print(_source_line(src, m))
+
+    _emit("raw(readout)", results["baseline"])
+    for key, entry in results["readouts"].items():
+        _emit(key, entry)
     if "oracle_ref" in results["baseline"]:
         ref = results["baseline"]["oracle_ref"]
         print(f"oracle_ref: {ref['matched_items']} items, max |Δp| "
@@ -422,7 +561,8 @@ def main() -> None:
     ap.add_argument("action", choices=("run", "extract", "fit"))
     ap.add_argument("--model", default="internlm/Intern-Decision-0.8B")
     ap.add_argument("--name", required=True)
-    ap.add_argument("--bench", type=Path, default=DEFAULT_BENCH)
+    ap.add_argument("--bench", type=Path, action="append", default=None,
+                    help="bench jsonl (repeatable; default: frozen J-Bench)")
     ap.add_argument("--out", type=Path, default=RESULTS_DIR)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--dtype", default="bfloat16")
@@ -431,8 +571,13 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--mlp-epochs", type=int, default=400)
     ap.add_argument("--seed", type=int, default=1337)
+    ap.add_argument("--apply-head", type=Path, default=None,
+                    help="saved readout-head npz applied to this corpus for comparison")
+    ap.add_argument("--apply-head-name", default=None,
+                    help="label for applied-head readouts (default: file stem)")
     args = ap.parse_args()
     args.depths = [float(t) for t in args.depths.split(",")]
+    args.bench = args.bench or [DEFAULT_BENCH]
 
     if args.action in ("run", "extract"):
         extract(args)
