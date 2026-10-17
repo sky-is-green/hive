@@ -205,9 +205,14 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "74/116 (FA 35/87 wrong). Frozen-backbone trained readout "
             "(decision-readout-20261017): decision-position hidden states + "
             "ridge/MLP heads lift test AUC to 0.974/0.981 (MLP ECE 0.052, "
-            "FA 3, task-disjoint split) with no model update — retrain + "
-            "validate on amplified + harvested data before shipping it as "
-            "the resident gate"
+            "FA 3, task-disjoint split) with no model update. Stage 2 refit "
+            "on J-Bench + 642 harvested 176B answers (224 organic / 418 "
+            "amplified, results/decision-readout-harvest-20261017) held the "
+            "bench (MLP AUC 0.980, acc 110/116, FA 2, ECE 0.045) but the "
+            "held-out organic slice stays hard: refit MLP AUC 0.774 catching "
+            "4/9 organic wrongs (raw 0.603 / 0 of 9) — not shipped yet; next: "
+            "organic-weighted training or LoRA, and the raw 2b/4b verdicts "
+            "on the same slice"
         ),
     ),
     Candidate(
