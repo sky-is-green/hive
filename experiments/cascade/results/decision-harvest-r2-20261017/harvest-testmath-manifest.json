@@ -1,0 +1,42 @@
+{
+ "created": "2026-10-17",
+ "purpose": "test-side organic extension for the math tasks round 1 left without coverage; NOT part of the training corpus",
+ "runs": [
+  {
+   "dir": "experiments/cascade/results/decision-harvest-r2-20261017/runs/testmath",
+   "items": 4,
+   "config": {
+    "samples": 3,
+    "temp": 0.7,
+    "max_tokens": 1280,
+    "enable_thinking": false,
+    "max_neg": 0,
+    "limit": 0,
+    "split": "all",
+    "tasks": "math-0005,math-0017",
+    "tag_prefix": "t2-",
+    "seen_corpus": "experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl"
+   }
+  }
+ ],
+ "items": 4,
+ "sha256": "3cb452e5cbd1bfb323fb4574bc62677da2d7c24e77dd1cafd9dfac486caa26bd",
+ "per_split": {
+  "test": {
+   "correct": 4,
+   "wrong": 0
+  }
+ },
+ "per_family": {
+  "math": {
+   "correct": 4,
+   "wrong": 0
+  }
+ },
+ "per_origin": {
+  "harvested:t2-greedy": 1,
+  "harvested:t2-ts1": 1,
+  "harvested:t2-ts2": 1,
+  "harvested:t2-ts3": 1
+ }
+}

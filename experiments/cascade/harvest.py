@@ -19,6 +19,13 @@ Usage, from the repo root:
 
     .venv/bin/python experiments/cascade/harvest.py --limit 3 --samples 1   # smoke
     .venv/bin/python experiments/cascade/harvest.py                        # full run
+
+Round-2 (grow organic train negatives, dedupe against round 1, no new
+perturbations, higher token cap for the math CoTs):
+
+    .venv/bin/python experiments/cascade/harvest.py \
+        --split train --samples 6 --max-tokens 1280 --max-neg 0 \
+        --tag-prefix r2- --seen-corpus <round-1>/harvest-bench.jsonl
 """
 
 from __future__ import annotations
@@ -104,9 +111,22 @@ def main() -> int:
     ap.add_argument("--max-neg", type=int, default=3,
                     help="perturbed negatives per correct train answer")
     ap.add_argument("--checkpoint-every", type=int, default=25)
+    ap.add_argument("--split", choices=("all", "train", "test"), default="all",
+                    help="task split to harvest (round 2 uses train)")
+    ap.add_argument("--tasks", default=None,
+                    help="comma-separated task ids (AND with --split)")
+    ap.add_argument("--tag-prefix", default="",
+                    help="prefix for item ids and origins (round-2 corpus)")
+    ap.add_argument("--seen-corpus", type=Path, default=None,
+                    help="existing harvest-bench.jsonl; skip candidates already in it")
     args = ap.parse_args()
 
     tasks = json.loads(TASKS_FILE.read_text())["tasks"]
+    if args.split != "all":
+        tasks = [t for t in tasks if t["split"] == args.split]
+    if args.tasks:
+        wanted = {t.strip() for t in args.tasks.split(",") if t.strip()}
+        tasks = [t for t in tasks if t["id"] in wanted]
     if args.limit:
         tasks = tasks[: args.limit]
     decoys = _decoys(tasks)
@@ -135,6 +155,12 @@ def main() -> int:
         "per_bucket": {}, "per_origin": {},
     }
     seen_per_task: dict[str, set[str]] = {}
+    if args.seen_corpus:
+        for line in args.seen_corpus.read_text().splitlines():
+            if not line.strip():
+                continue
+            prev = json.loads(line)
+            seen_per_task.setdefault(prev["task_id"], set()).add(prev["candidate"])
     t0 = time.time()
 
     def flush(manifest_extra: dict | None = None) -> None:
@@ -148,7 +174,10 @@ def main() -> int:
             "serve": {"health_before": health_before, "model": _serve_model_info()},
             "config": {"samples": args.samples, "temp": args.temp,
                        "max_tokens": args.max_tokens, "enable_thinking": False,
-                       "max_neg": args.max_neg, "limit": args.limit},
+                       "max_neg": args.max_neg, "limit": args.limit,
+                       "split": args.split, "tasks": args.tasks,
+                       "tag_prefix": args.tag_prefix,
+                       "seen_corpus": str(args.seen_corpus) if args.seen_corpus else None},
             "tasks": len(tasks),
             "items": len(items),
             "stats": stats,
@@ -189,9 +218,11 @@ def main() -> int:
                 continue
             seen.add(content)
             label = bool(check(task, content))
-            origin = "harvested:greedy" if temp == 0.0 else f"harvested:t{tag}"
+            p = args.tag_prefix
+            origin = (f"harvested:{p}greedy" if temp == 0.0
+                      else f"harvested:{p}t{tag}")
             item = {
-                "item_id": f"{tid}:h{tag}",
+                "item_id": f"{tid}:{p}h{tag}",
                 "task_id": tid, "bucket": task["bucket"], "split": task["split"],
                 "prompt": task["prompt"], "candidate": content,
                 "label": int(label), "origin": origin, "source": "harvest",

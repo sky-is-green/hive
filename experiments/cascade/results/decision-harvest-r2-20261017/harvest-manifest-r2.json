@@ -1,0 +1,89 @@
+{
+ "created": "2026-10-17",
+ "purpose": "round-1 harvest plus round-2 organic train top-up; every label re-verified with the task checker",
+ "base": "experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl",
+ "runs": [
+  {
+   "dir": "experiments/cascade/results/decision-harvest-r2-20261017/runs/nonmath",
+   "items": 252,
+   "config": {
+    "samples": 6,
+    "temp": 0.7,
+    "max_tokens": 640,
+    "enable_thinking": false,
+    "max_neg": 0,
+    "limit": 0,
+    "split": "all",
+    "tasks": "gsm8k-0001,gsm8k-0002,gsm8k-0003,gsm8k-0004,gsm8k-0007,gsm8k-0010,gsm8k-0011,gsm8k-0012,gsm8k-0013,gsm8k-0016,gsm8k-0017,gsm8k-0018,gsm8k-0019,gsm8k-0021,gsm8k-0022,gsm8k-0023,gsm8k-0024,gsm8k-0025,gsm8k-0026,gsm8k-0027,gsm8k-0028,gsm8k-0029,gsm8k-0030,gsm8k-0031,gsm8k-0032,gsm8k-0034,gsm8k-0039,gsm8k-0040,humaneval-0005,humaneval-0006,humaneval-0008,humaneval-0009,humaneval-0010,humaneval-0011,humaneval-0012,humaneval-0013,humaneval-0014,humaneval-0016,humaneval-0017,humaneval-0018,humaneval-0019,humaneval-0020,truthfulqa-0001,truthfulqa-0002,truthfulqa-0003,truthfulqa-0004,truthfulqa-0005,truthfulqa-0006,truthfulqa-0007,truthfulqa-0009,truthfulqa-0010,truthfulqa-0012,truthfulqa-0014",
+    "tag_prefix": "r2-",
+    "seen_corpus": "experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl"
+   }
+  },
+  {
+   "dir": "experiments/cascade/results/decision-harvest-r2-20261017/runs/math",
+   "items": 43,
+   "config": {
+    "samples": 2,
+    "temp": 0.7,
+    "max_tokens": 1280,
+    "enable_thinking": false,
+    "max_neg": 0,
+    "limit": 0,
+    "split": "all",
+    "tasks": "math-0001,math-0003,math-0004,math-0007,math-0008,math-0009,math-0010,math-0011,math-0012,math-0014,math-0015,math-0018,math-0019,math-0021,math-0022,math-0024,math-0025",
+    "tag_prefix": "r2-",
+    "seen_corpus": "experiments/cascade/results/decision-harvest-20261017/harvest-bench.jsonl"
+   }
+  }
+ ],
+ "items": 937,
+ "sha256": "1c853a8fcde7228fc8c05cac5c4cb8a9d468aa3a21927cc4d1134db4defdaa09",
+ "per_split": {
+  "test": {
+   "correct": 57,
+   "wrong": 9
+  },
+  "train": {
+   "correct": 410,
+   "wrong": 461
+  }
+ },
+ "per_family": {
+  "gsm8k": {
+   "correct": 285,
+   "wrong": 251
+  },
+  "humaneval": {
+   "correct": 77,
+   "wrong": 92
+  },
+  "math": {
+   "correct": 74,
+   "wrong": 83
+  },
+  "truthfulqa": {
+   "correct": 31,
+   "wrong": 44
+  }
+ },
+ "per_origin": {
+  "harvested-perturbed:boxed-edit": 75,
+  "harvested-perturbed:choice-flip:B": 12,
+  "harvested-perturbed:choice-flip:C": 12,
+  "harvested-perturbed:choice-flip:D": 12,
+  "harvested-perturbed:code-edit": 64,
+  "harvested-perturbed:num-flip": 243,
+  "harvested:greedy": 86,
+  "harvested:r2-greedy": 32,
+  "harvested:r2-ts1": 55,
+  "harvested:r2-ts2": 53,
+  "harvested:r2-ts3": 38,
+  "harvested:r2-ts4": 38,
+  "harvested:r2-ts5": 39,
+  "harvested:r2-ts6": 40,
+  "harvested:ts1": 70,
+  "harvested:ts2": 68
+ },
+ "wrongs_total": 470,
+ "items_total": 937
+}
