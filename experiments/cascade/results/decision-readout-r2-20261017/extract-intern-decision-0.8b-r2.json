@@ -1,0 +1,36 @@
+{
+  "name": "intern-decision-0.8b-r2",
+  "model": "internlm/Intern-Decision-0.8B",
+  "device": "cpu",
+  "dtype": "bfloat16",
+  "temperature": 2.747760550703,
+  "n_layers": 24,
+  "depths": [
+    {
+      "depth": "0.5",
+      "layer": 12
+    },
+    {
+      "depth": "0.75",
+      "layer": 18
+    },
+    {
+      "depth": "1",
+      "layer": 24
+    }
+  ],
+  "n_items": 1315,
+  "elapsed_s": 651.3,
+  "serve": {
+    "before": {
+      "url": "http://127.0.0.1:8081/health",
+      "status": 200
+    },
+    "after": {
+      "url": "http://127.0.0.1:8081/health",
+      "status": 200
+    }
+  },
+  "mem_available_min_gib": 18.84,
+  "median_ms": 438.1
+}

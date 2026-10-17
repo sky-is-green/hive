@@ -219,8 +219,12 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "evade every scorer. Pre-registered organic-weighted refit (14 "
             "train organic wrongs at 10x/3x; weighted-refit.json): bench held "
             "(MLP 109/116) but organic unchanged (MLP 4/9, L0.5 6/9 both "
-            "boosts) — weighting is not the lever; not shipped; next: LoRA "
-            "or targeted harvest"
+            "boosts) — weighting is not the lever. Harvest round 2 (train "
+            "organic wrongs 14 -> 43; decision-harvest-r2-20261017) moved the "
+            "refit MLP on both slices: bench 0.991 (111/116, FA 2) + organic "
+            "0.844 (5/9)  vs 0.980/0.774 (4/9); L0.5 6/9, L0.75 101/116 with "
+            "0 correct-rejections; 5-probe union 6/9 at 17/57 — not shipped; "
+            "next: LoRA on the expanded corpus"
         ),
     ),
     Candidate(
