@@ -193,11 +193,47 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         notes="spans both cards (tensor-split); excludes every other dGPU role",
     ),
     Candidate(
+        id="intern-decision-0.8b", label="Intern-Decision-0.8B",
+        repo="internlm/Intern-Decision-0.8B",
+        params_b=0.8, precision="bf16", bytes_gb=1.71,
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
+        roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
+        notes=(
+            "CPU bf16 measured (decision oracle 2026-10-17, "
+            "results/decision-oracle-20261017): 1.7 GB on disk, 2.2 GiB peak "
+            "RSS, 0.38 s/verdict, J-Bench test n=116: AUC 0.771, acc@0.5 "
+            "74/116 (FA 35/87 wrong) — weakest verdict quality of the four; "
+            "a cheap filter at best, not a verifier"
+        ),
+    ),
+    Candidate(
+        id="intern-decision-2b", label="Intern-Decision-2B",
+        repo="internlm/Intern-Decision-2B",
+        params_b=2.0, precision="bf16", bytes_gb=4.43,
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
+        roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
+        notes=(
+            "CPU bf16 measured (decision oracle 2026-10-17, "
+            "results/decision-oracle-20261017): 4.4 GB on disk, 4.4 GiB peak "
+            "RSS, 0.74 s/verdict, J-Bench test n=116: AUC 0.933, acc@0.5 "
+            "95/116 (FA 19/87 wrong, FR 2/29 correct), no-leak thr 0.89 -> "
+            "98/116 — the recommended resident D2/C2 verifier beside the 176B"
+        ),
+    ),
+    Candidate(
         id="intern-decision-4b", label="Intern-Decision-4B",
         repo="internlm/Intern-Decision-4B",
-        params_b=4.0, precision="bf16", bytes_gb=8.0,
-        devices=(Device.IGPU, Device.DGPU0),
+        params_b=4.0, precision="bf16", bytes_gb=9.08,
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
         roles=("C1", "C2", "C3", "C4", "D1", "D2", "D3", "H1"),
+        notes=(
+            "CPU bf16 measured (decision oracle 2026-10-17, "
+            "results/decision-oracle-20261017): 9.1 GB on disk (language+vision "
+            "shards), 8.9 GiB peak RSS, 1.94 s/verdict, J-Bench test n=116: "
+            "AUC 0.979, acc@0.5 104/116 (FA 11/87, FR 1/29), no-leak thr 0.97 "
+            "-> 101/116 — best quality; keep as on-demand hard verification "
+            "(GPU readout reference: 184 ms/verdict)"
+        ),
     ),
     Candidate(
         id="clef-flash-9b", label="Cloudflare Clef-Flash 9B",
@@ -232,6 +268,13 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         params_b=1.7, precision="bf16", bytes_gb=3.4,
         devices=(Device.IGPU, Device.CPU),
         roles=("C2", "D2", "H1"),
+        notes=(
+            "CPU bf16 measured (decision oracle 2026-10-17, "
+            "results/decision-oracle-20261017): 3.4 GiB peak RSS, 0.48 "
+            "s/verdict, J-Bench test n=116: AUC 0.889, acc@0.5 87/116 "
+            "(FA 25/87, FR 4/29) — the harness validator's wired default; "
+            "second rung behind intern-decision-2b"
+        ),
     ),
     Candidate(
         id="ornith-1.5-9b", label="Ornith-1.5-9B",
