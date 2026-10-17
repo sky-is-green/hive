@@ -1,0 +1,80 @@
+{
+ "created": "2026-10-17",
+ "purpose": "organic answers from the live 176B for each J-Bench task; checker labels; train-side perturbation amplification; test-side organic-only",
+ "serve": {
+  "health_before": {
+   "url": "http://127.0.0.1:8081/health",
+   "status": 200
+  },
+  "model": {
+   "object": "list",
+   "data": [
+    {
+     "id": "scion-flashnext-176b-a6b-q6k",
+     "object": "model",
+     "status": {
+      "value": "loaded"
+     },
+     "meta": {
+      "n_ctx": 262144
+     },
+     "architecture": {
+      "input_modalities": [
+       "text"
+      ],
+      "output_modalities": [
+       "text"
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "config": {
+  "samples": 2,
+  "temp": 0.7,
+  "max_tokens": 640,
+  "enable_thinking": false,
+  "max_neg": 3,
+  "limit": 0
+ },
+ "tasks": 100,
+ "items": 642,
+ "stats": {
+  "requests": 300,
+  "kept": 224,
+  "truncated": 44,
+  "empty": 0,
+  "errors": 0,
+  "dup_skipped": 32,
+  "correct": 201,
+  "incorrect": 23,
+  "perturbed": 418,
+  "per_bucket": {
+   "reasoning": {
+    "correct": 146,
+    "incorrect": 7
+   },
+   "code": {
+    "correct": 38,
+    "incorrect": 12
+   },
+   "qa": {
+    "correct": 17,
+    "incorrect": 4
+   }
+  },
+  "per_origin": {
+   "harvested:greedy": 86,
+   "harvested:ts1": 70,
+   "harvested:ts2": 68
+  }
+ },
+ "elapsed_s": 1541.1,
+ "sha256": "2c4b39a45a4d8b056b549af36ac887a54e4688abc910db3091e81e5511121ac6",
+ "serve_health_after": {
+  "url": "http://127.0.0.1:8081/health",
+  "status": 200
+ },
+ "done": true
+}
