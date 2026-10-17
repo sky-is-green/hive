@@ -223,8 +223,16 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "organic wrongs 14 -> 43; decision-harvest-r2-20261017) moved the "
             "refit MLP on both slices: bench 0.991 (111/116, FA 2) + organic "
             "0.844 (5/9)  vs 0.980/0.774 (4/9); L0.5 6/9, L0.75 101/116 with "
-            "0 correct-rejections; 5-probe union 6/9 at 17/57 — not shipped; "
-            "next: LoRA on the expanded corpus"
+            "0 correct-rejections; 5-probe union 6/9 at 17/57 — not shipped. "
+            "LoRA verdict adaptation (rank 16, 2 epochs, 1,133 rows; "
+            "lora-verdict-20261017): bench 0.998 (115/116, FA 1, 86/87 "
+            "caught) but organic AUC 0.746 (3/9 caught, 0 correct "
+            "rejections, probabilities compressed near 1) — the adapter "
+            "learns the bench/perturbation signature and the organic-"
+            "positive style prior, not organic errors; pre-registered FAIL, "
+            "no adapted-feature refit; best gate remains L0.5 6/9 at 16% FR "
+            "/ MLP 5/9 at 12% / L0.75 3/9 at 0% FR; next: operating point + "
+            "escalation tier"
         ),
     ),
     Candidate(

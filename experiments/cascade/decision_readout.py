@@ -185,6 +185,11 @@ def extract(args: argparse.Namespace) -> None:
     args.out.mkdir(parents=True, exist_ok=True)
 
     inference, backend, torch = load_backend(args.model, args.device, args.dtype)
+    if args.adapter:
+        from peft import PeftModel
+        backend.model = PeftModel.from_pretrained(backend.model, str(args.adapter))
+        backend.model.eval()
+        print(f"[readout] adapter {args.adapter}", flush=True)
     temperature = float(inference.DEFAULT_TEMPERATURE)
     tok = backend.tokenizer
     print(f"[readout] {args.model} on {args.device} ({args.dtype}), "
@@ -296,6 +301,7 @@ def extract(args: argparse.Namespace) -> None:
     (args.out / f"extract-{args.name}.json").write_text(json.dumps({
         "name": args.name,
         "model": args.model,
+        "adapter": str(args.adapter) if args.adapter else None,
         "device": args.device,
         "dtype": args.dtype,
         "temperature": temperature,
@@ -601,6 +607,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=RESULTS_DIR)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--dtype", default="bfloat16")
+    ap.add_argument("--adapter", type=Path, default=None,
+                    help="PEFT adapter directory to load on top of --model (extract)")
     ap.add_argument("--depths", default="0.5,0.75,1.0",
                     help="comma-separated depth fractions")
     ap.add_argument("--limit", type=int, default=0)
