@@ -216,8 +216,11 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "judges do not close the gap. The refit's mid-depth L0.5 probe "
             "catches 6/9 (AUC 0.823, bench 93/116); L0.5+MLP+L1 reject-union "
             "7/9 at 20/57 corrects rejected. Two fluent micro-error wrongs "
-            "evade every scorer — not shipped; next: weighted refit, then "
-            "LoRA/targeted harvest"
+            "evade every scorer. Pre-registered organic-weighted refit (14 "
+            "train organic wrongs at 10x/3x; weighted-refit.json): bench held "
+            "(MLP 109/116) but organic unchanged (MLP 4/9, L0.5 6/9 both "
+            "boosts) — weighting is not the lever; not shipped; next: LoRA "
+            "or targeted harvest"
         ),
     ),
     Candidate(
