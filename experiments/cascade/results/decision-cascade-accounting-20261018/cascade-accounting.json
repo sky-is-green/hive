@@ -1,0 +1,63 @@
+{
+  "policies": {
+    "model_and_050": {
+      "api_calls": 7,
+      "false_rejects": 2,
+      "wrongs_escalated": 5,
+      "wrongs_pass": 4
+    },
+    "model_l05_055": {
+      "api_calls": 17,
+      "false_rejects": 10,
+      "wrongs_escalated": 7,
+      "wrongs_pass": 2
+    },
+    "model_mlp_050": {
+      "api_calls": 12,
+      "false_rejects": 7,
+      "wrongs_escalated": 5,
+      "wrongs_pass": 4
+    },
+    "verifier_accept_open": {
+      "api_calls": 9,
+      "false_rejects": 0,
+      "wrongs_escalated": 9,
+      "wrongs_pass": 0
+    },
+    "verifier_l05_055": {
+      "api_calls": 10,
+      "false_rejects": 1,
+      "wrongs_escalated": 9,
+      "wrongs_pass": 0
+    },
+    "verifier_mlp_050": {
+      "api_calls": 9,
+      "false_rejects": 0,
+      "wrongs_escalated": 9,
+      "wrongs_pass": 0
+    }
+  },
+  "slice": {
+    "checkable_share": 0.924,
+    "families": {
+      "gsm8k": {
+        "n": 32,
+        "wrongs": 3
+      },
+      "humaneval": {
+        "n": 16,
+        "wrongs": 4
+      },
+      "math": {
+        "n": 13,
+        "wrongs": 2
+      },
+      "truthfulqa": {
+        "n": 5,
+        "wrongs": 0
+      }
+    },
+    "n": 66,
+    "wrongs": 9
+  }
+}
