@@ -229,10 +229,18 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "caught) but organic AUC 0.746 (3/9 caught, 0 correct "
             "rejections, probabilities compressed near 1) — the adapter "
             "learns the bench/perturbation signature and the organic-"
-            "positive style prior, not organic errors; pre-registered FAIL, "
-            "no adapted-feature refit; best gate remains L0.5 6/9 at 16% FR "
-            "/ MLP 5/9 at 12% / L0.75 3/9 at 0% FR; next: operating point + "
-            "escalation tier"
+            "positive style prior, not organic errors; pre-registered FAIL. "
+            "Adapted-feature refit (decision-readout-lora-r2-20261018) "
+            "confirms the shift: bench up (MLP 0.998/113) but organic down "
+            "(0.844 -> 0.801, 5/9 -> 3/9; L0.5 0.827 -> 0.743, 6/9 -> 2/9); "
+            "adapted catches are a subset of the frozen L0.5's and the "
+            "cross-space union adds only correct rejections — the adapter is "
+            "not a second head. Caveat: LoRA trained yes/no while deployment "
+            "reads A/B (deployment raw A/B 0.673 vs yes/no 0.746), but the "
+            "deployment-head refit still loses organic. Representational line "
+            "closed; best gate L0.5 6/9 at 16% FR, MLP 5/9 at 12%, AND-tier "
+            "5/9 at 2/57; next: cascade tier 1 + different-evidence tier 2 "
+            "(verifier/critique)"
         ),
     ),
     Candidate(
