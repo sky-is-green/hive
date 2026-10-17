@@ -1,0 +1,165 @@
+{
+ "ts": "2026-10-17 15:38:48",
+ "runs": [
+  {
+   "name": "warmup",
+   "wall_s": 2.54,
+   "prompt_n": 150,
+   "read_n": 150,
+   "reused_n": 0,
+   "completion_n": 16,
+   "prompt_tps": 65.9,
+   "decode_tps": 63.3,
+   "decode_ms_per_tok": 15.8,
+   "engine": [
+    "strata serve: prompt 150 tokens = 0 reused + 150 read in 2276 ms (65.9 tok/s), 16 generated in 253 ms (63.3 tok/s), drafts accepted 9 of 13, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.8% (12865 hits / 12890 lookups)",
+    "strata serve: expert tiers: GPU 12865 hits this request; since the start RAM 0 blobs, files 0 blobs 169094.6 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 19.1 MB from storage (34 major faults) for 2078.4 MB of expert reads"
+   ]
+  },
+  {
+   "name": "p300a",
+   "wall_s": 4.08,
+   "prompt_n": 338,
+   "read_n": 338,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 114.8,
+   "decode_tps": 56.5,
+   "decode_ms_per_tok": 17.7,
+   "engine": [
+    "strata serve: prompt 338 tokens = 0 reused + 338 read in 2943 ms (114.8 tok/s), 64 generated in 1132 ms (56.5 tok/s), drafts accepted 33 of 54, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.7% (51513 hits / 51680 lookups)",
+    "strata serve: expert tiers: GPU 51513 hits this request; since the start RAM 0 blobs, files 0 blobs 172713.7 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 22.5 MB from storage (43 major faults) for 3619.1 MB of expert reads"
+   ]
+  },
+  {
+   "name": "p300b",
+   "wall_s": 3.84,
+   "prompt_n": 338,
+   "read_n": 338,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 115.0,
+   "decode_tps": 71.5,
+   "decode_ms_per_tok": 13.99,
+   "engine": [
+    "strata serve: prompt 338 tokens = 0 reused + 338 read in 2940 ms (115.0 tok/s), 64 generated in 895 ms (71.5 tok/s), drafts accepted 37 of 55, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.7% (48342 hits / 48510 lookups)",
+    "strata serve: expert tiers: GPU 48342 hits this request; since the start RAM 0 blobs, files 0 blobs 176337.1 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 6.7 MB from storage (3 major faults) for 3623.4 MB of expert reads",
+    "strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted"
+   ]
+  },
+  {
+   "name": "p1000a",
+   "wall_s": 5.09,
+   "prompt_n": 1005,
+   "read_n": 1005,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 231.0,
+   "decode_tps": 87.4,
+   "decode_ms_per_tok": 11.44,
+   "engine": [
+    "strata serve: prompt 1005 tokens = 0 reused + 1005 read in 4351 ms (231.0 tok/s), 64 generated in 732 ms (87.4 tok/s), drafts accepted 45 of 54, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.5% (40418 hits / 40630 lookups)",
+    "strata serve: expert tiers: GPU 40418 hits this request; since the start RAM 0 blobs, files 0 blobs 182544.2 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 14.3 MB from storage (69 major faults) for 6207.1 MB of expert reads",
+    "strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted"
+   ]
+  },
+  {
+   "name": "p1000b",
+   "wall_s": 5.13,
+   "prompt_n": 1005,
+   "read_n": 1005,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 230.9,
+   "decode_tps": 82.4,
+   "decode_ms_per_tok": 12.14,
+   "engine": [
+    "strata serve: prompt 1005 tokens = 0 reused + 1005 read in 4353 ms (230.9 tok/s), 64 generated in 777 ms (82.4 tok/s), drafts accepted 44 of 50, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.4% (39874 hits / 40110 lookups)",
+    "strata serve: expert tiers: GPU 39874 hits this request; since the start RAM 0 blobs, files 0 blobs 188776.1 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 10.9 MB from storage (63 major faults) for 6231.9 MB of expert reads",
+    "strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted"
+   ]
+  },
+  {
+   "name": "p3000a",
+   "wall_s": 8.76,
+   "prompt_n": 2855,
+   "read_n": 2855,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 363.2,
+   "decode_tps": 71.4,
+   "decode_ms_per_tok": 14.01,
+   "engine": [
+    "strata serve: prompt 2855 tokens = 0 reused + 2855 read in 7861 ms (363.2 tok/s), 64 generated in 896 ms (71.4 tok/s), drafts accepted 39 of 59, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.4% (46571 hits / 46840 lookups)",
+    "strata serve: expert tiers: GPU 46571 hits this request; since the start RAM 0 blobs, files 0 blobs 204779.4 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 103.9 MB from storage (245 major faults) for 16003.3 MB of expert reads",
+    "strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted"
+   ]
+  },
+  {
+   "name": "p3000b",
+   "wall_s": 8.7,
+   "prompt_n": 2855,
+   "read_n": 2855,
+   "reused_n": 0,
+   "completion_n": 64,
+   "prompt_tps": 363.8,
+   "decode_tps": 75.7,
+   "decode_ms_per_tok": 13.21,
+   "engine": [
+    "strata serve: prompt 2855 tokens = 0 reused + 2855 read in 7847 ms (363.8 tok/s), 64 generated in 845 ms (75.7 tok/s), drafts accepted 43 of 53, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.5% (43962 hits / 44170 lookups)",
+    "strata serve: expert tiers: GPU 43962 hits this request; since the start RAM 0 blobs, files 0 blobs 220741.8 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 11.4 MB from storage (90 major faults) for 15962.4 MB of expert reads",
+    "strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted"
+   ]
+  },
+  {
+   "name": "d256a",
+   "wall_s": 5.38,
+   "prompt_n": 153,
+   "read_n": 153,
+   "reused_n": 0,
+   "completion_n": 227,
+   "prompt_tps": 67.1,
+   "decode_tps": 73.2,
+   "decode_ms_per_tok": 13.66,
+   "engine": [
+    "strata serve: prompt 153 tokens = 0 reused + 153 read in 2280 ms (67.1 tok/s), 227 generated in 3102 ms (73.2 tok/s), drafts accepted 141 of 193, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 99.1% (157281 hits / 158640 lookups)",
+    "strata serve: expert tiers: GPU 157281 hits this request; since the start RAM 0 blobs, files 0 blobs 223647.0 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 23.2 MB from storage (12 major faults) for 2905.2 MB of expert reads",
+    "strata serve: suffix drafts: 2 windows, 7 of 8 drafts accepted"
+   ]
+  },
+  {
+   "name": "d256b",
+   "wall_s": 3.73,
+   "prompt_n": 153,
+   "read_n": 153,
+   "reused_n": 0,
+   "completion_n": 120,
+   "prompt_tps": 67.1,
+   "decode_tps": 83.0,
+   "decode_ms_per_tok": 12.05,
+   "engine": [
+    "strata serve: prompt 153 tokens = 0 reused + 153 read in 2281 ms (67.1 tok/s), 120 generated in 1445 ms (83.0 tok/s), drafts accepted 86 of 101, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 98.8% (73280 hits / 74190 lookups)",
+    "strata serve: expert tiers: GPU 73280 hits this request; since the start RAM 0 blobs, files 0 blobs 226352.2 MB read (the GGUF in place)",
+    "strata serve: file tier I/O this request: the OS read 35.4 MB from storage (24 major faults) for 2705.2 MB of expert reads",
+    "strata serve: suffix drafts: 4 windows, 13 of 16 drafts accepted"
+   ]
+  }
+ ]
+}
