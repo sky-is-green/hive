@@ -202,8 +202,12 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "CPU bf16 measured (decision oracle 2026-10-17, "
             "results/decision-oracle-20261017): 1.7 GB on disk, 2.2 GiB peak "
             "RSS, 0.38 s/verdict, J-Bench test n=116: AUC 0.771, acc@0.5 "
-            "74/116 (FA 35/87 wrong) — weakest verdict quality of the four; "
-            "a cheap filter at best, not a verifier"
+            "74/116 (FA 35/87 wrong). Frozen-backbone trained readout "
+            "(decision-readout-20261017): decision-position hidden states + "
+            "ridge/MLP heads lift test AUC to 0.974/0.981 (MLP ECE 0.052, "
+            "FA 3, task-disjoint split) with no model update — retrain + "
+            "validate on amplified + harvested data before shipping it as "
+            "the resident gate"
         ),
     ),
     Candidate(

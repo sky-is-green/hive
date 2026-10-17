@@ -1,0 +1,329 @@
+{
+ "name": "intern-decision-0.8b",
+ "protocol": "ridge fitted on the J-Bench train split only; Platt on train scores; frozen test split; MLP seed fixed, no test peeking",
+ "readouts": {
+  "L0.5": {
+   "kind": "ridge+platt",
+   "train": {
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.27
+    },
+    "ece": 0.09343917910049289,
+    "no_leak": {
+     "threshold": 0.27,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "n": 116,
+    "auc": 0.9151803408640508,
+    "best_ba": {
+     "bal_acc": 0.867816091954023,
+     "threshold": 0.41
+    },
+    "ece": 0.16713548223845356,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.39655172413793105,
+     "false_accepts": 20,
+     "false_rejects": 3,
+     "correct": 93,
+     "n": 116,
+     "bal_acc": 0.8333333333333333
+    }
+   }
+  },
+  "L0.75": {
+   "kind": "ridge+platt",
+   "train": {
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.28
+    },
+    "ece": 0.09340333853316007,
+    "no_leak": {
+     "threshold": 0.28,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "n": 116,
+    "auc": 0.9349980182322631,
+    "best_ba": {
+     "bal_acc": 0.9425287356321839,
+     "threshold": 0.71
+    },
+    "ece": 0.14692710160137004,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.35344827586206895,
+     "false_accepts": 13,
+     "false_rejects": 1,
+     "correct": 102,
+     "n": 116,
+     "bal_acc": 0.9080459770114943
+    }
+   }
+  },
+  "L1": {
+   "kind": "ridge+platt",
+   "train": {
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.26
+    },
+    "ece": 0.09423369242330651,
+    "no_leak": {
+     "threshold": 0.26,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "n": 116,
+    "auc": 0.9314308363059849,
+    "best_ba": {
+     "bal_acc": 0.8908045977011494,
+     "threshold": 0.96
+    },
+    "ece": 0.1733220722399918,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.39655172413793105,
+     "false_accepts": 20,
+     "false_rejects": 3,
+     "correct": 93,
+     "n": 116,
+     "bal_acc": 0.8333333333333333
+    }
+   }
+  },
+  "concat": {
+   "kind": "ridge+platt",
+   "train": {
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.08962780512085042,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "n": 116,
+    "auc": 0.9738406658739596,
+    "best_ba": {
+     "bal_acc": 0.9367816091954023,
+     "threshold": 0.89
+    },
+    "ece": 0.16890251945349277,
+    "no_leak": {
+     "threshold": 0.99,
+     "accept_rate": 0.14655172413793102,
+     "false_accepts": 0,
+     "false_rejects": 12,
+     "correct": 104,
+     "n": 116,
+     "bal_acc": 0.7931034482758621
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.3706896551724138,
+     "false_accepts": 15,
+     "false_rejects": 1,
+     "correct": 100,
+     "n": 116,
+     "bal_acc": 0.896551724137931
+    }
+   }
+  },
+  "mlp-concat": {
+   "kind": "mlp(64,400ep,seed1337)",
+   "train": {
+    "n": 262,
+    "auc": 1.0,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.00039400295499241795,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.2595419847328244,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 262,
+     "n": 262,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "n": 116,
+    "auc": 0.9809750297265161,
+    "best_ba": {
+     "bal_acc": 0.9425287356321839,
+     "threshold": 0.2
+    },
+    "ece": 0.05182126948555736,
+    "no_leak": {
+     "threshold": 0.99,
+     "accept_rate": 0.15517241379310345,
+     "false_accepts": 0,
+     "false_rejects": 11,
+     "correct": 105,
+     "n": 116,
+     "bal_acc": 0.8103448275862069
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.23275862068965517,
+     "false_accepts": 3,
+     "false_rejects": 5,
+     "correct": 108,
+     "n": 116,
+     "bal_acc": 0.896551724137931
+    }
+   }
+  }
+ },
+ "baseline": {
+  "train": {
+   "n": 262,
+   "auc": 0.7994996967859309,
+   "best_ba": {
+    "bal_acc": 0.7822164948453608,
+    "threshold": 0.63
+   },
+   "ece": 0.2811336738099364,
+   "no_leak": {
+    "threshold": 0.89,
+    "accept_rate": 0.05343511450381679,
+    "false_accepts": 0,
+    "false_rejects": 54,
+    "correct": 208,
+    "n": 262,
+    "bal_acc": 0.6029411764705882
+   },
+   "at_0.5": {
+    "threshold": 0.5,
+    "accept_rate": 0.5038167938931297,
+    "false_accepts": 77,
+    "false_rejects": 13,
+    "correct": 172,
+    "n": 262,
+    "bal_acc": 0.7059581564584596
+   }
+  },
+  "test": {
+   "n": 116,
+   "auc": 0.7711058263971462,
+   "best_ba": {
+    "bal_acc": 0.7586206896551724,
+    "threshold": 0.61
+   },
+   "ece": 0.2958485323221271,
+   "no_leak": {
+    "threshold": 0.89,
+    "accept_rate": 0.04310344827586207,
+    "false_accepts": 0,
+    "false_rejects": 24,
+    "correct": 92,
+    "n": 116,
+    "bal_acc": 0.5862068965517242
+   },
+   "at_0.5": {
+    "threshold": 0.5,
+    "accept_rate": 0.49137931034482757,
+    "false_accepts": 35,
+    "false_rejects": 7,
+    "correct": 74,
+    "n": 116,
+    "bal_acc": 0.6781609195402298
+   }
+  },
+  "oracle_ref": {
+   "path": "experiments/cascade/results/decision-oracle-20261017/judge-intern-decision-0.8b.json",
+   "matched_items": 116,
+   "max_abs_p_diff": 0.0
+  }
+ },
+ "heads_file": "readout-head-intern-decision-0.8b.npz"
+}
