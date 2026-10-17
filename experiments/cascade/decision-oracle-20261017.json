@@ -1,0 +1,78 @@
+{
+  "measurements": [
+    {
+      "candidate": "tiny-jev-1.7b",
+      "role": "D2",
+      "device": "cpu",
+      "quality": 0.889,
+      "latency_ms": 478.8,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "bf16",
+      "bytes_gb": 3.44,
+      "notes": "CPU bf16, J-Bench test n=116 (29 correct/87 wrong): AUC 0.889, acc@0.5 87/116, FA 25, FR 4; median 479 ms/verdict; peak RSS 3.43 GiB; via harness validator (threshold 0.5) as the C2 escalation gate"
+    },
+    {
+      "candidate": "intern-decision-0.8b",
+      "role": "D2",
+      "device": "cpu",
+      "quality": 0.7711,
+      "latency_ms": 375.3,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "bf16",
+      "bytes_gb": 1.71,
+      "notes": "CPU bf16, J-Bench test n=116 (29 correct/87 wrong): AUC 0.771, acc@0.5 74/116, FA 35, FR 7, no-leak thr 0.89 -> 92/116; median 375 ms/verdict; peak RSS 2.24 GiB; via harness validator (threshold 0.5) as the C2 escalation gate"
+    },
+    {
+      "candidate": "intern-decision-2b",
+      "role": "D2",
+      "device": "cpu",
+      "quality": 0.9326,
+      "latency_ms": 736.3,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "bf16",
+      "bytes_gb": 4.43,
+      "notes": "CPU bf16, J-Bench test n=116 (29 correct/87 wrong): AUC 0.933, acc@0.5 95/116, FA 19, FR 2, no-leak thr 0.89 -> 98/116; median 736 ms/verdict; peak RSS 4.38 GiB; via harness validator (threshold 0.5) as the C2 escalation gate"
+    },
+    {
+      "candidate": "intern-decision-4b",
+      "role": "D2",
+      "device": "cpu",
+      "quality": 0.9792,
+      "latency_ms": 1939.1,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "bf16",
+      "bytes_gb": 9.08,
+      "notes": "CPU bf16, J-Bench test n=116 (29 correct/87 wrong): AUC 0.979, acc@0.5 104/116, FA 11, FR 1, no-leak thr 0.97 -> 101/116; median 1939 ms/verdict; peak RSS 8.85 GiB; via harness validator (threshold 0.5) as the C2 escalation gate"
+    }
+  ],
+  "meta": {
+    "role": "D2 (accept/reject; feeds C2 answer/escalate/refuse gating)",
+    "date": "2026-10-17",
+    "device": "cpu",
+    "bench": "judge-bench.jsonl (test split)",
+    "split": "test",
+    "limit": null,
+    "run_elapsed_s": 448.6,
+    "serve": {
+      "before": {
+        "url": "http://127.0.0.1:8081/health",
+        "status": 200
+      },
+      "after": {
+        "url": "http://127.0.0.1:8081/health",
+        "status": 200
+      }
+    },
+    "mem_available_min_gib": 19.94,
+    "peak_rss_gib": {
+      "tiny-jev-1.7b": 3.43,
+      "intern-decision-0.8b": 2.24,
+      "intern-decision-2b": 4.38,
+      "intern-decision-4b": 8.85
+    }
+  }
+}
