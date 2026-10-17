@@ -1,0 +1,38 @@
+[
+  {
+    "name": "text_card",
+    "file": "text_card.jpg",
+    "bytes": 23196,
+    "sha256": "5072e45d1e28cfe2"
+  },
+  {
+    "name": "sign_stop",
+    "file": "sign_stop.jpg",
+    "bytes": 19635,
+    "sha256": "8c07af4c934e15c2"
+  },
+  {
+    "name": "shapes_scene",
+    "file": "shapes_scene.jpg",
+    "bytes": 18872,
+    "sha256": "9ef7aa39883b9373"
+  },
+  {
+    "name": "count_squares",
+    "file": "count_squares.jpg",
+    "bytes": 25786,
+    "sha256": "dc1fda0455fba4c6"
+  },
+  {
+    "name": "chart_bars",
+    "file": "chart_bars.jpg",
+    "bytes": 18932,
+    "sha256": "9895f602c6ba45a6"
+  },
+  {
+    "name": "photo_planet",
+    "file": "photo_planet.jpg",
+    "bytes": 60243,
+    "sha256": "b11bf48a00ee2a25"
+  }
+]

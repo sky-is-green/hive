@@ -1,0 +1,60 @@
+{
+  "measurements": [
+    {
+      "candidate": "florence-2-base",
+      "role": "A2",
+      "device": "cpu",
+      "quality": 0.6667,
+      "latency_ms": 800.2,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "fp32",
+      "bytes_gb": 0.926,
+      "notes": "CPU fp32, 6-image A2 set: 4/6 checks passed; warm 800.2 ms/call (median of per-image medians); load 1.92 s; resident 0.926 GB; transformers 4.46.3, peak RSS 1.73 GiB"
+    },
+    {
+      "candidate": "smolvlm2-256m",
+      "role": "A2",
+      "device": "cpu",
+      "quality": 0.8333,
+      "latency_ms": 4312.6,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "fp32",
+      "bytes_gb": 1.026,
+      "notes": "CPU fp32, 6-image A2 set: 5/6 checks passed; warm 4312.6 ms/call (median of per-image medians); load 3.48 s; resident 1.026 GB; transformers 5.17.0, peak RSS 1.97 GiB"
+    },
+    {
+      "candidate": "altclip",
+      "role": "A2",
+      "device": "cpu",
+      "quality": 1.0,
+      "latency_ms": 250.7,
+      "unit": "call",
+      "ctx": 0,
+      "precision": "fp32",
+      "bytes_gb": 3.457,
+      "notes": "CPU fp32, 6-image A2 set: 6/6 checks passed; warm 250.7 ms/call (median of per-image medians); load 3.16 s; resident 3.457 GB; transformers 5.17.0, peak RSS 3.05 GiB"
+    }
+  ],
+  "meta": {
+    "role": "A2",
+    "date": "2026-10-17",
+    "device": "cpu",
+    "host": "Penis-machine",
+    "reps_per_image": 3,
+    "images": 6,
+    "run_elapsed_s": 118.9,
+    "serve": {
+      "before": {
+        "url": "http://127.0.0.1:8081/health",
+        "status": 200
+      },
+      "after": {
+        "url": "http://127.0.0.1:8081/health",
+        "status": 200
+      }
+    },
+    "mem_available_min_gib": 19.24
+  }
+}

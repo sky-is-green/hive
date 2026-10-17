@@ -92,22 +92,41 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
         id="florence-2-base", label="Florence-2-base",
         repo="microsoft/Florence-2-base",
         params_b=0.23, precision="fp16", bytes_gb=0.46,
-        devices=(Device.IGPU, Device.DGPU0),
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
         roles=("A2",),
+        notes=(
+            "CPU fp32 measured (A2 oracle 2026-10-17, "
+            "results/a2-oracle-stage0-20261017): 0.93 GB, 0.80 s/call, 4/6 "
+            "checks — OCR strong (text, signs, chart labels), OD labels weak "
+            "on synthetic shapes; remote code needs transformers <4.50 "
+            "(pinned env .envs/florence-legacy, 4.46.3)"
+        ),
     ),
     Candidate(
         id="smolvlm2-256m", label="SmolVLM2-256M",
         repo="HuggingFaceTB/SmolVLM2-256M-Video-Instruct",
         params_b=0.26, precision="fp16", bytes_gb=0.5,
-        devices=(Device.IGPU, Device.DGPU0),
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
         roles=("A2",),
+        notes=(
+            "CPU fp32 measured (A2 oracle 2026-10-17): 1.03 GB, 4.31 s/call, "
+            "5/6 — best open-ended captioner/QA of the three; missed the "
+            "chart tallest-bar question (answered A over B); native in the "
+            "harness venv's transformers 5.x"
+        ),
     ),
     Candidate(
         id="altclip", label="AltCLIP",
         repo="BAAI/AltCLIP",
         params_b=0.4, precision="fp16", bytes_gb=1.6,
-        devices=(Device.IGPU, Device.DGPU0),
+        devices=(Device.IGPU, Device.DGPU0, Device.CPU),
         roles=("A2",),
+        notes=(
+            "CPU fp32 measured (A2 oracle 2026-10-17): 3.46 GB, 0.25 s/call, "
+            "6/6 retrieval checks — the only true A2 encoder of the three "
+            "(fp16 ~1.7 GB); prompt-sensitive on real photos: an ambiguous "
+            "'contains text' distractor once outranked the scene option"
+        ),
     ),
     Candidate(
         id="bge-reranker-v2-m3", label="bge-reranker-v2-m3",

@@ -1,0 +1,107 @@
+{
+  "candidate": "smolvlm2-256m",
+  "repo": "HuggingFaceTB/SmolVLM2-256M-Video-Instruct",
+  "role": "A2",
+  "device": "cpu",
+  "precision": "fp32",
+  "env": {
+    "python": "3.12.13",
+    "torch": "2.6.0+cpu",
+    "transformers": "5.17.0"
+  },
+  "generated_at": "2026-10-17T15:03:19Z",
+  "load_s": 3.48,
+  "resident_gb": 1.026,
+  "peak_rss_gib": 1.97,
+  "items": [
+    {
+      "image": "text_card",
+      "task": "What text is written in this image? Answer briefly.",
+      "output": "HIVE CASCADE 42 stage-0 vision oracle.",
+      "latency_ms": [
+        4689.0,
+        4554.3,
+        4525.7
+      ],
+      "check": {
+        "desc": "answer contains '42'",
+        "passed": true
+      }
+    },
+    {
+      "image": "sign_stop",
+      "task": "What does the sign say?",
+      "output": "The sign says \"STOP\".",
+      "latency_ms": [
+        4301.6,
+        4388.5,
+        4361.1
+      ],
+      "check": {
+        "desc": "answer contains 'stop'",
+        "passed": true
+      }
+    },
+    {
+      "image": "shapes_scene",
+      "task": "What color is the circle in this image? Answer briefly.",
+      "output": "Red.",
+      "latency_ms": [
+        4179.2,
+        4297.7,
+        4253.8
+      ],
+      "check": {
+        "desc": "answer contains 'red'",
+        "passed": true
+      }
+    },
+    {
+      "image": "count_squares",
+      "task": "How many blue squares are there? Answer with just the number.",
+      "output": "3",
+      "latency_ms": [
+        4269.2,
+        4264.2,
+        4211.6
+      ],
+      "check": {
+        "desc": "answer contains 3/'three'",
+        "passed": true
+      }
+    },
+    {
+      "image": "chart_bars",
+      "task": "Which bar is the tallest, A, B or C? Answer with one letter.",
+      "output": "A.",
+      "latency_ms": [
+        4191.2,
+        4209.6,
+        4165.8
+      ],
+      "check": {
+        "desc": "answer names 'B'",
+        "passed": false
+      }
+    },
+    {
+      "image": "photo_planet",
+      "task": "Describe this image in one sentence.",
+      "output": "A space scene with a planet and a logo in the center.",
+      "latency_ms": [
+        4489.3,
+        4595.3,
+        4574.5
+      ],
+      "check": {
+        "desc": "answer has >= 4 words",
+        "passed": true
+      }
+    }
+  ],
+  "checks_passed": 5,
+  "checks_total": 6,
+  "quality": 0.8333,
+  "median_call_ms": 4312.6,
+  "mean_call_ms": 4366.5
+}

@@ -1,0 +1,167 @@
+{
+  "candidate": "altclip",
+  "repo": "BAAI/AltCLIP",
+  "role": "A2",
+  "device": "cpu",
+  "precision": "fp32",
+  "env": {
+    "python": "3.12.13",
+    "torch": "2.6.0+cpu",
+    "transformers": "5.17.0"
+  },
+  "generated_at": "2026-10-17T15:03:29Z",
+  "load_s": 3.16,
+  "resident_gb": 3.457,
+  "peak_rss_gib": 3.05,
+  "items": [
+    {
+      "image": "text_card",
+      "task": "top-1 of 3 text options",
+      "output": "an image containing the text HIVE CASCADE 42",
+      "options": [
+        "an image containing the text HIVE CASCADE 42",
+        "a photo of a cat",
+        "a scenic mountain landscape"
+      ],
+      "probs": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "latency_ms": [
+        252.8,
+        249.1,
+        250.2
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('an image containing the text HIVE CASCADE 42')",
+        "passed": true
+      }
+    },
+    {
+      "image": "sign_stop",
+      "task": "top-1 of 3 text options",
+      "output": "a red stop sign",
+      "options": [
+        "a red stop sign",
+        "a blue square",
+        "a bar chart"
+      ],
+      "probs": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "latency_ms": [
+        235.0,
+        234.2,
+        234.0
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('a red stop sign')",
+        "passed": true
+      }
+    },
+    {
+      "image": "shapes_scene",
+      "task": "top-1 of 3 text options",
+      "output": "a red circle and a blue square and a green triangle",
+      "options": [
+        "a red circle and a blue square and a green triangle",
+        "a photo of a dog",
+        "a bar chart"
+      ],
+      "probs": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "latency_ms": [
+        254.6,
+        253.3,
+        252.5
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('a red circle and a blue square and a green triangle')",
+        "passed": true
+      }
+    },
+    {
+      "image": "count_squares",
+      "task": "top-1 of 3 text options",
+      "output": "an image with three blue squares",
+      "options": [
+        "an image with three blue squares",
+        "a photo of a beach",
+        "a red stop sign"
+      ],
+      "probs": [
+        0.9995,
+        0.0,
+        0.0005
+      ],
+      "latency_ms": [
+        243.6,
+        243.4,
+        245.0
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('an image with three blue squares')",
+        "passed": true
+      }
+    },
+    {
+      "image": "chart_bars",
+      "task": "top-1 of 3 text options",
+      "output": "a bar chart with three bars labeled A, B and C",
+      "options": [
+        "a bar chart with three bars labeled A, B and C",
+        "a photo of a cat",
+        "a red stop sign"
+      ],
+      "probs": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "latency_ms": [
+        253.6,
+        256.0,
+        255.3
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('a bar chart with three bars labeled A, B and C')",
+        "passed": true
+      }
+    },
+    {
+      "image": "photo_planet",
+      "task": "top-1 of 3 text options",
+      "output": "a planet in space surrounded by a green nebula",
+      "options": [
+        "a planet in space surrounded by a green nebula",
+        "a screenshot of a text editor",
+        "a bar chart with three bars"
+      ],
+      "probs": [
+        0.957,
+        0.0359,
+        0.0071
+      ],
+      "latency_ms": [
+        251.2,
+        248.9,
+        253.7
+      ],
+      "check": {
+        "desc": "top-1 is option 0 ('a planet in space surrounded by a green nebula')",
+        "passed": true
+      }
+    }
+  ],
+  "checks_passed": 6,
+  "checks_total": 6,
+  "quality": 1.0,
+  "median_call_ms": 250.7,
+  "mean_call_ms": 248.0
+}
