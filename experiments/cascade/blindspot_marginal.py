@@ -112,8 +112,12 @@ def main() -> int:
     probs = {
         "176b-own-community": head_probe("c", json.loads(HEAD_COMMUNITY.read_text()), states, organic),
         "176b-own-jbench": head_probe("j", json.loads(HEAD_JBENCH.read_text()), states, organic),
-        "0.8B-L0.5": {i: float(p08["L0.5"][ids.index(i)]) for i in organic},
         "0.8B-mlp-concat": {i: float(p08["mlp-concat"][ids.index(i)]) for i in organic},
+        "0.8B-L0.5": {i: float(p08["L0.5"][ids.index(i)]) for i in organic},
+        "0.8B-L0.75": {i: float(p08["L0.75"][ids.index(i)]) for i in organic},
+        "0.8B-L1": {i: float(p08["L1"][ids.index(i)]) for i in organic},
+        "0.8B-ridge-concat": {i: float(p08["ridge-concat"][ids.index(i)]) for i in organic},
+        "0.8B-p_raw": {i: float(p08["p_raw"][ids.index(i)]) for i in organic},
     }
 
     out = {"slice": "harvest organic-66 (stored candidates)", "n": len(organic),
