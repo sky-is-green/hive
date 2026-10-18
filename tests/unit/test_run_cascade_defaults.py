@@ -17,6 +17,7 @@ def test_default_flow_is_local_first_with_api_off():
     assert args.judge_device == "cpu"     # never a second ROCm context
     assert args.router_mode == "gate"     # gate with no router = plain local
     assert args.api_fallback == ""        # API off by default
+    assert args.human_gate == "auto"      # prompt only on a TTY with a fallback
     assert args.judge_threshold == 0.5
 
 
@@ -30,6 +31,7 @@ def test_api_fallback_is_opt_in_and_configurable():
     assert args.api_fallback.endswith("/v1")
     assert args.api_fallback_model == "my-model"
     assert args.api_fallback_key == "secret"
+    assert args.human_gate == "auto"
 
 
 def test_measurement_configuration_is_still_available():

@@ -1,0 +1,129 @@
+# Human gate before API escalation
+
+## Why
+
+A local rejection should not jump straight to a paid API call.  The person at
+the terminal often knows what the local tier missed — a missing fact, an
+ambiguous constraint, a tool that is unavailable, or simply that the task is
+outside the local model's family.  Asking once, at the last moment, has two
+effects:
+
+1. It gives the user a chance to solve the problem locally, with one
+   correction or one hint.
+2. It records *why* local could not solve it, which is exactly the routing
+   signal the cascade has been missing.  The choice itself is a gold-free
+   label: `solve` means local was recoverable; `escalate` means the API was
+   genuinely needed.
+
+This is a gate, not a new model tier.  It sits after the verifier rejects and
+immediately before the hosted fallback.  The two top-level outcomes stay
+simple:
+
+- **Solve locally** — correct the answer, give the model a hint, or keep the
+  local answer when the task's checker already passes.
+- **Escalate to API** — send the task to the configured frontier endpoint.
+
+## Flow
+
+```
+local generation -> verifier -> reject
+                                  |
+                                  v
+                         human gate (interactive)
+                          /                 \
+                    solve                    escalate
+                 /       \                       |
+        corrected answer  hint -> one local retry  API answer
+                 \       /                       |
+                  checker                     checker
+                     |                           |
+                  ship local                  ship API
+```
+
+The first trigger is deliberately verbose.  It prints:
+
+- the task id, bucket, and task prompt;
+- the local answer;
+- the verifier's decision, calibrated confidence, and reason;
+- the task checker result (`PASSED`, `FAILED`, or `not available`);
+- the API endpoint and model that would be called; and
+- the two choices.
+
+Later triggers are compact, because the user has already seen the mechanism.
+The answer as recorded (up to the report field limit) remains in `report.json`.
+
+## The solve path
+
+After `[s]olve`:
+
+- a plain line is treated as a corrected answer;
+- a line prefixed `hint:` is passed to the local model for one retry, and the
+  retry is checked again;
+- `keep` is offered only when the task checker already passes, i.e. the
+  verifier is the thing that is wrong;
+- a failed correction returns to the gate with the new evidence.
+
+The solve path records an optional reason (`what was missing?` / `what did you
+change?`).  It never silently accepts a failing answer.
+
+## The escalate path
+
+After `[e]scalate`, the user may give a short reason.  The reason is stored in
+the report and appended to the API prompt as reviewer context, so the
+frontier model knows what the local tier could not resolve.  The API call is
+paid and logged like any other fallback.
+
+## Non-interactive runs
+
+`--human-gate auto` (the default) enables the prompt only when **all** of the
+following hold:
+
+- `--api-fallback` is configured;
+- the run is not `--router-mode measure`; and
+- stdin is a TTY.
+
+That keeps benchmark and batch runs non-interactive.  `--human-gate on` forces
+the prompt and warns if there is no fallback or if the run is a measurement;
+`--human-gate off` preserves the old automatic behavior.  EOF at the prompt
+escalates with an explicit reason rather than hanging forever.
+
+## What is recorded
+
+Each gated task gets a `human_gate` object in `report.json`:
+
+```json
+{
+  "asked": true,
+  "first": true,
+  "choice": "escalate",
+  "mode": "escalate",
+  "reason": "the local model lacks the current release date",
+  "hint": "",
+  "human_answer": null,
+  "attempts": 1,
+  "accepted_locally": false,
+  "api_target": "https://.../v1",
+  "api_model": "..."
+}
+```
+
+The report summary adds `human_gate.asked/solve_attempts/solved/kept/
+escalated/first_triggered/reasons`, plus a `human_corrected` count.  A
+`HUMAN` telemetry row records the decision and reason alongside the existing
+model rows.  These rows are the raw material for the deferred C2 controller:
+they are human labels about recoverability, not gold answers.
+
+## Scope and caveats
+
+- The gate is provider-agnostic.  It displays whatever `--api-fallback` names;
+  it does not choose a provider or hide the price.
+- The checker is the task's runtime checker.  In the bench corpus some
+  checkers are gold-dependent and are for evaluation only; the gate treats
+  them as evidence, not as a deployment verifier.  The gold-free runtime split
+  (`code_exec`, `constraint_check`, `schema_ast`, `consistency`) is unchanged.
+- The gate does not load a second model.  It reuses the local tier for a hint
+  retry, so it adds no VRAM context.  Heavy partner runs still need a resource
+  guard; the 35B partner extraction run consumed unexpected ROCm memory
+  despite `-ngl 0` and has been stopped.
+- The router's pre-generation `gate -> api` path is not covered yet; this gate
+  covers the local-first verifier-rejection path, which is the default.

@@ -42,7 +42,7 @@ from harness.cascade.paths import (
     paths_for_bucket,
     resolve_steps,
 )
-from harness.cascade.policy import Policy
+from harness.cascade.policy import Policy, should_ask_human
 from harness.cascade.registry import (
     DEFAULT_CANDIDATES,
     Candidate,
@@ -105,6 +105,7 @@ __all__ = [
     "resolve_steps",
     # policy
     "Policy",
+    "should_ask_human",
     # judgements
     "Judgement",
     "JudgementBroker",
