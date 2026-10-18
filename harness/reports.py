@@ -806,12 +806,12 @@ def render_server_page() -> str:
 
 <div id="tab-engines" class="tabpane" style="display:none">
 <section>
-<h2 style="margin-top:0">Engine profiles — unified</h2>
+<h2 style="margin-top:0">Engine Profiles</h2>
 <form id="engine-profile-form" class="engine-grid" onsubmit="event.preventDefault(); saveEngineProfile();">
-  <div class="row" style="gap:.6rem; flex-wrap:wrap">
-    <select id="eng-select" style="min-width:180px" onchange="engineSelected()"></select>
-    <label class="inline" title="How: Stored via POST /v1/engines default:true, resolved when engine param missing. Does: Default for new conversations. Changing: Check to make this fallback — only one active, persisted to engines.local.json.">default  <input id="eng-default" type="checkbox" onchange="engDirty=true"></label>
-    <button type="button" onclick="engineAdd()">+ Add</button>
+  <div class="row" style="gap:.6rem; flex-wrap:wrap; align-items:center">
+    <select id="eng-select" style="min-width:180px" onchange="engineSelected()"><option value="">— select profile —</option></select>
+    <label class="inline" title="Use this profile as the default for new conversations.">Set as default <input id="eng-default" type="checkbox" onchange="engDirty=true"></label>
+    <button type="button" onclick="engineAdd()">+ New profile</button>
   </div>
 
   <!-- Model -->
@@ -1693,6 +1693,7 @@ async function suggestLocal() {{
     if(_libCache.system && (Date.now()-_libCache.ts < 30000)) l={{models: _libCache.system}};
     else l=await api('/v1/models/local');
     const dl = document.getElementById('local-suggestions');
+    if (!dl) return;
     dl.innerHTML = '';
     for (const m of l.models) {{
       const opt = document.createElement('option');
@@ -2266,7 +2267,7 @@ function filterLibrary() {{
   }}
   const count = document.getElementById('library-filter-count');
   if (count) count.textContent = q ? `${{visible}} / ${{wrap.children.length}}` : '';
-  const engSel = document.getElementById('eng-model-select');
+  const engSel = document.getElementById('eng-model');
   const launchSel = document.getElementById('launch-model-select');
   const filterSelect = (sel) => {{
     if (!sel) return;
