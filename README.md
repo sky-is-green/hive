@@ -102,6 +102,18 @@ splinter repo's `docs/INTEGRATE.md` shows how to point external clients at it.
 .\.venv\Scripts\python -m harness           # studio UI on http://127.0.0.1:8765
 ```
 
+## Sandbox (optional, Docker-backed)
+
+The Studio ships a `/v1/sandbox/exec` endpoint: run a command in an isolated
+container when the Docker daemon is up (network disabled, 512 MiB / 1 CPU,
+hard timeout), and fall back to a local subprocess otherwise. It backs the
+cascade's `code_exec` detector and gives the agent a safe execution surface.
+Check availability with `GET /v1/sandbox/status`.
+
+```powershell
+curl -X POST http://127.0.0.1:8765/v1/sandbox/exec -H "Content-Type: application/json" -d '{"command":"python -c \"print(42)\"", "timeout":10}'
+```
+
 ## Hive Cascade (core feature)
 
 Hive Cascade is the local-first answer-quality loop built into HiveBench: **generate → detect → repair → escalate**. It runs entirely on your machine — no answer key is ever exposed to the runtime (the verifier reads a gold-stripped `runtime_spec`).

@@ -3233,7 +3233,7 @@ def render_cascade_page(task_files: list[str]) -> str:
   <a href="/runs"><button type="button">Runs →</button></a>
   <a href="/docs"><button type="button">API docs</button></a>
 </div>
-<h1>Hive Cascade <span class="note">generate → detect → repair → escalate</span></h1>
+<h1><img src="/bee.svg" alt="" style="height:2rem;vertical-align:middle;margin-right:.4rem">Hive Cascade <span class="note">generate → detect → repair → escalate</span></h1>
 <p class="note">The cascade is <b>fully in your control</b>: every knob the runner accepts is exposed here. The learned gate is <b>off by default</b> (its own pre-registered rule); <code>--gate intern-0.8b</code> is an opt-in third trigger. The escalation lane harvests every ladder-resolved item to <code>escalation.jsonl</code> next to the report.</p>
 
 <form id="cascade-form" onsubmit="return launchCascade(event)" style="max-width:72rem">
