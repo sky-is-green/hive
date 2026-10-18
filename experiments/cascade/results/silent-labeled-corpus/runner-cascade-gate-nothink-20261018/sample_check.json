@@ -1,0 +1,144 @@
+{
+ "run": "runner-cascade-gate-nothink-20261018",
+ "k": 3,
+ "temperature": 0.7,
+ "tasks": [
+  {
+   "task_id": "gsm8k-0035:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Peter's locker is 1/4 as big as Zack's locker.\n\nIf Peter's locker is 5 cubic inches:\n\nZack's locker = 5 \u00d7 4 = 20 cubic inches\n\nZack's locker is half as big as Timothy's locker.\n\nTimothy's locker = 20 \u00d7 2 = 40 cubic inches\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 14303.3
+    },
+    {
+     "draft": "Let:\n- T = Timothy's locker size\n- Z = Zack's locker size\n- P = Peter's locker size\n\nGiven information:\n1. Zack = half of Timothy \u2192 Z = (1/2) \u00d7 T\n2. Peter = one-fourth of Zack \u2192 P = (1/4) \u00d7 Z\n3. Peter = 5 cubic inches\n\nSolve step by step:\n\nFrom (1/4) \u00d7 Z = 5:\nZ = 5 \u00d7 4 = 20 cubic inches\n\nFrom Z = (1/2) \u00d7 T:\nT = 2 \u00d7 Z = 2 \u00d7 20 = 40 cubic inches\n\nCheck: Timothy = 40 \u2192 Zack = 40/2 = 20 \u2192 Peter = 20/4 = 5 \u2713\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 13188.2
+    },
+    {
+     "draft": "Let me define the locker sizes using clear variables:\n- Let Timothy's locker size = T\n- Zack's locker is half as big as Timothy's \u2192 Z = T/2\n- Peter's locker is 1/4 as big as Zack's \u2192 P = Z/4 = (T/2)/4 = T/8\n\nWe are told Peter's locker = 5 cubic inches, so:\nT/8 = 5 \u2192 T = 5 \u00d7 8 = 40.\n\nVerification: if T = 40, then Zack = 40/2 = 20, and Peter = 20/4 = 5, which matches the given value.\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 8396.8
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) < 100)\n```",
+     "label": true,
+     "ms_gen": 34924.9
+    },
+    {
+     "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+     "label": true,
+     "ms_gen": 14604.9
+    },
+    {
+     "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    total = 0\n    for i in range(k):\n        num = arr[i]\n        if abs(num) < 100:\n            total += num\n    return total\n```",
+     "label": true,
+     "ms_gen": 42909.4
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hg",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    beginning_of_suffix = 0\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n    return string + string[:beginning_of_suffix][::-1]\n```",
+     "label": true,
+     "ms_gen": 43117.4
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 75342.68414399412,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:",
+     "label": false,
+     "ms_gen": 21438.0
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "```python\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    beginning_of_suffix = 0\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n    return string + string[:beginning_of_suffix][::-1]\n```",
+     "label": false,
+     "ms_gen": 21646.2
+    },
+    {
+     "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    for i in range(len(string), -1, -1):\n        if is_palindrome(string[i:]):\n            return string + string[:i][::-1]\n```",
+     "label": false,
+     "ms_gen": 43744.1
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 59786.39126999769,
+     "error": "empty"
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hs2",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 63711.85943900491,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 27380.571002999204,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 56906.89679500065,
+     "error": "empty"
+    }
+   ]
+  },
+  {
+   "task_id": "math-0020:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "To round \\(6{,}287{,}215\\) to the nearest ten thousand:\n\n- The ten thousands digit is \\(8\\).\n- The digit just below it (thousands place) is \\(7\\).\n- Since \\(7 \\ge 5\\), round the ten thousands digit up from \\(8\\) to \\(9\\), and replace all lower digits with zeros.\n\nThus:\n\n\\[\n6{,}287{,}215 \\approx 6{,}290{,}000\n\\]\n\n\\[\n\\boxed{6{,}290{,}000}\n\\]",
+     "label": false,
+     "ms_gen": 26929.5
+    },
+    {
+     "draft": "To round **6,287,215** to the nearest **ten thousand**:\n\n1. Identify the digit in the **ten thousands** place: it is **8**.\n2. Look at the digit immediately to its right (the **thousands** digit): it is **7**.\n3. Since 7 \u2265 5, we **round up** the ten thousands digit from 8 \u2192 9.\n4. Set all digits to the right of the ten thousands place to **0**.\n\nThis gives: **6,290,000**.\n\n\\boxed{6290000}",
+     "label": true,
+     "ms_gen": 7496.7
+    },
+    {
+     "draft": "To round $6,287,215$ to the nearest ten thousand, we look at the digit in the **thousands** place to decide whether to round the ten thousands digit up or down.\n\nThe digits are:\n- Ten thousands digit: $8$\n- Thousands digit: $7$\n\nSince the thousands digit is $7$, which is greater than or equal to $5$, we **round up** the ten thousands digit from $8$ to $9$, and set all lower digits to $0$.\n\nThus:\n$$6,287,215 \\to 6,290,000$$\n\nFinal answer:\n\\boxed{6,290,000}",
+     "label": false,
+     "ms_gen": 16103.9
+    }
+   ]
+  }
+ ]
+}
