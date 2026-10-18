@@ -672,6 +672,22 @@ paired run (M4, arm-B config + gate) is done:
 the default** by its own rule; `--gate` remains a tested opt-in flag.  The
 path-A stage (M5) is still available behind the serve-restart decision.
 
+**Escalation lane (durable harvest).**  Every run now writes
+`escalation.jsonl` next to its `report.json` — one line per item the ladder
+resolved (flagged, escalated, or human-gated): the task (checker included,
+training-side only), the full draft, the structured detector findings, the
+repair attempt and the ladder's resolution (human answer, API answer, or a
+persistent flag).  The serving loop appends and forgets; nothing in the
+runtime reads it, so the gold-free runtime contract is untouched while the
+lane feeds offline training.  It is the seed for three consumers: (1) the
+gate discriminator — escalate a task, sample k fresh local drafts on it
+(mined hard task), checker-label each against the escalated answer and
+re-audit any head on the silent distribution before pre-registering a
+restart; (2) repair SFT on `(prompt, draft, finding, fixed answer)` triples;
+(3) local-tier distillation of API/human answers.  Disable with
+`--no-escalation-lane` for lean smoke runs.  Unit tests:
+`tests/unit/test_cascade_escalation_lane.py`.
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice
