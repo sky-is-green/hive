@@ -128,3 +128,14 @@ Embedding rate from the port's own log: 1,992 community items (two vectors each)
 - **Window B (~50-55 min):** the same for all 937 harvest items → a clean harvest-refit head
   (ridge+Platt on 871 train items, tested on 66) and the 176B signal for every gate candidate, so
   the fusion v1 can use it as a feature.
+
+## Update 2026-10-18 — Window A ran
+
+7 min 13 s serve-down (engine load 36 s, 140 prompts at 2.7 s/prompt, service restored healthy);
+the 4 shared seed states are bit-identical across the port and Window A windows.  Headlines: the
+generator's own in-domain head is a real organic instrument (0.803 on organic-66, free at serve
+time); the own J-Bench head is QA-strong (0.979 on qa-75) and organic-weak (0.671); fusion
+`self-community+L0.5+MLP+p_raw` reaches 0.858 organic / 0.975 test-182 — the previous best organic
+number, without the Bonsai body in the stack.  Window B (full 937-item bench → honest fusion v1
+features on the train split + clean harvest refit) remains the optional next window.  Full report:
+`experiments/cascade/results/scion176b-self-organic-20261018/SELF-HEAD.md`.

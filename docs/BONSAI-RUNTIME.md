@@ -105,3 +105,11 @@ as a judge.  The stronger on-disk instruments are the 0.8B MLP head (organic
 0.844, bench 0.991) and the generator's own 176B J-Bench head (bench 0.9941);
 see `experiments/cascade/results/fusion-probe-20261018/FUSION-PROBE.md`.  Any
 future role for the dense body is repair/generation, not verification.
+
+Update 2026-10-18 (Window A, 7 min 13 s serve-down): the generator's own readout was measured on
+the same harvest slices through the decision-head build.  The in-domain own head is a real organic
+instrument — 0.803 on organic-66, against 0.624/0.630 for the two Bonsai heads, and ~4 points under
+the 0.8B MLP — and it is free at serve time (one engine pass, no second body).  The own J-Bench head
+is the complementary QA instrument (0.979 on qa-75, 0.671 organic).  Fusion with the self signal
+reproduces the previous best organic number (0.858) without the Bonsai body in the stack.  See
+`experiments/cascade/results/scion176b-self-organic-20261018/SELF-HEAD.md`.
