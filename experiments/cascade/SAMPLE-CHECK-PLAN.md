@@ -83,3 +83,7 @@ lever for separation.**  The restore trap is documented and ready.  If M5 also
 fails to separate, the gate stays opt-in-only and the cascade relies on
 detectors + repair + escalation (which already serves 59-62/66 with 0 false
 rejects).
+
+**M5 shelved (2026-10-18):** path A requires strata engineering (add
+/embedding to serve/server.py for the strata-embd model); not feasible as a
+hivebench serve restart. Gate stays opt-in-only. Next focus: UI cleanup.

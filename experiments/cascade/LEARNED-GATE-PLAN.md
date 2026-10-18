@@ -175,3 +175,10 @@ empty.
 - The 0.8B head is in-domain (train task overlap — the `SELF-HEAD.md`
   caveat).  The universal miss `humaneval-0001:hs1` (min p 0.76) stays a
   miss under every signal measured so far; some wrongs will always remain.
+
+**M5 shelved (2026-10-18):** path A requires modifying strata's serve/server.py
+to add an /embedding endpoint for the strata-embd model — strata engineering,
+not a hivebench serve restart. The 0.8B readout does not separate on 3
+measurements, and M5's cost/benefit (strata-repo work, risk to live serve,
+marginal gate value +1 catch) does not justify it. Gate stays opt-in-only.
+Revisit only if a strata embedding endpoint lands.
