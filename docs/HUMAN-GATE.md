@@ -113,6 +113,37 @@ escalated/first_triggered/reasons`, plus a `human_corrected` count.  A
 model rows.  These rows are the raw material for the deferred C2 controller:
 they are human labels about recoverability, not gold answers.
 
+## Offline workload preview
+
+Before changing the live gate, use `experiments/cascade/eval_partner_transfer.py`
+to apply a frozen judge head to a held-out organic/QA set.  It writes:
+
+- `human-gate-candidates.jsonl` — every candidate with its probability, bucket,
+  origin, prompt and local answer, ranked by the judge;
+- `human-gate-preview.md` — the **real** `HumanGate._show` rendering for the
+  first few triggers (verbose first, compact later), with an explicit note that
+  it is offline and that evaluation labels are never shown to the runtime gate;
+- `BONSAI-TRANSFER.md` / `eval-*.json` — judge accuracy plus threshold
+  sensitivity (rejected counts and false rejects at 0.50/0.58/0.60/0.65/0.70).
+
+The preview is a workload and visibility test, not a live run.  The live gate
+still triggers only on a verifier reject; the judge probability is a stand-in
+for that trigger in the offline analysis.  Thresholds are chosen from the
+gold-free workload and the user's tolerance for false rejects, never from the
+evaluation labels at runtime.
+
+The first Bonsai baseline (CPU, 2026-10-18) is in
+`experiments/cascade/results/partner-bonsai-organic-20261018/`.  On 252
+held-out candidates the frozen head rejected 127 at p<0.58 — every rejection
+was a wrong answer and no correct answer was rejected, but it caught only
+1 of 9 organic wrongs and missed 13 wrongs overall (recall 90.7%, carried by
+J-Bench/QA).  `human-gate-missed.jsonl` lists those misses.  The lesson for
+the gate: precision is not enough; recall on organic free-form tasks has to
+come from the 0.8B verifier or the human/API tier.
+
+Pair it with `run_partner_probe.sh` for a guarded, pure-CPU extraction so the
+176B serve can stay up.
+
 ## Scope and caveats
 
 - The gate is provider-agnostic.  It displays whatever `--api-fallback` names;

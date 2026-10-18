@@ -1,0 +1,18 @@
+{
+  "label": "bonsai-transfer",
+  "samples": 501,
+  "started": "2026-10-18T03:13:29+0100",
+  "ended": "2026-10-18T03:55:15+0100",
+  "duration_s": 2506.137,
+  "pid": 583509,
+  "max_load1": 9.95,
+  "min_mem_available_gib": 13.478,
+  "max_swap_used_gib": 3.801,
+  "max_rss_gib": 13.576,
+  "min_vram_free_mib": {
+    "card0": 2799,
+    "card1": 1886
+  },
+  "health_failures": 0,
+  "pid_exited": true
+}
