@@ -146,7 +146,6 @@ th, td { background: #FFB703; color: #000000; }
 th { background: #000000; color: #FFDD00; }
 .card span { color: #000000; opacity: .75; }
 .card b { color: #000000; }
-table .note, .card .note, .kv-grid .note, .kv .note { color: #000000; opacity: .75; }
    Pattern mirrors ui-primitives HoverCard: fixed-position card portaled to document.body,
    244px wide, 12/16 padding, 12px radius, dark surface #2C2C2E, elevated shadow.
    Appears after 1s hover on div.librow, disappears on mouseleave. */
@@ -205,7 +204,7 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 .chatlog { background: #FFB703; border: 1.5px solid #000000; }
 .msg.user { background: #000000; color: #FFDD00; border: 1.5px solid #000000; }
 .msg.ai { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
-.msg.sys { background: rgba(255,221,0,.14); color: #FFDD00; border: 1px solid #000000; }
+.msg.sys { background: #000000; color: #FFDD00; border: 1px solid #000000; font-size: .8rem; padding: .25rem .7rem; border-radius: 999px; }
 .tab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; }
 .tab.active { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-bottom-color: #FFB703; }
 .sesstab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; transition: transform .15s ease; }
@@ -295,3 +294,9 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 .context-menu-item:hover { background: #FFB703; color: #000; }
 .context-menu-item.danger:hover { background: #b3372c; color: #fff; }
 
+/* .note: black on yellow backgrounds, yellow on black sections */
+
+/* .note color: black on yellow panels, yellow on black sections */
+.note { color: #000000; }
+section .note { color: #FFDD00; opacity: .85; }
+table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color: #000000; opacity: .9; }
