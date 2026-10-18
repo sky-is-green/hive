@@ -39,7 +39,7 @@ from typing import Callable, List, Optional
 
 import psutil
 import requests
-from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi import Body, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel
@@ -3654,6 +3654,80 @@ def create_app(
     def view_runs():
         return HTMLResponse(render_runs_page(_list_runs(st.runs_root)), headers=_NO_STORE)
 
+    # ------------------------------------------------------------------
+    # Sandbox (Docker-backed, optional): run a command in an isolated
+    # container when the daemon is up; fall back to a local subprocess with
+    # a hard timeout otherwise.  Feeds the cascade's code_exec detector and
+    # gives the agent a safe execution surface.
+    @app.post("/v1/sandbox/exec")
+    def sandbox_exec(body: dict[str, Any] = Body(default={})):
+        import shutil, subprocess as _sp
+        command = str(body.get("command") or "")
+        if not command.strip():
+            raise HTTPException(422, "command is required")
+        try:
+            timeout = int(body.get("timeout") or 30)
+        except (TypeError, ValueError):
+            raise HTTPException(422, "timeout must be an integer")
+        timeout = max(1, min(timeout, 120))
+        use_docker = bool(body.get("use_docker", True))
+        image = str(body.get("image") or "python:3.12-slim")
+        docker_bin = shutil.which("docker")
+        daemon_ok = False
+        if use_docker and docker_bin:
+            try:
+                _sp.run([docker_bin, "info"], capture_output=True, timeout=5, check=True)
+                daemon_ok = True
+            except Exception:  # noqa: BLE001
+                daemon_ok = False
+
+        CAP = 10000
+        if daemon_ok:
+            cmd = [docker_bin, "run", "--rm", "--network", "none",
+                   "--memory", "512m", "--cpus", "1", image,
+                   "sh", "-c", command]
+            backend = "docker"
+        else:
+            cmd = ["/bin/sh", "-c", command]
+            backend = "local"
+
+        try:
+            proc = _sp.run(cmd, capture_output=True, text=True, timeout=timeout)
+            timed_out = False
+            rc = proc.returncode
+            out = (proc.stdout or "")[:CAP]
+            err = (proc.stderr or "")[:CAP]
+        except _sp.TimeoutExpired as exc:
+            timed_out = True
+            rc = 124
+            out = ((exc.stdout or "") if isinstance(exc.stdout, str) else (exc.stdout or b"").decode("utf-8", "replace"))[:CAP]
+            err = ((exc.stderr or "") if isinstance(exc.stderr, str) else (exc.stderr or b"").decode("utf-8", "replace"))[:CAP]
+        except Exception as exc:  # noqa: BLE001
+            return {"backend": backend, "error": str(exc), "exit_code": 1,
+                    "stdout": "", "stderr": str(exc), "timed_out": False}
+        return {
+            "backend": backend,
+            "docker_available": daemon_ok,
+            "exit_code": rc,
+            "timed_out": timed_out,
+            "stdout": out,
+            "stderr": err,
+        }
+
+    @app.get("/v1/sandbox/status")
+    def sandbox_status():
+        import shutil, subprocess as _sp
+        docker_bin = shutil.which("docker")
+        daemon_ok = False
+        if docker_bin:
+            try:
+                _sp.run([docker_bin, "info"], capture_output=True, timeout=5, check=True)
+                daemon_ok = True
+            except Exception:  # noqa: BLE001
+                daemon_ok = False
+        return {"docker_installed": bool(docker_bin), "docker_daemon": daemon_ok,
+                "fallback": "local subprocess (no isolation)"}
+
     @app.get("/cascade", response_class=HTMLResponse)
     def view_cascade():
         task_files = sorted(
@@ -3665,13 +3739,32 @@ def create_app(
     def favicon_svg():
         svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
                "<polygon points='32,4 58,18 58,46 32,60 6,46 6,18' fill='#FFB703' stroke='#000' stroke-width='3'/>"
-               "<text x='32' y='40' font-size='26' text-anchor='middle' fill='#000' font-family='sans-serif' font-weight='900'>H</text>"
+               "<text x='32' y='42' font-size='28' text-anchor='middle' fill='#000' font-family='sans-serif' font-weight='900'>H</text>"
+               # two small bees
+               "<g transform='translate(10,8) scale(0.35)'>"
+               "<ellipse cx='12' cy='10' rx='6' ry='4' fill='#000'/>"
+               "<ellipse cx='12' cy='10' rx='3' ry='2' fill='#FFDD00'/>"
+               "<circle cx='16' cy='8' r='3' fill='#000'/>"
+               "</g>"
+               "<g transform='translate(38,4) scale(0.35)'>"
+               "<ellipse cx='12' cy='10' rx='6' ry='4' fill='#000'/>"
+               "<ellipse cx='12' cy='10' rx='3' ry='2' fill='#FFDD00'/>"
+               "<circle cx='16' cy='8' r='3' fill='#000'/>"
+               "</g>"
                "</svg>")
         return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
 
-    @app.get("/favicon.ico")
-    def favicon_ico():
-        return RedirectResponse("/favicon.svg", status_code=302)
+    @app.get("/bee.svg")
+    def bee_svg():
+        svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+               "<ellipse cx='32' cy='36' rx='18' ry='12' fill='#000'/>"
+               "<ellipse cx='32' cy='36' rx='10' ry='6' fill='#FFB703'/>"
+               "<circle cx='46' cy='28' r='8' fill='#000'/>"
+               "<circle cx='49' cy='26' r='2' fill='#FFDD00'/>"
+               "<ellipse cx='22' cy='22' rx='10' ry='6' fill='#FFDD00' opacity='0.85' transform='rotate(-20 22 22)'/>"
+               "<ellipse cx='42' cy='22' rx='10' ry='6' fill='#FFDD00' opacity='0.85' transform='rotate(20 42 22)'/>"
+               "</svg>")
+        return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
 
     @app.get("/", response_class=HTMLResponse)
     def index():
