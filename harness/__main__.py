@@ -145,8 +145,11 @@ def _protect_git_excludes(root: Path, names: list[str]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="HiveBench Studio harness sidecar (FastAPI, local-only)",
+        prog="hivebench",
+        description="HiveBench Studio — local-first AI harness with the Hive Cascade "
+                    "(generate → detect → repair → escalate) built in.",
     )
+    parser.add_argument("--version", action="version", version="HiveBench Studio 0.4 (hive cascade)")
     parser.add_argument("--host", default="127.0.0.1",
                         help="bind address (default 127.0.0.1; keep it local)")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)

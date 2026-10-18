@@ -187,7 +187,7 @@ def render_report_page(report: dict, run_name: str) -> str:
 
     avg_ms = aggregate.get("avg_total_ms")
     return f"""<!doctype html>
-<html><head><meta charset="utf-8">
+<html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>HiveBench report &mdash; {_esc(run_name)}</title>
 <style>{_CSS}</style></head><body>
 <h1>HiveBench report &mdash; <code>{_esc(run_name)}</code></h1>
@@ -250,10 +250,10 @@ def render_runs_page(entries: list[dict]) -> str:
         for e in entries
     ) or "<li class='note'>no runs yet</li>"
     return f"""<!doctype html>
-<html><head><meta charset="utf-8"><title>HiveBench runs</title>
+<html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><title>HiveBench runs</title>
 <style>{_CSS}</style></head><body>
 <h1>HiveBench run bundles</h1>
-<p><a href="/server"><button>← Studio console</button></a> <a href="/docs"><button>API docs</button></a></p>
+<p><a href="/server"><button>← Studio console</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
 <ul class="runs">{items}</ul>
 </body></html>"""
 
@@ -287,7 +287,7 @@ def render_training_report(report: dict, run_name: str) -> str:
     ) or "<tr><td colspan='6' class='note'>no evaluation yet &mdash; run still in progress</td></tr>"
 
     return f"""<!doctype html>
-<html><head><meta charset="utf-8">
+<html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>Hive-Ternary run &mdash; {_esc(run_name)}</title>
 <style>{_CSS}</style></head><body>
 <h1>Hive-Ternary &mdash; <code>{_esc(run_name)}</code></h1>
@@ -471,11 +471,11 @@ def render_server_page() -> str:
     Discovery is live against the Hugging Face hub API — no model catalog is
     hardcoded here."""
     return f"""<!doctype html>
-<html><head><meta charset="utf-8"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Studio server &amp; models</title>
+<html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Studio server &amp; models</title>
 <style>{_get_server_css()}</style><style>input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{{-webkit-appearance:none;margin:0}}input[type=number]{{-moz-appearance:textfield;appearance:textfield}}</style></head><body>
 <div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
 <h1>Splinter Studio console</h1>
-<p style="margin:.3rem 0"><button id="afkbtn" onclick="toggleAfk(this)" title="How: toggleAfk sets SPLINTER-MODE.json. Does: QUEEN autonomy (GREEN/YELLOW auto, RED contained). Changing: On queues pushes/merges until return.">AFK</button> <a href="/runs"><button>Runs →</button></a> <a href="/docs"><button>API docs</button></a></p>
+<p style="margin:.3rem 0"><button id="afkbtn" onclick="toggleAfk(this)" title="How: toggleAfk sets SPLINTER-MODE.json. Does: QUEEN autonomy (GREEN/YELLOW auto, RED contained). Changing: On queues pushes/merges until return.">AFK</button> <a href="/runs"><button>Runs →</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
 <form style="display:inline" onsubmit="event.preventDefault(); return false"><input id="researchq" placeholder="deep-research question..." size="30" autocomplete="off" title="How: researchAdd queues to RESEARCH-QUEUE.md. Does: Deep research task (Auditor only). Changing: Adds entry, not instant." onkeydown="if (event.key === &quot;Enter&quot;) researchAdd(this)"> <button id="researchsubmit" onclick="researchAdd(this)">Research</button> <span id="researchcount" class="meta" title="Queues a deep-research question for QUEEN. Execution is master-only; reports land in RESEARCH/&lt;slug&gt;.md and are summarized on wake."></span></form>
 
 <div class="grid">
@@ -3216,5 +3216,121 @@ document.addEventListener('visibilitychange', ()=>{{
     refreshProcesses().catch(e=>console.error(e));
   }}
 }});
+</script>
+</body></html>"""
+
+
+def render_cascade_page(task_files: list[str]) -> str:
+    """Hive Cascade launch console: every knob the runner accepts, in one form."""
+    opts = "".join(f"<option value='{_esc(t)}'>{_esc(t)}</option>" for t in task_files)
+    if not opts:
+        opts = "<option value='tasks-hard.json'>tasks-hard.json</option>"
+    return f"""<!doctype html>
+<html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Hive Cascade</title>
+<style>{_get_server_css()}</style></head><body>
+<div style="position:absolute; top:1rem; right:1.2rem; z-index:10">
+  <a href="/server"><button type="button">← Studio</button></a>
+  <a href="/runs"><button type="button">Runs →</button></a>
+  <a href="/docs"><button type="button">API docs</button></a>
+</div>
+<h1>Hive Cascade <span class="note">generate → detect → repair → escalate</span></h1>
+<p class="note">The cascade is <b>fully in your control</b>: every knob the runner accepts is exposed here. The learned gate is <b>off by default</b> (its own pre-registered rule); <code>--gate intern-0.8b</code> is an opt-in third trigger. The escalation lane harvests every ladder-resolved item to <code>escalation.jsonl</code> next to the report.</p>
+
+<form id="cascade-form" onsubmit="return launchCascade(event)" style="max-width:72rem">
+<section>
+<h2 style="margin-top:0">Run</h2>
+<div class="grid-2col">
+  <label>Task file <select name="tasks">{opts}</select></label>
+  <label>Run name <input name="run_name" placeholder="cascade-YYYYMMDD-HHMMSS"></label>
+  <label>Limit (0 = all) <input name="limit" type="number" min="0" value="0"></label>
+  <label>Router <select name="router"><option value="local">local</option><option value="jev">jev</option></select></label>
+  <label>Router mode <select name="router_mode"><option value="gate">gate</option><option value="measure">measure</option></select></label>
+</div>
+</section>
+
+<section>
+<h2>Judge &amp; repair</h2>
+<div class="grid-2col">
+  <label>Judge <select name="judge"><option value="deterministic">deterministic (consistency + code_exec)</option><option value="learned">learned</option></select></label>
+  <label>Judge threshold <input name="judge_threshold" type="number" step="0.01" value="0.5"></label>
+  <label>Repair <select name="repair"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
+  <label>Human gate <select name="human_gate"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
+</div>
+</section>
+
+<section>
+<h2>Learned gate (third trigger, blind-spot only)</h2>
+<div class="grid-2col">
+  <label>Gate <select name="gate"><option value="off">off (default)</option><option value="intern-0.8b">intern-0.8b</option><option value="scion">scion (needs serve restart)</option></select></label>
+  <label>Gate head <select name="gate_head"><option value="L0.5">L0.5</option><option value="L0.75" selected>L0.75</option><option value="L1">L1</option><option value="ridge-concat">ridge-concat</option><option value="mlp-concat">mlp-concat</option></select></label>
+  <label>Gate threshold <input name="gate_threshold" type="number" step="0.01" value="0.5"></label>
+</div>
+<p class="note">Scores a draft only when the deterministic detectors are silent. A fired gate is one more rejection finding (greedy repair quotes it); the repaired answer is re-scored.</p>
+</section>
+
+<section>
+<h2>Local model</h2>
+<div class="grid-2col">
+  <label>Temperature <input name="local_temperature" type="number" step="0.1" value="0.7"></label>
+  <label>Max tokens <input name="local_max_tokens" type="number" value="1024"></label>
+  <label>Reasoning effort <select name="local_reasoning_effort"><option value="none">none</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label>
+  <label>Reasoning budget tokens <input name="local_reasoning_budget_tokens" type="number" value="0"></label>
+</div>
+</section>
+
+<section>
+<h2>API fallback (optional)</h2>
+<div class="grid-2col">
+  <label>Base URL <input name="api_fallback" placeholder="http://127.0.0.1:4000/v1"></label>
+  <label>Model <input name="api_fallback_model" placeholder="model name"></label>
+  <label>Key <input name="api_fallback_key" type="password" placeholder="bearer key"></label>
+</div>
+</section>
+
+<section>
+<h2>Harvest</h2>
+<label style="display:flex; align-items:center; gap:.5rem"><input name="no_escalation_lane" type="checkbox"> Disable escalation lane (lean smoke runs)</label>
+<p class="note">By default every ladder-resolved item is written to <code>escalation.jsonl</code> next to the report (training-side only).</p>
+</section>
+
+<div class="row" style="margin-top:1rem">
+  <button type="submit" style="background:#157a3e;color:#fff;font-weight:700;padding:.6rem 1.4rem">Launch cascade</button>
+  <span id="cascade-status" class="note" style="margin-left:1rem"></span>
+</div>
+</form>
+
+<pre id="cascade-result" style="display:none; margin-top:1rem"></pre>
+
+<script>
+async function launchCascade(ev) {{
+  ev.preventDefault();
+  const form = document.getElementById('cascade-form');
+  const fd = new FormData(form);
+  const body = {{}};
+  for (const [k, v] of fd.entries()) {{
+    if (k === 'no_escalation_lane') continue;
+    if (v === '') continue;
+    if (k === 'limit' || k === 'local_max_tokens' || k === 'local_reasoning_budget_tokens') body[k] = parseInt(v, 10);
+    else if (k === 'gate_threshold' || k === 'judge_threshold' || k === 'local_temperature') body[k] = parseFloat(v);
+    else body[k] = v;
+  }}
+  if (form.querySelector('[name=no_escalation_lane]').checked) body.no_escalation_lane = true;
+  const status = document.getElementById('cascade-status');
+  const result = document.getElementById('cascade-result');
+  status.textContent = 'launching…';
+  result.style.display = 'none';
+  try {{
+    const r = await fetch('/v1/cascade/run', {{ method: 'POST', headers: {{'Content-Type':'application/json'}}, body: JSON.stringify(body) }});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+    status.textContent = 'launched: ' + data.run + ' (pid ' + data.pid + ')';
+    result.textContent = JSON.stringify(data, null, 2);
+    result.style.display = 'block';
+  }} catch (e) {{
+    status.textContent = 'error: ' + e.message;
+    status.style.color = '#b3372c';
+  }}
+  return false;
+}}
 </script>
 </body></html>"""

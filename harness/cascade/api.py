@@ -277,6 +277,43 @@ def create_router(
         ]
         if limit:
             cmd += ["--limit", str(limit)]
+
+        # Cascade knobs (all optional; runner defaults apply when omitted).
+        _str_opt = (
+            ("judge", "--judge"),
+            ("repair", "--repair"),
+            ("gate", "--gate"),
+            ("gate_head", "--gate-head"),
+            ("human_gate", "--human-gate"),
+            ("router", "--router"),
+            ("router_mode", "--router-mode"),
+            ("local_reasoning_effort", "--local-reasoning-effort"),
+            ("scion_base", "--scion-base"),
+            ("api_fallback", "--api-fallback"),
+            ("api_fallback_model", "--api-fallback-model"),
+            ("api_fallback_key", "--api-fallback-key"),
+        )
+        for key, flag in _str_opt:
+            val = body.get(key)
+            if val not in (None, ""):
+                cmd += [flag, str(val)]
+        _num_opt = (
+            ("gate_threshold", "--gate-threshold", float),
+            ("local_temperature", "--local-temperature", float),
+            ("local_max_tokens", "--local-max-tokens", int),
+            ("local_reasoning_budget_tokens", "--local-reasoning-budget-tokens", int),
+            ("judge_threshold", "--judge-threshold", float),
+        )
+        for key, flag, cast in _num_opt:
+            val = body.get(key)
+            if val not in (None, ""):
+                try:
+                    cmd += [flag, str(cast(val))]
+                except (TypeError, ValueError) as exc:
+                    raise HTTPException(422, f"bad value for {key}: {exc}") from exc
+        if body.get("no_escalation_lane"):
+            cmd.append("--no-escalation-lane")
+
         pid = launcher(cmd, REPO_ROOT, run_dir / "run_stdout.log")
         return {
             "ok": True,
@@ -284,6 +321,7 @@ def create_router(
             "run_dir": str(run_dir),
             "log": str(run_dir / "run_stdout.log"),
             "pid": pid,
+            "cmd": cmd,
         }
 
     @router.get("/runs")

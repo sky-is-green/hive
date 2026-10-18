@@ -82,6 +82,7 @@ from harness.reports import (
     render_report_page,
     render_runs_page,
     render_server_page,
+    render_cascade_page,
     resolve_run_dir,
 )
 from harness.stack import (
@@ -3652,6 +3653,25 @@ def create_app(
     @app.get("/runs", response_class=HTMLResponse)
     def view_runs():
         return HTMLResponse(render_runs_page(_list_runs(st.runs_root)), headers=_NO_STORE)
+
+    @app.get("/cascade", response_class=HTMLResponse)
+    def view_cascade():
+        task_files = sorted(
+            p.name for p in cascade_api.CASCADE_DIR.glob("*.json")
+        ) if cascade_api.CASCADE_DIR.is_dir() else []
+        return HTMLResponse(render_cascade_page(task_files), headers=_NO_STORE)
+
+    @app.get("/favicon.svg")
+    def favicon_svg():
+        svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+               "<polygon points='32,4 58,18 58,46 32,60 6,46 6,18' fill='#FFB703' stroke='#000' stroke-width='3'/>"
+               "<text x='32' y='40' font-size='26' text-anchor='middle' fill='#000' font-family='sans-serif' font-weight='900'>H</text>"
+               "</svg>")
+        return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+    @app.get("/favicon.ico")
+    def favicon_ico():
+        return RedirectResponse("/favicon.svg", status_code=302)
 
     @app.get("/", response_class=HTMLResponse)
     def index():

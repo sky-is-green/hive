@@ -102,6 +102,26 @@ splinter repo's `docs/INTEGRATE.md` shows how to point external clients at it.
 .\.venv\Scripts\python -m harness           # studio UI on http://127.0.0.1:8765
 ```
 
+## Hive Cascade (core feature)
+
+Hive Cascade is the local-first answer-quality loop built into HiveBench: **generate → detect → repair → escalate**. It runs entirely on your machine — no answer key is ever exposed to the runtime (the verifier reads a gold-stripped `runtime_spec`).
+
+- **Detect** — deterministic verifier (`consistency` + the task's own tests via `code_exec`), reported as findings.
+- **Repair** — one greedy local re-attempt with the finding quoted; truncated/byte-identical attempts are rejected; cleared repairs are re-framed by `canonical()`.
+- **Escalate** — human gate (first trigger verbose, later compact) and an optional API fallback.
+- **Learned gate** (opt-in) — `intern-0.8b` readout as a third trigger, blind-spot only; off by default by its own pre-registered rule.
+
+Control it from the **Studio UI** at `/cascade` (every runner knob exposed) or the **CLI**:
+
+```powershell
+.venv\Scripts\python -m experiments.cascade.run_cascade `
+  --tasks experiments/cascade/tasks-bench.json `
+  --judge deterministic --repair auto `
+  --gate intern-0.8b          # optional third trigger; off by default
+```
+
+Every ladder-resolved item is harvested to `escalation.jsonl` next to the report (training-side only), feeding repair SFT and local-tier distillation. See `docs/CASCADE-PILOT.md` and `experiments/cascade/LEARNED-GATE-PLAN.md`.
+
 ## Running the suite
 
 Offline, no LLM required (CI runs exactly this):
