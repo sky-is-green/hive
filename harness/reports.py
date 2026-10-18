@@ -851,8 +851,6 @@ turns, durable session log.</div>
 
 <!-- ==================== RIGHT: Server (standalone, no tabs) ==================== -->
 <div class="col" id="right-col">
-<details>
-<summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#FFDD00">Server &amp; Launch ▾</summary>
 <section>
 <h2 style="margin-top:0">Launch</h2>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
@@ -886,14 +884,16 @@ turns, durable session log.</div>
 </details>
 <pre id="status">loading…</pre>
 <div id="instances"></div>
+<details style="margin-top:.6rem">
+<summary style="cursor:pointer;font-weight:600;padding:.3rem 0;color:#FFDD00">Console logs &amp; processes ▾</summary>
 <section id="proc-manager" style="margin-top:1rem">
 <h3 style="margin:.6rem 0 .3rem">Process manager <span class="note">CPU/RAM · kill</span></h3>
 <div class="row" style="gap:.5rem;align-items:center"><button onclick="refreshProcesses()">Refresh processes</button><span id="proc-msg" class="note"></span><span id="proc-sidecar" class="note" style="margin-left:.4rem"></span></div>
 <table style="width:100%;margin-top:.4rem"><thead><tr><th>PID</th><th>Kind</th><th>Name</th><th title="CPU % (process)">CPU%</th><th title="Resident memory MB">RAM MB</th><th>Port</th><th>Status</th><th></th></tr></thead><tbody id="proc-table"><tr><td colspan="8" class="note">loading…</td></tr></tbody></table>
 </section>
 <pre id="srvlog" title="llama_server.log tail">log: loading…</pre>
-</section>
 </details>
+</section>
 
 </div></div>
 
