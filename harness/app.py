@@ -3020,39 +3020,8 @@ def create_app(
         return {"queued": True, "question": q}
 
 
-    @app.get("/v1/splinter/mode")
-    def splinter_mode_get():
-        if MODE_FILE.exists():
-            try:
-                data = json.loads(MODE_FILE.read_text(encoding="utf-8-sig"))
-                return {"afk": True, **data, "_file": str(MODE_FILE)}
-            except Exception as exc:
-                return {"afk": False, "error": f"unreadable mode file: {exc}",
-                        "_file": str(MODE_FILE)}
-        return {"afk": False, "_file": str(MODE_FILE)}
-
-    @app.post("/v1/splinter/mode")
-    async def splinter_mode_set(req: Request):
-        body = await req.json()
-        afk = bool(body.get("afk"))
-        note = str(body.get("note", ""))[:200]
-        if afk:
-            payload = {"mode": "AFK",
-                       "since": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                       "operator": "away", "note": note,
-                       "preapproved": ["GREEN/YELLOW fixes",
-                                       "catalog+doc regeneration",
-                                       "executing SPLINTER-PLAN orders",
-                                       "approved-proposal implementation",
-                                       "gate bug fixes"],
-                       "queue_for_return": ["pushes to public masters",
-                                            "PR merges",
-                                            "policy/protocol changes",
-                                            "RED defects beyond containment"]}
-            MODE_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        elif MODE_FILE.exists():
-            MODE_FILE.unlink()
-        return {"afk": afk, "note": note}
+    # AFK mode removed (shelved). The idea: QUEEN autonomy toggle for
+    # unattended operation. Revisit when we revisit the shelf.
 
     @app.post("/v1/server/stop")
     def server_stop(key: Optional[str] = Query(default=None)):
