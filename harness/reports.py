@@ -850,7 +850,9 @@ turns, durable session log.</div>
 </div>
 
 <!-- ==================== RIGHT: Server (standalone, no tabs) ==================== -->
-<div class="col">
+<div class="col" id="right-col">
+<details>
+<summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#FFDD00">Server &amp; Launch ▾</summary>
 <section>
 <h2 style="margin-top:0">Launch</h2>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
@@ -891,6 +893,7 @@ turns, durable session log.</div>
 </section>
 <pre id="srvlog" title="llama_server.log tail">log: loading…</pre>
 </section>
+</details>
 
 </div></div>
 
