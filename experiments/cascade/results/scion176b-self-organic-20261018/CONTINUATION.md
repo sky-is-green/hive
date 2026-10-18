@@ -1,4 +1,4 @@
-# Continuation — after Fusion v1 (2026-10-18)
+# Continuation — after Window B (2026-10-18)
 
 Fresh-session handoff.  Paste the "Start here" section (or this whole file) as the first
 message of the next session.
@@ -12,68 +12,73 @@ The 176B serve is up on 8081 (user unit `scion-flashnext`) — keep it up; any s
 window needs the user's explicit go-ahead first, and the window script has a trap that
 always restores the service.
 
-Fusion v1 has run (`experiments/cascade/results/fusion-v1-20261018/FUSION-V1.md`): the
-fusion gate fit honestly on the r2 train split with `GroupKFold(5)`-by-task out-of-fold base
-probabilities, one pass on test-182.  Twelve seconds, CPU only, no serve contact.
+**Window B ran and the self signal is real.**  All 937 harvest judge states are on disk
+(gitignored); the 176B's own head refit on 871 harvest train items and tested on the 66 organic
+items — whose tasks share **0** tasks with its train items — lands at **organic-66 AUC 0.832**
+cross-task, *above* the in-domain community head's 0.803.  In the honest out-of-fold fusion
+(the 176B signal is now on all 1,133 train rows) the gate reaches **organic 0.897 / test-182
+0.988**, against 0.852 for the best no-self fusion and 0.844 for the single best 0.8B head.
+Report: `experiments/cascade/results/scion176b-harvest-20261018/WINDOW-B.md`.
 
-Three results worth carrying:
+Three things to carry:
 
-1. **The honest gate is `L0.5+MLP`** — test-182 **0.978**, bench-116 0.991, organic-66 **0.852**
-   (frontier 6/9 caught at 9 of 57 correct rejections).  But it beats the single 0.8B MLP head by
-   +0.008 organic AUC, i.e. nothing.  Reweighting the existing heads is not the lever.
-2. **The previously reported best feature set was a LOO artifact.**  `L0.5+MLP+p_raw` scored 0.858
-   organic under leave-one-out on the test set itself and **0.827** honestly fitted; `p_raw` has
-   organic AUC 0.603 alone.  All six base features: 0.819.  Treat the fusion tables in
-   `FUSION-PROBE.md` / `SELF-HEAD.md` as upper bounds; LOO overstates by ~0.03-0.04 organic.
-3. **The 176B self-community head is the only feature that adds** — +0.03 organic AUC in all three
-   fit subsets (1,133 / 332 / 262 / 70 rows), and it is the only instrument in the whole cascade
-   that catches `humaneval-0001:hs1`, a "universal miss" every 0.8B/Bonsai signal sits above 0.87
-   on.  `self-jbench` is a trap: +0.007 bench, −0.03 organic (the fusion over-weights it at
-   coefficient 3.03 because it is near-perfect on the bench rows it is fit against).
+1. **The generator's own readout is the strongest organic signal we have, and it is free** —
+   one engine pass, no second body, no extra VRAM.  The deployed gate is now
+   `L0.5+MLP+p_raw+self-harvest`, frontier **7/9 organic wrongs caught at 5 of 57 correct
+   rejections** (was 5/9 at 1).
+2. **`self-jbench` stays out of the gate.**  It is a QA/structured verifier (qa-75 0.979,
+   organic 0.671); every fusion containing it loses organic AUC (0.897 → 0.809).  Keep it as a
+   task-form router input, not a gate feature.
+3. **Reweighting the existing 0.8B heads is not a lever** (fusion v1: +0.008 over the best single
+   head, inside noise), and **leave-one-out on the test split inflates by ~0.03-0.04 organic** —
+   the `p_raw` row that read 0.858 honestly reads 0.827.  Both lines are closed.
 
-## The Window B decision (needs the user's go-ahead — do not start it)
+## A leak worth remembering
 
-Measured here: `176b-own-community` was fit on the port community corpus, whose train split covers
-465 tasks.  **61% of organic-66 (40/66 items, 7 of 9 wrongs) is in-domain for that head.**  The
-clean cross-task organic slice is 26 items with **2** wrongs — both `humaneval-0001`.  So the
-cross-task value of the generator's own head is currently *unmeasured and unmeasurable offline*:
-the +0.03 is 61% in-domain, and the honest fusion cannot give the self signal a trustworthy weight
-because it has no organic harvest train row (it is fit on 332 bench/qa rows, 79% bench).
-
-Window B (937 harvest items, ~50-55 min serve-down, same `run_self_head_window.sh` pointed at the
-full harvest bench) is the only step that fixes both: the 176B signal on the organic train side,
-and a harvest-refit head whose test tasks are disjoint from its train tasks.  Expected outcome is
-not a number — it is confirming or killing the self signal.
+The Window B refit head is fit on the 871 harvest train rows, so wiring the exported head
+straight into the fusion as a feature reads **organic 0.924** — in-sample on the train side, the
+best-looking number in the project, and wrong.  `fusion_v1.py` refits it out-of-fold on the train
+side (`GroupKFold(5)` by `task_id`, same lambda) and uses the full-fit head everywhere else, which
+is honest because the organic-66 tasks are disjoint from its train tasks and the bench items were
+never in its training corpus.  Honest: **0.897**.  Any future head added to the fusion needs the
+same treatment.
 
 ## Which lines are closed
 
-- Dense partner (Bonsai-27B) as an organic judge: **closed** (0.624 / 0.630 organic, chance).
-- Bench is saturated for every bench-fitted head (0.988-0.994).
-- Natural-error detection tops out ~0.83-0.86 per-sample across instruments.
-- **Fusion by reweighting the existing signals: closed** (honest v1 = best single head + 0.008).
-- LOO-on-the-test fusion as an evaluation scheme: closed; it inflates by ~0.03-0.04.
+- Dense partner (Bonsai-27B) as an organic judge: **closed** (0.624 / 0.630, chance).
+- Bench is saturated for every bench-fitted head (0.988-0.999).
+- Natural-error detection for the 0.8B heads: **closed** at ~0.84-0.85 per sample.
+- Fusion by reweighting the existing signals: **closed**.
+- LOO-on-the-test fusion as an evaluation scheme: **closed**.
+- Two organic items are missed by *every* instrument measured and are the residual:
+  `gsm8k-0033:hs1`, `math-0013:hs1`.  `humaneval-0001:hs1` is no longer one of them — both self
+  heads reject it (0.341, 0.185).
 
 ## What remains
 
-- **Window B** (optional, ~50-55 min serve-down, ask first) — see above.
-- **API provider** for the escalation tier: still unnamed by the user; blocks the production API tier.
-- Human-gate coverage of the router's pre-generation `gate -> API` path; bench ingest builders;
-  9B Qwen ternary (deferred).
+- **API provider** for the escalation tier: the user deferred it ("not now" as of Window B).  It
+  blocks the production API tier; nothing else is blocked by it.
+- Human-gate coverage of the router's pre-generation `gate -> API` path (the post-verifier path
+  is built and tested).
+- Bench ingest builders; 9B Qwen ternary (deferred).
+- Optional, if the gate is to move further: the next clean instrument is a *different* evidence
+  source, not another reader of the same candidate text.
 
 ## Next moves (in order)
 
-1. Ask the user for the Window B go-ahead (nothing else in the offline line is open).
-2. On a yes: run `run_self_head_window.sh` against the full harvest bench, then refit the community
-   head on 871 harvest train items and re-run `fusion_v1.py` — the clean cross-task organic number
-   is the deliverable, and it decides whether `self-community` goes in the deployed gate.
-3. Keep pending: name the API provider; human-gate coverage of the router path; bench ingest
-   builders; 9B Qwen ternary.
+1. Wire `self-harvest` into the serving gate and measure the escalate-vs-accept decision on the
+   frozen organic-66 at a fixed budget (7/9 at 5 CR) — this is the first deployment-shaped use of
+   the fusion.
+2. Human-gate coverage of the router's pre-generation `gate -> API` path.
+3. Keep pending: API provider (user deferred), bench ingest builders, 9B Qwen ternary.
 
 ## Hard constraints
 
 - Never `git push`; one step per commit.
 - Do not touch `scion/docs/HARVEST-NEMOTRON-FLASHNEXT.md` or `scion/docs/DRAFT-nemotron-field-notes.md`.
-- Serve windows: ask first; the script's EXIT trap always restarts `scion-flashnext` and waits for health.
+- Serve windows: ask first; the script's EXIT trap always restarts `scion-flashnext` and waits for
+  health.  Budget **~95 min cold / ~50 min warm** for a 937-prompt window (3.0 s/prompt warm,
+  5-7 s/prompt cold); the probe now checkpoints every 25 items and rides out engine restarts.
 - No large artifacts in `/tmp`; durable outputs go to the work-drive lane dirs.
 - Partner stays CPU-preferred (no persistent dGPU use); no torch-ROCm context beside the serve.
 - Runtime corrections must be gold-free (`code_exec`, `constraint_check`, `schema_ast`, `consistency`);
@@ -84,11 +89,15 @@ not a number — it is confirming or killing the self signal.
 
 ## Key files
 
-- `experiments/cascade/fusion_v1.py` — this step's analysis (rerunnable, ~12 s).
-- `experiments/cascade/results/fusion-v1-20261018/FUSION-V1.md` — report; `fusion-v1.json` — numbers.
-- `experiments/cascade/results/scion176b-self-organic-20261018/SELF-HEAD.md` — Window A report.
-- `experiments/cascade/run_self_head_window.sh` — serve-down window script (rerunnable; Window B = same script).
-- `experiments/cascade/fusion_probe.py`, `eval_self_head.py` — the earlier LOO fusion probes.
-- `experiments/cascade/results/decision-readout-r2-20261017/` — r2 states/heads/splits (0.8B reference).
+- `experiments/cascade/results/scion176b-harvest-20261018/WINDOW-B.md` — **Window B report**.
+- `experiments/cascade/eval_harvest_head.py` — the clean cross-task refit + head export.
+- `experiments/cascade/results/scion176b-harvest-20261018/harvest-refit-head.json` — the clean
+  head in the standard head format; consumed by the fusion.
+- `experiments/cascade/fusion_v1.py` — the honest fusion (OOF base features + OOF self feature).
+- `experiments/cascade/results/fusion-v1-20261018/FUSION-V1.md` — the no-self fusion and the
+  post-Window-B update.
+- `experiments/cascade/run_self_head_window.sh` — serve-down window script (`WINDOW_OUT` /
+  `WINDOW_BENCH` / `WINDOW_NAME`, defaults = Window A).
+- `experiments/cascade/probe_scion.py` — the judge probe (checkpoint/resume/retry).
 - `scion/decision-heads/PORT-REPORT.md` — port numbers (heads, veto, serving path).
 - `strata-dh/` (worktree, branch `decision-head`) — the decision-head build (`/v1/verdict`, `/embedding`).

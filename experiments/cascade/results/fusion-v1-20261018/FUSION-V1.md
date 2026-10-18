@@ -172,3 +172,33 @@ the reason the `p_raw` row looked good.  Treat the two previous fusion tables as
 - `fusion_v1.py` — this analysis (rerunnable, ~12 s, CPU only).
 - `fusion-v1.json` — every number above, machine-readable, including per-slice metrics for each
   fit, per-item probabilities for the 9 organic wrongs, and the OOF sanity table.
+
+## Update after Window B — the self signal is now on the organic train side
+
+Sections 1-2 are unchanged and still current: the honest no-self gate is `L0.5+MLP` at organic
+0.852, and `p_raw` still hurts (0.827).  Window B put the 176B states for all 937 harvest items on
+disk, so the self feature now covers all 1,133 train rows and all 182 test rows, and the fusion can
+be fit on organic data instead of inheriting a bench-calibrated weight.
+
+| features | test-182 | bench-116 | organic-66 | frontier @ 0 / 3 / 5 / 9 / 14 |
+| --- | --- | --- | --- | --- |
+| L0.5+MLP (no self) | 0.978 | 0.991 | 0.852 | 1/0 · 5/1 · 5/1 · 6/9 · 8/12 |
+| + self-community (frozen) | 0.974 | 0.989 | 0.860 | 0/0 · 6/3 · 6/3 · 7/7 · 7/7 |
+| **+ self-harvest (Window B)** | **0.988** | **0.999** | **0.897** | **3/0 · 3/0 · 7/5 · 7/5 · 8/12** |
+| + self-harvest + self-community | 0.988 | 0.999 | 0.895 | 3/0 · 5/1 · 7/4 · 7/4 · 7/4 |
+
+The Section 2 verdict ("reweighting the existing heads is not worth much") stands and sharpens: the
++0.008 that the fusion bought over the best single 0.8B head is dwarfed by the +0.045 the *new*
+signal adds on top of it.  `self-harvest` carries the largest coefficient (2.69 vs 1.58 for the 0.8B
+MLP), and the gain survives being fit on the organic half of the corpus alone (871 harvest-train
+rows: 0.825 → 0.889).
+
+One methodological note for anyone re-running this: `self-harvest` is a head fit on the 871 harvest
+train rows, so its score on those rows is in-sample and using the exported head as a feature
+directly reads **0.924** on organic-66 — a leak, and the best-looking number in the project.
+`fusion_v1.py` refits it out-of-fold on the train side (`GroupKFold(5)` by `task_id`, same lambda)
+and applies the full-fit head everywhere else, which is honest because the organic-66 tasks are
+disjoint from its train tasks and the bench items were never in its training corpus.  Honest: 0.897.
+Per-item detail for all 9 organic wrongs is in `organic_wrongs_by_self_domain`.
+
+Full report: `../scion176b-harvest-20261018/WINDOW-B.md`.

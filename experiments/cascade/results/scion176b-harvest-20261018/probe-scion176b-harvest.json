@@ -1,0 +1,63 @@
+{
+ "name": "scion176b-harvest",
+ "backend": "http://127.0.0.1:8897",
+ "layers": {
+  "1": {
+   "train": {
+    "layer": null,
+    "depth": "1",
+    "n": 871,
+    "auc": null,
+    "best_ba": {
+     "bal_acc": 1.0,
+     "threshold": 0.2
+    },
+    "ece": 0.06448698402574343,
+    "no_leak": {
+     "threshold": 0.2,
+     "accept_rate": 0.4707233065442021,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 871,
+     "n": 871,
+     "bal_acc": 1.0
+    },
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.4707233065442021,
+     "false_accepts": 0,
+     "false_rejects": 0,
+     "correct": 871,
+     "n": 871,
+     "bal_acc": 1.0
+    }
+   },
+   "test": {
+    "layer": null,
+    "depth": "1",
+    "n": 66,
+    "auc": 0.7660818713450293,
+    "best_ba": {
+     "bal_acc": 0.7280701754385965,
+     "threshold": 0.99
+    },
+    "ece": 0.11078691980544259,
+    "no_leak": null,
+    "at_0.5": {
+     "threshold": 0.5,
+     "accept_rate": 0.9545454545454546,
+     "false_accepts": 7,
+     "false_rejects": 1,
+     "correct": 58,
+     "n": 66,
+     "bal_acc": 0.6023391812865497
+    }
+   }
+  }
+ },
+ "state_file": "probe-states-scion176b-harvest.npz",
+ "n_layers": null,
+ "dim": 2560,
+ "items_retried_after_engine_restart": 0,
+ "resume_checkpoint": "probe-states-scion176b-harvest.partial.npz"
+}
