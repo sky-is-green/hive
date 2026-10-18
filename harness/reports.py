@@ -856,14 +856,20 @@ turns, durable session log.</div>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
 <div class="row">
-<label class="inline" style="flex:1"><select id="launch-profile" style="flex:1;min-width:220px"><option value="">— choose engine profile —</option></select></label>
-<button onclick="startServer(this)">Start</button></div>
-<div class="row">
-<span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional, for new models)" size="30">
-<div class="sugbox" id="sug-hfrepo"></div></span>
-<input id="hffile" placeholder="--hf-file (optional)" size="18" title="Download from Hugging Face then start. Both needed if no local model.">
+<label class="inline" style="flex:1"><select id="launch-profile" style="flex:1;min-width:180px"><option value="">(none — use model below)</option></select></label>
+<button onclick="startServer(this)">Start</button>
 </div>
-<p class="note">Model, context, GPU layers, sampling, and API key come from the selected engine profile. Advanced flags below override the profile.</p>
+<div class="row">
+<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px"><option value="">— choose local model —</option></select></label>
+<label class="inline">ctx <input id="ctx" type="number" value="8192" size="6"></label>
+<label class="inline">gpu <input id="ngl" type="number" value="999" size="4"></label>
+</div>
+<div class="row">
+<span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional)" size="24">
+<div class="sugbox" id="sug-hfrepo"></div></span>
+<input id="hffile" placeholder="--hf-file (optional)" size="14">
+</div>
+<p class="note">Pick a model above to quick-start, or select a saved profile. Advanced flags below override.</p>
 <details><summary>Advanced launch flags (override profile)</summary>
 <div class="row">
 <label class="inline" title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4->16 up tok/s, over->down.">threads  <input id="l-threads" type="number" size="3" placeholder="auto (from profile)"></label>
@@ -1899,9 +1905,9 @@ setTimeout(applyConvProvider, 2000);
 
 /* --------------------------- server panel ---------------------------- */
 function launchBody() {{
-  const idx = +(document.getElementById('launch-profile')?.value ?? currentEngineIndex());
-  const prof = engines[idx] || {{}};
-  const lo = prof.load_options || {{}};
+  const profIdx = document.getElementById('launch-profile')?.value;
+  const prof = (profIdx !== '' && profIdx != null) ? (engines[+profIdx] || null) : null;
+  const lo = prof?.load_options || {{}};
   const override = (id) => {{
     const el = document.getElementById(id);
     if (!el) return null;
@@ -1909,12 +1915,13 @@ function launchBody() {{
     const v = (el.value || '').trim();
     return v === '' ? null : (el.type === 'number' ? +v : v);
   }};
+  const model = prof?.model || (document.getElementById('model')?.value?.trim() || document.getElementById('launch-model-select')?.value || null);
   return {{
-    model: prof.model || null,
+    model: model || null,
     hf_repo: val('hfrepo') || null,
     hf_file: val('hffile') || null,
-    ctx_size: +(lo.context || lo.contextLength || lo.ctx_size || 8192),
-    ngl: +(lo.gpu_layers || lo.ngl || 999),
+    ctx_size: prof ? +(lo.context || lo.contextLength || lo.ctx_size || 8192) : (+(document.getElementById('ctx')?.value) || 8192),
+    ngl: prof ? +(lo.gpu_layers || lo.ngl || 999) : (+(document.getElementById('ngl')?.value) || 999),
     api_key: null,
     threads: override('l-threads') ?? lo.threads ?? null,
     flash_attn: document.getElementById('l-fa')?.checked || !!lo.flash_attn,
