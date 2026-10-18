@@ -519,7 +519,7 @@ def render_server_page() -> str:
 <div class="cards" style="margin:1rem 0">
   <a href="/cascade" style="text-decoration:none"><div class="card"><span>Run a cascade</span><b style="font-size:1.1rem">Hive Cascade →</b><span class="note">generate → detect → repair → escalate</span></div></a>
   <a href="/runs" style="text-decoration:none"><div class="card"><span>Browse results</span><b style="font-size:1.1rem">Runs →</b><span class="note">view past run bundles</span></div></a>
-  <button onclick="showTab('tab-settings')" style="all:unset;cursor:pointer"><div class="card"><span>Configure</span><b style="font-size:1.1rem">Settings →</b><span class="note">models, providers, engines</span></div></button>
+  <button onclick="document.querySelector('[data-tab=\\'tab-settings\\']')?.click()" style="all:unset;cursor:pointer"><div class="card"><span>Configure</span><b style="font-size:1.1rem">Settings →</b><span class="note">models, providers, engines</span></div></button>
 </div>
 <p class="note">Advanced tools (Docker setup, agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
 </section>
@@ -856,20 +856,17 @@ turns, durable session log.</div>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
 <div class="row">
-<label class="inline" style="flex:1"><select id="launch-profile" style="flex:1;min-width:180px"><option value="">(none — use model below)</option></select></label>
-<button onclick="startServer(this)">Start</button>
-</div>
-<div class="row">
 <label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px"><option value="">— choose local model —</option></select></label>
 <label class="inline">ctx <input id="ctx" type="number" value="8192" size="6"></label>
 <label class="inline">gpu <input id="ngl" type="number" value="999" size="4"></label>
+<button onclick="startServer(this)">Start</button>
 </div>
 <div class="row">
 <span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional)" size="24">
 <div class="sugbox" id="sug-hfrepo"></div></span>
 <input id="hffile" placeholder="--hf-file (optional)" size="14">
 </div>
-<p class="note">Pick a model above to quick-start, or select a saved profile. Advanced flags below override.</p>
+<p class="note">Pick a model, set context/GPU, click Start. Use the Engines tab for saved profiles with full settings.</p>
 <details><summary>Advanced launch flags (override profile)</summary>
 <div class="row">
 <label class="inline" title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4->16 up tok/s, over->down.">threads  <input id="l-threads" type="number" size="3" placeholder="auto (from profile)"></label>
@@ -1905,9 +1902,7 @@ setTimeout(applyConvProvider, 2000);
 
 /* --------------------------- server panel ---------------------------- */
 function launchBody() {{
-  const profIdx = document.getElementById('launch-profile')?.value;
-  const prof = (profIdx !== '' && profIdx != null) ? (engines[+profIdx] || null) : null;
-  const lo = prof?.load_options || {{}};
+  const lo = {{}};
   const override = (id) => {{
     const el = document.getElementById(id);
     if (!el) return null;
@@ -1915,24 +1910,23 @@ function launchBody() {{
     const v = (el.value || '').trim();
     return v === '' ? null : (el.type === 'number' ? +v : v);
   }};
-  const model = prof?.model || (document.getElementById('model')?.value?.trim() || document.getElementById('launch-model-select')?.value || null);
   return {{
-    model: model || null,
+    model: (document.getElementById('model')?.value?.trim() || document.getElementById('launch-model-select')?.value || null),
     hf_repo: val('hfrepo') || null,
     hf_file: val('hffile') || null,
-    ctx_size: prof ? +(lo.context || lo.contextLength || lo.ctx_size || 8192) : (+(document.getElementById('ctx')?.value) || 8192),
-    ngl: prof ? +(lo.gpu_layers || lo.ngl || 999) : (+(document.getElementById('ngl')?.value) || 999),
+    ctx_size: (+(document.getElementById('ctx')?.value) || 8192),
+    ngl: (+(document.getElementById('ngl')?.value) || 999),
     api_key: null,
-    threads: override('l-threads') ?? lo.threads ?? null,
-    flash_attn: document.getElementById('l-fa')?.checked || !!lo.flash_attn,
-    parallel_slots: override('l-parallel') ?? lo.parallel_slots ?? null,
-    cache_type_k: override('l-ctk') ?? lo.cache_type_k ?? null,
-    cache_type_v: override('l-ctv') ?? lo.cache_type_v ?? null,
-    batch_size: override('l-batch') ?? lo.batch_size ?? null,
-    ubatch_size: override('l-ubatch') ?? lo.ubatch_size ?? null,
-    alias: override('l-alias') ?? lo.alias ?? null,
-    mlock: document.getElementById('l-mlock')?.checked || !!lo.mlock,
-    no_mmap: document.getElementById('l-nommap')?.checked || !!lo.no_mmap,
+    threads: override('l-threads'),
+    flash_attn: document.getElementById('l-fa')?.checked || false,
+    parallel_slots: override('l-parallel'),
+    cache_type_k: override('l-ctk'),
+    cache_type_v: override('l-ctv'),
+    batch_size: override('l-batch'),
+    ubatch_size: override('l-ubatch'),
+    alias: override('l-alias'),
+    mlock: document.getElementById('l-mlock')?.checked || false,
+    no_mmap: document.getElementById('l-nommap')?.checked || false,
   }};
 }}
 
@@ -2417,21 +2411,6 @@ function renderEngineSelect(selectIndex) {{
   }});
   sel.value = selectIndex;
   refreshAbSelects();
-  // sync launch-profile dropdown
-  const lp = document.getElementById('launch-profile');
-  if (lp) {{
-    const cur = lp.value;
-    lp.innerHTML = '<option value="">— choose engine profile —</option>';
-    engines.forEach((e, i) => {{
-      const o = document.createElement('option');
-      o.value = i;
-      o.textContent = e.name + (e.name.toLowerCase() === engDefault.toLowerCase()
-                                ? '  (default)' : '');
-      lp.appendChild(o);
-    }});
-    if (cur && +cur < engines.length) lp.value = cur;
-    else if (engines.length) lp.value = '0';
-  }}
 }}
 
 function refreshAbSelects() {{
