@@ -22,6 +22,7 @@ from harness.cascade.policy import (
     escalation_for,
     escalation_probability,
     route_needs_escalation,
+    should_ask_human,
     should_escalate,
     streamable_tokens,
     verifier_rejects,
@@ -104,6 +105,17 @@ def test_escalation_choice_priority_and_budget():
     assert should_escalate([], Policy()) is None
 
 
+def test_human_gate_is_opt_in_and_reuses_the_escalation_trigger():
+    triggers = [EscalationTrigger.VERIFIER_REJECT]
+
+    assert should_ask_human(triggers, Policy()) is None
+    assert (
+        should_ask_human(triggers, Policy(human_gate=True))
+        is EscalationTrigger.VERIFIER_REJECT
+    )
+    assert should_ask_human(triggers, Policy(human_gate=True), escalations_used=2) is None
+
+
 def test_escalation_target_and_probability():
     assert escalation_for(EscalationTrigger.VERIFIER_REJECT, get_path("P2")) == "P3"
     assert escalation_for(EscalationTrigger.ROUTE_LOW_CONFIDENCE, get_path("P1")) == "P3"
@@ -126,3 +138,4 @@ def test_policy_round_trips():
     data = Policy().to_dict()
     assert data["verify_window"] == 24
     assert data["max_escalations"] == 2
+    assert data["human_gate"] is False

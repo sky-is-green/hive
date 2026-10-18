@@ -25,6 +25,7 @@ import argparse
 import json
 import os
 import sys
+import textwrap
 import time
 import uuid
 from pathlib import Path
@@ -213,6 +214,218 @@ class Frontier:
                 "finish_reason": "length", "tag": tag}
 
 
+class HumanGate:
+    """The last checkpoint before a paid API call.
+
+    The cascade has already generated a local answer and the verifier has
+    rejected it.  Instead of silently escalating, show the failure to the
+    person at the terminal and offer exactly two outcomes:
+
+    * ``solve`` — provide a corrected answer, or a hint for one local retry.
+      A ``keep`` shortcut is accepted only when the task's own checker already
+      passes (i.e. the verifier is the thing that is wrong).
+    * ``escalate`` — send the task to the configured API.  The human's reason
+      is recorded and included as context in the API prompt.
+
+    The first trigger is deliberately verbose: the task, the local answer, the
+    verifier's verdict and reason, the checker result, and the API target are
+    all printed.  Later triggers are compact.  ``input_fn``/``print_fn`` are
+    injectable so the prompt can be tested without a terminal.
+    """
+
+    def __init__(
+        self,
+        *,
+        api_target: str,
+        api_model: str,
+        input_fn=input,
+        print_fn=print,
+        max_answer_chars: int = 2400,
+    ) -> None:
+        self.api_target = api_target
+        self.api_model = api_model
+        self._input = input_fn
+        self._print = print_fn
+        self.max_answer_chars = max_answer_chars
+        self.asked = 0
+
+    # -- rendering -----------------------------------------------------
+
+    def _checker_label(self, checker_ok: Optional[bool]) -> str:
+        if checker_ok is True:
+            return "PASSED (the verifier may be a false reject)"
+        if checker_ok is False:
+            return "FAILED"
+        return "not available"
+
+    def _show(
+        self,
+        *,
+        task: dict[str, Any],
+        local_answer: str,
+        verdict: Any,
+        checker_ok: Optional[bool],
+        first: bool,
+        still_failing: bool,
+        attempts: int,
+    ) -> None:
+        print_ = self._print
+        print_("=" * 78)
+        if first:
+            print_("HUMAN GATE — local answer rejected; the next step is the hosted API")
+            print_("This is the first trigger. Local generation and the verifier both ran;")
+            print_("the cascade would have called the API automatically. You choose now:")
+            print_("  [s]olve locally  — correct the answer, or give the model a hint")
+            print_("  [e]scalate to API — pay for the frontier answer")
+            print_("-" * 78)
+        else:
+            print_("HUMAN GATE — still unresolved before the API call")
+        print_(f"task:   {task.get('id', '?')}  bucket={task.get('bucket', '?')}")
+        prompt = str(task.get("prompt", "") or "")
+        if prompt:
+            if len(prompt) > 1600:
+                prompt = prompt[:1600] + "\n... [truncated]"
+            print_("task prompt:")
+            print_(textwrap.indent(prompt, "  "))
+        if attempts > 1 or still_failing:
+            print_(f"attempt: {attempts}  (the previous human answer did not pass the checker)")
+        reason = ""
+        try:
+            reason = str((verdict.payload or {}).get("reason", ""))
+        except AttributeError:
+            reason = ""
+        body = local_answer or ""
+        if len(body) > self.max_answer_chars:
+            body = body[: self.max_answer_chars] + "\n... [truncated; full answer is in the report]"
+        print_("local answer:")
+        print_(textwrap.indent(body or "(empty)", "  "))
+        print_(
+            f"verifier: {getattr(verdict, 'decision', '?')} "
+            f"(confidence {float(getattr(verdict, 'confidence', 0.0) or 0.0):.3f})"
+        )
+        if reason:
+            print_(f"verifier reason: {reason}")
+        print_(f"checker:  {self._checker_label(checker_ok)}")
+        print_(f"API:      {self.api_target}  model={self.api_model}")
+        print_("The API call is paid and logged; the local path is free.")
+        print_("-" * 78)
+
+    # -- prompt --------------------------------------------------------
+
+    def ask(
+        self,
+        *,
+        task: dict[str, Any],
+        local_answer: str,
+        verdict: Any,
+        checker_ok: Optional[bool],
+        still_failing: bool = False,
+    ) -> dict[str, Any]:
+        """Show the evidence and return one human decision.
+
+        Returns a dict with ``choice`` (``solve``/``escalate``), ``mode``
+        (``answer``/``hint``/``keep``/``escalate``), and the ``answer``,
+        ``hint``, and ``reason`` fields.  Raises ``KeyboardInterrupt`` if the
+        human aborts; EOF is treated as escalation so a misconfigured
+        non-interactive run cannot hang forever.
+        """
+        self.asked += 1
+        first = self.asked == 1
+        self._show(
+            task=task,
+            local_answer=local_answer,
+            verdict=verdict,
+            checker_ok=checker_ok,
+            first=first,
+            still_failing=still_failing,
+            attempts=self.asked,
+        )
+
+        while True:
+            try:
+                choice = self._input("Choice [s]olve / [e]scalate: ").strip().lower()
+            except EOFError:
+                self._print("No interactive input; escalating to the API.")
+                return {
+                    "choice": "escalate",
+                    "mode": "escalate",
+                    "answer": "",
+                    "hint": "",
+                    "reason": "human gate reached EOF",
+                }
+
+            if choice in ("s", "solve", "1"):
+                prompt = (
+                    "Paste a corrected answer, or a hint prefixed 'hint:' "
+                    "(blank = back"
+                )
+                if checker_ok is True:
+                    prompt += ", 'keep' = keep the local answer"
+                prompt += "): "
+                try:
+                    answer = self._input(prompt).strip()
+                except EOFError:
+                    answer = ""
+                if not answer:
+                    continue
+                if checker_ok is True and answer.lower() in ("keep", "k"):
+                    return {
+                        "choice": "solve",
+                        "mode": "keep",
+                        "answer": "",
+                        "hint": "",
+                        "reason": "checker already passes",
+                    }
+                if answer.lower().startswith("hint:"):
+                    hint = answer[len("hint:") :].strip()
+                    if not hint:
+                        self._print("The hint was empty; try again.")
+                        continue
+                    try:
+                        why = self._input(
+                            "What was missing? (optional; Enter for none): "
+                        ).strip()
+                    except EOFError:
+                        why = ""
+                    return {
+                        "choice": "solve",
+                        "mode": "hint",
+                        "answer": "",
+                        "hint": hint,
+                        "reason": why,
+                    }
+                try:
+                    why = self._input(
+                        "What was wrong / what did you change? (optional; Enter for none): "
+                    ).strip()
+                except EOFError:
+                    why = ""
+                return {
+                    "choice": "solve",
+                    "mode": "answer",
+                    "answer": answer,
+                    "hint": "",
+                    "reason": why,
+                }
+
+            if choice in ("e", "escalate", "2"):
+                try:
+                    why = self._input(
+                        "Why can't local solve this? (optional; Enter for none): "
+                    ).strip()
+                except EOFError:
+                    why = ""
+                return {
+                    "choice": "escalate",
+                    "mode": "escalate",
+                    "answer": "",
+                    "hint": "",
+                    "reason": why,
+                }
+
+            self._print("Please answer 's' to solve locally or 'e' to escalate to the API.")
+
+
 class ScionTier:
     """The local tier: the llama-server hivebench spawned for the stack."""
 
@@ -306,11 +519,46 @@ class ScionTier:
 # ---------------------------------------------------------------- pipeline
 
 
-def answer_prompt(task: dict) -> list[dict]:
-    return [
+def answer_prompt(
+    task: dict,
+    *,
+    hint: str = "",
+    reviewer_note: str = "",
+) -> list[dict]:
+    messages = [
         {"role": "system", "content": ANSWER_SYSTEM},
         {"role": "user", "content": task["prompt"]},
     ]
+    if hint:
+        messages.append(
+            {
+                "role": "user",
+                "content": (
+                    f"Reviewer hint: {hint}\n"
+                    "Use this hint to correct the answer to the task above."
+                ),
+            }
+        )
+    if reviewer_note:
+        messages.append(
+            {
+                "role": "user",
+                "content": (
+                    "Human reviewer note (why the local tier could not solve "
+                    f"this): {reviewer_note}"
+                ),
+            }
+        )
+    return messages
+
+
+def record_human_reason(stats: dict[str, Any], reason: str) -> None:
+    """Keep a compact frequency table of why humans solved/escalated."""
+    reason = (reason or "").strip()
+    if not reason:
+        return
+    key = reason[:160]
+    stats["reasons"][key] = int(stats["reasons"].get(key, 0)) + 1
 
 
 def route_prompt(task: dict) -> list[dict]:
@@ -397,6 +645,12 @@ def build_parser() -> argparse.ArgumentParser:
                         help="model name for the fallback (default: CASCADE_API_MODEL)")
     parser.add_argument("--api-fallback-key", default="",
                         help="bearer key for the fallback (default: CASCADE_API_KEY)")
+    parser.add_argument(
+        "--human-gate", choices=("auto", "on", "off"), default="auto",
+        help="ask a human before the API fallback: auto (default) is on only "
+             "when stdin is a TTY and --api-fallback is configured; on forces "
+             "the prompt; off preserves the non-interactive benchmark flow",
+    )
     return parser
 
 
@@ -443,8 +697,43 @@ def main() -> int:
             model=args.api_fallback_model or None,
             key=args.api_fallback_key or None,
         )
+    human_gate: Optional[HumanGate] = None
+    if args.human_gate == "on" or (
+        args.human_gate == "auto" and sys.stdin.isatty()
+    ):
+        if fallback is None:
+            if args.human_gate == "on":
+                print(
+                    "[cascade] --human-gate on needs --api-fallback; gate disabled",
+                    file=sys.stderr,
+                )
+        elif measure:
+            if args.human_gate == "on":
+                print(
+                    "[cascade] --human-gate is not used in measure mode; gate disabled",
+                    file=sys.stderr,
+                )
+        else:
+            human_gate = HumanGate(
+                api_target=fallback.base_url,
+                api_model=fallback.model,
+            )
+
+    human_stats: dict[str, Any] = {
+        "asked": 0,
+        "solve_attempts": 0,
+        "solved": 0,
+        "escalated": 0,
+        "kept": 0,
+        "first_triggered": False,
+        "reasons": {},
+    }
+
     telemetry = TelemetryLog()
-    policy = Policy(accept_confidence=args.judge_threshold)
+    policy = Policy(
+        accept_confidence=args.judge_threshold,
+        human_gate=human_gate is not None,
+    )
     broker = JudgementBroker()
 
     def router_handler(batch):
@@ -669,6 +958,8 @@ def main() -> int:
                     "planned_path": planned.path,
                     "scion_answer": None, "scion_ok": None, "scion_ms": None,
                     "scion_tokens": 0,
+                    "human_answer": None, "human_gate": None,
+                    "human_corrected": False,
                     "router_route": route_result.decision,
                     "router_confidence": route_result.confidence,
                     "router_agrees": None,
@@ -731,15 +1022,110 @@ def main() -> int:
         # fallback unset (the default), a reject is recorded and the local
         # answer is returned; measure mode uses the measurement API instead.
         escalate = rejected and (measure or fallback is not None)
+        human_decision: Optional[dict[str, Any]] = None
+        human_attempts = 0
+        human_gate_first = False
+        human_checked_answer: Optional[str] = None
+        display_answer = local["content"]
+        display_checker_ok: Optional[bool] = local_ok
+
+        if escalate and human_gate is not None and fallback is not None:
+            while True:
+                human_attempts += 1
+                was_first = not human_stats["first_triggered"]
+                human_decision = human_gate.ask(
+                    task=task,
+                    local_answer=display_answer,
+                    verdict=verdict,
+                    checker_ok=display_checker_ok,
+                    still_failing=human_attempts > 1,
+                )
+                human_stats["asked"] += 1
+                if was_first:
+                    human_stats["first_triggered"] = True
+                    human_gate_first = True
+                reason = str(human_decision.get("reason", "") or "")
+                record_human_reason(human_stats, reason)
+                telemetry.log(
+                    task["id"], planned.path, "HUMAN", "human", 0.0,
+                    outcome=str(human_decision["choice"]),
+                    detail=(
+                        f"mode={human_decision['mode']}"
+                        + (f"; {reason}" if reason else "")
+                    )[:300],
+                )
+
+                if human_decision["choice"] == "escalate":
+                    human_stats["escalated"] += 1
+                    break
+
+                human_stats["solve_attempts"] += 1
+                mode = human_decision["mode"]
+                if mode == "keep":
+                    human_stats["kept"] += 1
+                    human_stats["solved"] += 1
+                    human_checked_answer = local["content"]
+                    escalate = False
+                    break
+                if mode == "hint":
+                    print(
+                        "[cascade] retrying local with the human hint ...",
+                        file=sys.stderr, flush=True,
+                    )
+                    local = scion.chat(answer_prompt(task, hint=human_decision["hint"]))
+                    local_ok = check(task, local["content"])
+                    display_answer = local["content"]
+                    display_checker_ok = local_ok
+                    telemetry.log(
+                        task["id"], planned.path, "E4-local-retry", "dgpu1",
+                        local["latency_ms"],
+                        tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
+                        outcome="ok" if local_ok else "wrong",
+                        detail="human hint",
+                    )
+                    if local_ok:
+                        human_stats["solved"] += 1
+                        human_checked_answer = local["content"]
+                        escalate = False
+                        break
+                    continue
+
+                # mode == "answer"
+                human_checked_answer = str(human_decision["answer"])
+                human_ok = check(task, human_checked_answer)
+                display_answer = human_checked_answer
+                display_checker_ok = human_ok
+                if human_ok:
+                    human_stats["solved"] += 1
+                    escalate = False
+                    break
+                # The human's answer failed the checker; show the gate again.
+                continue
+
         api_direct = None
         if measure:
             api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
         elif escalate:
-            api_direct = fallback.chat(answer_prompt(task), tag="fallback", max_tokens=700)
+            reviewer_note = (
+                str(human_decision.get("reason", "") or "")
+                if human_decision is not None else ""
+            )
+            api_direct = fallback.chat(
+                answer_prompt(task, reviewer_note=reviewer_note),
+                tag="fallback", max_tokens=700,
+            )
         api_ok = check(task, api_direct["content"]) if api_direct is not None else None
 
-        cascade_answer = api_direct["content"] if escalate else local["content"]
-        cascade_ok = api_ok if escalate else local_ok
+        if human_decision is not None and not escalate:
+            if human_decision["mode"] in ("keep", "hint"):
+                cascade_answer = local["content"]
+                cascade_ok = local_ok
+            else:
+                cascade_answer = human_checked_answer or local["content"]
+                cascade_ok = check(task, cascade_answer)
+        else:
+            cascade_answer = api_direct["content"] if escalate else local["content"]
+            cascade_ok = api_ok if escalate else local_ok
         flagged = rejected and not measure and fallback is None
 
         if escalate:
@@ -748,7 +1134,29 @@ def main() -> int:
                 "E4-api" if measure else "E4-fallback",
                 "api", api_direct["latency_ms"],
                 outcome="ok" if api_ok else "wrong", escalated=True,
+                detail=(
+                    f"human reason: {human_decision.get('reason', '')}"
+                    if human_decision is not None
+                    and human_decision.get("choice") == "escalate"
+                    else ""
+                )[:300],
             )
+
+        human_record = None
+        if human_decision is not None:
+            human_record = {
+                "asked": True,
+                "first": human_gate_first,
+                "choice": human_decision["choice"],
+                "mode": human_decision["mode"],
+                "reason": str(human_decision.get("reason", "") or ""),
+                "hint": str(human_decision.get("hint", "") or ""),
+                "human_answer": human_checked_answer,
+                "attempts": human_attempts,
+                "accepted_locally": not escalate,
+                "api_target": (human_gate.api_target if human_gate else None),
+                "api_model": (human_gate.api_model if human_gate else None),
+            }
 
         records.append(
             {
@@ -759,6 +1167,8 @@ def main() -> int:
                 "scion_ok": local_ok,
                 "scion_ms": round(local["latency_ms"], 1),
                 "scion_tokens": int((local["usage"] or {}).get("completion_tokens") or 0),
+                "human_answer": human_checked_answer,
+                "human_gate": human_record,
                 "router_route": (route_result.decision if route_result else None),
                 "router_confidence": (route_result.confidence if route_result else None),
                 "router_agrees": ((route_result.decision == "local") == local_ok)
@@ -775,9 +1185,15 @@ def main() -> int:
                 "api_ms": (round(api_direct["latency_ms"], 1) if api_direct else None),
                 "api_direct_correct": api_ok,
                 "cascade_ok": cascade_ok,
-                "false_accept": (not escalate) and (not local_ok),
+                "false_accept": (not escalate) and (not cascade_ok),
                 "false_reject": escalate and local_ok,
                 "corrected": escalate and local_ok is False and api_ok,
+                "human_corrected": bool(
+                    human_decision is not None
+                    and not escalate
+                    and human_decision["mode"] in ("answer", "hint")
+                    and cascade_ok
+                ),
                 "judge": args.judge,
                 "fallback_available": fallback is not None,
                 "flagged": flagged,
@@ -814,6 +1230,18 @@ def main() -> int:
         "api_mean_ms": mean(api_rows, "api_ms"),
         "fallback_available": fallback is not None,
         "flagged_no_fallback": sum(1 for r in records if r.get("flagged")),
+        "human_corrected": sum(1 for r in measured if r.get("human_corrected")),
+        "human_gate": {
+            "enabled": human_gate is not None,
+            "mode": args.human_gate,
+            "asked": human_stats["asked"],
+            "solve_attempts": human_stats["solve_attempts"],
+            "solved": human_stats["solved"],
+            "kept": human_stats["kept"],
+            "escalated": human_stats["escalated"],
+            "first_triggered": human_stats["first_triggered"],
+            "reasons": human_stats["reasons"],
+        },
         "usage": usage.summary(),
         "telemetry": telemetry.summary(),
     }
@@ -828,6 +1256,7 @@ def main() -> int:
         "judge": args.judge,
         "router_mode": args.router_mode,
         "api_fallback": args.api_fallback or None,
+        "human_gate": args.human_gate,
         "api_model": (frontier.model if frontier is not None
                       else (fallback.model if fallback is not None else None)),
         "summary": summary,

@@ -34,6 +34,10 @@ class Policy:
     max_escalations: int = 2
     budget_check_every: int = 256
     draft_accept_payback: float = 0.40
+    #: Ask a human before the hosted API is called.  Off by default: batch
+    #: runs and measurements must not block on stdin.  The interactive runner
+    #: turns this on when it has an API fallback and a TTY.
+    human_gate: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -44,6 +48,7 @@ class Policy:
             "max_escalations": self.max_escalations,
             "budget_check_every": self.budget_check_every,
             "draft_accept_payback": self.draft_accept_payback,
+            "human_gate": self.human_gate,
         }
 
 
@@ -109,6 +114,25 @@ def should_escalate(
         if candidate in triggers:
             return candidate
     return None
+
+
+def should_ask_human(
+    triggers: Sequence[EscalationTrigger],
+    policy: Policy,
+    *,
+    escalations_used: int = 0,
+) -> Optional[EscalationTrigger]:
+    """The trigger to show a human before spending the API call, or ``None``.
+
+    The human gate is deliberately *not* a separate escalation tier: it is the
+    same trigger that would have called the API, paused for a decision.  This
+    keeps the two outcomes the user asked for — solve locally, or escalate —
+    and avoids inventing a third policy branch.  It is disabled by default so
+    batch and measurement runs remain non-interactive.
+    """
+    if not policy.human_gate:
+        return None
+    return should_escalate(triggers, policy, escalations_used=escalations_used)
 
 
 def escalation_probability(confidence: float) -> float:
