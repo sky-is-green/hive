@@ -141,11 +141,12 @@ summary { cursor: pointer; color: #456; font-size: .88rem; }
 .liblist .librow.loaded { outline: 2px solid #157a3e; }
 .librow button { padding: .05rem .5rem; }
 /* On-theme: nested panels inside dark sections are yellow with black text (matches inputs/buttons) */
-table, .card, .kv-grid, .kv { background: #FFB703; color: #000000; border: 1.5px solid #000; }
-th, td { background: #FFD54F; color: #000000; }
-.card span { color: #333333; }
+table, .card, .kv-grid, .kv { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
+th, td { background: #FFB703; color: #000000; }
+th { background: #000000; color: #FFDD00; }
+.card span { color: #000000; opacity: .75; }
 .card b { color: #000000; }
-table .note, .card .note, .kv-grid .note, .kv .note { color: #333333; }
+table .note, .card .note, .kv-grid .note, .kv .note { color: #000000; opacity: .75; }
    Pattern mirrors ui-primitives HoverCard: fixed-position card portaled to document.body,
    244px wide, 12/16 padding, 12px radius, dark surface #2C2C2E, elevated shadow.
    Appears after 1s hover on div.librow, disappears on mouseleave. */
