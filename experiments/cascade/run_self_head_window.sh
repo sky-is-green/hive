@@ -1,21 +1,29 @@
 #!/bin/bash
-# Window A: the 176B's own judge states for the 140-item harvest transfer subset.
+# Window A/B: the 176B's own judge states for a harvest bench.
 #
 #   bash experiments/cascade/run_self_head_window.sh 2>&1 | tee -a results/.../window.log
 #
+# Window B (full 937-item harvest corpus):
+#   WINDOW_OUT=.../results/scion176b-harvest-20261018 \
+#   WINDOW_BENCH=.../results/decision-harvest-r2-20261017/harvest-bench-r2.jsonl \
+#   WINDOW_NAME=scion176b-harvest \
+#   bash experiments/cascade/run_self_head_window.sh
+#
 # Stops scion-flashnext, serves the 176B through the decision-head build (strata-dh, port 8897,
-# the established port pattern), embeds the 140 judge prompts with the same prompt the harvest
+# the established port pattern), embeds the judge prompts with the same prompt the harvest
 # extraction used, and restores the service whichever way it ends.  The trap is the safety net:
 # the user's serve always comes back.
 set -u
 W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work
 PY=$W/hivebench/.venv/bin/python
-OUT=$W/hivebench/experiments/cascade/results/scion176b-self-organic-20261018
-BENCH=$W/hivebench/experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl
+OUT=${WINDOW_OUT:-$W/hivebench/experiments/cascade/results/scion176b-self-organic-20261018}
+BENCH=${WINDOW_BENCH:-$W/hivebench/experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl}
+NAME=${WINDOW_NAME:-scion176b-transfer}
 SERVICE=scion-flashnext
 PORT=8897
 mkdir -p "$OUT"
 echo "== $(date -Is) start (pid $$)"
+echo "== $(date -Is) out=$OUT bench=$BENCH name=$NAME"
 
 SRV=
 cleanup() {
@@ -97,14 +105,15 @@ if [ $n -ge 120 ]; then
     exit 1
 fi
 
-echo "== $(date -Is) embed: the 140-item harvest transfer subset"
+echo "== $(date -Is) embed: $(wc -l < "$BENCH") judge prompts from $(basename "$BENCH")"
+START=$(date +%s)
 "$PY" "$W/hivebench/experiments/cascade/probe_scion.py" \
     --server "http://127.0.0.1:$PORT" \
     --bench "$BENCH" \
     --out "$OUT" \
-    --name scion176b-transfer
+    --name "$NAME"
 rc=$?
-echo "== $(date -Is) probe rc=$rc"
-ls -lh "$OUT/probe-states-scion176b-transfer.npz" 2>/dev/null || true
+echo "== $(date -Is) probe rc=$rc elapsed $(( $(date +%s) - START ))s"
+ls -lh "$OUT/probe-states-$NAME.npz" 2>/dev/null || true
 echo "== $(date -Is) window complete rc=$rc"
 exit "$rc"

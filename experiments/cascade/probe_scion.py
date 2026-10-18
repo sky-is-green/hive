@@ -49,6 +49,25 @@ def post(url: str, path: str, body: dict, timeout: float = 600.0) -> dict:
         return json.load(r)
 
 
+def wait_healthy(url: str, timeout_s: float) -> bool:
+    """Poll /health until the engine answers 200 again.
+
+    The decision-head server SIGTERMs and auto-restarts an engine that goes silent for
+    STRATA_ENGINE_STALL_S (90 s by default), which closes the open connection.  That is a
+    recoverable event for the client, not a reason to lose the run.
+    """
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(url.rstrip("/") + "/health", timeout=5) as r:
+                if r.status == 200:
+                    return True
+        except Exception:  # noqa: BLE001 — any error just means "not ready yet"
+            pass
+        time.sleep(3)
+    return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--server", required=True)
@@ -58,33 +77,83 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--system", default=SYSTEM,
                     help="system message for the decision prompt")
+    ap.add_argument("--checkpoint-every", type=int, default=25,
+                    help="embed states to a partial npz every N items (0 disables)")
+    ap.add_argument("--retries", type=int, default=4,
+                    help="re-attempts per item after an engine restart closes the connection")
+    ap.add_argument("--restart-wait", type=float, default=420.0,
+                    help="seconds to wait for /health after a dropped connection")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="ignore an existing partial checkpoint and re-embed from scratch")
     args = ap.parse_args()
 
+    args.out.mkdir(parents=True, exist_ok=True)
     items = [json.loads(line) for line in args.bench.read_text().splitlines()]
     if args.limit:
         items = items[:args.limit]
 
+    partial = args.out / f"probe-states-{args.name}.partial.npz"
+
+    def save_partial() -> None:
+        done = [i for i in items if i["item_id"] in states]
+        if not done:
+            return
+        tmp = partial.with_name(partial.name + ".tmp.npz")   # savez appends .npz unless it is already there
+        np.savez_compressed(tmp,
+                            item_ids=[i["item_id"] for i in done],
+                            labels=[i["label"] for i in done],
+                            splits=[i["split"] for i in done],
+                            L1=np.stack([states[i["item_id"]] for i in done]))
+        tmp.replace(partial)
+
     states: dict[str, np.ndarray] = {}
+    if partial.exists() and not args.no_resume:
+        z = np.load(partial, allow_pickle=True)
+        states = {str(i): z["L1"][n] for n, i in enumerate(z["item_ids"])}
+        print(f"resumed {len(states)}/{len(items)} states from {partial.name}", flush=True)
+
     t0 = time.time()
-    dim = None
+    dim = next(iter(states.values())).shape[0] if states else None
+    n_retried = 0
     for n, item in enumerate(items, 1):
+        if item["item_id"] in states:
+            continue
         body = {"messages": [{"role": "system", "content": args.system},
                              {"role": "user", "content": order_body(item, False)}],
                 "add_generation_prompt": True}
-        try:
-            prompt = post(args.server, "/apply-template",
-                          {**body, "chat_template_kwargs": {"enable_thinking": False}})["prompt"]
-        except Exception:
-            # template without thinking-control support (e.g. Clef)
-            prompt = post(args.server, "/apply-template", body)["prompt"]
-        emb = post(args.server, "/embedding",
-                   {"content": prompt, "embd_normalize": -1})
-        vec = np.asarray(emb[0]["embedding"][0], dtype=np.float32)
+        for attempt in range(args.retries + 1):
+            try:
+                try:
+                    prompt = post(args.server, "/apply-template",
+                                  {**body,
+                                   "chat_template_kwargs": {"enable_thinking": False}})["prompt"]
+                except Exception:
+                    # template without thinking-control support (e.g. Clef)
+                    prompt = post(args.server, "/apply-template", body)["prompt"]
+                emb = post(args.server, "/embedding",
+                           {"content": prompt, "embd_normalize": -1})
+                vec = np.asarray(emb[0]["embedding"][0], dtype=np.float32)
+                break
+            except Exception as exc:  # noqa: BLE001 — an engine restart looks like this
+                if attempt >= args.retries:
+                    raise
+                n_retried += 1
+                print(f"[{n}/{len(items)}] {type(exc).__name__} on {item['item_id']}; "
+                      f"waiting for the engine to come back (attempt {attempt + 1})", flush=True)
+                if not wait_healthy(args.server, args.restart_wait):
+                    raise SystemExit(f"engine did not return within {args.restart_wait}s")
         dim = vec.shape[0] if dim is None else dim
         states[item["item_id"]] = vec
         if n % 25 == 0 or n == len(items):
-            print(f"[{n}/{len(items)}] {time.time()-t0:.0f}s dim={dim}",
+            print(f"[{n}/{len(items)}] {time.time()-t0:.0f}s dim={dim} retried={n_retried}",
                   flush=True)
+        if args.checkpoint_every and n % args.checkpoint_every == 0:
+            save_partial()
+
+    missing = [i["item_id"] for i in items if i["item_id"] not in states]
+    if missing:
+        raise SystemExit(f"{len(missing)} items have no state: {missing[:5]}")
+    save_partial()
 
     frac = "1"
     arr = np.stack([states[i["item_id"]] for i in items])
@@ -93,6 +162,7 @@ def main() -> int:
                         labels=[i["label"] for i in items],
                         splits=[i["split"] for i in items],
                         **{f"L{frac}": arr})
+    partial.unlink(missing_ok=True)
 
     train = [i for i in items if i["split"] == "train"]
     test = [i for i in items if i["split"] == "test"]
@@ -102,7 +172,9 @@ def main() -> int:
     a, b = platt(ridge_score(arr[tr].astype(np.float64), model), y[tr])
     results = {"name": args.name, "backend": args.server, "layers": {},
                "state_file": f"probe-states-{args.name}.npz",
-               "n_layers": None, "dim": dim}
+               "n_layers": None, "dim": dim,
+               "items_retried_after_engine_restart": n_retried,
+               "resume_checkpoint": partial.name}
     for split_name, split_items in (("train", train), ("test", test)):
         idx = [n for n, i in enumerate(items) if i["split"] == split_name]
         s = ridge_score(arr[idx].astype(np.float64), model)
