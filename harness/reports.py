@@ -882,8 +882,6 @@ turns, durable session log.</div>
 <label class="inline" title="How: --alias <id>. Does: Model id vs path. Changing: Clients see alias.">alias  <input id="l-alias" size="14" placeholder="model id"></label>
 </div>
 </details>
-<h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Server status</h3>
-<pre id="status">loading…</pre>
 <div id="instances"></div>
 <details style="margin-top:.6rem">
 <summary style="cursor:pointer;font-weight:600;padding:.3rem 0;color:#FFDD00">Console logs &amp; processes ▾</summary>
@@ -894,6 +892,11 @@ turns, durable session log.</div>
 </section>
 <h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Engine log (strata)</h3>
 <pre id="srvlog" title="strata engine log tail">log: loading…</pre>
+<details style="margin-top:.6rem">
+<summary style="cursor:pointer;font-weight:600;padding:.3rem 0;color:#FFDD00;opacity:.8">Server status (raw) ▾</summary>
+<h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Server status</h3>
+<pre id="status">loading…</pre>
+</details>
 </details>
 </section>
 
