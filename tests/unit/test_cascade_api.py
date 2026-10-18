@@ -70,7 +70,7 @@ def test_paths_and_route_table(client):
 
 def test_registry_covers_every_role(client):
     data = client.get("/v1/cascade/registry").json()
-    assert data["count"] == 24
+    assert data["count"] == 26
     # G1 is the deterministic harness policy (no model candidate by design).
     assert data["missing_roles"] == ["G1"]
     ids = {c["id"] for c in data["candidates"]}
