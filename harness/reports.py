@@ -753,6 +753,17 @@ def render_server_page() -> str:
   <button onclick="document.querySelector('[data-tab=\\'tab-settings\\']')?.click()" style="all:unset;cursor:pointer"><div class="card"><span>Configure</span><b style="font-size:1.1rem">Settings →</b><span class="note">models, providers, engines</span></div></button>
 </div>
 <p class="note">Advanced tools (Docker setup, agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
+
+<section style="margin-top:1.5rem">
+<h2 style="margin-top:0">Backend</h2>
+<p class="note">Choose which AI backend the Studio and Cascade use. Only one is active at a time.</p>
+<div class="row" style="gap:.6rem;flex-wrap:wrap;align-items:center;margin:.6rem 0">
+  <label class="inline" style="cursor:pointer"><input type="radio" name="backend" value="strata" onchange="setBackend(this.value)"> <b>Strata</b> (local 176B, port 8081)</label>
+  <label class="inline" style="cursor:pointer"><input type="radio" name="backend" value="llama" onchange="setBackend(this.value)"> <b>Llama.cpp</b> (local GGUF, Launch panel)</label>
+  <label class="inline" style="cursor:pointer"><input type="radio" name="backend" value="api" onchange="setBackend(this.value)"> <b>API</b> (remote endpoint, Providers tab)</label>
+</div>
+<div id="backend-status" class="note" style="margin:.4rem 0"></div>
+</section>
 </section>
 </div>
 
@@ -1185,6 +1196,28 @@ function toggleAdvanced() {{
   el.style.display = show ? 'flex' : 'none';
   if (btn) btn.textContent = show ? 'Fewer tools ▴' : 'More tools ▾';
 }}
+
+function setBackend(val) {{
+  localStorage.setItem('hive-backend', val);
+  const st = document.getElementById('backend-status');
+  if (val === 'strata') {{
+    // check if strata is alive
+    fetch('/v1/server/status').then(r => r.json()).then(s => {{
+      if (st) st.textContent = s.running ? 'Strata is running and healthy.' : 'Strata is not running. Start it separately (port 8081).';
+    }}).catch(() => {{ if (st) st.textContent = 'Could not reach strata.'; }});
+  }} else if (val === 'llama') {{
+    if (st) st.textContent = 'Use the Launch panel to start a local model.';
+  }} else {{
+    if (st) st.textContent = 'Configure endpoints in the Providers tab.';
+  }}
+}}
+// restore backend selection on load
+(function() {{
+  const v = localStorage.getItem('hive-backend') || 'strata';
+  const r = document.querySelector('input[name="backend"][value="' + v + '"]');
+  if (r) r.checked = true;
+  setBackend(v);
+}})();
 
 /* ------------------------------ settings search ----------------------- */
 const SETTINGS_INDEX = {json.dumps(SETTINGS_INDEX)};
