@@ -3,15 +3,20 @@
 2026-10-18, off the back of `results/scion176b-self-organic-20261018/
 MARGINAL.md` (the measurement: the deterministic stack catches 6/9 stored
 wrongs; the learned signals add on top) and its extended head table.
-Status: **stages M1–M2 implemented** — the path-B scorer is
-`harness/cascade/learned_gate.py` (22 offline tests reproducing the stored
-fitted p; live cross-check opt-in via `HIVE_GATE_LIVE=1`) and the runner
-takes `--gate off|intern-0.8b|scion` with the blind-spot-only trigger, the
-quoted finding, the strict re-verify and the gate report fields
-(`tests/unit/test_run_cascade_repair.py`, gate section).  M3 (offline
-replay) and M4 (the live paired run) are still plan from here; this file
-carries the numbers to freeze and the recommendation.  One decision in it is
-yours: path A needs a serve restart.
+Status: **stages M1–M4 done, M4's acceptance failed → the gate default
+stays OFF.**  The path-B scorer is `harness/cascade/learned_gate.py` (22
+offline tests reproducing the stored fitted p; live cross-check opt-in via
+`HIVE_GATE_LIVE=1`), the runner takes `--gate off|intern-0.8b|scion` with
+the blind-spot-only trigger, the quoted finding, the strict re-verify and
+the gate report fields (`tests/unit/test_run_cascade_repair.py`, gate
+section), M3's replay reproduced the study body bit-for-bit and M4's live
+paired run measured the gate on fresh serve data: 1 fresh catch, 0
+false-flag damage, +8.7 % wall clock, **3 false flags > the ≤2 budget →
+default unchanged (off)** (`results/runner-cascade-gate-nothink-20261018/
+RESULT.md`).  M5 (path A) is still plan and needs a serve restart — a
+decision that is yours; the false-flag risk this run exposed (~3/66 at
+L0.75@0.5 on fresh drafts) is the number M5 would have to beat against the
+same rule.
 
 ## What the gate is
 
