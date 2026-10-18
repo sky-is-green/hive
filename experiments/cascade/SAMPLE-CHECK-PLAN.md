@@ -63,13 +63,23 @@ ceiling, and the verdict (separates / overlaps) on the pooled corpus.
 
 ## Status
 
-Built: `sample_check.py`, `audit_labeled.py`.  First corpus run complete:
-20 drafts (12 correct, 8 wrong) from 3 runs, k=3.  Audit verdict: **no head
-separates** — wrongs' p ranges overlap corrects' mass (L0.75 wrongs
-0.034–0.996 vs corrects 10th pct 0.653).  Consistent with the
-fresh-silent audit.  The corpus is small and skewed to mined-hard tasks, so
-this is not a final verdict — grow it before drawing conclusions.
+Built: `sample_check.py`, `audit_labeled.py`.  Three corpus measurements complete,
+all consistent:
 
-Next: broaden sampling to a representative task mix (all tasks or a random
-subset at T=0.7) so silent wrongs appear in natural proportion, accumulate
-to ≥ 200 drafts, then re-audit.  M5 still held.
+- fresh_silent_audit: 195 silent drafts (28 wrong) — no separation.
+- sample_check (hard tasks): 20 drafts (8 wrong) — no separation.
+- sample_check (broad, random tasks): 47 drafts (5 wrong) — no separation.
+- merged: 67 drafts (13 wrong) — no separation.
+
+**Conclusion: the 0.8B readout features do not separate silent wrongs from
+corrects on any of these distributions.**  The cap-2 ceiling is 3-5 catches
+at 0-1 flags per run, but pooled it collapses (wrongs' p spans 0.00-1.00
+and overlaps the corrects' mass).  Per-run winners (mlp-concat 7/1 on armB)
+do not pool (4/1).  This is a feature problem, not a threshold or data-volume
+problem.
+
+**M5 (serve restart for path A / 176B /embedding) is now the only remaining
+lever for separation.**  The restore trap is documented and ready.  If M5 also
+fails to separate, the gate stays opt-in-only and the cascade relies on
+detectors + repair + escalation (which already serves 59-62/66 with 0 false
+rejects).
