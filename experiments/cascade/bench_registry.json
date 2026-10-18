@@ -1,0 +1,221 @@
+{
+  "created": "2026-10-18T00:19:50Z",
+  "policy": "Select by verifier class and hardness, not by benchmark name; gold-dependent benches are eval/family-prior only.",
+  "verifier_classes": {
+    "code_exec": {
+      "gold_free_runtime": true,
+      "condition": "task supplies tests",
+      "feedback": "failing test + traceback"
+    },
+    "constraint_check": {
+      "gold_free_runtime": true,
+      "condition": "constraints in task",
+      "feedback": "violated constraint"
+    },
+    "schema_ast": {
+      "gold_free_runtime": true,
+      "condition": "schema/tool contract in task",
+      "feedback": "parse/AST error"
+    },
+    "consistency": {
+      "gold_free_runtime": true,
+      "condition": "always",
+      "feedback": "disagreement / arithmetic mismatch"
+    },
+    "numeric_gold": {
+      "gold_free_runtime": false,
+      "condition": "expected answer supplied or independent solver",
+      "feedback": "mismatch"
+    },
+    "choice_gold": {
+      "gold_free_runtime": false,
+      "condition": "answer key",
+      "feedback": "mismatch"
+    },
+    "judge": {
+      "gold_free_runtime": false,
+      "condition": "hosted API",
+      "feedback": "judge verdict"
+    }
+  },
+  "benches": [
+    {
+      "name": "humaneval",
+      "rows": 164,
+      "source": "https://github.com/openai/human-eval",
+      "license": "MIT",
+      "local": "data/benches/humaneval.jsonl.gz",
+      "bytes": 44877,
+      "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+      "verifier": "code_exec",
+      "runtime": "conditional",
+      "use": "verifier+negatives",
+      "split": "test",
+      "note": "tests are part of the task in the bench; at runtime only when the task supplies tests"
+    },
+    {
+      "name": "mbpp",
+      "rows": 974,
+      "source": "https://github.com/google-research/google-research/tree/master/mbpp",
+      "license": "CC-BY-4.0 (check source)",
+      "local": "data/benches/mbpp.jsonl",
+      "bytes": 563743,
+      "sha256": "ccf64ceae9c5403bf50a044cb6d505bfd2a2963ee58338ba268fd65beab92a9f",
+      "verifier": "code_exec",
+      "runtime": "conditional",
+      "use": "verifier+negatives",
+      "split": "test",
+      "note": "test_list + challenge_test_list; same runtime condition as HumanEval"
+    },
+    {
+      "name": "ifeval",
+      "rows": 541,
+      "source": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
+      "license": "Apache-2.0",
+      "local": "data/benches/ifeval-input_data.jsonl",
+      "bytes": 207111,
+      "sha256": "67ffeee0fcb87c317c5b08a2de85557b4a7e96ada6178aa645b4954fe4b53d49",
+      "verifier": "constraint_check",
+      "runtime": "gold_free",
+      "use": "verifier+repair",
+      "split": "test",
+      "note": "instruction_id_list + kwargs are programmatic; some violations are deterministically repairable"
+    },
+    {
+      "name": "gsm8k-test",
+      "rows": 1319,
+      "source": "https://github.com/openai/grade-school-math",
+      "license": "MIT",
+      "local": "data/benches/gsm8k-test.jsonl",
+      "bytes": 749738,
+      "sha256": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14",
+      "verifier": "numeric_gold",
+      "runtime": "gold_dependent",
+      "use": "train+eval",
+      "split": "test",
+      "note": "final-answer check needs the gold number; independent re-solve/consistency is the gold-free fallback"
+    },
+    {
+      "name": "gsm8k-train",
+      "rows": 7473,
+      "source": "https://github.com/openai/grade-school-math",
+      "license": "MIT",
+      "local": "data/benches/gsm8k-train.jsonl",
+      "bytes": 4166206,
+      "sha256": "17f347dc51477c50d4efb83959dbb7c56297aba886e5544ee2aaed3024813465",
+      "verifier": "numeric_gold",
+      "runtime": "gold_dependent",
+      "use": "train+eval",
+      "split": "train",
+      "note": ""
+    },
+    {
+      "name": "aime",
+      "rows": 90,
+      "source": "https://huggingface.co/datasets/AI-MO/aimo-validation-aime",
+      "license": "Apache-2.0",
+      "local": "data/benches/aime/data/train-00000-of-00001.parquet",
+      "bytes": 261038,
+      "sha256": "025484a99fea498e7d0c3b0ee42afcbec0176405c19c5dbf557b9f6ca6445675",
+      "verifier": "numeric_gold",
+      "runtime": "gold_dependent",
+      "use": "eval+negatives",
+      "split": "test",
+      "note": "hard math; answer key only, needs an independent solver for a runtime check"
+    },
+    {
+      "name": "livecodebench",
+      "rows": 400,
+      "source": "https://huggingface.co/datasets/livecodebench/code_generation_lite",
+      "license": "CC (see dataset card)",
+      "local": "data/benches/livecodebench/test.jsonl",
+      "bytes": 1252609773,
+      "sha256": "2bd02b38beb48e8c46b5b9987095d999ff38cd8efc255ea5d58974317c48f63f",
+      "verifier": "code_exec",
+      "runtime": "conditional",
+      "use": "verifier+negatives",
+      "split": "test",
+      "note": "public/private test cases included; time-sliced contest dates reduce contamination"
+    },
+    {
+      "name": "mmlu-pro",
+      "rows": 12032,
+      "source": "https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro",
+      "license": "MIT",
+      "local": "data/benches/mmlu-pro/data/test-00000-of-00001.parquet",
+      "bytes": 4144185,
+      "sha256": "0e24a191921c2f453518a537a8b2117bd137e7714d4ef1565e9ba06c1ecb9ad8",
+      "verifier": "choice_gold",
+      "runtime": "gold_dependent",
+      "use": "eval+family-prior",
+      "split": "test",
+      "note": "answer key only; no runtime correction path, useful for family priors and gate training"
+    }
+  ],
+  "existing_corpora": [
+    {
+      "name": "cascade-bench-v1",
+      "path": "experiments/cascade/tasks-bench.json",
+      "rows": 100,
+      "note": "frozen J-Bench: gsm8k/math/humaneval/truthfulqa; harvest round-1/2 source"
+    },
+    {
+      "name": "cascade-community-v1",
+      "path": "experiments/cascade/tasks-community.json",
+      "rows": 664,
+      "note": "300 gsm8k / 164 humaneval / 200 math"
+    },
+    {
+      "name": "cascade-community-v1-code",
+      "path": "experiments/cascade/tasks-community-code.json",
+      "rows": 164,
+      "note": "full HumanEval"
+    }
+  ],
+  "queued": [
+    {
+      "name": "humaneval+ / mbpp+",
+      "why": "stronger EvalPlus tests; more organic code negatives",
+      "status": "locate source"
+    },
+    {
+      "name": "bfcl",
+      "why": "tool-call AST/executable checks; gold-free",
+      "status": "queued"
+    },
+    {
+      "name": "mt-bench / arena-hard",
+      "why": "open-ended judge tier and family-held-out gate eval",
+      "status": "needs hosted API provider"
+    },
+    {
+      "name": "gpqa",
+      "why": "hard knowledge family prior",
+      "status": "gated"
+    },
+    {
+      "name": "swe-bench-lite",
+      "why": "repo-level code verification",
+      "status": "heavy; later"
+    },
+    {
+      "name": "ruler / longbench",
+      "why": "long-context family prior",
+      "status": "only if 256K workload needs it"
+    }
+  ],
+  "skipped": [
+    {
+      "name": "saturated easy MCQ (ARC-easy, HellaSwag)",
+      "why": "few wrongs, gold-dependent, no runtime path"
+    },
+    {
+      "name": "safety/toxicity",
+      "why": "different objective from correctness gate"
+    },
+    {
+      "name": "vision/multimodal",
+      "why": "flashnext is text-only"
+    }
+  ]
+}
