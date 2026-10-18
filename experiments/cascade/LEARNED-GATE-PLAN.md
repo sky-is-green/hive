@@ -3,11 +3,14 @@
 2026-10-18, off the back of `results/scion176b-self-organic-20261018/
 MARGINAL.md` (the measurement: the deterministic stack catches 6/9 stored
 wrongs; the learned signals add on top) and its extended head table.
-Status: **stage M1 implemented** — the path-B scorer is
-`harness/cascade/learned_gate.py` (22 unit tests reproducing the stored
-fitted p; live cross-check opt-in via `HIVE_GATE_LIVE=1`) but **not wired
-into the runner**; M2 (the `--gate` wiring) onward is still plan — this file
-is the numbers to freeze and the recommendation.  One decision in it is
+Status: **stages M1–M2 implemented** — the path-B scorer is
+`harness/cascade/learned_gate.py` (22 offline tests reproducing the stored
+fitted p; live cross-check opt-in via `HIVE_GATE_LIVE=1`) and the runner
+takes `--gate off|intern-0.8b|scion` with the blind-spot-only trigger, the
+quoted finding, the strict re-verify and the gate report fields
+(`tests/unit/test_run_cascade_repair.py`, gate section).  M3 (offline
+replay) and M4 (the live paired run) are still plan from here; this file
+carries the numbers to freeze and the recommendation.  One decision in it is
 yours: path A needs a serve restart.
 
 ## What the gate is

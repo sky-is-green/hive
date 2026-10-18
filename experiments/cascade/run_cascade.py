@@ -56,6 +56,11 @@ from harness.cascade import (  # noqa: E402
 )
 from harness.cascade.registry import CandidateRegistry  # noqa: E402
 from harness.cascade.policy import verifier_rejects  # noqa: E402
+from harness.cascade.learned_gate import (  # noqa: E402
+    DEFAULT_HEAD,
+    KNOWN_HEADS,
+    LearnedGate,
+)
 
 from experiments.cascade.checkers import check, extract_json  # noqa: E402
 from experiments.cascade.cascade import (  # noqa: E402 - the gold-free runtime guard
@@ -63,7 +68,11 @@ from experiments.cascade.cascade import (  # noqa: E402 - the gold-free runtime 
     detect,
     runtime_spec,
 )
-from experiments.cascade.repair_pass import evidence_prompt, generic_prompt  # noqa: E402
+from experiments.cascade.repair_pass import (  # noqa: E402
+    DRAFT_HEAD,
+    evidence_prompt,
+    generic_prompt,
+)
 
 # ---------------------------------------------------------------- providers
 
@@ -636,10 +645,104 @@ def finding_digest(findings: list[dict[str, Any]]) -> str:
             parts.append(
                 f"consistency: {first.get('equation', 'an asserted step')} is false"
             )
+        elif detector == "learned_gate":
+            d = f.get("detail") or {}
+            parts.append(
+                f"learned gate: score {float(d.get('p', 0.0)):.3f} below the frozen "
+                f"threshold {float(d.get('threshold', 0.5)):.2f} — doubtful"
+            )
         else:
             text = " ".join(str(f.get("finding", "")).split())
             parts.append(f"{detector}: {text[:240] or 'flagged'}")
     return "; ".join(parts)
+
+
+def gate_finding(p: float, ms: float, threshold: float, head: str) -> dict[str, Any]:
+    """The learned gate's rejection finding (gold-free: question+candidate only)."""
+    return {
+        "detector": "learned_gate",
+        "finding": (
+            f"the frozen self-check scored this answer's correctness confidence "
+            f"at {p:.3f}, below the {threshold:.2f} gate threshold; its "
+            f"arithmetic and the task's own checks found no definite failure"
+        ),
+        "detail": {"p": p, "ms": ms, "threshold": threshold, "head": head},
+    }
+
+
+def _new_d3_judgement(task_id: str) -> Judgement:
+    return Judgement(id=f"verify-{task_id}", request_id=task_id, generation_id=0,
+                     role="D3", kind="verify")
+
+
+def apply_learned_gate(
+    gate: LearnedGate,
+    task_id: str,
+    task: dict,
+    candidate: str,
+    verdict: Any,
+    threshold: float,
+) -> tuple[Any, dict[str, Any]]:
+    """Blind-spot-only learned gate: score a silent-draft, fire below threshold.
+
+    Called for a deterministic verdict only, and only when the detectors are
+    silent (the verdict accepts): that is the measured blind spot.  A fired
+    gate is one more rejection finding — findings, digest and ladder all
+    behave exactly like a detector's.
+    """
+    if getattr(verdict, "decision", "") == "reject":
+        return verdict, {"scored": False, "fired": None}
+    p, ms = gate.score(str(task.get("prompt", "")), candidate)
+    head = getattr(getattr(gate, "head", None), "name", "")
+    old_payload = dict(verdict.payload or {})
+    row: dict[str, Any] = {"scored": True, "fired": p < threshold, "p": p,
+                           "ms": ms, "head": head, "threshold": threshold}
+    gate_payload = {"p": p, "ms": ms, "threshold": threshold, "head": head}
+    latency = float(getattr(verdict, "latency_ms", 0.0) or 0.0) + ms
+    if p >= threshold:
+        # silent: the verdict is unchanged in meaning (same decision and
+        # confidence) — but re-issued so the D3 row's latency and payload
+        # include the score honestly.
+        fresh = result_for(
+            _new_d3_judgement(task_id), verdict.decision, verdict.confidence,
+            latency_ms=latency, payload={**old_payload, "gate": gate_payload},
+        )
+        return fresh, row
+    findings = list(old_payload.get("findings") or [])
+    findings.append(gate_finding(p, ms, threshold, head))
+    fresh = result_for(
+        _new_d3_judgement(task_id), "reject", 0.0,
+        latency_ms=latency,
+        payload={
+            "judge": old_payload.get("judge") or "deterministic",
+            "detectors": [f["detector"] for f in findings],
+            "findings": findings,
+            "reason": finding_digest(findings),
+            "gate": gate_payload,
+        },
+    )
+    return fresh, row
+
+
+def gate_repair_prompt(row: dict, finding: dict[str, Any]) -> str:
+    """The learned-gate repair prompt: p vs threshold quoted, nothing else.
+
+    No gold, no checker output — the finding is the score itself and the ask
+    is an internal-inconsistency recheck, the failure mode the blind spot is
+    made of (a wrong answer the detectors could not see).
+    """
+    d = finding.get("detail") or {}
+    detail = (
+        f"An internal consistency self-check scored this draft's correctness "
+        f"confidence at {float(d.get('p', 0.0)):.3f}, below the "
+        f"{float(d.get('threshold', 0.5)):.2f} gate threshold, while the "
+        f"arithmetic and the task's own checks found no definite failure. "
+        f"Reread the reasoning line by line looking for an internal "
+        f"inconsistency (a step that contradicts another step, or a final "
+        f"answer the steps do not actually support), redo the work "
+        f"correctly, and give the final answer in the same format."
+    )
+    return row["prompt"].rstrip() + "\n\n" + DRAFT_HEAD.format(row["candidate"].strip()) + detail
 
 
 def repair_user_text(task: dict, candidate: str, findings: list[dict[str, Any]]
@@ -647,11 +750,14 @@ def repair_user_text(task: dict, candidate: str, findings: list[dict[str, Any]]
     """The repair prompt: the finding is quoted, never the expected answer.
 
     With structured findings (``--judge deterministic``) the measured
-    evidence prompt is used; without one (a learned judge rejected) it falls
-    back to the generic recheck prompt.
+    evidence prompt is used; a learned-gate rejection (the deterministic
+    stack silent by construction) gets its own template; without one it
+    falls back to the generic recheck prompt.
     """
     row = {"prompt": str(task.get("prompt", "")), "candidate": candidate or ""}
     if findings:
+        if all(f.get("detector") == "learned_gate" for f in findings):
+            return "learned-gate", gate_repair_prompt(row, findings[0])
         found = {f["detector"]: f["finding"] for f in findings}
         return evidence_prompt(row, found)
     return "generic", generic_prompt(row)
@@ -665,6 +771,7 @@ def attempt_repair(
     rs: dict,
     *,
     max_tokens: Optional[int] = None,
+    rescore: Optional[Any] = None,
 ) -> dict[str, Any]:
     """One greedy local re-attempt with the finding quoted, then re-detect.
 
@@ -672,6 +779,13 @@ def attempt_repair(
     quoted and never the expected answer; a truncated or byte-identical
     attempt is never accepted as the answer; an attempt that clears the
     detectors is re-framed by ``canonical()`` for the task's interface.
+
+    ``rescore`` is the learned gate's strict re-verify: when a gate finding
+    is the reason the draft was rejected, a repaired answer that clears the
+    detectors is re-scored and the finding clears only if the score clears
+    (a persistent flag stays flagged).  It is only called when the detectors
+    are silent on the repair — the only case where the gate is the remaining
+    objection.
     """
     detail, user_text = repair_user_text(task, candidate, findings)
     messages = [
@@ -700,11 +814,25 @@ def attempt_repair(
         "truncated": out.get("finish_reason") == "length",
         "canonical": canonical(rs.get("kind"), text) if not after else None,
         "cleared": False,
+        "gate_rescored": False,
+        "gate_p2": None,
+        "gate_cleared": None,
         "text": text,
     }
+    if rescore is not None and not after and not record["truncated"]:
+        scored = rescore(text)
+        record["gate_rescored"] = True
+        record["gate_p2"] = scored["p"]
+        record["gate_cleared"] = scored["p"] >= scored["threshold"]
     if not after and not record["truncated"] and record["canonical"]:
-        record["cleared"] = True
-    if not after and not record["cleared"]:
+        if record["gate_rescored"] and not record["gate_cleared"]:
+            record["stopped"] = (
+                f"the learned gate still scores the repair below threshold "
+                f"(p={record['gate_p2']:.3f})"
+            )
+        else:
+            record["cleared"] = True
+    if not after and not record["cleared"] and "stopped" not in record:
         record["stopped"] = (
             "the repair was truncated" if record["truncated"]
             else "the repair produced no consumable final answer"
@@ -743,6 +871,36 @@ def repair_enabled(args: argparse.Namespace) -> bool:
     return args.repair == "on" or (
         args.repair == "auto" and args.judge == "deterministic"
     )
+
+
+def open_gate(args: argparse.Namespace, err=sys.stderr) -> Optional[LearnedGate]:
+    """The learned gate behind ``--gate`` — or None, with the reason printed.
+
+    The gate is the deterministic stack's third trigger: it is meaningless
+    without ``--judge deterministic``.  ``scion`` (path A) is a future source
+    that needs the serve restart (M5 of LEARNED-GATE-PLAN.md); a failed head
+    load turns the optional trigger off rather than losing the run.
+    """
+    if args.gate == "off":
+        return None
+    if args.gate == "scion":
+        print("[cascade] --gate scion (path A) is not wired yet — it needs the "
+              "serve /embedding restart (M5 of LEARNED-GATE-PLAN.md); gate off",
+              file=err)
+        return None
+    if args.judge != "deterministic":
+        print("[cascade] --gate needs --judge deterministic (the gate is the "
+              "deterministic stack's third trigger); gate off", file=err)
+        return None
+    try:
+        gate = LearnedGate(head=args.gate_head)
+    except Exception as exc:  # noqa: BLE001 - an optional trigger must not kill the run
+        print(f"[cascade] --gate disabled (head load failed: {exc})", file=err)
+        return None
+    print(f"[cascade] learned gate on: head {args.gate_head} at "
+          f"{args.gate_threshold:.2f} (frozen r2 heads; the 0.8B backbone "
+          "loads on the first silent-draft score)", file=err, flush=True)
+    return gate
 
 
 def route_prompt(task: dict) -> list[dict]:
@@ -810,6 +968,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="after a verifier reject, re-ask the local model once, greedily, "
              "with the finding quoted, before the human gate or the API: auto "
              "(default) is on for --judge deterministic and off otherwise",
+    )
+    parser.add_argument(
+        "--gate", choices=("off", "intern-0.8b", "scion"), default="off",
+        help="the learned gate (a third trigger beside the deterministic "
+             "detectors, blind-spot-only): intern-0.8b is the frozen r2 "
+             "readout head over the intern-decision-0.8B CPU backbone; scion "
+             "(path A, the serve's own embedding) is not wired yet",
+    )
+    parser.add_argument(
+        "--gate-head", default=DEFAULT_HEAD, choices=KNOWN_HEADS,
+        help=f"the frozen r2 head the gate applies (default {DEFAULT_HEAD}, "
+             "the plan's precision-first choice; L0.5 is the recall dial)",
+    )
+    parser.add_argument(
+        "--gate-threshold", type=float, default=0.5,
+        help="fire the gate when the head's score falls below this (frozen "
+             "at 0.5 by the plan; no per-run tuning)",
     )
     parser.add_argument("--judge-model", default="",
                         help="empty = the default model for the chosen judge")
@@ -942,6 +1117,7 @@ def main() -> int:
         human_gate=human_gate is not None,
     )
     broker = JudgementBroker()
+    gate = open_gate(args)
 
     def router_handler(batch):
         results = []
@@ -1203,6 +1379,8 @@ def main() -> int:
                     "cascade_ok": api_ok,
                     "false_accept": False, "false_reject": False, "corrected": False,
                     "judge": None,
+                    "gate": args.gate, "gate_scored": False, "gate_fired": None,
+                    "gate_p": None, "gate_cleared": None,
                     "fallback_available": fallback is not None,
                     "flagged": False,
                 }
@@ -1258,11 +1436,34 @@ def main() -> int:
                 max(2048, args.local_max_tokens * 2),
             )
             rejected = True
+
+        # The learned gate, blind-spot-only: it scores a draft only when the
+        # deterministic detectors are silent (the measured blind spot, where
+        # the +1..+2 catch lives).  A fired gate is one more rejection
+        # finding — findings, digest, repair and ladder all behave as for a
+        # detector; a truncated draft is never scored (no answer to score).
+        gate_row: Optional[dict[str, Any]] = None
+        if gate is not None and not rejected and not truncated:
+            try:
+                verdict, gate_row = apply_learned_gate(
+                    gate, task["id"], task, local["content"], verdict,
+                    args.gate_threshold,
+                )
+            except Exception as exc:  # noqa: BLE001 - a failed score is not a verdict
+                gate_row = {"scored": False, "fired": None, "error": str(exc)[:200]}
+                print(f"[cascade] {task['id']}: gate scoring failed "
+                      f"({gate_row['error']}); gate skipped", file=sys.stderr)
+            if gate_row.get("fired"):
+                rejected = True
         telemetry.log(
             task["id"], planned.path, "D3-verify",
             "api" if args.judge == "api" else args.judge_device,
             verdict.latency_ms,
             outcome="ok" if not rejected else "reject", async_=True,
+            detail=(
+                f"gate p={gate_row['p']:.4f}"
+                + (", fired" if gate_row.get("fired") else "")
+            ) if gate_row and gate_row.get("scored") else "",
         )
 
         # The repair leg: one greedy local re-attempt with the finding quoted.
@@ -1272,11 +1473,22 @@ def main() -> int:
         repair_record: Optional[dict[str, Any]] = None
         repaired_answer: Optional[str] = None
         if rejected and repair_on and not truncated:
+            rescore = None
+            if gate is not None and any(
+                f.get("detector") == "learned_gate"
+                for f in (verdict.payload or {}).get("findings") or []
+            ):
+                def _rescore(candidate_text: str, _task=task):
+                    p2, ms2 = gate.score(str(_task["prompt"]), candidate_text)
+                    return {"p": p2, "ms": ms2, "threshold": args.gate_threshold}
+
+                rescore = _rescore
             repair_record = attempt_repair(
                 scion, task, local["content"],
                 list((verdict.payload or {}).get("findings") or []),
                 runtime_specs.get(task["id"]) or {"kind": None},
                 max_tokens=args.local_max_tokens,
+                rescore=rescore,
             )
             if repair_record["cleared"]:
                 repaired_answer = repair_record["canonical"]
@@ -1479,6 +1691,13 @@ def main() -> int:
                     and cascade_ok
                 ),
                 "judge": args.judge,
+                "gate": args.gate,
+                "gate_scored": bool(gate_row and gate_row.get("scored")),
+                "gate_fired": (gate_row.get("fired") if gate_row else None),
+                "gate_p": (gate_row.get("p") if gate_row else None),
+                "gate_cleared": (
+                    repair_record.get("gate_cleared") if repair_record else None
+                ),
                 "fallback_available": fallback is not None,
                 "flagged": flagged,
             }
@@ -1513,6 +1732,11 @@ def main() -> int:
         "repairs_still_flagged": sum(
             1 for r in records if r.get("repair") and not r["repair"]["cleared"]
         ),
+        "gate_scored": sum(1 for r in records if r.get("gate_scored")),
+        "gate_fires": sum(1 for r in records if r.get("gate_fired")),
+        "gate_cleared": sum(
+            1 for r in records if r.get("gate_cleared") is True
+        ),
         "router_agreement": mean(measured, "router_agrees"),
         "scion_mean_ms": mean(measured, "scion_ms"),
         "scion_mean_tokens": mean(measured, "scion_tokens"),
@@ -1544,6 +1768,9 @@ def main() -> int:
         "router": args.router,
         "judge": args.judge,
         "repair": args.repair,
+        "gate": args.gate,
+        "gate_head": args.gate_head,
+        "gate_threshold": args.gate_threshold,
         "local_temperature": args.local_temperature,
         "router_mode": args.router_mode,
         "api_fallback": args.api_fallback or None,
