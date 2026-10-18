@@ -715,6 +715,14 @@ def render_server_page() -> str:
 
 <div class="grid">
 
+<!-- Command palette (Ctrl+K) -->
+<div id="cmd-palette" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.5); align-items:flex-start; justify-content:center; padding-top:15vh">
+  <div style="background:#000; border:2px solid #FFB703; border-radius:10px; width:min(600px,90vw); max-height:60vh; display:flex; flex-direction:column; overflow:hidden">
+    <input id="cmd-palette-input" type="text" placeholder="Search commands…" style="padding:.8rem 1rem; font-size:1rem; background:#FFB703; color:#000; border:none; border-bottom:1px solid #FFDD00; outline:none">
+    <div id="cmd-palette-list" style="overflow-y:auto; flex:1; padding:.5rem"></div>
+  </div>
+</div>
+
 <!-- ==================== LEFT: tabs ==================== -->
 <div class="col">
 <div class="tabs" id="main-tabs">
@@ -1217,6 +1225,53 @@ function goSetting(tab, id) {{
 function filterSettings(q) {{ buildSettingsList(q); }}
 
 setTimeout(() => buildSettingsList(''), 500);
+/* --------------------------- command palette ---------------------- */
+let _cmdPaletteOpen = false;
+async function openCmdPalette() {{
+  const pal = document.getElementById('cmd-palette');
+  const input = document.getElementById('cmd-palette-input');
+  const list = document.getElementById('cmd-palette-list');
+  if (!pal) return;
+  pal.style.display = 'flex';
+  input.value = '';
+  input.focus();
+  _cmdPaletteOpen = true;
+  try {{
+    const data = await api('/v1/commands');
+    const cmds = data.commands || [];
+    window._cmdList = cmds;
+    renderCmdPalette('');
+  }} catch (e) {{ list.textContent = 'Failed to load commands: ' + e; }}
+}}
+function closeCmdPalette() {{
+  const pal = document.getElementById('cmd-palette');
+  if (pal) pal.style.display = 'none';
+  _cmdPaletteOpen = false;
+}}
+function renderCmdPalette(q) {{
+  const list = document.getElementById('cmd-palette-list');
+  if (!list) return;
+  q = (q || '').toLowerCase();
+  const cmds = (window._cmdList || []).filter(c =>
+    !q || c.name.includes(q) || (c.description||'').toLowerCase().includes(q));
+  list.innerHTML = cmds.map(c =>
+    `<div style="padding:.5rem .8rem; cursor:pointer; border-bottom:1px solid rgba(255,221,0,.12)" onclick="runCmd('${{c.name}}')">
+       <b style="color:#FFDD00">/${{c.name}}</b> <span class="note">${{c.description||''}}</span>
+       ${{c.input_hint ? `<span class="note" style="float:right">${{c.input_hint}}</span>` : ''}}
+     </div>`).join('') || '<p class="note" style="padding:.5rem">No matching commands.</p>';
+}}
+async function runCmd(name) {{
+  closeCmdPalette();
+  const input = document.getElementById('chatin');
+  if (input) {{ input.value = '/' + name + ' '; input.focus(); }}
+}}
+document.getElementById('cmd-palette-input')?.addEventListener('input', e => renderCmdPalette(e.target.value));
+document.getElementById('cmd-palette')?.addEventListener('click', e => {{ if (e.target.id === 'cmd-palette') closeCmdPalette(); }});
+document.addEventListener('keydown', e => {{
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{ e.preventDefault(); openCmdPalette(); }}
+  if (e.key === 'Escape' && _cmdPaletteOpen) closeCmdPalette();
+}});
+
 for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
   btn.addEventListener('click', (e) => {{
     try{{
