@@ -63,5 +63,13 @@ ceiling, and the verdict (separates / overlaps) on the pooled corpus.
 
 ## Status
 
-Built: `sample_check.py`, `audit_labeled.py`.  First corpus run in progress.
-M5 still held.
+Built: `sample_check.py`, `audit_labeled.py`.  First corpus run complete:
+20 drafts (12 correct, 8 wrong) from 3 runs, k=3.  Audit verdict: **no head
+separates** — wrongs' p ranges overlap corrects' mass (L0.75 wrongs
+0.034–0.996 vs corrects 10th pct 0.653).  Consistent with the
+fresh-silent audit.  The corpus is small and skewed to mined-hard tasks, so
+this is not a final verdict — grow it before drawing conclusions.
+
+Next: broaden sampling to a representative task mix (all tasks or a random
+subset at T=0.7) so silent wrongs appear in natural proportion, accumulate
+to ≥ 200 drafts, then re-audit.  M5 still held.
