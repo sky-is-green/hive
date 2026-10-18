@@ -68,6 +68,11 @@ from experiments.cascade.cascade import (  # noqa: E402 - the gold-free runtime 
     detect,
     runtime_spec,
 )
+from experiments.cascade.escalation_lane import (  # noqa: E402
+    EscalationLane,
+    in_lane,
+    lane_record,
+)
 from experiments.cascade.repair_pass import (  # noqa: E402
     DRAFT_HEAD,
     evidence_prompt,
@@ -1022,6 +1027,12 @@ def build_parser() -> argparse.ArgumentParser:
              "when stdin is a TTY and --api-fallback is configured; on forces "
              "the prompt; off preserves the non-interactive benchmark flow",
     )
+    parser.add_argument(
+        "--no-escalation-lane", action="store_true",
+        help="do not write escalation.jsonl next to the report (the harvest "
+             "of every ladder-resolved item: task+findings+resolution; "
+             "training-side only, the runtime never reads it)",
+    )
     return parser
 
 
@@ -1118,6 +1129,15 @@ def main() -> int:
     )
     broker = JudgementBroker()
     gate = open_gate(args)
+
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    out_dir = Path(args.out) / (args.run_name.strip() or stamp)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    lane = (
+        EscalationLane.disabled()
+        if args.no_escalation_lane
+        else EscalationLane(out_dir / "escalation.jsonl")
+    )
 
     def router_handler(batch):
         results = []
@@ -1673,6 +1693,7 @@ def main() -> int:
                 "verdict": verdict.decision,
                 "verdict_confidence": verdict.confidence,
                 "verdict_reason": verdict.payload.get("reason", ""),
+                "findings": list((verdict.payload or {}).get("findings") or []),
                 "escalated": escalate,
                 "gated": False,
                 "api_ok": api_ok,
@@ -1702,6 +1723,23 @@ def main() -> int:
                 "flagged": flagged,
             }
         )
+
+        if in_lane(records[-1]):
+            try:
+                lane.append(
+                    lane_record(
+                        records[-1], task,
+                        run=(args.run_name.strip() or stamp),
+                        draft=local["content"],
+                        cascade_answer=cascade_answer,
+                        findings=records[-1]["findings"],
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001 - never kill the run over the harvest
+                print(
+                    f"[cascade] escalation lane write failed ({exc})",
+                    file=sys.stderr,
+                )
 
     # -- aggregate -----------------------------------------------------
     n = len(records)
@@ -1759,9 +1797,6 @@ def main() -> int:
         "telemetry": telemetry.summary(),
     }
 
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    out_dir = Path(args.out) / (args.run_name.strip() or stamp)
-    out_dir.mkdir(parents=True, exist_ok=True)
     report = {
         "spec": spec["name"],
         "scion_base": scion.base,
@@ -1771,6 +1806,10 @@ def main() -> int:
         "gate": args.gate,
         "gate_head": args.gate_head,
         "gate_threshold": args.gate_threshold,
+        "escalation_lane": {
+            "path": (str(lane.path) if lane.path else None),
+            "count": lane.count,
+        },
         "local_temperature": args.local_temperature,
         "router_mode": args.router_mode,
         "api_fallback": args.api_fallback or None,
@@ -1781,6 +1820,7 @@ def main() -> int:
         "records": records,
     }
     (out_dir / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
+    lane.close()
 
     print("\n=== cascade pilot ===")
     header = f"{'task':26} {'bucket':10} {'scion':>5} {'api':>4} {'route':>5} {'verdict':>8} {'esc':>4} {'cascade':>7}"
