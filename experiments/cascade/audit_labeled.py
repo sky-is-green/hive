@@ -76,15 +76,15 @@ def main():
         p10 = cs[max(0, len(cs) // 10)] if cs else float("nan")
         caught05 = sum(1 for m in wrongs if m["p"][h] < 0.5)
         flags05 = sum(1 for m in corrects if m["p"][h] < 0.5)
-        # cap-2 best
         best_c, best_f = 0, 0
         for t in sorted({m["p"][h] for m in meta}):
             c = sum(1 for m in wrongs if m["p"][h] < t)
             f = sum(1 for m in corrects if m["p"][h] < t)
             if f <= 2 and c > best_c:
                 best_c, best_f = c, f
+        w_range = f"{min(ws):.4f}-{max(ws):.4f}" if ws else "n/a"
         gap = "GAP" if (ws and cs and max(ws) < p10) else "overlap"
-        lines.append(f"| {h} | {min(ws):.4f}-{max(ws):.4f} | {p10:.4f} (n={len(cs)}) | "
+        lines.append(f"| {h} | {w_range} | {p10:.4f} (n={len(cs)}) | "
                      f"{caught05} | {flags05} | {best_c}/{best_f} |")
     lines.append("")
 
@@ -114,5 +114,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-PY
-echo "written"
