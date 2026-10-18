@@ -15,6 +15,7 @@ cmdlets (they decode as ANSI on Windows and mojibake every non-ASCII char).
 from __future__ import annotations
 
 import html
+import json
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -476,6 +477,235 @@ def tip(text: str) -> str:
     return ""
 
 
+SETTINGS_INDEX = [
+  {
+    "label": "Model (engine profile)",
+    "desc": "GGUF weights for -m",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-model"
+  },
+  {
+    "label": "Context length",
+    "desc": "Caps prompt+reply, KV cost",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-ctxlen"
+  },
+  {
+    "label": "GPU layers",
+    "desc": "GPU offload (999=all)",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-gpu"
+  },
+  {
+    "label": "Engine name",
+    "desc": "Profile lookup key",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-name"
+  },
+  {
+    "label": "Base URL",
+    "desc": "Provider endpoint",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-url"
+  },
+  {
+    "label": "API key",
+    "desc": "Auth for endpoint",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-apikey"
+  },
+  {
+    "label": "Temperature",
+    "desc": "Logit scale (0=deterministic)",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-temp"
+  },
+  {
+    "label": "Top-p",
+    "desc": "Nucleus mass cut",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-topp"
+  },
+  {
+    "label": "Top-k",
+    "desc": "Keep K most likely",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-topk"
+  },
+  {
+    "label": "Min-p",
+    "desc": "Drop below fraction*top",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-minp"
+  },
+  {
+    "label": "Repeat penalty",
+    "desc": "Penalise present tokens",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-rep"
+  },
+  {
+    "label": "Presence penalty",
+    "desc": "Once-per-token",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-pres"
+  },
+  {
+    "label": "Frequency penalty",
+    "desc": "Per-repeat penalty",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-freq"
+  },
+  {
+    "label": "Seed",
+    "desc": "Reproducible output",
+    "cat": "Sampling",
+    "tab": "tab-engines",
+    "id": "s-seed"
+  },
+  {
+    "label": "Flash attention",
+    "desc": "Faster long context",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-flash"
+  },
+  {
+    "label": "Parallel slots",
+    "desc": "Concurrent decode",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-parallel"
+  },
+  {
+    "label": "mlock",
+    "desc": "Pin RAM, no swap",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-mlock"
+  },
+  {
+    "label": "no-mmap",
+    "desc": "Full RAM vs mmap",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-nommap"
+  },
+  {
+    "label": "KV cache K",
+    "desc": "KV quantization (K)",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-ctk"
+  },
+  {
+    "label": "KV cache V",
+    "desc": "KV quantization (V)",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-ctv"
+  },
+  {
+    "label": "Batch size",
+    "desc": "Tokens per step",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-batch"
+  },
+  {
+    "label": "Micro-batch",
+    "desc": "Physical micro-batch",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-ubatch"
+  },
+  {
+    "label": "Threads",
+    "desc": "CPU parallelism",
+    "cat": "Performance",
+    "tab": "tab-engines",
+    "id": "eng-threads"
+  },
+  {
+    "label": "Alias",
+    "desc": "Model id for clients",
+    "cat": "Model",
+    "tab": "tab-engines",
+    "id": "eng-alias"
+  },
+  {
+    "label": "Providers",
+    "desc": "OpenAI-compatible endpoints & keys",
+    "cat": "Providers",
+    "tab": "tab-providers",
+    "id": "tab-providers"
+  },
+  {
+    "label": "Splinter tuning",
+    "desc": "Retrieval & assembly params",
+    "cat": "Splinter",
+    "tab": "tab-splinter",
+    "id": "tab-splinter"
+  },
+  {
+    "label": "Chat mode",
+    "desc": "Splinter vs Agent (dsh)",
+    "cat": "Chat",
+    "tab": "tab-home",
+    "id": "chat-title"
+  },
+  {
+    "label": "Cascade knobs",
+    "desc": "Judge, repair, gate, temperature, etc.",
+    "cat": "Cascade",
+    "tab": None,
+    "id": None,
+    "href": "/cascade"
+  },
+  {
+    "label": "Cascade runs",
+    "desc": "View past run bundles",
+    "cat": "Cascade",
+    "tab": None,
+    "id": None,
+    "href": "/runs"
+  },
+  {
+    "label": "Docker setup",
+    "desc": "VHDX, drives, compose",
+    "cat": "Setup",
+    "tab": "tab-setup",
+    "id": "tab-setup"
+  },
+  {
+    "label": "Library path",
+    "desc": "Local GGUF folder",
+    "cat": "Setup",
+    "tab": "tab-library",
+    "id": "library-path"
+  },
+  {
+    "label": "AFK mode",
+    "desc": "QUEEN autonomy toggle",
+    "cat": "General",
+    "tab": "tab-home",
+    "id": "afkbtn"
+  }
+]
+
 def render_server_page() -> str:
     """Model-management console: server + settings | loaded-model chat | hub.
 
@@ -809,8 +1039,11 @@ providers.local.json (gitignored).</div>
 <div id="tab-settings" class="tabpane" style="display:none">
 <section>
 <h2 style="margin-top:0">Settings</h2>
-<div class="row"><label class="inline" title="How: setTheme() writes localStorage. Does: Switches CSS tokens. Changing: Affects only UI chrome, no backend.">Theme  <select id="settings-theme" onchange="setTheme(this.value)"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></label></div>
-<div class="row"><span class="note">Engine profiles, model library, and provider settings are in their own tabs. This tab will hold general Studio preferences.</span></div>
+<p class="note">Search all settings below, or browse by category. Each setting links to where it lives.</p>
+<div class="row" style="margin:.6rem 0">
+  <input id="settings-search" type="text" placeholder="Search settings…" style="flex:1;min-width:200px" oninput="filterSettings(this.value)">
+</div>
+<div id="settings-list"></div>
 </section>
 </div>
 
@@ -951,6 +1184,46 @@ function toggleAdvanced() {{
   el.style.display = show ? 'flex' : 'none';
   if (btn) btn.textContent = show ? 'Fewer tools ▴' : 'More tools ▾';
 }}
+
+/* ------------------------------ settings search ----------------------- */
+const SETTINGS_INDEX = {json.dumps(SETTINGS_INDEX)};
+
+function buildSettingsList(filter) {{
+  const q = (filter || '').toLowerCase().trim();
+  const list = document.getElementById('settings-list');
+  if (!list) return;
+  const cats = {{}};
+  for (const s of SETTINGS_INDEX) {{
+    if (q && !s.label.toLowerCase().includes(q) && !(s.desc||'').toLowerCase().includes(q) && !s.cat.toLowerCase().includes(q)) continue;
+    (cats[s.cat] = cats[s.cat] || []).push(s);
+  }}
+  const catNames = Object.keys(cats).sort();
+  if (!catNames.length) {{ list.innerHTML = '<p class="note">No matching settings.</p>'; return; }}
+  let html = '';
+  for (const cat of catNames) {{
+    html += `<details open style="margin:.6rem 0"><summary style="cursor:pointer;font-weight:700;padding:.4rem 0;color:#FFDD00">${{cat}} <span class="note">(${{cats[cat].length}})</span></summary>`;
+    for (const s of cats[cat]) {{
+      const go = s.href ? `location.href='${{s.href}}'` : `goSetting('${{s.tab}}','${{s.id||''}}')`;
+      html += `<div style="padding:.3rem 0 .3rem 1rem;border-bottom:1px solid rgba(255,221,0,.12);cursor:pointer" onclick="${{go}}">` +
+              `<b style="color:#FFDD00">${{s.label}}</b> <span class="note">${{s.desc}}</span></div>`;
+    }}
+    html += '</details>';
+  }}
+  list.innerHTML = html;
+}}
+
+function goSetting(tab, id) {{
+  const btn = document.querySelector('.tab[data-tab="' + tab + '"]');
+  if (btn) btn.click();
+  if (id) setTimeout(() => {{
+    const el = document.getElementById(id);
+    if (el) {{ el.scrollIntoView({{behavior:'smooth',block:'center'}}); el.style.outline='2px solid #FFDD00'; setTimeout(()=>el.style.outline='',1500); }}
+  }}, 100);
+}}
+
+function filterSettings(q) {{ buildSettingsList(q); }}
+
+setTimeout(() => buildSettingsList(''), 500);
 for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
   btn.addEventListener('click', (e) => {{
     try{{
