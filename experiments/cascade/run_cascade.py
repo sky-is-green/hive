@@ -1262,7 +1262,7 @@ def main() -> int:
             task["id"], planned.path, "D3-verify",
             "api" if args.judge == "api" else args.judge_device,
             verdict.latency_ms,
-            outcome="reject" if rejected else "accept", async_=True,
+            outcome="ok" if not rejected else "reject", async_=True,
         )
 
         # The repair leg: one greedy local re-attempt with the finding quoted.
@@ -1284,7 +1284,7 @@ def main() -> int:
             telemetry.log(
                 task["id"], planned.path, "D3-repair", "dgpu1",
                 repair_record["ms"],
-                outcome="cleared" if repair_record["cleared"] else "flagged",
+                outcome="ok" if repair_record["cleared"] else "flagged",
                 tokens=repair_record["completion_tokens"], async_=True,
                 detail=repair_record["finding"][:200],
             )
@@ -1320,7 +1320,7 @@ def main() -> int:
                 record_human_reason(human_stats, reason)
                 telemetry.log(
                     task["id"], planned.path, "HUMAN", "human", 0.0,
-                    outcome=str(human_decision["choice"]),
+                    outcome="ok" if human_decision["choice"] == "solve" else "escalate",
                     detail=(
                         f"mode={human_decision['mode']}"
                         + (f"; {reason}" if reason else "")
