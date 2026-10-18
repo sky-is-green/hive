@@ -1,0 +1,127 @@
+{
+  "run_id": "partner-bonsai-organic-20261018",
+  "date": "2026-10-18",
+  "status": "complete",
+  "objective": "Bonsai 2 27B pure-CPU judge transfer baseline on the 176B candidate set, with host-stability monitoring and a human-gate workload preview",
+  "model": {
+    "name": "Ternary-Bonsai-2-27B-PQ2_0",
+    "path": "artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf",
+    "sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+    "size_bytes": 7206168928,
+    "quant": "PQ2_0",
+    "base": "Bonsai-2 27B dense",
+    "role": "partner candidate: judge/verifier first; generator/repairer if the judge does not transfer"
+  },
+  "head": {
+    "path": "experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
+    "train_n": 262,
+    "jbench_test_auc": 0.9881093935790726,
+    "threshold": 0.58,
+    "sanity_observed_auc": 0.9881093935790726,
+    "cpu_gpu_state_parity": {
+      "n": 4,
+      "mean_cosine": 0.9999571871277472,
+      "min_cosine": 0.999952823392297,
+      "max_abs_diff": 0.08524656295776367
+    }
+  },
+  "execution": {
+    "cpu_only": true,
+    "gpu_hidden": [
+      "HIP_VISIBLE_DEVICES=",
+      "ROCR_VISIBLE_DEVICES=",
+      "CUDA_VISIBLE_DEVICES="
+    ],
+    "binary": "/home/penis/llama.cpp/build/bin/llama-server",
+    "flags": [
+      "-ngl 0",
+      "--device none",
+      "--no-op-offload",
+      "-t 8",
+      "-c 2048",
+      "-np 1",
+      "--embeddings",
+      "--pooling last",
+      "--embd-normalize -1",
+      "--no-warmup",
+      "--jinja"
+    ],
+    "taskset": "0-7",
+    "nice": 19,
+    "port": 8899,
+    "started": "2026-10-18T03:13:26+01:00",
+    "finished": "2026-10-18T03:55:15+01:00",
+    "probe_rc": 0,
+    "extraction_seconds": 2502,
+    "extraction_items": 140,
+    "hidden_dim": 5120
+  },
+  "serve_176b": {
+    "url": "http://127.0.0.1:8081/health",
+    "model": "scion-flashnext-176b-a6b-q6k",
+    "health_failures": 0,
+    "still_up_after_run": true
+  },
+  "subset": {
+    "path": "experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl",
+    "sha256": "3be5c54a126abf8bb0389fe913aba1d697ee9d93183a10f05e89f358019c0a44",
+    "n": 140,
+    "new_transfer_items": 136,
+    "train_padding": 4,
+    "test_split": 66,
+    "qa_items": 75,
+    "overlap": 5,
+    "buckets": {
+      "qa": 75,
+      "reasoning": 49,
+      "code": 16
+    },
+    "selection": "all 66 combined test harvest items + all 75 harvest QA items - 5 overlap + 4 train seeds needed by the probe runner"
+  },
+  "states": {
+    "path": "experiments/cascade/results/partner-bonsai-organic-20261018/probe-states-bonsai-transfer.npz",
+    "sha256": "2ab3ce98df1e3ed085ff043d10ad9aca10bd224dc5bdafe4980547ff0328b572",
+    "note": "2.6 MB, gitignored; durable local copy in the work-drive results lane"
+  },
+  "evaluation": {
+    "script": "experiments/cascade/eval_partner_transfer.py",
+    "report": "experiments/cascade/results/partner-bonsai-organic-20261018/BONSAI-TRANSFER.md",
+    "json": "experiments/cascade/results/partner-bonsai-organic-20261018/eval-bonsai-2-27b-transfer.json",
+    "protocol": "frozen J-Bench head; no refit on organic/QA; evaluation labels are for scoring only",
+    "key": {
+      "jbench_test_auc": 0.9881,
+      "combined_test_auc_182": 0.9525,
+      "organic_test_auc_66": 0.6238,
+      "qa_clean_auc_91": 0.9954,
+      "qa_harvest_auc_75": 0.9949,
+      "organic_harvest_caught_at_0_58": "1/9",
+      "human_gate_rejected_at_0_58": "127/252 (all wrong; 13 wrong missed; recall 90.7%)"
+    }
+  },
+  "stability": {
+    "summary": "experiments/cascade/results/partner-bonsai-organic-20261018/stability.summary.json",
+    "raw_csv": "experiments/cascade/results/partner-bonsai-organic-20261018/stability.csv",
+    "samples": 501,
+    "duration_s": 2506.137,
+    "max_load1": 9.95,
+    "min_mem_available_gib": 13.478,
+    "max_swap_used_gib": 3.801,
+    "max_partner_rss_gib": 13.576,
+    "health_failures_176b": 0,
+    "min_vram_free_mib": {
+      "card0": 2799,
+      "card1": 1886
+    }
+  },
+  "artifacts_not_committed": [
+    "probe-states-bonsai-transfer.npz (gitignored)",
+    "server.log",
+    "probe.log",
+    "logs/bonsai-transfer-20261018.log"
+  ],
+  "notes": [
+    "probe-bonsai-transfer.json was deleted: its four-row fit is not the baseline; use BONSAI-TRANSFER.md.",
+    "The frozen head was trained on J-Bench only; organic/QA is a transfer test, not the combined 1,186-row LOFO protocol.",
+    "One aborted harness-timeout attempt was removed; it produced no embeddings and no model result."
+  ]
+}

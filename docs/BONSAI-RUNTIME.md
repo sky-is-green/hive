@@ -53,7 +53,44 @@ Hivebench eval, `--max-convs 10`, 124 turns compared:
   layer improves context fidelity over FIFO while trailing slightly on raw answer
   recall. `hive_only` 4, `fifo_only` 10, `both_sufficient` 77.
 
+## CPU-only partner probe (coexist with the 176B serve)
+
+The same GGUF also runs under the generic CPU build. The 176B serve owns the
+GPUs, so a partner run must hide every accelerator. Do **not** rely on
+`-ngl 0` alone: the first Scion attempt still assigned a fused op to ROCm0.
+Use `HIP_VISIBLE_DEVICES=""`, `--device none`, and `--no-op-offload`, plus the
+preflight/guard in `experiments/cascade/run_partner_probe.sh`:
+
+```sh
+cd ~/Desktop/work/hivebench
+./experiments/cascade/run_partner_probe.sh \
+  artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf \
+  experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl \
+  bonsai-transfer experiments/cascade/results/partner-bonsai-organic-20261018 8899
+```
+
+The runner refuses to start below 12 GiB available RAM or if the 176B health
+endpoint is down, samples RAM/VRAM/load/RSS/176B health into
+`stability.csv`, stops the partner below 4 GiB available RAM or after 60 s of
+176B health failure, and always writes a stability summary. The Bonsai 27B
+dense model is much slower on CPU than on GPU: expect tens of seconds per
+judge prompt at 8 threads. The transfer baseline and stability numbers for the
+2026-10-18 run are in
+`experiments/cascade/results/partner-bonsai-organic-20261018/BONSAI-TRANSFER.md`.
+
+Observed on 2026-10-18 (140 prompts, `probe_rc=0`):
+
+- 2,502 s total (~42 min), dim 5120, no GPU context.
+- min MemAvailable 13.478 GiB, max partner RSS 13.576 GiB, max swap 3.801 GiB.
+- 176B health failures 0; min free VRAM card0 2799 MiB / card1 1886 MiB.
+- Frozen J-Bench head sanity exact (AUC 0.9881); CPU/GPU state parity on 4
+  re-embedded rows: mean cosine 0.999957.
+- Judge transfer: J-Bench 0.988, QA clean 0.995, organic 0.624. The head is a
+  structured/QA verifier, not an organic one — see the report's
+  "Reading this result" and `human-gate-missed.jsonl`.
+
 ## Status
 
-T29 runtime + eval verified. Remaining (optional): LoRA adaptation around the
-released weights, and a 2-card throughput pass if serving latency matters.
+T29 runtime + eval verified. CPU-only partner coexistence is guarded and
+reproducible; the remaining optional work is LoRA adaptation around the
+released weights and a 2-card throughput pass if serving latency matters.
