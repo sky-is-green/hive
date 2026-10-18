@@ -18,6 +18,22 @@ decision that is yours; the false-flag risk this run exposed (~3/66 at
 L0.75@0.5 on fresh drafts) is the number M5 would have to beat against the
 same rule.
 
+Next (post-M4, no restart): the escalation lane is now wired into the runner
+(`experiments/cascade/escalation_lane.py`, `--no-escalation-lane` to opt out)
+— every ladder-resolved item is harvested as JSONL next to the report, and the
+fresh silent-wrong corpus is audited across all five heads in
+`results/fresh-silent-audit-20261018/AUDIT.md` (195 silent drafts: 28 wrong).
+The pooled picture is the gate's problem in one table — L0.75 catches 9
+wrongs at 8 false flags at 0.5, and with the cap-2 rule only 3 catches / 0
+flags; no head separates (wrongs' p spans 0.00-1.00 and overlaps the
+corrects' mass).  mlp-concat looks best per-run (armB: 7 catches / 1 flag)
+but does not pool (4 / 1) — run-specific, i.e. overfit.  Conclusion
+unchanged: do not restart M5; grow the corpus and audit heads before any new
+acceptance.  The lane feeds three consumers: (1) gate re-audit via
+sample-and-check on escalated tasks, (2) repair SFT on
+(prompt, draft, finding, fixed) triples, (3) local-tier distillation of
+API/human answers.
+
 ## What the gate is
 
 A third trigger beside `consistency` and `code_exec`, with three deliberate
