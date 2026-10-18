@@ -640,6 +640,16 @@ it.
     --api-fallback http://127.0.0.1:4000/v1   # optional; gate without it still repairs
 ```
 
+The learned gate's scorer (path B of `experiments/cascade/LEARNED-GATE-PLAN.md`)
+is in place as `harness/cascade/learned_gate.py`: the intern-decision-0.8B
+readout on CPU behind `score(question, candidate) -> (p, ms)`, the frozen r2
+heads applied client-side, threshold 0.5, head L0.75.  Its unit tests
+reproduce the stored fitted p exactly from the committed states/heads npz
+(`tests/unit/test_cascade_learned_gate.py`, 22 offline tests); one live
+extraction cross-check runs opt-in via `HIVE_GATE_LIVE=1` and reproduced the
+flagship catch `gsm8k-0015:hs2` at p=0.073751 (stored-fitted: identical).  It
+is **not wired into the runner yet** — that is stage M2 (`--gate`).
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice

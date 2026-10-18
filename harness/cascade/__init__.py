@@ -18,9 +18,11 @@ The dividing line (brief §"Harness vs model vs training") is:
 ``harness.cascade`` is a skeleton: interfaces and deterministic behaviour with
 models stubbed.  Measured quality/latency land in
 :class:`harness.cascade.oracle.CandidateMeasurement` records and feed the
-per-role frontiers; nothing here loads a model or spawns a server — the
-existing :mod:`harness.stack` layer owns launches once a resident set is
-chosen.
+per-role frontiers; nothing here loads a model or spawns a server at import
+time — the existing :mod:`harness.stack` layer owns launches once a resident
+set is chosen.  The one learned component, the D3 learned gate
+(:mod:`harness.cascade.learned_gate`), loads its small CPU readout lazily on
+first use and never on import.
 """
 
 from harness.cascade.judgement import (
