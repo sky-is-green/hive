@@ -1892,6 +1892,8 @@ ensureSession(convId);
 persistSessions();
 renderTabs();
 restoreTranscript(convId);
+/* populate engine profile dropdown for the Launch panel */
+loadEngines().catch(() => {{}});
 /* the model dropdown populates async from /v1/provider/config */
 setTimeout(applyConvProvider, 2000);
 
