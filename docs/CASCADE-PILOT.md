@@ -617,9 +617,16 @@ the 9 wrong answers (consistency 2, code_exec 4) with **0 false rejects on the
 **58/66 → 62/66**.  In the greedy regime the bench is nearly clean (65/66, 0
 detections), so the loop is a no-op there — sampling is the cascade's dial.
 Artifacts: `experiments/cascade/results/cascade-e2e-sampled-20261018/`,
-`repair-pass-20261018/`.  The human gate shows the repair attempt on the first
-trigger (`keep` only when the task's checker already passes), and the API
-fallback is unchanged behind it.
+`repair-pass-20261018/`.  The runner then re-ran both regimes itself:
+`results/runner-cascade-sampled-20261018` (engine default, thinking on:
+56 → 59/66, 3/3 code detections repaired, 3 truncations caught by the ladder
+and flagged) and `results/runner-cascade-sampled-nothink-20261018` (the
+comparable regime: 57 → 60/66, 3/4 cleared, the fourth a repeat-verbatim
+repair correctly not accepted, 0 truncations) — 0 false rejects in both, and
+the `code_exec` "no python code block" finding alone converted three
+prose-only code answers into passing ones.  The human gate shows the repair
+attempt on the first trigger (`keep` only when the task's checker already
+passes), and the API fallback is unchanged behind it.
 
 ```sh
 .venv/bin/python experiments/cascade/run_cascade.py \
