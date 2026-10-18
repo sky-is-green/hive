@@ -637,18 +637,32 @@ it.
 .venv/bin/python experiments/cascade/run_cascade.py \
     --tasks experiments/cascade/tasks-bench.json \
     --judge deterministic --repair auto \
-    --api-fallback http://127.0.0.1:4000/v1   # optional; gate without it still repairs
+    --gate intern-0.8b \                        # optional third trigger; off by default
+    --api-fallback http://127.0.0.1:4000/v1     # optional; escalate, not needed to repair
 ```
 
-The learned gate's scorer (path B of `experiments/cascade/LEARNED-GATE-PLAN.md`)
-is in place as `harness/cascade/learned_gate.py`: the intern-decision-0.8B
-readout on CPU behind `score(question, candidate) -> (p, ms)`, the frozen r2
-heads applied client-side, threshold 0.5, head L0.75.  Its unit tests
-reproduce the stored fitted p exactly from the committed states/heads npz
-(`tests/unit/test_cascade_learned_gate.py`, 22 offline tests); one live
-extraction cross-check runs opt-in via `HIVE_GATE_LIVE=1` and reproduced the
-flagship catch `gsm8k-0015:hs2` at p=0.073751 (stored-fitted: identical).  It
-is **not wired into the runner yet** — that is stage M2 (`--gate`).
+The learned gate (path B of `experiments/cascade/LEARNED-GATE-PLAN.md`) is
+implemented and wired: the scorer is `harness/cascade/learned_gate.py`
+(the intern-decision-0.8B readout on CPU behind `score(question, candidate)
+-> (p, ms)`, the frozen r2 heads applied client-side, head L0.75, threshold
+0.5), and the runner takes `--gate off|intern-0.8b|scion` with
+`--gate-head`/`--gate-threshold`.  The gate scores a draft **only when the
+deterministic detectors are silent** (the measured blind spot); a fired gate
+is one more rejection finding — the same greedy repair quotes it (its own
+prompt: p vs threshold, an internal-inconsistency recheck, no gold), and the
+repaired answer is **re-scored** (the finding clears only if the score
+clears; a persistent flag stays flagged).  Disabled by default; `scion`
+(path A) refuses until the serve-restart stage.  Unit tests reproduce the
+stored fitted p exactly from the committed states/heads npz
+(`tests/unit/test_cascade_learned_gate.py`) and cover the wiring
+(`tests/unit/test_run_cascade_repair.py`, gate section); the live extraction
+cross-check runs opt-in via `HIVE_GATE_LIVE=1` and reproduced the flagship
+catch `gsm8k-0015:hs2` at p=0.073751 (stored-fitted: identical).  Reported
+per-run: `gate_scored`/`gate_fires`/`gate_cleared` counts, per-record
+`gate_scored`/`gate_fired`/`gate_p`/`gate_cleared`, and the D3-verify
+telemetry row carries `gate p=...` in its detail with the score's ms folded
+into its latency.  Still due: the offline replay (M3) and the live paired
+run (M4) that decide whether the flag stays on.
 
 ## Priority plan after the literature pass
 
