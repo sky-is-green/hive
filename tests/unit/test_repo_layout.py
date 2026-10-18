@@ -41,9 +41,6 @@ EXPECTED_PACKAGES = {
 KNOWN_ROOT_SCRIPTS = {
     "conftest.py",
     "install_cpu_torch.py",
-    "launch_detached.py",
-    "longrun.py",
-    "longtest.py",
 }
 
 
