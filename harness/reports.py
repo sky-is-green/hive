@@ -882,6 +882,7 @@ turns, durable session log.</div>
 <label class="inline" title="How: --alias <id>. Does: Model id vs path. Changing: Clients see alias.">alias  <input id="l-alias" size="14" placeholder="model id"></label>
 </div>
 </details>
+<h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Server status</h3>
 <pre id="status">loading…</pre>
 <div id="instances"></div>
 <details style="margin-top:.6rem">
@@ -891,8 +892,8 @@ turns, durable session log.</div>
 <div class="row" style="gap:.5rem;align-items:center"><button onclick="refreshProcesses()">Refresh processes</button><span id="proc-msg" class="note"></span><span id="proc-sidecar" class="note" style="margin-left:.4rem"></span></div>
 <table style="width:100%;margin-top:.4rem"><thead><tr><th>PID</th><th>Kind</th><th>Name</th><th title="CPU % (process)">CPU%</th><th title="Resident memory MB">RAM MB</th><th>Port</th><th>Status</th><th></th></tr></thead><tbody id="proc-table"><tr><td colspan="8" class="note">loading…</td></tr></tbody></table>
 </section>
-<h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Server log (llama_server.log tail)</h3>
-<pre id="srvlog" title="llama_server.log tail">log: loading…</pre>
+<h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Engine log (strata)</h3>
+<pre id="srvlog" title="strata engine log tail">log: loading…</pre>
 </details>
 </section>
 
