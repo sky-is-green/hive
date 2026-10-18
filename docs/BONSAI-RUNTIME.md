@@ -94,3 +94,14 @@ Observed on 2026-10-18 (140 prompts, `probe_rc=0`):
 T29 runtime + eval verified. CPU-only partner coexistence is guarded and
 reproducible; the remaining optional work is LoRA adaptation around the
 released weights and a 2-card throughput pass if serving latency matters.
+
+Update 2026-10-18: the judge line is closed for organic tasks.  A second
+Bonsai head — the community in-domain fit (natural answers, byte-identical
+judge prompt) — lands at 0.630 organic AUC on the harvest states, the same
+chance region as the frozen J-Bench head (0.624), so the failure is
+cross-generator transfer, not an under-trained head; the deferred 7 h harvest
+extraction (an in-domain refit on Bonsai-reads-176B errors) is not justified
+as a judge.  The stronger on-disk instruments are the 0.8B MLP head (organic
+0.844, bench 0.991) and the generator's own 176B J-Bench head (bench 0.9941);
+see `experiments/cascade/results/fusion-probe-20261018/FUSION-PROBE.md`.  Any
+future role for the dense body is repair/generation, not verification.

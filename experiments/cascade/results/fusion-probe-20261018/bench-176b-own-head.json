@@ -1,0 +1,188 @@
+{
+ "states_176b": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work/overnight/probe-states-main176b.npz",
+ "labels_match_across_sources": true,
+ "slices": {
+  "bench-train-262": {
+   "n": 262,
+   "wrong": 194
+  },
+  "bench-test-116": {
+   "n": 116,
+   "wrong": 87
+  }
+ },
+ "signals": {
+  "176b-own-jbench": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads/scion-176b-a6b-decision-head.json",
+   "stored_threshold": 0.6,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 1.0,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 0,
+     "false_rejects": 0
+    },
+    "at_stored": {
+     "threshold": 0.6,
+     "false_accepts": 0,
+     "false_rejects": 0
+    }
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.9940546967895363,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 6,
+     "false_rejects": 0
+    },
+    "at_stored": {
+     "threshold": 0.6,
+     "false_accepts": 3,
+     "false_rejects": 0
+    }
+   }
+  },
+  "176b-own-community": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work/overnight/scion176b-community-indomain-head.json",
+   "stored_threshold": 0.5,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 0.6936021831412977,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 144,
+     "false_rejects": 8
+    },
+    "at_stored": null
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.6983749504558066,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 64,
+     "false_rejects": 2
+    },
+    "at_stored": null
+   }
+  },
+  "bonsai-frozen-partner": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
+   "stored_threshold": 0.58,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 1.0,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 0,
+     "false_rejects": 0
+    },
+    "at_stored": {
+     "threshold": 0.58,
+     "false_accepts": 0,
+     "false_rejects": 0
+    }
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.9881093935790726,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 6,
+     "false_rejects": 0
+    },
+    "at_stored": {
+     "threshold": 0.58,
+     "false_accepts": 3,
+     "false_rejects": 0
+    }
+   }
+  },
+  "080-L0.5": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "stored_threshold": 0.5,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 1.0,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 1,
+     "false_rejects": 0
+    },
+    "at_stored": null
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.8149028933808958,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 19,
+     "false_rejects": 7
+    },
+    "at_stored": null
+   }
+  },
+  "080-MLP": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "stored_threshold": 0.5,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 1.0,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 0,
+     "false_rejects": 0
+    },
+    "at_stored": null
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.9912802219579866,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 2,
+     "false_rejects": 3
+    },
+    "at_stored": null
+   }
+  },
+  "080-p_raw": {
+   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "stored_threshold": 0.5,
+   "bench-train-262": {
+    "n": 262,
+    "wrong": 194,
+    "auc": 0.7994996967859309,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 77,
+     "false_rejects": 13
+    },
+    "at_stored": null
+   },
+   "bench-test-116": {
+    "n": 116,
+    "wrong": 87,
+    "auc": 0.7711058263971461,
+    "at_0.5": {
+     "threshold": 0.5,
+     "false_accepts": 35,
+     "false_rejects": 7
+    },
+    "at_stored": null
+   }
+  }
+ }
+}
