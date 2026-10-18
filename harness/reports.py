@@ -696,13 +696,6 @@ SETTINGS_INDEX = [
     "cat": "Setup",
     "tab": "tab-library",
     "id": "library-path"
-  },
-  {
-    "label": "AFK mode",
-    "desc": "QUEEN autonomy toggle",
-    "cat": "General",
-    "tab": "tab-home",
-    "id": "afkbtn"
   }
 ]
 
@@ -717,7 +710,7 @@ def render_server_page() -> str:
 <div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
 <h1>Splinter Studio console</h1>
 {render_nav("server")}
-<p style="margin:.3rem 0"><button id="afkbtn" onclick="toggleAfk(this)" title="How: toggleAfk sets SPLINTER-MODE.json. Does: QUEEN autonomy (GREEN/YELLOW auto, RED contained). Changing: On queues pushes/merges until return.">AFK</button> <a href="/runs"><button>Runs →</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
+<p style="margin:.3rem 0"><a href="/runs"><button>Runs →</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
 <form style="display:inline" onsubmit="event.preventDefault(); return false"><input id="researchq" placeholder="deep-research question..." size="30" autocomplete="off" title="How: researchAdd queues to RESEARCH-QUEUE.md. Does: Deep research task (Auditor only). Changing: Adds entry, not instant." onkeydown="if (event.key === &quot;Enter&quot;) researchAdd(this)"> <button id="researchsubmit" onclick="researchAdd(this)">Research</button> <span id="researchcount" class="meta" title="Queues a deep-research question for QUEEN. Execution is master-only; reports land in RESEARCH/&lt;slug&gt;.md and are summarized on wake."></span></form>
 
 <div class="grid">
@@ -809,7 +802,7 @@ def render_server_page() -> str:
 <h2 style="margin-top:0">Engine Profiles</h2>
 <form id="engine-profile-form" class="engine-grid" onsubmit="event.preventDefault(); saveEngineProfile();">
   <div class="row" style="gap:.6rem; flex-wrap:wrap; align-items:center">
-    <select id="eng-select" style="min-width:180px" onchange="engineSelected()"><option value="">— select profile —</option></select>
+    <label class="inline">Profile <select id="eng-select" style="min-width:180px" onchange="engineSelected()"><option value="">— select profile —</option></select></label>
     <label class="inline" title="Use this profile as the default for new conversations.">Set as default <input id="eng-default" type="checkbox" onchange="engDirty=true"></label>
     <button type="button" onclick="engineAdd()">+ New profile</button>
   </div>
@@ -1059,7 +1052,7 @@ providers.local.json (gitignored).</div>
 <h2 id="chat-title">Loaded model</h2>
 <div class="chat-controls">
 <span class="modesel">
-<label class="inline">model <select id="chat-provider" onchange="saveConvProvider(this.value)" title="How: select saves to localStorage splinter-console-convprov, sent as provider on /v1/splinter/turn vs /v1/agent/stream, swaps Splinter.backend via registry. Does: Per-conversation model/endpoint. Changing: Pick different engine → different base_url/model for this tab only."></select></label>
+<label class="inline">model <span class="note" id="chat-model-name">no model loaded</span></label>
 <label class="inline"><input type="radio" name="chatmode" value="splinter" checked title="How: POST /v1/splinter/stream → splinter.process_turn curates assembled_content → single generate. Does: No tools, fast curated. Changing: Good for chat/memory; Agent needed for bash/code."> Splinter </label>
 <label class="inline"><input type="radio" name="chatmode" value="agent" title="How: POST /v1/agent/stream → DshAgentService loop with tools/session log. Does: Full agent (bash/fs/web/subagent). Changing: Use for code/tasks; slower but multi-step."> Agent (dsh) </label>
 </span>
@@ -1810,28 +1803,10 @@ function saveConvProvider(value) {{
   localStorage.setItem('splinter-console-convprov', JSON.stringify(per));
 }}
 function applyConvProvider() {{
-  const v = convProviderStore()[convId];
-  if (!v) return;
-  const sel = document.getElementById('chat-provider');
-  if ([...sel.options].some(o => o.value === v)) sel.value = v;
+  /* model selection now lives in Engines/Launch; chat shows the loaded model */
 }}
 
-/* --------------------------- afk toggle ------------------------------ */
-async function toggleAfk(btn) {{
-  const on = btn.dataset.afk === '1';
-  const r = await api('/v1/splinter/mode', 'POST', {{afk: !on, note: on ? 'operator returned' : 'operator away'}});
-  applyAfk(r.afk);
-}}
-function applyAfk(on) {{
-  const b = document.getElementById('afkbtn');
-  if (!b) return;
-  b.dataset.afk = on ? '1' : '0';
-  b.textContent = on ? 'AFK ON - click to end' : 'AFK';
-  b.classList.toggle('afk-on', !!on);
-}}
-(async function initAfk() {{
-  try {{ const m = await api('/v1/splinter/mode'); applyAfk(!!m.afk); }} catch (e) {{}}
-}})();
+/* AFK mode removed (shelved). Revisit when we revisit the shelf. */
 /* --------------------------- research queue -------------------------- */
 async function researchAdd(btn) {{
   const inp = document.getElementById('researchq');
@@ -2171,6 +2146,8 @@ renderTabs();
 restoreTranscript(convId);
 /* populate engine profile dropdown for the Launch panel */
 loadEngines().catch(() => {{}});
+/* populate model dropdowns from local library */
+loadLibrarySystem().catch(() => {{}});
 /* the model dropdown populates async from /v1/provider/config */
 setTimeout(applyConvProvider, 2000);
 
@@ -3446,23 +3423,14 @@ async function refresh() {{
       row.appendChild(unload);
       wrap.appendChild(row);
     }}
-    // Chat model picker: every loaded instance's provider + remote providers.
+    // Chat model display: show the loaded model name (model selection lives in Engines/Launch).
     api('/v1/provider/config').then(pc => {{
-      const sel = document.getElementById('chat-provider');
-      const current = sel.value;
-      sel.innerHTML = '';
+      const el = document.getElementById('chat-model-name');
+      if (!el) return;
       const locals = (s.instances || []).map(i => 'local-' + i.key);
-      for (const p of pc.providers) {{
-        if (!locals.includes(p.name) && p.name.startsWith('local-')) continue;
-        const o = document.createElement('option');
-        o.value = p.name;
-        o.textContent = p.name + (p.model ? ' — ' + p.model.split('\\\\').pop().split('/').pop() : '');
-        sel.appendChild(o);
-      }}
-      sel.value = pc.default && locals.concat(
-        pc.providers.filter(p => !p.name.startsWith('local-')).map(p => p.name)
-      ).includes(pc.default) ? pc.default : (sel.firstElementChild ? sel.firstElementChild.value : '');
-      if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+      const name = pc.default || (locals.length ? locals[0] : '');
+      const prov = pc.providers.find(p => p.name === name);
+      el.textContent = prov ? (prov.model || name) : (name || 'no model loaded');
     }}).catch(() => {{}});
   }}).catch(e => show('status', String(e)));
   api('/v1/server/log?tail=30').then(l => {{
