@@ -8,6 +8,13 @@ rejected answer escalates there.  Tiny-Jev is the default validator
 (``--judge tiny-jev``, ~40 ms/check); ``--judge none`` skips validation and
 ``--judge local`` uses Intern-Decision-4B/JEV.
 
+``--judge deterministic`` is the gold-free stack the cascade line measured:
+the arithmetic ``consistency`` verifier plus ``code_exec`` against the task's
+own tests, both reported as findings instead of a probability.  With it,
+``--repair`` (default ``auto``) re-asks the local model once, greedily, with
+the finding quoted, before the human gate or the API — so the pipeline is
+generate -> detect -> repair -> escalate.
+
 The measurement configuration the benchmark used is still available:
 ``--router api --judge api --router-mode measure`` records the frontier
 router's decision and an API comparison answer for every task, which is what
@@ -51,6 +58,12 @@ from harness.cascade.registry import CandidateRegistry  # noqa: E402
 from harness.cascade.policy import verifier_rejects  # noqa: E402
 
 from experiments.cascade.checkers import check, extract_json  # noqa: E402
+from experiments.cascade.cascade import (  # noqa: E402 - the gold-free runtime guard
+    canonical,
+    detect,
+    runtime_spec,
+)
+from experiments.cascade.repair_pass import evidence_prompt, generic_prompt  # noqa: E402
 
 # ---------------------------------------------------------------- providers
 
@@ -217,9 +230,10 @@ class Frontier:
 class HumanGate:
     """The last checkpoint before a paid API call.
 
-    The cascade has already generated a local answer and the verifier has
-    rejected it.  Instead of silently escalating, show the failure to the
-    person at the terminal and offer exactly two outcomes:
+    The cascade has already generated a local answer, the verifier has
+    rejected it, and the automatic repair round (if configured) could not
+    clear the finding.  Instead of silently escalating, show the failure to
+    the person at the terminal and offer exactly two outcomes:
 
     * ``solve`` — provide a corrected answer, or a hint for one local retry.
       A ``keep`` shortcut is accepted only when the task's own checker already
@@ -267,7 +281,8 @@ class HumanGate:
         checker_ok: Optional[bool],
         first: bool,
         still_failing: bool,
-        attempts: int,
+        repair: Optional[dict[str, Any]] = None,
+        attempts: int = 0,
     ) -> None:
         print_ = self._print
         print_("=" * 78)
@@ -299,6 +314,19 @@ class HumanGate:
             body = body[: self.max_answer_chars] + "\n... [truncated; full answer is in the report]"
         print_("local answer:")
         print_(textwrap.indent(body or "(empty)", "  "))
+        if repair and first:
+            attempt = str(repair.get("text", "") or "")
+            if len(attempt) > self.max_answer_chars:
+                attempt = attempt[: self.max_answer_chars] + (
+                    "\n... [truncated; full attempt is in the report]"
+                )
+            finding = str(repair.get("detail", "") or repair.get("finding", ""))
+            print_("automatic repair: one re-attempt with the finding quoted"
+                   + (f" ({finding})" if finding else ""))
+            if repair.get("still_flagged"):
+                print_(f"repair still flagged by: {', '.join(repair['still_flagged'])}")
+            print_("repair attempt:")
+            print_(textwrap.indent(attempt or "(empty)", "  "))
         print_(
             f"verifier: {getattr(verdict, 'decision', '?')} "
             f"(confidence {float(getattr(verdict, 'confidence', 0.0) or 0.0):.3f})"
@@ -320,6 +348,7 @@ class HumanGate:
         verdict: Any,
         checker_ok: Optional[bool],
         still_failing: bool = False,
+        repair: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         """Show the evidence and return one human decision.
 
@@ -338,6 +367,7 @@ class HumanGate:
             checker_ok=checker_ok,
             first=first,
             still_failing=still_failing,
+            repair=repair,
             attempts=self.asked,
         )
 
@@ -430,10 +460,12 @@ class ScionTier:
     """The local tier: the llama-server hivebench spawned for the stack."""
 
     def __init__(self, base: str = SCION_BASE, *, max_tokens: int = 768,
+                 temperature: float = 0.0,
                  reasoning_effort: str = "",
                  reasoning_budget_tokens: int = 0) -> None:
         self.base = base.rstrip("/")
         self.max_tokens = int(max_tokens)
+        self.temperature = float(temperature)
         self.reasoning_effort = reasoning_effort
         self.reasoning_budget_tokens = int(reasoning_budget_tokens)
 
@@ -485,12 +517,13 @@ class ScionTier:
                 self._recover()
         raise last if last else RuntimeError("local call failed")
 
-    def chat(self, messages: list[dict], *, max_tokens: Optional[int] = None) -> dict:
+    def chat(self, messages: list[dict], *, max_tokens: Optional[int] = None,
+             temperature: Optional[float] = None) -> dict:
         budget = int(max_tokens or self.max_tokens)
         payload = {
             "model": "scion",
             "messages": messages,
-            "temperature": 0,
+            "temperature": self.temperature if temperature is None else float(temperature),
             "max_tokens": budget,
         }
         if self.reasoning_effort:
@@ -498,20 +531,25 @@ class ScionTier:
         if self.reasoning_budget_tokens:
             payload["reasoning_budget_tokens"] = self.reasoning_budget_tokens
         data, ms = self._post_local(payload, timeout=900)
-        msg = data["choices"][0]["message"]
+        choice = data["choices"][0]
+        msg = choice["message"]
         content = msg.get("content") or ""
         usage = data.get("usage") or {}
+        finish = choice.get("finish_reason")
         # A reasoning model that ran out of budget before answering: retry once.
         if not content.strip() and int(usage.get("completion_tokens") or 0) >= budget:
             payload["max_tokens"] = max(2048, budget * 2)
             data, ms = self._post_local(payload, timeout=1200)
-            msg = data["choices"][0]["message"]
+            choice = data["choices"][0]
+            msg = choice["message"]
             content = msg.get("content") or ""
             usage = data.get("usage") or {}
+            finish = choice.get("finish_reason")
         return {
             "content": content,
             "reasoning": msg.get("reasoning_content") or "",
             "latency_ms": ms,
+            "finish_reason": finish,
             "usage": usage,
         }
 
@@ -561,6 +599,126 @@ def record_human_reason(stats: dict[str, Any], reason: str) -> None:
     stats["reasons"][key] = int(stats["reasons"].get(key, 0)) + 1
 
 
+# ---------------------------------------------------------------- D3 + repair
+
+def deterministic_verdict(judgement: Judgement, task: dict, candidate: str, rs: dict):
+    """The gold-free D3 verdict: reject when a detector fires, accept otherwise.
+
+    ``rs`` is the task's runtime spec (see ``cascade.runtime_spec``): the
+    answer key is not in it, so neither this verdict nor anything downstream
+    can read gold.
+    """
+    t0 = time.time()
+    findings = detect(candidate, rs)
+    ms = (time.time() - t0) * 1000.0
+    return result_for(
+        judgement,
+        "reject" if findings else "accept",
+        0.0 if findings else 1.0,
+        latency_ms=ms,
+        payload={
+            "judge": "deterministic",
+            "detectors": [f["detector"] for f in findings],
+            "findings": findings,
+            "reason": finding_digest(findings),
+        },
+    )
+
+
+def finding_digest(findings: list[dict[str, Any]]) -> str:
+    """A one-line, human-readable digest of the detectors' findings."""
+    parts: list[str] = []
+    for f in findings:
+        detector = str(f.get("detector", "?"))
+        if detector == "consistency":
+            equations = f.get("finding") or []
+            first = equations[0] if equations else {}
+            parts.append(
+                f"consistency: {first.get('equation', 'an asserted step')} is false"
+            )
+        else:
+            text = " ".join(str(f.get("finding", "")).split())
+            parts.append(f"{detector}: {text[:240] or 'flagged'}")
+    return "; ".join(parts)
+
+
+def repair_user_text(task: dict, candidate: str, findings: list[dict[str, Any]]
+                     ) -> tuple[str, str]:
+    """The repair prompt: the finding is quoted, never the expected answer.
+
+    With structured findings (``--judge deterministic``) the measured
+    evidence prompt is used; without one (a learned judge rejected) it falls
+    back to the generic recheck prompt.
+    """
+    row = {"prompt": str(task.get("prompt", "")), "candidate": candidate or ""}
+    if findings:
+        found = {f["detector"]: f["finding"] for f in findings}
+        return evidence_prompt(row, found)
+    return "generic", generic_prompt(row)
+
+
+def attempt_repair(
+    scion: "ScionTier",
+    task: dict,
+    candidate: str,
+    findings: list[dict[str, Any]],
+    rs: dict,
+    *,
+    max_tokens: Optional[int] = None,
+) -> dict[str, Any]:
+    """One greedy local re-attempt with the finding quoted, then re-detect.
+
+    Mirrors the measured repair arm: one round, temperature 0, the finding
+    quoted and never the expected answer; a truncated or byte-identical
+    attempt is never accepted as the answer; an attempt that clears the
+    detectors is re-framed by ``canonical()`` for the task's interface.
+    """
+    detail, user_text = repair_user_text(task, candidate, findings)
+    messages = [
+        {"role": "system", "content": ANSWER_SYSTEM},
+        {"role": "user", "content": user_text},
+    ]
+    t0 = time.time()
+    generations = 1
+    out = scion.chat(messages, max_tokens=max_tokens, temperature=0.0)
+    if out.get("finish_reason") == "length":
+        budget = max(2048, int(max_tokens or 0) * 2)
+        out = scion.chat(messages, max_tokens=budget, temperature=0.0)
+        generations = 2
+    text = out.get("content") or ""
+    after = detect(text, rs)
+    record: dict[str, Any] = {
+        "detail": detail,
+        "finding": finding_digest(findings),
+        "ms": round((time.time() - t0) * 1000.0, 1),
+        "completion_tokens": int((out.get("usage") or {}).get("completion_tokens") or 0),
+        "chars": len(text),
+        "generations": generations,
+        "finish_reason": out.get("finish_reason"),
+        "same_as_draft": text.strip() == (candidate or "").strip(),
+        "still_flagged": [f["detector"] for f in after],
+        "truncated": out.get("finish_reason") == "length",
+        "canonical": canonical(rs.get("kind"), text) if not after else None,
+        "cleared": False,
+        "text": text,
+    }
+    if not after and not record["truncated"] and record["canonical"]:
+        record["cleared"] = True
+    if not after and not record["cleared"]:
+        record["stopped"] = (
+            "the repair was truncated" if record["truncated"]
+            else "the repair produced no consumable final answer"
+        )
+    return record
+
+
+def repair_enabled(args: argparse.Namespace) -> bool:
+    """The repair leg runs when asked, or by default with the deterministic judge."""
+    return args.repair == "on" or (
+        args.repair == "auto" and args.judge == "deterministic"
+    )
+
+
 def route_prompt(task: dict) -> list[dict]:
     return [
         {"role": "system", "content": ROUTER_SYSTEM},
@@ -594,6 +752,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--scion-base", default=SCION_BASE)
     parser.add_argument("--local-max-tokens", type=int, default=768,
                         help="local answer budget; a reasoning-only answer retries doubled")
+    parser.add_argument("--local-temperature", type=float, default=0.0,
+                        help="local sampling temperature (0 = greedy, the serving "
+                             "default); 0.7 reproduces the sampled cascade regime")
     parser.add_argument("--local-reasoning-effort", default="",
                         choices=("", "none", "low", "medium", "high"),
                         help="local thinking level; empty = the engine default")
@@ -610,10 +771,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--router-model", default="lostargon/Tiny-Jev-1.7B")
     parser.add_argument(
-        "--judge", choices=("none", "tiny-jev", "local", "api", "harness"), default="tiny-jev",
+        "--judge",
+        choices=("none", "tiny-jev", "local", "api", "harness", "deterministic"),
+        default="tiny-jev",
         help="D3 validation: none, local Tiny-Jev (default, in-process), local "
-             "Intern-Decision-4B/JEV, the frontier API prompt, or the harness "
-             "validator service at --validator-url",
+             "Intern-Decision-4B/JEV, the frontier API prompt, the harness "
+             "validator service at --validator-url, or deterministic (the "
+             "gold-free consistency + code_exec stack, with findings)",
+    )
+    parser.add_argument(
+        "--repair", choices=("auto", "on", "off"), default="auto",
+        help="after a verifier reject, re-ask the local model once, greedily, "
+             "with the finding quoted, before the human gate or the API: auto "
+             "(default) is on for --judge deterministic and off otherwise",
     )
     parser.add_argument("--judge-model", default="",
                         help="empty = the default model for the chosen judge")
@@ -669,9 +839,20 @@ def main() -> int:
         print("no tasks selected", file=sys.stderr)
         return 2
 
+    # The loop's runtime view of each task: `runtime_spec` drops the answer
+    # key, so the deterministic verifier and the repair leg (and nothing they
+    # call) can read it.
+    runtime_specs: dict[str, dict[str, Any]] = {}
+    for task in tasks:
+        try:
+            runtime_specs[task["id"]] = runtime_spec(task)
+        except Exception as exc:  # noqa: BLE001 - a malformed checker is not a runtime input
+            runtime_specs[task["id"]] = {"kind": None, "error": str(exc)[:200]}
+
     scion = ScionTier(
         args.scion_base,
         max_tokens=args.local_max_tokens,
+        temperature=args.local_temperature,
         reasoning_effort=args.local_reasoning_effort,
         reasoning_budget_tokens=args.local_reasoning_budget_tokens,
     )
@@ -913,6 +1094,29 @@ def main() -> int:
 
         broker.register_handler("D3", local_verify_handler)
 
+    repair_on = repair_enabled(args)
+    if args.judge == "deterministic":
+        # D3: the measured gold-free stack — the arithmetic consistency
+        # verifier plus the task's own tests (code_exec).  The finding is the
+        # verdict's reason, which is what the repair leg quotes and the human
+        # gate shows.
+        def deterministic_verify_handler(batch):
+            results = []
+            for j in batch:
+                task = j.payload["task"]
+                rs = runtime_specs.get(task["id"]) or {"kind": None}
+                try:
+                    results.append(
+                        deterministic_verdict(j, task, j.payload["candidate"], rs)
+                    )
+                except Exception as exc:  # noqa: BLE001 - do not trust on error
+                    results.append(
+                        result_for(j, "reject", 0.0, payload={"error": str(exc)[:200]})
+                    )
+            return results
+
+        broker.register_handler("D3", deterministic_verify_handler)
+
     # -- phase A: router batch (skipped in the local-first default) -----
     routes: dict[str, Any] = {}
     if args.router != "none":
@@ -1018,6 +1222,30 @@ def main() -> int:
             outcome="reject" if rejected else "accept", async_=True,
         )
 
+        # The repair leg: one greedy local re-attempt with the finding quoted.
+        # It runs before the gate, so the wrong answers it can fix never
+        # reach the human or the API; what it cannot clear is what the gate
+        # and the fallback are for.
+        repair_record: Optional[dict[str, Any]] = None
+        repaired_answer: Optional[str] = None
+        if rejected and repair_on:
+            repair_record = attempt_repair(
+                scion, task, local["content"],
+                list((verdict.payload or {}).get("findings") or []),
+                runtime_specs.get(task["id"]) or {"kind": None},
+                max_tokens=args.local_max_tokens,
+            )
+            if repair_record["cleared"]:
+                repaired_answer = repair_record["canonical"]
+                rejected = False
+            telemetry.log(
+                task["id"], planned.path, "D3-repair", "dgpu1",
+                repair_record["ms"],
+                outcome="cleared" if repair_record["cleared"] else "flagged",
+                tokens=repair_record["completion_tokens"], async_=True,
+                detail=repair_record["finding"][:200],
+            )
+
         # Escalate only when there is somewhere to escalate to.  With the API
         # fallback unset (the default), a reject is recorded and the local
         # answer is returned; measure mode uses the measurement API instead.
@@ -1039,6 +1267,7 @@ def main() -> int:
                     verdict=verdict,
                     checker_ok=display_checker_ok,
                     still_failing=human_attempts > 1,
+                    repair=repair_record,
                 )
                 human_stats["asked"] += 1
                 if was_first:
@@ -1124,8 +1353,17 @@ def main() -> int:
                 cascade_answer = human_checked_answer or local["content"]
                 cascade_ok = check(task, cascade_answer)
         else:
-            cascade_answer = api_direct["content"] if escalate else local["content"]
-            cascade_ok = api_ok if escalate else local_ok
+            if escalate:
+                cascade_answer = api_direct["content"]
+                cascade_ok = api_ok
+            elif repaired_answer is not None:
+                # the repair cleared the detectors: the canonical re-framing
+                # is the served answer (the draft was wrong)
+                cascade_answer = repaired_answer
+                cascade_ok = check(task, repaired_answer)
+            else:
+                cascade_answer = local["content"]
+                cascade_ok = local_ok
         flagged = rejected and not measure and fallback is None
 
         if escalate:
@@ -1169,6 +1407,8 @@ def main() -> int:
                 "scion_tokens": int((local["usage"] or {}).get("completion_tokens") or 0),
                 "human_answer": human_checked_answer,
                 "human_gate": human_record,
+                "repair": repair_record,
+                "repaired_answer": repaired_answer,
                 "router_route": (route_result.decision if route_result else None),
                 "router_confidence": (route_result.confidence if route_result else None),
                 "router_agrees": ((route_result.decision == "local") == local_ok)
@@ -1224,6 +1464,11 @@ def main() -> int:
         "accepted_and_wrong": sum(r["false_accept"] for r in measured),
         "false_rejects": sum(r["false_reject"] for r in measured),
         "corrections": sum(r["corrected"] for r in measured),
+        "repairs_attempted": sum(1 for r in records if r.get("repair")),
+        "repairs_cleared": sum(1 for r in records if (r.get("repair") or {}).get("cleared")),
+        "repairs_still_flagged": sum(
+            1 for r in records if r.get("repair") and not r["repair"]["cleared"]
+        ),
         "router_agreement": mean(measured, "router_agrees"),
         "scion_mean_ms": mean(measured, "scion_ms"),
         "scion_mean_tokens": mean(measured, "scion_tokens"),
@@ -1254,6 +1499,8 @@ def main() -> int:
         "scion_base": scion.base,
         "router": args.router,
         "judge": args.judge,
+        "repair": args.repair,
+        "local_temperature": args.local_temperature,
         "router_mode": args.router_mode,
         "api_fallback": args.api_fallback or None,
         "human_gate": args.human_gate,
