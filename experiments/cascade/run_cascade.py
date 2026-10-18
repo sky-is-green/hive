@@ -712,6 +712,32 @@ def attempt_repair(
     return record
 
 
+def truncation_verdict(verdict: Any, task_id: str, judge: str, budget: int):
+    """Fold the harness's own truncation finding into the verdict.
+
+    A generation that hit the token cap even after the doubled retry has no
+    final answer to accept, so the verdict is a reject whatever the detectors
+    said — the truncation rule, in the runner.
+    """
+    findings = [
+        *((verdict.payload or {}).get("findings") or []),
+        {"detector": "truncated",
+         "finding": f"still cut off at {budget} tokens; there is no final answer to accept"},
+    ]
+    return result_for(
+        Judgement(id=f"verify-{task_id}", request_id=task_id, generation_id=0,
+                  role="D3", kind="verify"),
+        "reject", 0.0,
+        latency_ms=float(getattr(verdict, "latency_ms", 0.0) or 0.0),
+        payload={
+            "judge": judge,
+            "detectors": [f["detector"] for f in findings],
+            "findings": findings,
+            "reason": finding_digest(findings),
+        },
+    )
+
+
 def repair_enabled(args: argparse.Namespace) -> bool:
     """The repair leg runs when asked, or by default with the deterministic judge."""
     return args.repair == "on" or (
@@ -1184,11 +1210,22 @@ def main() -> int:
             continue
 
         local = scion.chat(answer_prompt(task))
+        truncated = local.get("finish_reason") == "length"
+        if truncated:
+            # The truncation rule: a cap hit is the harness's ceiling, not an
+            # answer.  Retry once at twice the budget; if it is still cut off,
+            # the verdict below rejects it and it is never served as-is.
+            print(f"[cascade] {task['id']}: local answer hit the token cap; "
+                  "retrying at double budget", file=sys.stderr, flush=True)
+            local = scion.chat(answer_prompt(task),
+                               max_tokens=max(2048, args.local_max_tokens * 2))
+            truncated = local.get("finish_reason") == "length"
         local_ok = check(task, local["content"])
         telemetry.log(
             task["id"], planned.path, "E4-local", "dgpu1", local["latency_ms"],
             tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
             outcome="ok" if local_ok else "wrong",
+            detail="truncated at 2x budget" if truncated else "",
         )
 
         if verify_enabled:
@@ -1215,6 +1252,12 @@ def main() -> int:
                 "accept", 1.0, latency_ms=0.0, payload={"judge": "none"},
             )
         rejected = verifier_rejects(verdict, policy) if verify_enabled else False
+        if truncated:
+            verdict = truncation_verdict(
+                verdict, task["id"], args.judge,
+                max(2048, args.local_max_tokens * 2),
+            )
+            rejected = True
         telemetry.log(
             task["id"], planned.path, "D3-verify",
             "api" if args.judge == "api" else args.judge_device,
@@ -1228,7 +1271,7 @@ def main() -> int:
         # and the fallback are for.
         repair_record: Optional[dict[str, Any]] = None
         repaired_answer: Optional[str] = None
-        if rejected and repair_on:
+        if rejected and repair_on and not truncated:
             repair_record = attempt_repair(
                 scion, task, local["content"],
                 list((verdict.payload or {}).get("findings") or []),
@@ -1405,6 +1448,7 @@ def main() -> int:
                 "scion_ok": local_ok,
                 "scion_ms": round(local["latency_ms"], 1),
                 "scion_tokens": int((local["usage"] or {}).get("completion_tokens") or 0),
+                "truncated": truncated,
                 "human_answer": human_checked_answer,
                 "human_gate": human_record,
                 "repair": repair_record,

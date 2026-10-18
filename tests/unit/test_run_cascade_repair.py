@@ -88,6 +88,30 @@ def test_deterministic_verdict_accepts_a_consistent_draft():
     assert not verifier_rejects(verdict, Policy())
 
 
+def test_truncation_verdict_rejects_even_when_the_detectors_accepted():
+    accepted = rc.deterministic_verdict(
+        _judgement(RIGHT), NUMBER_TASK, RIGHT, runtime_spec(NUMBER_TASK)
+    )
+
+    verdict = rc.truncation_verdict(accepted, "t1", "deterministic", 2048)
+
+    assert verdict.decision == "reject"
+    assert verifier_rejects(verdict, Policy())
+    assert verdict.payload["detectors"] == ["truncated"]
+    assert "2048 tokens" in verdict.payload["reason"]
+
+
+def test_truncation_verdict_keeps_the_detector_findings():
+    rejected = rc.deterministic_verdict(
+        _judgement(WRONG), NUMBER_TASK, WRONG, runtime_spec(NUMBER_TASK)
+    )
+
+    verdict = rc.truncation_verdict(rejected, "t1", "deterministic", 2048)
+
+    assert verdict.payload["detectors"] == ["consistency", "truncated"]
+    assert "12 + 12 = 26 is false" in verdict.payload["reason"]
+
+
 # ---------------------------------------------------------------- prompts
 
 def test_repair_prompt_quotes_the_finding_and_never_the_answer():
