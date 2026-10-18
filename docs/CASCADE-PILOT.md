@@ -624,9 +624,14 @@ and flagged) and `results/runner-cascade-sampled-nothink-20261018` (the
 comparable regime: 57 → 60/66, 3/4 cleared, the fourth a repeat-verbatim
 repair correctly not accepted, 0 truncations) — 0 false rejects in both, and
 the `code_exec` "no python code block" finding alone converted three
-prose-only code answers into passing ones.  The human gate shows the repair
-attempt on the first trigger (`keep` only when the task's checker already
-passes), and the API fallback is unchanged behind it.
+prose-only code answers into passing ones.  The residual blind spot
+(internally consistent wrongs) is measured:
+`results/scion176b-self-organic-20261018/MARGINAL.md` — the own-community
+head adds 2 of the 3 detector-missed wrongs at one extra flag per 66 items,
+so a learned gate as a third trigger is justified; it is not wired yet.  The
+human gate shows the repair attempt on the first trigger (`keep` only when
+the task's checker already passes), and the API fallback is unchanged behind
+it.
 
 ```sh
 .venv/bin/python experiments/cascade/run_cascade.py \

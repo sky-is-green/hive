@@ -106,7 +106,12 @@ class TelemetryLog:
         return {rid: tuple(items) for rid, items in grouped.items()}
 
     def summary(self) -> dict[str, dict[str, Any]]:
-        """Per-role count, latency percentiles, tokens, outcome rates."""
+        """Per-role count, latency percentiles, tokens, outcome rates.
+
+        ``ok`` is the one success word; every other outcome counts as non-ok,
+        so callers with richer vocabularies (accept/reject, cleared/flagged)
+        must map their success case to ``ok``.
+        """
         out: dict[str, dict[str, Any]] = {}
         for role, records in self.by_role().items():
             latencies = [r.latency_ms for r in records]
