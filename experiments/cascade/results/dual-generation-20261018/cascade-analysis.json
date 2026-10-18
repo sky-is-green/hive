@@ -1,0 +1,159 @@
+{
+ "out": "experiments/cascade/results/dual-generation-20261018",
+ "models": [
+  "35b",
+  "bonsai27b"
+ ],
+ "items": 4,
+ "tiers": {
+  "35b": {
+   "gold_accuracy": 1.0,
+   "gold_accuracy_where_176b_solved": 1.0,
+   "solved_by_176b": {
+    "items": 4,
+    "gold_correct": 4,
+    "accepted": 4,
+    "accept_rate": 1.0,
+    "accepted_but_wrong": 0,
+    "rejected_but_correct": 0,
+    "failed": 0,
+    "failed_truncated": 0,
+    "failed_flagged": 0,
+    "failed_silent": 0,
+    "no_final": 0
+   },
+   "failed_by_176b": {
+    "items": 0,
+    "gold_correct": 0,
+    "accepted": 0,
+    "accept_rate": null,
+    "accepted_but_wrong": 0,
+    "rejected_but_correct": 0,
+    "failed": 0,
+    "failed_truncated": 0,
+    "failed_flagged": 0,
+    "failed_silent": 0,
+    "no_final": 0
+   },
+   "tokens_median": 0,
+   "ms_median": 2010.0789070129395
+  },
+  "bonsai27b": {
+   "gold_accuracy": 0.5,
+   "gold_accuracy_where_176b_solved": 0.5,
+   "solved_by_176b": {
+    "items": 4,
+    "gold_correct": 2,
+    "accepted": 4,
+    "accept_rate": 1.0,
+    "accepted_but_wrong": 2,
+    "rejected_but_correct": 0,
+    "failed": 0,
+    "failed_truncated": 0,
+    "failed_flagged": 0,
+    "failed_silent": 0,
+    "no_final": 2
+   },
+   "failed_by_176b": {
+    "items": 0,
+    "gold_correct": 0,
+    "accepted": 0,
+    "accept_rate": null,
+    "accepted_but_wrong": 0,
+    "rejected_but_correct": 0,
+    "failed": 0,
+    "failed_truncated": 0,
+    "failed_flagged": 0,
+    "failed_silent": 0,
+    "no_final": 0
+   },
+   "tokens_median": 0,
+   "ms_median": 5733.470916748047
+  }
+ },
+ "cascade": {
+  "35b_then_bonsai27b": {
+   "on_solved_by_176b": {
+    "items": 4,
+    "tier1_accepts": 4,
+    "escalated": 0,
+    "escalation_rate": 0.0,
+    "tier2_resolves": 0,
+    "unresolved": 0,
+    "unresolved_truncated": 0,
+    "unresolved_ids": []
+   },
+   "on_failed_by_176b": {
+    "items": 0,
+    "tier1_accepts": 0,
+    "escalated": 0,
+    "escalation_rate": null,
+    "tier2_resolves": 0,
+    "unresolved": 0,
+    "unresolved_truncated": 0,
+    "unresolved_ids": []
+   },
+   "cost_on_solved": {
+    "always_first_s": 5.813802719116211,
+    "always_second_s": 21.761579513549805,
+    "cascade_s": 5.813802719116211,
+    "swaps": 0,
+    "always_176b_s": 36.99,
+    "saved_vs_176b_s": 31.17619728088379
+   }
+  },
+  "bonsai27b_then_35b": {
+   "on_solved_by_176b": {
+    "items": 4,
+    "tier1_accepts": 4,
+    "escalated": 0,
+    "escalation_rate": 0.0,
+    "tier2_resolves": 0,
+    "unresolved": 0,
+    "unresolved_truncated": 0,
+    "unresolved_ids": []
+   },
+   "on_failed_by_176b": {
+    "items": 0,
+    "tier1_accepts": 0,
+    "escalated": 0,
+    "escalation_rate": null,
+    "tier2_resolves": 0,
+    "unresolved": 0,
+    "unresolved_truncated": 0,
+    "unresolved_ids": []
+   },
+   "cost_on_solved": {
+    "always_first_s": 21.761579513549805,
+    "always_second_s": 5.813802719116211,
+    "cascade_s": 21.761579513549805,
+    "swaps": 0,
+    "always_176b_s": 36.99,
+    "saved_vs_176b_s": 15.228420486450197
+   }
+  }
+ },
+ "agreement": {
+  "both_answered": 2,
+  "agreed": 2,
+  "disagreed": 0,
+  "on_disagreements_176b_solved": 0
+ },
+ "big_model_176b": {
+  "items": 4,
+  "ms_median": 9932,
+  "ms_mean": 9247.5,
+  "tokens_median": 517,
+  "total_s_on_solved": 36.99,
+  "same_final_as_big": {
+   "35b": {
+    "same": 4,
+    "both_answered": 4
+   },
+   "bonsai27b": {
+    "same": 2,
+    "both_answered": 2
+   }
+  }
+ }
+}
