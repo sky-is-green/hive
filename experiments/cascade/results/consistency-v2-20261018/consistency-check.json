@@ -1,0 +1,197 @@
+{
+ "verifier": "self-asserted arithmetic equations: evaluate both sides, flag disagreement",
+ "gold_free": true,
+ "slices": {
+  "organic-66": {
+   "n": 66,
+   "wrong": 9,
+   "correct": 57,
+   "flagged": 2,
+   "flagged_and_wrong": 2,
+   "precision_on_flagged": 1.0,
+   "recall_of_wrongs": 0.2222222222222222,
+   "false_flag_rate_on_correct": 0.0,
+   "equations_checked_total": 95,
+   "flagged_items": [
+    {
+     "item_id": "gsm8k-0033:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "5 + 10 + 10 + 2.5 + 2.5 = 25",
+       "lhs": 30.0,
+       "rhs": 25.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0013:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2007 = 6 * 334 + 1",
+       "lhs": 2007.0,
+       "rhs": 2005.0
+      }
+     ]
+    }
+   ]
+  },
+  "harvest-train-871": {
+   "n": 871,
+   "wrong": 461,
+   "correct": 410,
+   "flagged": 1,
+   "flagged_and_wrong": 1,
+   "precision_on_flagged": 1.0,
+   "recall_of_wrongs": 0.0021691973969631237,
+   "false_flag_rate_on_correct": 0.0,
+   "equations_checked_total": 1238,
+   "flagged_items": [
+    {
+     "item_id": "math-0019:r2-hs2",
+     "label": 0,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "199 = 11 * 17",
+       "lhs": 199.0,
+       "rhs": 187.0
+      },
+      {
+       "equation": "398 = 7 * 56 + 2",
+       "lhs": 398.0,
+       "rhs": 394.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "1 = 7 - (398 - 7 * 56) * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 - 398 * 3 + 7 * 168",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * (1 + 168) - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * 169 - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "7 * 169 - 398 * 3 = 1",
+       "lhs": -11.0,
+       "rhs": 1.0
+      }
+     ]
+    }
+   ]
+  },
+  "harvest-937": {
+   "n": 937,
+   "wrong": 470,
+   "correct": 467,
+   "flagged": 3,
+   "flagged_and_wrong": 3,
+   "precision_on_flagged": 1.0,
+   "recall_of_wrongs": 0.006382978723404255,
+   "false_flag_rate_on_correct": 0.0,
+   "equations_checked_total": 1333,
+   "flagged_items": [
+    {
+     "item_id": "gsm8k-0033:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "5 + 10 + 10 + 2.5 + 2.5 = 25",
+       "lhs": 30.0,
+       "rhs": 25.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0013:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2007 = 6 * 334 + 1",
+       "lhs": 2007.0,
+       "rhs": 2005.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0019:r2-hs2",
+     "label": 0,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "199 = 11 * 17",
+       "lhs": 199.0,
+       "rhs": 187.0
+      },
+      {
+       "equation": "398 = 7 * 56 + 2",
+       "lhs": 398.0,
+       "rhs": 394.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "1 = 7 - (398 - 7 * 56) * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 - 398 * 3 + 7 * 168",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * (1 + 168) - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * 169 - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "7 * 169 - 398 * 3 = 1",
+       "lhs": -11.0,
+       "rhs": 1.0
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

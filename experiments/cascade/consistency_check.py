@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prototype: a gold-free arithmetic-consistency verifier over the model's own answer.
+r"""Prototype: a gold-free arithmetic-consistency verifier over the model's own answer.
 
 The two organic items that every detector misses are the same failure.  `gsm8k-0033:hs1` writes
 `5 + 10 + 10 + 2.5 + 2.5 = 25` (it is 30, which is the gold); `math-0013:hs1` writes
@@ -18,11 +18,36 @@ disagrees with itself, how many of the flagged items are actually wrong?  Measur
 
     .venv/bin/python experiments/cascade/consistency_check.py \
         --out experiments/cascade/results/scion176b-harvest-20261018/consistency-check.json
+
+What the second and third answer styles found (2026-10-18, results/consistency-v2-20261018/).  The
+1.000 precision first measured here was measured on one model's way of writing; run the same 66
+items through Bonsai-2 27B and Qwen3.6-35B-A3B and it flagged 7 of Bonsai's answers, 5 of them
+correct, and none of the 35B's.  Every one had a named cause:
+
+  * "2x + \frac{x}{2} + 4 = 19" -> the equation regex captures the *fragment* "+ 4 = 19" and tests it.
+    A claim and a fragment are indistinguishable inside the character class that captures them, so
+    the fix is to require a line to BE one arithmetic equation (PURE_LINE), not to contain digits
+    and an "=".
+  * "$40 = 2^3 \cdot 5$" -> the right side stops at "^", so a prime factorization is tested as
+    "40 = 2".  Same fix.
+  * every span containing \text{ was skipped, a rule written for one "with a remainder of" idiom
+    that threw away all unit-labelled arithmetic -- and the 35B labels every number, so the verifier
+    was nearly blind to it.  Units are now stripped from the span, not the span discarded.
+  * "1 \div 7 = 0 with a remainder of 1" is long division, not a false equation, and when the steps
+    are a numbered list the marker is in the sentence.  The skip is narrow now -- division sign, the
+    floor as the right side, a sentence saying remainder -- which keeps the quotient/remainder
+    decomposition "2007 = 6 * 334 + 1" checkable (and it is wrong: 2005).
+
+After: precision 1.000 on all three answer sets (176B 2 flags, 35B 3, Bonsai 0), and on harvest-937
+the old 40 flags / 21 wrong (0.525) become 3 / 3 (1.000) -- most of those 21 were accidents on
+boxed-edit perturbations whose reasoning is intact (a function definition read as "2 = 9", an
+absolute value as "2 = 1"), so the recall drop is false positives removed.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import warnings
 from fractions import Fraction
@@ -42,11 +67,28 @@ MATH_SPANS = re.compile(
 # inside a math span: a maximal run of digits/operators, then '=', then another run
 ARITH = r"[\d\s\+\-\*/\(\)\.]"
 EQ = re.compile(rf"({ARITH}+)=({ARITH}+)")
+# A whole line that IS one arithmetic equation, nothing else on it.  A span holding an expression
+# fragment of a larger equation matches EQ without being a claim the answer makes: "2x +
+# \frac{x}{2} + 4 = 19" yields "+ 4 = 19" and "40 = 2^3 \cdot 5" yields "40 = 2".  Requiring the
+# line to be pure is what separates a claim from a fragment -- letters, '^' and the braces a macro
+# leaves behind are what the old guards failed to notice, because the fragments they left were
+# pure-arithmetic *by construction* (that is what the character class in EQ captures).
+PURE_LINE = re.compile(rf"{ARITH}+={ARITH}+")
+# "1 \div 7 = 0 with a remainder of 1" is a quotient-not-remainder statement, not a false equation.
+CONVENTION = re.compile(r"remainder|long division", re.I)
 
 
 def _normalise(span: str) -> str:
     e = span.replace("\\times", "*").replace("\\cdot", "*").replace("\\div", "/")
     e = e.replace("\\cdotp", "*").replace("\\!", "").replace("\\,", "").replace("\\ ", " ")
+    # a fraction is a division: \frac{1}{7} -> (1)/(7).  \frac{x}{2} keeps its letter and the purity
+    # rule below discards it, which is the intent -- it is not arithmetic we can evaluate.
+    e = re.sub(r"\\frac\{([^{}]*)\}\{([^{}]*)\}", r"(\1)/(\2)", e)
+    # units are not arithmetic: "6 \text{ weeks} \times 2 \text{ sessions} = 12 \text{ sessions}".
+    # Dropping the whole span on sight (the old rule) threw away every number a model that labels
+    # its units ever wrote -- Qwen3.6-35B-A3B labels all of them.
+    e = re.sub(r"\\text\{[^{}]*\}", " ", e)
+    e = e.replace("\\$", "").replace("$", "")     # currencies are units too
     for sym, op in (("×", "*"), ("÷", "/"), ("−", "-"), ("·", "*")):
         e = e.replace(sym, op)
     e = re.sub(r"(?<=\s)[xX](?=\s)", "*", e)          # a spaced x is multiplication, not a variable
@@ -86,30 +128,48 @@ def check_answer(answer: str) -> dict:
     checked = 0
     for m in MATH_SPANS.finditer(answer):
         raw = m.group(0)
-        # a span mixing prose into the math ("...\text{ with a remainder of }...") states a
-        # convention rather than an equality we can evaluate
-        if "\\text{" in raw or "remainder" in raw.lower():
+        # A span that talks about a remainder states a convention, not an equality: "1 \div 7 = 0 with
+        # a remainder of 1" reads as a false equation to a rational evaluator, as does the
+        # quotient/remainder decomposition "2007 = 6 x 334 + 1" that a decimal-expansion answer writes.
+        # The marker sits in the span when the answer writes "\text{ with a remainder of }", and in
+        # the sentence when it writes the long-division steps as a numbered list -- check both.
+        ls = answer.rfind("\n", 0, m.start())
+        le = answer.find("\n", m.end())
+        window = answer[max(0, ls + 1 - 60):(le if le != -1 else len(answer)) + 60]
+        if CONVENTION.search(raw):
             continue
         span = _normalise(raw)
         if "=" not in span:
             continue
-        for eq in EQ.finditer(span):
-            s, e = eq.span()
-            lhs, rhs = eq.group(1).strip(), eq.group(2).strip()
-            if not rhs or "=" in rhs:
+        had_units = "\\text{" in raw
+        for line in re.split(r"\\\\|\n", span):       # a display span can hold several rows
+            line = line.strip()
+            if not PURE_LINE.fullmatch(line):
                 continue
-            # "2.5x = 15" is variable notation, not an arithmetic claim: if either side runs into a
-            # letter or digit we did not capture, this is not an equation we know how to check
-            if s > 0 and (span[s - 1].isalnum()):
+            # with the unit words gone a bare "6 = 12" is a conversion ("6 weeks = 12 sessions"),
+            # not a computation; a computation has an operator in it
+            if had_units and not re.search(r"[+\-*/]", line):
                 continue
-            if e < len(span) and (span[e].isalnum()):
-                continue
-            lv, rv = _evaluate(lhs), _evaluate(rhs)
-            if lv is None or rv is None:
-                continue
-            checked += 1
-            if lv != rv:
-                bad.append({"equation": f"{lhs} = {rhs}", "lhs": float(lv), "rhs": float(rv)})
+            for eq in EQ.finditer(line):
+                lhs, rhs = eq.group(1).strip(), eq.group(2).strip()
+                if not rhs or "=" in rhs:
+                    continue
+                lv, rv = _evaluate(lhs), _evaluate(rhs)
+                if lv is None or rv is None:
+                    continue
+                if lv != rv:
+                    # A long-division step states a quotient with the remainder written separately:
+                    # "1 \div 7 = 0 with a remainder of 1" is 0 remainder 1, not a false equation.  The
+                    # skip is narrow on purpose -- it needs the division sign, the floor as the right
+                    # side, and a sentence that says it is a remainder.  "2007 = 6 * 334 + 1", the
+                    # decomposition of the same division, has no division sign and stays checkable
+                    # (and is wrong: 6*334+1 is 2005).
+                    if "/" in lhs and rv == math.floor(lv) and CONVENTION.search(window):
+                        continue
+                    checked += 1
+                    bad.append({"equation": f"{lhs} = {rhs}", "lhs": float(lv), "rhs": float(rv)})
+                else:
+                    checked += 1
     return {"equations_checked": checked, "inconsistent": bad, "flagged": bool(bad)}
 
 
