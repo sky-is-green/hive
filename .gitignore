@@ -106,6 +106,8 @@ experiments/cascade/results/*/streams.json
 experiments/cascade/results/*/capture.json
 experiments/cascade/results/.model-sha-cache.json
 experiments/cascade/results/.engine-sha-cache.json
+# engine-written launch records (exe + argv of the serve that made the run)
+experiments/cascade/results/*/dh-server.json
 
 # slot-logit readout caches (prompts + dumps + harness stderr; scores and
 # index.json stay tracked)
