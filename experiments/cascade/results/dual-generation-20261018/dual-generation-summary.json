@@ -1,0 +1,51 @@
+{
+ "items": 4,
+ "models": [
+  "35b",
+  "bonsai27b"
+ ],
+ "wall_s": 21.764789819717407,
+ "agreement": {
+  "both_answered": 2,
+  "agreed": 2,
+  "disagreed": 0
+ },
+ "latency_ms": {
+  "35b": {
+   "median": 2010.0789070129395,
+   "mean": 1453.4506797790527,
+   "p90": 2061.089038848877,
+   "errors": 0
+  },
+  "bonsai27b": {
+   "median": 5733.470916748047,
+   "mean": 5440.394878387451,
+   "p90": 6869.165658950806,
+   "errors": 0
+  }
+ },
+ "checker_accuracy": {
+  "35b": {
+   "n": 4,
+   "wrong_vs_label": 0,
+   "wrong_rate": 0.0,
+   "false_reject": 0,
+   "false_accept": 0,
+   "consistency_flagged": 0
+  },
+  "bonsai27b": {
+   "n": 4,
+   "wrong_vs_label": 2,
+   "wrong_rate": 0.5,
+   "false_reject": 2,
+   "false_accept": 0,
+   "consistency_flagged": 2
+  }
+ },
+ "on_disagreements": {
+  "n": 2,
+  "a_right": 2,
+  "b_right": 2,
+  "neither": 0
+ }
+}

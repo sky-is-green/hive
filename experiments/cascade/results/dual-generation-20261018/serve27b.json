@@ -1,0 +1,15 @@
+{
+ "exe": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2/build-hip/strata-dense",
+ "args": ["--native", "/home/penis/Desktop/models/hub/Ternary-Bonsai-2-27B-PQ2_0.gguf", "--context", "4096", "--no-prefill"],
+ "cwd": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2",
+ "tokenizer": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2/data/packs/qwen3.8-27b/tokenizer",
+ "model_name": "bonsai-2-27b-dense",
+ "log": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/dual-generation-20261018/engine27b.log",
+ "lib_dirs": [],
+ "env": {"STRATA_DENSE_GRAPH": "1"},
+ "sampling": {"temperature": 0.0, "top_p": 1.0, "top_k": 1},
+ "port": 8083,
+ "backend": "hip",
+ "gpu": [1],
+ "gpus_asked": true
+}
