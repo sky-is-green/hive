@@ -1,0 +1,534 @@
+{
+ "threshold": 0.5,
+ "heads": [
+  "L0.75",
+  "L0.5"
+ ],
+ "default_head": "L0.75",
+ "harvest": {
+  "n": 66,
+  "scoring_s": 38.5,
+  "max_abs_dp_vs_stored": {
+   "L0.75": 0.0,
+   "L0.5": 0.0
+  },
+  "detectors": {
+   "caught_wrong": [
+    "gsm8k-0033:hs1",
+    "humaneval-0001:hs1",
+    "humaneval-0001:hs2",
+    "humaneval-0015:hs1",
+    "humaneval-0015:hs2",
+    "math-0013:hs1"
+   ],
+   "false_flags": []
+  },
+  "heads": {
+   "L0.75": {
+    "threshold": 0.5,
+    "marginal_at_cut": {
+     "caught": [
+      "gsm8k-0015:hs2"
+     ],
+     "paid": []
+    },
+    "fired": [
+     [
+      "gsm8k-0015:hs2",
+      0.073751
+     ]
+    ],
+    "auc": 0.8187
+   },
+   "L0.5": {
+    "threshold": 0.5,
+    "marginal_at_cut": {
+     "caught": [
+      "gsm8k-0009:hs2",
+      "gsm8k-0015:hs2",
+      "math-0020:hs2"
+     ],
+     "paid": [
+      "gsm8k-0014:hg",
+      "gsm8k-0038:hs1",
+      "humaneval-0002:hg",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0016:hg",
+      "math-0020:hg",
+      "truthfulqa-0008:hg"
+     ]
+    },
+    "fired": [
+     [
+      "gsm8k-0009:hs2",
+      0.425547
+     ],
+     [
+      "gsm8k-0015:hs2",
+      0.009242
+     ],
+     [
+      "math-0020:hs2",
+      0.00271
+     ],
+     [
+      "gsm8k-0014:hg",
+      0.435765
+     ],
+     [
+      "gsm8k-0038:hs1",
+      0.214015
+     ],
+     [
+      "humaneval-0002:hg",
+      0.488122
+     ],
+     [
+      "math-0006:hg",
+      0.003802
+     ],
+     [
+      "math-0006:hs1",
+      0.014662
+     ],
+     [
+      "math-0006:hs2",
+      0.014633
+     ],
+     [
+      "math-0016:hg",
+      0.271712
+     ],
+     [
+      "math-0020:hg",
+      0.047112
+     ],
+     [
+      "truthfulqa-0008:hg",
+      7e-06
+     ]
+    ],
+    "auc": 0.8265
+   }
+  }
+ },
+ "arms": {
+  "armA-sampled": {
+   "rows": 66,
+   "detector_flagged": 4,
+   "truncated_no_score": [
+    "gsm8k-0033:hs1",
+    "gsm8k-0038:hs1",
+    "humaneval-0015:hs1"
+   ],
+   "silent": 60,
+   "silent_scoring_s": 24.7,
+   "scored_per_silent_ms": 411.0,
+   "heads": {
+    "L0.75": {
+     "threshold": 0.5,
+     "silent": 60,
+     "fires": 2,
+     "marginal_catch": 0,
+     "marginal_catch_ids": [],
+     "extra_flags": 2,
+     "extra_flag_ids": [
+      "humaneval-0002:hg",
+      "math-0020:hs2"
+     ],
+     "silent_wrong_ids": [
+      "gsm8k-0009:hs1",
+      "gsm8k-0033:hg",
+      "gsm8k-0038:hs2",
+      "math-0020:hg"
+     ],
+     "silent_correct_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0005:hs1",
+      "gsm8k-0006:hg",
+      "gsm8k-0006:hs1",
+      "gsm8k-0006:hs2",
+      "gsm8k-0008:hg",
+      "gsm8k-0008:hs1",
+      "gsm8k-0008:hs2",
+      "gsm8k-0009:hg",
+      "gsm8k-0009:hs2",
+      "gsm8k-0014:hg",
+      "gsm8k-0014:hs1",
+      "gsm8k-0014:hs2",
+      "gsm8k-0015:hs2",
+      "gsm8k-0020:hg",
+      "gsm8k-0020:hs1",
+      "gsm8k-0020:hs2",
+      "gsm8k-0035:hg",
+      "gsm8k-0035:hs1",
+      "gsm8k-0035:hs2",
+      "gsm8k-0036:hg",
+      "gsm8k-0036:hs1",
+      "gsm8k-0036:hs2",
+      "gsm8k-0037:hg",
+      "gsm8k-0037:hs1",
+      "gsm8k-0037:hs2",
+      "gsm8k-0038:hg",
+      "humaneval-0001:hg",
+      "humaneval-0001:hs1",
+      "humaneval-0002:hg",
+      "humaneval-0002:hs1",
+      "humaneval-0003:hg",
+      "humaneval-0003:hs1",
+      "humaneval-0004:hs1",
+      "humaneval-0004:hs2",
+      "humaneval-0007:hg",
+      "humaneval-0007:hs2",
+      "humaneval-0015:hg",
+      "humaneval-0015:hs2",
+      "math-0002:hg",
+      "math-0002:hs1",
+      "math-0002:hs2",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0013:hs1",
+      "math-0013:hs2",
+      "math-0016:hg",
+      "math-0016:hs1",
+      "math-0020:hs2",
+      "math-0023:hg",
+      "truthfulqa-0008:hg",
+      "truthfulqa-0011:hg",
+      "truthfulqa-0013:hg",
+      "truthfulqa-0015:hg",
+      "truthfulqa-0015:hs1"
+     ],
+     "fires_p": {
+      "humaneval-0002:hg": 0.406606,
+      "math-0020:hs2": 0.034724
+     }
+    },
+    "L0.5": {
+     "threshold": 0.5,
+     "silent": 60,
+     "fires": 17,
+     "marginal_catch": 1,
+     "marginal_catch_ids": [
+      "math-0020:hg"
+     ],
+     "extra_flags": 16,
+     "extra_flag_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0005:hs1",
+      "gsm8k-0008:hs1",
+      "gsm8k-0009:hs2",
+      "gsm8k-0036:hg",
+      "humaneval-0001:hg",
+      "humaneval-0001:hs1",
+      "humaneval-0002:hg",
+      "humaneval-0002:hs1",
+      "humaneval-0015:hs2",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0016:hs1",
+      "math-0020:hs2",
+      "truthfulqa-0008:hg"
+     ],
+     "silent_wrong_ids": [
+      "gsm8k-0009:hs1",
+      "gsm8k-0033:hg",
+      "gsm8k-0038:hs2",
+      "math-0020:hg"
+     ],
+     "silent_correct_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0005:hs1",
+      "gsm8k-0006:hg",
+      "gsm8k-0006:hs1",
+      "gsm8k-0006:hs2",
+      "gsm8k-0008:hg",
+      "gsm8k-0008:hs1",
+      "gsm8k-0008:hs2",
+      "gsm8k-0009:hg",
+      "gsm8k-0009:hs2",
+      "gsm8k-0014:hg",
+      "gsm8k-0014:hs1",
+      "gsm8k-0014:hs2",
+      "gsm8k-0015:hs2",
+      "gsm8k-0020:hg",
+      "gsm8k-0020:hs1",
+      "gsm8k-0020:hs2",
+      "gsm8k-0035:hg",
+      "gsm8k-0035:hs1",
+      "gsm8k-0035:hs2",
+      "gsm8k-0036:hg",
+      "gsm8k-0036:hs1",
+      "gsm8k-0036:hs2",
+      "gsm8k-0037:hg",
+      "gsm8k-0037:hs1",
+      "gsm8k-0037:hs2",
+      "gsm8k-0038:hg",
+      "humaneval-0001:hg",
+      "humaneval-0001:hs1",
+      "humaneval-0002:hg",
+      "humaneval-0002:hs1",
+      "humaneval-0003:hg",
+      "humaneval-0003:hs1",
+      "humaneval-0004:hs1",
+      "humaneval-0004:hs2",
+      "humaneval-0007:hg",
+      "humaneval-0007:hs2",
+      "humaneval-0015:hg",
+      "humaneval-0015:hs2",
+      "math-0002:hg",
+      "math-0002:hs1",
+      "math-0002:hs2",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0013:hs1",
+      "math-0013:hs2",
+      "math-0016:hg",
+      "math-0016:hs1",
+      "math-0020:hs2",
+      "math-0023:hg",
+      "truthfulqa-0008:hg",
+      "truthfulqa-0011:hg",
+      "truthfulqa-0013:hg",
+      "truthfulqa-0015:hg",
+      "truthfulqa-0015:hs1"
+     ],
+     "fires_p": {
+      "math-0020:hg": 0.239907,
+      "gsm8k-0005:hg": 0.320331,
+      "gsm8k-0005:hs1": 2e-05,
+      "gsm8k-0008:hs1": 0.160017,
+      "gsm8k-0009:hs2": 0.193143,
+      "gsm8k-0036:hg": 0.439405,
+      "humaneval-0001:hg": 0.112949,
+      "humaneval-0001:hs1": 0.439256,
+      "humaneval-0002:hg": 0.228075,
+      "humaneval-0002:hs1": 0.488122,
+      "humaneval-0015:hs2": 0.157222,
+      "math-0006:hg": 0.019156,
+      "math-0006:hs1": 0.005178,
+      "math-0006:hs2": 0.368112,
+      "math-0016:hs1": 0.004769,
+      "math-0020:hs2": 0.410838,
+      "truthfulqa-0008:hg": 7e-06
+     }
+    }
+   }
+  },
+  "armB-nothink": {
+   "rows": 66,
+   "detector_flagged": 4,
+   "truncated_no_score": [],
+   "silent": 62,
+   "silent_scoring_s": 32.9,
+   "scored_per_silent_ms": 530.1,
+   "heads": {
+    "L0.75": {
+     "threshold": 0.5,
+     "silent": 62,
+     "fires": 5,
+     "marginal_catch": 2,
+     "marginal_catch_ids": [
+      "gsm8k-0015:hs2",
+      "gsm8k-0036:hs1"
+     ],
+     "extra_flags": 3,
+     "extra_flag_ids": [
+      "humaneval-0003:hg",
+      "math-0020:hg",
+      "math-0020:hs2"
+     ],
+     "silent_wrong_ids": [
+      "gsm8k-0015:hs2",
+      "gsm8k-0033:hs1",
+      "gsm8k-0036:hs1",
+      "math-0023:hg",
+      "truthfulqa-0015:hg"
+     ],
+     "silent_correct_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0005:hs1",
+      "gsm8k-0006:hg",
+      "gsm8k-0006:hs1",
+      "gsm8k-0006:hs2",
+      "gsm8k-0008:hg",
+      "gsm8k-0008:hs1",
+      "gsm8k-0008:hs2",
+      "gsm8k-0009:hg",
+      "gsm8k-0009:hs1",
+      "gsm8k-0009:hs2",
+      "gsm8k-0014:hg",
+      "gsm8k-0014:hs1",
+      "gsm8k-0014:hs2",
+      "gsm8k-0020:hg",
+      "gsm8k-0020:hs1",
+      "gsm8k-0020:hs2",
+      "gsm8k-0033:hg",
+      "gsm8k-0035:hg",
+      "gsm8k-0035:hs1",
+      "gsm8k-0035:hs2",
+      "gsm8k-0036:hg",
+      "gsm8k-0036:hs2",
+      "gsm8k-0037:hg",
+      "gsm8k-0037:hs1",
+      "gsm8k-0037:hs2",
+      "gsm8k-0038:hg",
+      "gsm8k-0038:hs1",
+      "gsm8k-0038:hs2",
+      "humaneval-0001:hs1",
+      "humaneval-0001:hs2",
+      "humaneval-0002:hg",
+      "humaneval-0002:hs1",
+      "humaneval-0003:hg",
+      "humaneval-0004:hg",
+      "humaneval-0004:hs1",
+      "humaneval-0004:hs2",
+      "humaneval-0007:hg",
+      "humaneval-0007:hs1",
+      "humaneval-0015:hg",
+      "humaneval-0015:hs1",
+      "math-0002:hg",
+      "math-0002:hs1",
+      "math-0002:hs2",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0013:hs1",
+      "math-0013:hs2",
+      "math-0016:hg",
+      "math-0016:hs1",
+      "math-0020:hg",
+      "math-0020:hs2",
+      "truthfulqa-0008:hg",
+      "truthfulqa-0011:hg",
+      "truthfulqa-0013:hg",
+      "truthfulqa-0015:hs1"
+     ],
+     "fires_p": {
+      "gsm8k-0015:hs2": 0.00279,
+      "gsm8k-0036:hs1": 0.001335,
+      "humaneval-0003:hg": 0.279063,
+      "math-0020:hg": 0.024202,
+      "math-0020:hs2": 0.108375
+     }
+    },
+    "L0.5": {
+     "threshold": 0.5,
+     "silent": 62,
+     "fires": 16,
+     "marginal_catch": 2,
+     "marginal_catch_ids": [
+      "gsm8k-0015:hs2",
+      "gsm8k-0033:hs1"
+     ],
+     "extra_flags": 14,
+     "extra_flag_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0008:hs1",
+      "gsm8k-0014:hs1",
+      "gsm8k-0036:hg",
+      "gsm8k-0036:hs2",
+      "humaneval-0001:hs2",
+      "humaneval-0002:hg",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0016:hg",
+      "math-0020:hg",
+      "math-0020:hs2",
+      "truthfulqa-0008:hg"
+     ],
+     "silent_wrong_ids": [
+      "gsm8k-0015:hs2",
+      "gsm8k-0033:hs1",
+      "gsm8k-0036:hs1",
+      "math-0023:hg",
+      "truthfulqa-0015:hg"
+     ],
+     "silent_correct_ids": [
+      "gsm8k-0005:hg",
+      "gsm8k-0005:hs1",
+      "gsm8k-0006:hg",
+      "gsm8k-0006:hs1",
+      "gsm8k-0006:hs2",
+      "gsm8k-0008:hg",
+      "gsm8k-0008:hs1",
+      "gsm8k-0008:hs2",
+      "gsm8k-0009:hg",
+      "gsm8k-0009:hs1",
+      "gsm8k-0009:hs2",
+      "gsm8k-0014:hg",
+      "gsm8k-0014:hs1",
+      "gsm8k-0014:hs2",
+      "gsm8k-0020:hg",
+      "gsm8k-0020:hs1",
+      "gsm8k-0020:hs2",
+      "gsm8k-0033:hg",
+      "gsm8k-0035:hg",
+      "gsm8k-0035:hs1",
+      "gsm8k-0035:hs2",
+      "gsm8k-0036:hg",
+      "gsm8k-0036:hs2",
+      "gsm8k-0037:hg",
+      "gsm8k-0037:hs1",
+      "gsm8k-0037:hs2",
+      "gsm8k-0038:hg",
+      "gsm8k-0038:hs1",
+      "gsm8k-0038:hs2",
+      "humaneval-0001:hs1",
+      "humaneval-0001:hs2",
+      "humaneval-0002:hg",
+      "humaneval-0002:hs1",
+      "humaneval-0003:hg",
+      "humaneval-0004:hg",
+      "humaneval-0004:hs1",
+      "humaneval-0004:hs2",
+      "humaneval-0007:hg",
+      "humaneval-0007:hs1",
+      "humaneval-0015:hg",
+      "humaneval-0015:hs1",
+      "math-0002:hg",
+      "math-0002:hs1",
+      "math-0002:hs2",
+      "math-0006:hg",
+      "math-0006:hs1",
+      "math-0006:hs2",
+      "math-0013:hs1",
+      "math-0013:hs2",
+      "math-0016:hg",
+      "math-0016:hs1",
+      "math-0020:hg",
+      "math-0020:hs2",
+      "truthfulqa-0008:hg",
+      "truthfulqa-0011:hg",
+      "truthfulqa-0013:hg",
+      "truthfulqa-0015:hs1"
+     ],
+     "fires_p": {
+      "gsm8k-0015:hs2": 0.019333,
+      "gsm8k-0033:hs1": 0.096242,
+      "gsm8k-0005:hg": 0.054715,
+      "gsm8k-0008:hs1": 0.408831,
+      "gsm8k-0014:hs1": 0.216793,
+      "gsm8k-0036:hg": 0.339592,
+      "gsm8k-0036:hs2": 0.052695,
+      "humaneval-0001:hs2": 0.235069,
+      "humaneval-0002:hg": 0.488122,
+      "math-0006:hg": 0.01256,
+      "math-0006:hs1": 0.068219,
+      "math-0006:hs2": 0.096409,
+      "math-0016:hg": 0.040076,
+      "math-0020:hg": 0.065339,
+      "math-0020:hs2": 0.179253,
+      "truthfulqa-0008:hg": 7e-06
+     }
+    }
+   }
+  }
+ }
+}

@@ -661,8 +661,13 @@ catch `gsm8k-0015:hs2` at p=0.073751 (stored-fitted: identical).  Reported
 per-run: `gate_scored`/`gate_fires`/`gate_cleared` counts, per-record
 `gate_scored`/`gate_fired`/`gate_p`/`gate_cleared`, and the D3-verify
 telemetry row carries `gate p=...` in its detail with the score's ms folded
-into its latency.  Still due: the offline replay (M3) and the live paired
-run (M4) that decide whether the flag stays on.
+into its latency.  The offline replay (M3) reproduced the study body
+exactly (max |Δp| 0.0 on all 66 stored items) and measured the fresh-draft
+behavior of both committed arm runs:
+`experiments/cascade/results/gate-replay-20261018/REPLAY.md` — on the
+nothink regime's fresh drafts the default head catches 2 of 5 silent wrongs
+at 3 extra flags, inside the ~10 % wall-clock budget.  The live paired run
+(M4) that decides whether the flag stays on is still due.
 
 ## Priority plan after the literature pass
 
