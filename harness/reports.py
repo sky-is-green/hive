@@ -1435,7 +1435,7 @@ for (const id of ['q', 'drepo', 'hfrepo']) {{
            suggestTimer = setTimeout(() => suggestRepos(e.target.value.trim(), id), 350); }});
   el.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
 }}
-document.getElementById('model').addEventListener('focus', suggestLocal);
+const _m = document.getElementById('model'); if (_m) _m.addEventListener('focus', suggestLocal);
 
 /* --------------------- sessions (OpenCode-style tabs) ----------------- */
 const SESS_KEY = 'splinter-console-sessions';
