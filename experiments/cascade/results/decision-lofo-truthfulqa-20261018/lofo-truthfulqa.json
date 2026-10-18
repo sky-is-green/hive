@@ -1,0 +1,418 @@
+{
+  "held_out": {
+    "corrects": 44,
+    "n": 129,
+    "organic_wrongs": 10,
+    "perturbed_wrongs": 75
+  },
+  "variants": {
+    "L0.5": {
+      "LOFO": {
+        "auc_all": 0.5722,
+        "auc_organic": 0.8091,
+        "budget": {
+          "k10": {
+            "caught": 2,
+            "fr": 3
+          },
+          "k20": {
+            "caught": 5,
+            "fr": 6
+          },
+          "k30": {
+            "caught": 7,
+            "fr": 9
+          }
+        },
+        "fr": 28,
+        "organic_caught": 10,
+        "organic_p": [
+          0.0,
+          0.0248,
+          0.2267,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "perturbed_caught": 51
+      },
+      "in-family": {
+        "auc_all": 0.9353,
+        "auc_organic": 0.9545,
+        "budget": {
+          "k10": {
+            "caught": 3,
+            "fr": 2
+          },
+          "k20": {
+            "caught": 9,
+            "fr": 2
+          },
+          "k30": {
+            "caught": 10,
+            "fr": 6
+          }
+        },
+        "fr": 2,
+        "organic_caught": 10,
+        "organic_p": [
+          0.1594,
+          0.1202,
+          0.2143,
+          0.0736,
+          0.1399,
+          0.1594,
+          0.1345,
+          0.0847,
+          0.2563,
+          0.1685
+        ],
+        "perturbed_caught": 69
+      }
+    },
+    "L0.75": {
+      "LOFO": {
+        "auc_all": 0.4904,
+        "auc_organic": 0.4659,
+        "budget": {
+          "k10": {
+            "caught": 1,
+            "fr": 4
+          },
+          "k20": {
+            "caught": 2,
+            "fr": 9
+          },
+          "k30": {
+            "caught": 3,
+            "fr": 13
+          }
+        },
+        "fr": 0,
+        "organic_caught": 0,
+        "organic_p": [
+          1.0,
+          0.9992,
+          1.0,
+          0.6727,
+          1.0,
+          1.0,
+          0.9928,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "perturbed_caught": 7
+      },
+      "in-family": {
+        "auc_all": 0.9955,
+        "auc_organic": 1.0,
+        "budget": {
+          "k10": {
+            "caught": 5,
+            "fr": 0
+          },
+          "k20": {
+            "caught": 10,
+            "fr": 1
+          },
+          "k30": {
+            "caught": 10,
+            "fr": 6
+          }
+        },
+        "fr": 0,
+        "organic_caught": 10,
+        "organic_p": [
+          0.1026,
+          0.1068,
+          0.1639,
+          0.0585,
+          0.1945,
+          0.1026,
+          0.141,
+          0.1132,
+          0.371,
+          0.2819
+        ],
+        "perturbed_caught": 70
+      }
+    },
+    "L1": {
+      "LOFO": {
+        "auc_all": 0.4029,
+        "auc_organic": 0.4341,
+        "budget": {
+          "k10": {
+            "caught": 0,
+            "fr": 5
+          },
+          "k20": {
+            "caught": 1,
+            "fr": 10
+          },
+          "k30": {
+            "caught": 2,
+            "fr": 14
+          }
+        },
+        "fr": 0,
+        "organic_caught": 0,
+        "organic_p": [
+          1.0,
+          0.9998,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9859,
+          0.9988
+        ],
+        "perturbed_caught": 0
+      },
+      "in-family": {
+        "auc_all": 0.938,
+        "auc_organic": 0.9545,
+        "budget": {
+          "k10": {
+            "caught": 3,
+            "fr": 2
+          },
+          "k20": {
+            "caught": 9,
+            "fr": 2
+          },
+          "k30": {
+            "caught": 10,
+            "fr": 6
+          }
+        },
+        "fr": 2,
+        "organic_caught": 10,
+        "organic_p": [
+          0.1008,
+          0.0914,
+          0.1247,
+          0.0877,
+          0.1874,
+          0.1008,
+          0.1882,
+          0.1219,
+          0.474,
+          0.3348
+        ],
+        "perturbed_caught": 69
+      }
+    },
+    "mlp-concat": {
+      "LOFO": {
+        "auc_all": 0.6989,
+        "auc_organic": 0.5159,
+        "budget": {
+          "k10": {
+            "caught": 0,
+            "fr": 5
+          },
+          "k20": {
+            "caught": 0,
+            "fr": 11
+          },
+          "k30": {
+            "caught": 3,
+            "fr": 13
+          }
+        },
+        "fr": 18,
+        "organic_caught": 4,
+        "organic_p": [
+          0.5187,
+          0.0081,
+          0.1562,
+          1.0,
+          1.0,
+          0.5187,
+          0.9999,
+          0.0013,
+          0.9925,
+          0.0082
+        ],
+        "perturbed_caught": 56
+      },
+      "in-family": {
+        "auc_all": 1.0,
+        "auc_organic": 1.0,
+        "budget": {
+          "k10": {
+            "caught": 5,
+            "fr": 0
+          },
+          "k20": {
+            "caught": 10,
+            "fr": 1
+          },
+          "k30": {
+            "caught": 10,
+            "fr": 6
+          }
+        },
+        "fr": 0,
+        "organic_caught": 10,
+        "organic_p": [
+          0.0001,
+          0.0,
+          0.0012,
+          0.0,
+          0.0002,
+          0.0001,
+          0.0019,
+          0.0001,
+          0.0222,
+          0.0078
+        ],
+        "perturbed_caught": 75
+      }
+    },
+    "raw": {
+      "LOFO": {
+        "auc_all": 0.5425,
+        "auc_organic": 0.3898,
+        "budget": {
+          "k10": {
+            "caught": 0,
+            "fr": 5
+          },
+          "k20": {
+            "caught": 0,
+            "fr": 11
+          },
+          "k30": {
+            "caught": 0,
+            "fr": 16
+          }
+        },
+        "fr": 31,
+        "organic_caught": 7,
+        "organic_p": [
+          0.4434,
+          0.3774,
+          0.4773,
+          0.6118,
+          0.6743,
+          0.4434,
+          0.7735,
+          0.4434,
+          0.41,
+          0.3774
+        ],
+        "perturbed_caught": 53
+      },
+      "in-family": {
+        "auc_all": 0.5425,
+        "auc_organic": 0.3898,
+        "budget": {
+          "k10": {
+            "caught": 0,
+            "fr": 5
+          },
+          "k20": {
+            "caught": 0,
+            "fr": 11
+          },
+          "k30": {
+            "caught": 0,
+            "fr": 16
+          }
+        },
+        "fr": 31,
+        "organic_caught": 7,
+        "organic_p": [
+          0.4434,
+          0.3774,
+          0.4773,
+          0.6118,
+          0.6743,
+          0.4434,
+          0.7735,
+          0.4434,
+          0.41,
+          0.3774
+        ],
+        "perturbed_caught": 53
+      }
+    },
+    "ridge-concat": {
+      "LOFO": {
+        "auc_all": 0.6219,
+        "auc_organic": 0.7295,
+        "budget": {
+          "k10": {
+            "caught": 2,
+            "fr": 3
+          },
+          "k20": {
+            "caught": 3,
+            "fr": 8
+          },
+          "k30": {
+            "caught": 5,
+            "fr": 11
+          }
+        },
+        "fr": 24,
+        "organic_caught": 10,
+        "organic_p": [
+          0.0001,
+          0.036,
+          0.0064,
+          0.0,
+          0.002,
+          0.0001,
+          0.005,
+          0.0,
+          0.0045,
+          0.0
+        ],
+        "perturbed_caught": 58
+      },
+      "in-family": {
+        "auc_all": 0.9556,
+        "auc_organic": 0.9545,
+        "budget": {
+          "k10": {
+            "caught": 3,
+            "fr": 2
+          },
+          "k20": {
+            "caught": 9,
+            "fr": 2
+          },
+          "k30": {
+            "caught": 10,
+            "fr": 6
+          }
+        },
+        "fr": 2,
+        "organic_caught": 10,
+        "organic_p": [
+          0.1242,
+          0.1169,
+          0.1225,
+          0.1066,
+          0.1213,
+          0.1242,
+          0.1211,
+          0.1107,
+          0.1436,
+          0.1287
+        ],
+        "perturbed_caught": 73
+      }
+    }
+  }
+}

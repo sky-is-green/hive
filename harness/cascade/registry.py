@@ -239,8 +239,19 @@ DEFAULT_CANDIDATES: tuple[Candidate, ...] = (
             "reads A/B (deployment raw A/B 0.673 vs yes/no 0.746), but the "
             "deployment-head refit still loses organic. Representational line "
             "closed; best gate L0.5 6/9 at 16% FR, MLP 5/9 at 12%, AND-tier "
-            "5/9 at 2/57; next: cascade tier 1 + different-evidence tier 2 "
-            "(verifier/critique)"
+            "5/9 at 2/57. Cascade accounting: all 9 organic-test wrongs are on "
+            "checker-covered families (gsm8k/humaneval/math), so verifier-first "
+            "is 9/9 at 0 correct escalations and 9 API calls; the gate's "
+            "open-ended domain is unmeasured by the frozen test. "
+            "Leave-one-family-out truthfulqa refit (129 held out: 10 organic "
+            "wrong, 75 perturbed, 44 correct) shows the in-family 10/10 "
+            "catches are memorization: LOFO L0.5 keeps rank signal (AUC 0.809; "
+            "5/10 at 6/44 FR on a 20% budget) but its 0.5 calibration rejects "
+            "28/44 corrects; MLP 4/10 (AUC 0.516); L0.75/L1 accept-all. "
+            "Different-question probes on the same 0.8B are also weak (AUC "
+            "0.35-0.61; error probe 8/9 at 39/57 FR). Local tier = verifier "
+            "for checkable tasks; open-ended -> hosted API or multi-family "
+            "open-ended data; the learned gate is a prefilter/fallback"
         ),
     ),
     Candidate(
