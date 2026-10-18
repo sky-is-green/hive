@@ -16,8 +16,9 @@ effects:
    genuinely needed.
 
 This is a gate, not a new model tier.  It sits after the verifier rejects and
-immediately before the hosted fallback.  The two top-level outcomes stay
-simple:
+after the automatic repair round (when one is configured) fails to clear the
+finding, immediately before the hosted fallback.  The two top-level outcomes
+stay simple:
 
 - **Solve locally** — correct the answer, give the model a hint, or keep the
   local answer when the task's checker already passes.
@@ -29,21 +30,27 @@ simple:
 local generation -> verifier -> reject
                                   |
                                   v
-                         human gate (interactive)
-                          /                 \
-                    solve                    escalate
-                 /       \                       |
-        corrected answer  hint -> one local retry  API answer
-                 \       /                       |
-                  checker                     checker
-                     |                           |
-                  ship local                  ship API
+                    automatic repair (one round,
+                     the finding quoted, T=0)
+                        /               \
+                  cleared             still flagged
+                     |                     |
+             ship canonical        human gate (interactive)
+                                     /                \
+                                 solve                escalate
+                              /        \                  |
+                     corrected answer   hint -> one       API answer
+                              \        /   local retry        |
+                               checker                     checker
+                                  |                           |
+                              ship local                   ship API
 ```
 
 The first trigger is deliberately verbose.  It prints:
 
 - the task id, bucket, and task prompt;
 - the local answer;
+- the automatic repair attempt and what it still trips on (when one ran);
 - the verifier's decision, calibrated confidence, and reason;
 - the task checker result (`PASSED`, `FAILED`, or `not available`);
 - the API endpoint and model that would be called; and
@@ -107,7 +114,10 @@ Each gated task gets a `human_gate` object in `report.json`:
 }
 ```
 
-The report summary adds `human_gate.asked/solve_attempts/solved/kept/
+When the repair leg ran, the same task record carries a `repair` object (the
+quoted finding, the attempt, whether it cleared, and the canonical re-framing
+when it did); the summary adds `repairs_attempted/cleared/still_flagged`.  The
+report summary adds `human_gate.asked/solve_attempts/solved/kept/
 escalated/first_triggered/reasons`, plus a `human_corrected` count.  A
 `HUMAN` telemetry row records the decision and reason alongside the existing
 model rows.  These rows are the raw material for the deferred C2 controller:

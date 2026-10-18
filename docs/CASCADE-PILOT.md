@@ -590,6 +590,44 @@ evaluation is decision parity against the bf16 table, not just PPL.  Plan:
 one directory (PQ2_0 body + joint head + tokenizer) and a `clef-ternary`
 backend in the harness validator service.
 
+## Deterministic verifier + repair leg (2026-10-18)
+
+The runner now carries the gold-free stack the cascade line measured, and the
+pipeline is generate → detect → repair → escalate:
+
+- **`--judge deterministic`** — the arithmetic `consistency` verifier
+  (`experiments/cascade/consistency_check.py`) plus `code_exec` against the
+  task's **own tests**, both reported as *findings* (the false equation, the
+  traceback) instead of a probability.  The verifier reads the task through
+  `cascade.runtime_spec`, which drops `checker.expect`, so no stage of the
+  loop — verdict, repair, gate — can see the answer key.
+- **`--repair` (default `auto`, on with the deterministic judge)** — after a
+  reject, one local re-attempt at temperature 0 with the finding quoted; a
+  truncated attempt retries once at double the budget and is otherwise never
+  accepted as the answer; a byte-identical attempt stops; an attempt that
+  clears the detectors is re-framed by `canonical()` (`\boxed{…}` / `Final
+  answer: n` / letter / fenced block) and becomes the served answer.  A
+  verdict from a learned judge has no finding, so the repair falls back to the
+  generic recheck prompt.
+
+Measured on the organic-66 (sampled T=0.7, live 176B): detection caught 6 of
+the 9 wrong answers (consistency 2, code_exec 4) with **0 false rejects on the
+57 correct ones**; the repair leg fixed 4 of the 5 caught wrongs it saw live
+(5/6 offline), with no content harm to correct answers; served-correct went
+**58/66 → 62/66**.  In the greedy regime the bench is nearly clean (65/66, 0
+detections), so the loop is a no-op there — sampling is the cascade's dial.
+Artifacts: `experiments/cascade/results/cascade-e2e-sampled-20261018/`,
+`repair-pass-20261018/`.  The human gate shows the repair attempt on the first
+trigger (`keep` only when the task's checker already passes), and the API
+fallback is unchanged behind it.
+
+```sh
+.venv/bin/python experiments/cascade/run_cascade.py \
+    --tasks experiments/cascade/tasks-bench.json \
+    --judge deterministic --repair auto \
+    --api-fallback http://127.0.0.1:4000/v1   # optional; gate without it still repairs
+```
+
 ## Priority plan after the literature pass
 
 1. **Evaluation floor first**: held-out split plus a real benchmark slice
