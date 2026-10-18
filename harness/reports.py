@@ -856,30 +856,28 @@ turns, durable session log.</div>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
 <div class="row">
-<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px"><option value="">— choose local model —</option></select></label>
-<span class="sugwrap"><input id="model" placeholder="or type path" size="18" list="local-suggestions" title="How: launchBody model → resolve_model local else needs hf_repo/file. Does: Sets -m path. Changing: Pick dropdown or type path; blank → must fill hf below or 400.">
-<datalist id="local-suggestions"></datalist></span>
-<label class="inline" title="How: ctx_size → -c (8192), KV 0.07/1024 GB tier vs 0.25GB/1k fit. Does: Caps prompt+reply. Changing: 8k→32k +2GB KV → spill/oom; >16k Auto→q8_0.">ctx  <input id="ctx" type="number" value="8192" size="4"></label>
-<label class="inline" title="How: ngl → -ngl, 999=all clamped to est_layers. Does: GPU offload. Changing: 999 needs VRAM≥size+KV else exit; lower fits but slower.">gpu  <input id="ngl" type="number" value="999" size="3"></label>
-<label class="inline" title="How: api_key → --api-key + provider auth. Does: Protects server. Changing: Set → clients need Bearer.">api-key  <input id="l-apikey" size="10" placeholder="(none)"></label><br>
-<span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (type to search)" size="30">
-<div class="sugbox" id="sug-hfrepo"></div></span>
-<input id="hffile" placeholder="--hf-file" size="18" title="How: hffile → --hf-file with hfrepo. Does: Direct HF pull. Changing: Both needed if no local model.">
+<label class="inline" style="flex:1">Profile <select id="launch-profile" style="flex:1;min-width:220px"><option value="">— choose engine profile —</option></select></label>
 <button onclick="startServer(this)">Start</button></div>
-<details><summary>Advanced launch flags</summary>
 <div class="row">
-<label class="inline" title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4→16 up tok/s, over→down.">threads  <input id="l-threads" type="number" size="3" placeholder="auto"></label>
-<label class="inline"><input id="l-fa" type="checkbox" title="How: -fa on if set, auto on when ctx>=8192. Does: Faster long ctx. Changing: off→on +10-30% at 32k, needs GPU."> flash-attn </label>
-<label class="inline" title="How: -np <n> parallel slots. Does: Concurrent decode, ctx/slots. Changing: 1→4 throughput up, per-slot ctx down.">parallel  <input id="l-parallel" type="number" size="2" placeholder="1"></label>
-<label class="inline"><input id="l-mlock" type="checkbox" title="How: mlock → --mlock. Does: Pins RAM, no swap. Changing: Slower start, stable."> mlock </label>
-<label class="inline"><input id="l-nommap" type="checkbox" title="How: no_mmap → --no-mmap. Does: Full RAM vs mmap. Changing: More RSS, avoids faults."> no-mmap </label>
+<span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional, for new models)" size="30">
+<div class="sugbox" id="sug-hfrepo"></div></span>
+<input id="hffile" placeholder="--hf-file (optional)" size="18" title="Download from Hugging Face then start. Both needed if no local model.">
+</div>
+<p class="note">Model, context, GPU layers, sampling, and API key come from the selected engine profile. Advanced flags below override the profile.</p>
+<details><summary>Advanced launch flags (override profile)</summary>
+<div class="row">
+<label class="inline" title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4->16 up tok/s, over->down.">threads  <input id="l-threads" type="number" size="3" placeholder="auto (from profile)"></label>
+<label class="inline"><input id="l-fa" type="checkbox" title="How: -fa on if set, auto on when ctx>=8192. Does: Faster long ctx. Changing: off->on +10-30% at 32k, needs GPU."> flash-attn </label>
+<label class="inline" title="How: -np <n> parallel slots. Does: Concurrent decode, ctx/slots. Changing: 1->4 throughput up, per-slot ctx down.">parallel  <input id="l-parallel" type="number" size="2" placeholder="1"></label>
+<label class="inline"><input id="l-mlock" type="checkbox" title="How: mlock -> --mlock. Does: Pins RAM, no swap. Changing: Slower start, stable."> mlock </label>
+<label class="inline"><input id="l-nommap" type="checkbox" title="How: no_mmap -> --no-mmap. Does: Full RAM vs mmap. Changing: More RSS, avoids faults."> no-mmap </label>
 </div>
 <div class="row">
-<label class="inline" title="How: cache K → --cache-type-k f16/q8_0/q4_0, Auto q8_0 >16k. Does: Halves KV. Changing: f16→q8 saves 50%.">kv-K  <select id="l-ctk"><option value="">f16</option><option>q8_0</option><option>q4_0</option></select></label>
-<label class="inline" title="How: --cache-type-v same. Does: V cache quant. Changing: Same as K.">kv-V  <select id="l-ctv"><option value="">f16</option><option>q8_0</option><option>q4_0</option></select></label>
-<label class="inline" title="How: -b <n> 512 default. Does: Tokens/step RAM. Changing: 512→2048 prompt faster, more VRAM/spill.">batch  <input id="l-batch" type="number" size="4" placeholder="512"></label>
-<label class="inline" title="How: -ub <n> 512. Does: Micro-batch physically. Changing: 512→128 lower peak but more steps; tune with batch.">ubatch  <input id="l-ubatch" type="number" size="4" placeholder="512"></label>
-<label class="inline" title="How: --alias <id>. Does: Model id vs path. Changing: Clients see alias.">alias  <input id="l-alias" size="14" placeholder="model id"></label>
+<label class="inline" title="How: cache K -> --cache-type-k f16/q8_0/q4_0, Auto q8_0 >16k. Does: Halves KV. Changing: f16->q8 saves 50%.">kv-K  <select id="l-ctk"><option value="">profile default</option><option>q8_0</option><option>q4_0</option></select></label>
+<label class="inline" title="How: --cache-type-v same. Does: V cache quant. Changing: Same as K.">kv-V  <select id="l-ctv"><option value="">profile default</option><option>q8_0</option><option>q4_0</option></select></label>
+<label class="inline" title="How: -b <n> 512 default. Does: Tokens/step RAM. Changing: 512->2048 prompt faster, more VRAM/spill.">batch  <input id="l-batch" type="number" size="4" placeholder="profile"></label>
+<label class="inline" title="How: -ub <n> 512. Does: Micro-batch physically. Changing: 512->128 lower peak but more steps; tune with batch.">ubatch  <input id="l-ubatch" type="number" size="4" placeholder="profile"></label>
+<label class="inline" title="How: --alias <id>. Does: Model id vs path. Changing: Clients see alias.">alias  <input id="l-alias" size="14" placeholder="profile"></label>
 </div>
 </details>
 <div id="instances"></div>
@@ -1899,23 +1897,33 @@ setTimeout(applyConvProvider, 2000);
 
 /* --------------------------- server panel ---------------------------- */
 function launchBody() {{
+  const idx = +(document.getElementById('launch-profile')?.value ?? currentEngineIndex());
+  const prof = engines[idx] || {{}};
+  const lo = prof.load_options || {{}};
+  const override = (id) => {{
+    const el = document.getElementById(id);
+    if (!el) return null;
+    if (el.type === 'checkbox') return el.checked ? true : null;
+    const v = (el.value || '').trim();
+    return v === '' ? null : (el.type === 'number' ? +v : v);
+  }};
   return {{
-    model: val('model') || null,
+    model: prof.model || null,
     hf_repo: val('hfrepo') || null,
     hf_file: val('hffile') || null,
-    ctx_size: +val('ctx') || 8192,
-    ngl: +val('ngl') || 999,
-    api_key: val('l-apikey') || null,
-    threads: num('l-threads'),
-    flash_attn: document.getElementById('l-fa').checked,
-    parallel_slots: num('l-parallel'),
-    cache_type_k: val('l-ctk') || null,
-    cache_type_v: val('l-ctv') || null,
-    batch_size: num('l-batch'),
-    ubatch_size: num('l-ubatch'),
-    alias: val('l-alias') || null,
-    mlock: document.getElementById('l-mlock').checked,
-    no_mmap: document.getElementById('l-nommap').checked,
+    ctx_size: +(lo.context || lo.contextLength || lo.ctx_size || 8192),
+    ngl: +(lo.gpu_layers || lo.ngl || 999),
+    api_key: null,
+    threads: override('l-threads') ?? lo.threads ?? null,
+    flash_attn: document.getElementById('l-fa')?.checked || !!lo.flash_attn,
+    parallel_slots: override('l-parallel') ?? lo.parallel_slots ?? null,
+    cache_type_k: override('l-ctk') ?? lo.cache_type_k ?? null,
+    cache_type_v: override('l-ctv') ?? lo.cache_type_v ?? null,
+    batch_size: override('l-batch') ?? lo.batch_size ?? null,
+    ubatch_size: override('l-ubatch') ?? lo.ubatch_size ?? null,
+    alias: override('l-alias') ?? lo.alias ?? null,
+    mlock: document.getElementById('l-mlock')?.checked || !!lo.mlock,
+    no_mmap: document.getElementById('l-nommap')?.checked || !!lo.no_mmap,
   }};
 }}
 
@@ -2400,6 +2408,21 @@ function renderEngineSelect(selectIndex) {{
   }});
   sel.value = selectIndex;
   refreshAbSelects();
+  // sync launch-profile dropdown
+  const lp = document.getElementById('launch-profile');
+  if (lp) {{
+    const cur = lp.value;
+    lp.innerHTML = '<option value="">— choose engine profile —</option>';
+    engines.forEach((e, i) => {{
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = e.name + (e.name.toLowerCase() === engDefault.toLowerCase()
+                                ? '  (default)' : '');
+      lp.appendChild(o);
+    }});
+    if (cur && +cur < engines.length) lp.value = cur;
+    else if (engines.length) lp.value = '0';
+  }}
 }}
 
 function refreshAbSelects() {{
