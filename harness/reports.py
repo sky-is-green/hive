@@ -856,7 +856,7 @@ turns, durable session log.</div>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
 <div class="row">
-<label class="inline" style="flex:1">Profile <select id="launch-profile" style="flex:1;min-width:220px"><option value="">— choose engine profile —</option></select></label>
+<label class="inline" style="flex:1"><select id="launch-profile" style="flex:1;min-width:220px"><option value="">— choose engine profile —</option></select></label>
 <button onclick="startServer(this)">Start</button></div>
 <div class="row">
 <span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional, for new models)" size="30">
