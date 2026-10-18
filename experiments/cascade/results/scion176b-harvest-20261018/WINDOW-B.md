@@ -119,6 +119,39 @@ lambda) gives 0.897 on exactly the same test items.  The honest number is 0.897.
 
 ## A leak I introduced and closed
 
+## Is the readout underfit?  Ridge vs small encoders (`probe_head_shapes.py`)
+
+The head above is a plain ridge+Platt needing λ=10000 on 871 items, which smells like an underfit —
+and on the 0.8B an MLP had beaten the ridge on organic by a wide margin (0.844 vs 0.688).  So the
+same question was asked of the 176B's own states, selecting on the 871 harvest train items under
+`GroupKFold(5)` by `task_id` (461 wrongs — the only properly powered measurement available; the
+66-item test has 9 wrongs and an AUC SE near 0.08).
+
+| head on the 176B judge state | grouped-CV AUC |
+| --- | --- |
+| **ridge λ=10000** | **0.9889 ± 0.0042** |
+| MLP-64 | 0.9856 ± 0.0050 |
+| MLP-128 | 0.9860 ± 0.0051 |
+| MLP-256 | 0.9858 ± 0.0052 |
+| MLP-512 | 0.9860 ± 0.0052 |
+
+**Every MLP is marginally worse than the tuned ridge, inside one SEM.**  There is no capacity to
+win on this representation.
+
+The same sweep on the 0.8B concat (train 1133, 655 wrongs) explains why, and corrects a belief the
+head-selection history rested on:
+
+| 0.8B head | grouped-CV AUC | organic-66 |
+| --- | --- | --- |
+| ridge λ=1 (what was deployed) | 0.8939 ± 0.019 | 0.688 |
+| ridge λ=1000 (tuned) | **0.9650 ± 0.003** | — |
+| MLP-64 (what was deployed) | 0.9682 ± 0.007 | 0.844 |
+
+Those 0.8B ridges were fit at `ridge_fit`'s default **λ=1**.  Properly regularised they reach
+0.9650, and the MLP's remaining advantage is **+0.003 — a wash**.  The "MLP beats ridge" result was
+mostly missing regularisation, not capacity.  The deployed MLP is not wrong, but it was not earned,
+and no head-shape change is the lever here.
+
 ## Caveats
 
 - n = 9 organic wrongs.  The 0.852 → 0.897 step is ~0.4 items and the frontier step (5/1 → 7/5) is
