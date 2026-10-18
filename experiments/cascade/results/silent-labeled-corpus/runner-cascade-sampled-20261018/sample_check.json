@@ -1,0 +1,77 @@
+{
+ "run": "runner-cascade-sampled-20261018",
+ "k": 3,
+ "temperature": 0.7,
+ "tasks": [
+  {
+   "task_id": "gsm8k-0033:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Let\u2019s add up the time for each side, using the first side as our base.\n\n- **1st side**: 5 minutes\n- **2nd side**: twice the 1st \u2192 2 \u00d7 5 = 10 minutes\n- **3rd side**: twice the 1st \u2192 2 \u00d7 5 = 10 minutes\n- **4th side (one of the \u201clast 2 sides\u201d)**: half the 1st \u2192 5 \u00f7 2 = 2.5 minutes\n- **5th side (the other of the \u201clast 2 sides\u201d)**: half the 1st \u2192 5 \u00f7 2 = 2.5 minutes\n\nSince the 5th side already makes the cube complete (all 6 sides done), there is no extra time for a separate 6th side.\n\n**Total**: 5 + 10 + 10 + 2.5 + 2.5 = 25 minutes.\n\nFinal answer: 25",
+     "label": false,
+     "ms_gen": 34145.8
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 56825.628987993696,
+     "error": "empty"
+    },
+    {
+     "draft": "Here's how the Rubik's cube time adds up:\n\n1. **First side:** 5 minutes.\n2. **Second side:** twice the first \u2192 2 \u00d7 5 = 10 minutes.\n3. **Third side:** twice the first \u2192 2 \u00d7 5 = 10 minutes.\n4. **Last 2 sides:** each take half as long as the first \u2192 (5 \u00f7 2) \u00d7 2 = 2.5 + 2.5 = 5 minutes.\n\nNow sum them:\n5 + 10 + 10 + 5 = 25 minutes.\n\nFinal answer: 25",
+     "label": false,
+     "ms_gen": 8497.9
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0038:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "**Step 1 \u2013 Count the coupons:**\n- Small coupons: 700\n- Big coupons: twice as many = 700 \u00d7 2 = 1,400\n\n**Step 2 \u2013 Postage cost for small coupons:**\n- 700 \u00d7 5 cents = 3,500 cents\n\n**Step 3 \u2013 Postage cost for big coupons:**\n- 1,400 \u00d7 15 cents = 21,000 cents\n\n**Step 4 \u2013 Total:**\n- 3,500 + 21,000 = 24,500 cents = **245 dollars**\n\nFinal answer: 245",
+     "label": true,
+     "ms_gen": 18404.8
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 58292.690864996985,
+     "error": "empty"
+    },
+    {
+     "draft": "To solve this problem, I will find the number of coupons first, then compute the postage cost.\n\n**Step 1: Find the number of big coupons**\n- Small coupons = 700\n- Big coupons = twice as many = 2 \u00d7 700 = 1400\n\n**Step 2: Compute postage for small coupons**\n- Cost per small coupon = 5 cents = $0.05\n- 700 \u00d7 $0.05 = $35.00\n\n**Step 3: Compute postage for big coupons**\n- Cost per big coupon = 15 cents = $0.15\n- 1400 \u00d7 $0.15 = $210.00\n\n**Step 4: Total postage**\n- $35.00 + $210.00 = $245.00\n\nFinal answer: 245",
+     "label": true,
+     "ms_gen": 8915.0
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 89835.89577699604,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 76730.98852101248,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n\n    for i in range(len(string)):\n        suffix = string[i:]\n        if is_palindrome(suffix):\n            prefix = string[:i]\n            return string + prefix[::-1]\n\n    return string\n```",
+     "label": true,
+     "ms_gen": 17299.7
+    }
+   ]
+  }
+ ]
+}

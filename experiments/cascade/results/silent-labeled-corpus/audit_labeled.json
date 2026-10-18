@@ -1,0 +1,327 @@
+{
+ "n": 20,
+ "n_correct": 12,
+ "n_wrong": 8,
+ "items": [
+  {
+   "run": "runner-cascade-sampled-20261018",
+   "task_id": "gsm8k-0033:hs1",
+   "bucket": "reasoning",
+   "prompt": "It takes John 5 minutes to get to the first side of the Rubik's cube.  The second and third sides each take twice that long.  The last 2 sides each take half as long as the first, and once you get the 5th side you have all 6 sides.  How long does the Rubik's cube take?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "Let\u2019s add up the time for each side, using the first side as our base.\n\n- **1st side**: 5 minutes\n- **2nd side**: twice the 1st \u2192 2 \u00d7 5 = 10 minutes\n- **3rd side**: twice the 1st \u2192 2 \u00d7 5 = 10 minutes\n- **4th side (one of the \u201clast 2 sides\u201d)**: half the 1st \u2192 5 \u00f7 2 = 2.5 minutes\n- **5th side (the other of the \u201clast 2 sides\u201d)**: half the 1st \u2192 5 \u00f7 2 = 2.5 minutes\n\nSince the 5th side already makes the cube complete (all 6 sides done), there is no extra time for a separate 6th side.\n\n**Total**: 5 + 10 + 10 + 2.5 + 2.5 = 25 minutes.\n\nFinal answer: 25",
+   "label": false,
+   "ms_gen": 34145.8,
+   "p": {
+    "L0.5": 0.9661644795928935,
+    "L0.75": 0.9954940446843255,
+    "L1": 0.9997801103158749,
+    "ridge-concat": 0.9925187700014572,
+    "mlp-concat": 0.9972425582750085
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-20261018",
+   "task_id": "gsm8k-0033:hs1",
+   "bucket": "reasoning",
+   "prompt": "It takes John 5 minutes to get to the first side of the Rubik's cube.  The second and third sides each take twice that long.  The last 2 sides each take half as long as the first, and once you get the 5th side you have all 6 sides.  How long does the Rubik's cube take?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "Here's how the Rubik's cube time adds up:\n\n1. **First side:** 5 minutes.\n2. **Second side:** twice the first \u2192 2 \u00d7 5 = 10 minutes.\n3. **Third side:** twice the first \u2192 2 \u00d7 5 = 10 minutes.\n4. **Last 2 sides:** each take half as long as the first \u2192 (5 \u00f7 2) \u00d7 2 = 2.5 + 2.5 = 5 minutes.\n\nNow sum them:\n5 + 10 + 10 + 5 = 25 minutes.\n\nFinal answer: 25",
+   "label": false,
+   "ms_gen": 8497.9,
+   "p": {
+    "L0.5": 0.9945312106875315,
+    "L0.75": 0.9956363959169554,
+    "L1": 0.9997828671965875,
+    "ridge-concat": 0.9980383743134885,
+    "mlp-concat": 0.9999016285215083
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-20261018",
+   "task_id": "gsm8k-0038:hs1",
+   "bucket": "reasoning",
+   "prompt": "Anthony is sending out coupons for his pizza parlor through the mail. He wants to send out 700 small coupons and twice as many big coupons. If each small coupon costs 5 cents to mail and each big coupon costs 15 cents, how much does he spend on postage total?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "**Step 1 \u2013 Count the coupons:**\n- Small coupons: 700\n- Big coupons: twice as many = 700 \u00d7 2 = 1,400\n\n**Step 2 \u2013 Postage cost for small coupons:**\n- 700 \u00d7 5 cents = 3,500 cents\n\n**Step 3 \u2013 Postage cost for big coupons:**\n- 1,400 \u00d7 15 cents = 21,000 cents\n\n**Step 4 \u2013 Total:**\n- 3,500 + 21,000 = 24,500 cents = **245 dollars**\n\nFinal answer: 245",
+   "label": true,
+   "ms_gen": 18404.8,
+   "p": {
+    "L0.5": 0.2076442290581006,
+    "L0.75": 0.9877366504080753,
+    "L1": 0.9869619268235621,
+    "ridge-concat": 0.22212641190010407,
+    "mlp-concat": 0.9962608887819907
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-20261018",
+   "task_id": "gsm8k-0038:hs1",
+   "bucket": "reasoning",
+   "prompt": "Anthony is sending out coupons for his pizza parlor through the mail. He wants to send out 700 small coupons and twice as many big coupons. If each small coupon costs 5 cents to mail and each big coupon costs 15 cents, how much does he spend on postage total?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "To solve this problem, I will find the number of coupons first, then compute the postage cost.\n\n**Step 1: Find the number of big coupons**\n- Small coupons = 700\n- Big coupons = twice as many = 2 \u00d7 700 = 1400\n\n**Step 2: Compute postage for small coupons**\n- Cost per small coupon = 5 cents = $0.05\n- 700 \u00d7 $0.05 = $35.00\n\n**Step 3: Compute postage for big coupons**\n- Cost per big coupon = 15 cents = $0.15\n- 1400 \u00d7 $0.15 = $210.00\n\n**Step 4: Total postage**\n- $35.00 + $210.00 = $245.00\n\nFinal answer: 245",
+   "label": true,
+   "ms_gen": 8915.0,
+   "p": {
+    "L0.5": 0.06719922426243094,
+    "L0.75": 0.9809250291873552,
+    "L1": 0.9533043920925799,
+    "ridge-concat": 0.47980130863675696,
+    "mlp-concat": 0.9948341535440461
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-20261018",
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n```",
+   "draft": "```python\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n\n    for i in range(len(string)):\n        suffix = string[i:]\n        if is_palindrome(suffix):\n            prefix = string[:i]\n            return string + prefix[::-1]\n\n    return string\n```",
+   "label": true,
+   "ms_gen": 17299.7,
+   "p": {
+    "L0.5": 0.02816051363912513,
+    "L0.75": 0.7537111622715391,
+    "L1": 0.3659436370636938,
+    "ridge-concat": 0.5991925496219876,
+    "mlp-concat": 0.2919711876110323
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-nothink-20261018",
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n```",
+   "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)",
+   "label": false,
+   "ms_gen": 40255.6,
+   "p": {
+    "L0.5": 0.9357960834664087,
+    "L0.75": 0.25754964939123576,
+    "L1": 0.618116855740711,
+    "ridge-concat": 0.4067145232608407,
+    "mlp-concat": 0.06054467466941148
+   }
+  },
+  {
+   "run": "runner-cascade-sampled-nothink-20261018",
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n```",
+   "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+   "label": true,
+   "ms_gen": 46940.7,
+   "p": {
+    "L0.5": 0.9991032292586088,
+    "L0.75": 0.9441006995587744,
+    "L1": 0.9798350051667842,
+    "ridge-concat": 0.9613504504978507,
+    "mlp-concat": 0.8108504615740174
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "gsm8k-0035:hs1",
+   "bucket": "reasoning",
+   "prompt": "Zack's locker is half as big as Timothy's locker. Peter's locker is 1/4 as big as Zack's locker. If Peter's locker is 5 cubic inches, how big is Timothy's locker in cubic inches?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "Peter's locker is 1/4 as big as Zack's locker.\n\nIf Peter's locker is 5 cubic inches:\n\nZack's locker = 5 \u00d7 4 = 20 cubic inches\n\nZack's locker is half as big as Timothy's locker.\n\nTimothy's locker = 20 \u00d7 2 = 40 cubic inches\n\nFinal answer: 40",
+   "label": true,
+   "ms_gen": 14303.3,
+   "p": {
+    "L0.5": 0.989137878434882,
+    "L0.75": 0.9711284944237583,
+    "L1": 0.9057751948531989,
+    "ridge-concat": 0.9370702405948489,
+    "mlp-concat": 0.9964089116092559
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "gsm8k-0035:hs1",
+   "bucket": "reasoning",
+   "prompt": "Zack's locker is half as big as Timothy's locker. Peter's locker is 1/4 as big as Zack's locker. If Peter's locker is 5 cubic inches, how big is Timothy's locker in cubic inches?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "Let:\n- T = Timothy's locker size\n- Z = Zack's locker size\n- P = Peter's locker size\n\nGiven information:\n1. Zack = half of Timothy \u2192 Z = (1/2) \u00d7 T\n2. Peter = one-fourth of Zack \u2192 P = (1/4) \u00d7 Z\n3. Peter = 5 cubic inches\n\nSolve step by step:\n\nFrom (1/4) \u00d7 Z = 5:\nZ = 5 \u00d7 4 = 20 cubic inches\n\nFrom Z = (1/2) \u00d7 T:\nT = 2 \u00d7 Z = 2 \u00d7 20 = 40 cubic inches\n\nCheck: Timothy = 40 \u2192 Zack = 40/2 = 20 \u2192 Peter = 20/4 = 5 \u2713\n\nFinal answer: 40",
+   "label": true,
+   "ms_gen": 13188.2,
+   "p": {
+    "L0.5": 0.023068600551329876,
+    "L0.75": 0.6531843308139681,
+    "L1": 0.22502849423768193,
+    "ridge-concat": 0.2076932561498268,
+    "mlp-concat": 0.904804030195393
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "gsm8k-0035:hs1",
+   "bucket": "reasoning",
+   "prompt": "Zack's locker is half as big as Timothy's locker. Peter's locker is 1/4 as big as Zack's locker. If Peter's locker is 5 cubic inches, how big is Timothy's locker in cubic inches?\n\nSolve the problem, showing your work. End your answer with 'Final answer: <number>'.",
+   "draft": "Let me define the locker sizes using clear variables:\n- Let Timothy's locker size = T\n- Zack's locker is half as big as Timothy's \u2192 Z = T/2\n- Peter's locker is 1/4 as big as Zack's \u2192 P = Z/4 = (T/2)/4 = T/8\n\nWe are told Peter's locker = 5 cubic inches, so:\nT/8 = 5 \u2192 T = 5 \u00d7 8 = 40.\n\nVerification: if T = 40, then Zack = 40/2 = 20, and Peter = 20/4 = 5, which matches the given value.\n\nFinal answer: 40",
+   "label": true,
+   "ms_gen": 8396.8,
+   "p": {
+    "L0.5": 0.9989145391372869,
+    "L0.75": 0.9797468163667273,
+    "L1": 0.9836828386209893,
+    "ridge-concat": 0.9997175641192784,
+    "mlp-concat": 0.9999498647751133
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n```",
+   "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) < 100)\n```",
+   "label": true,
+   "ms_gen": 34924.9,
+   "p": {
+    "L0.5": 0.9995277956597555,
+    "L0.75": 0.9014235476955442,
+    "L1": 0.9863626393728193,
+    "ridge-concat": 0.9558260884759434,
+    "mlp-concat": 0.8002548380661119
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n```",
+   "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+   "label": true,
+   "ms_gen": 14604.9,
+   "p": {
+    "L0.5": 0.9991032292586088,
+    "L0.75": 0.9441006995587744,
+    "L1": 0.9798350051667842,
+    "ridge-concat": 0.9613504504978507,
+    "mlp-concat": 0.8108504615740174
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n```",
+   "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    total = 0\n    for i in range(k):\n        num = arr[i]\n        if abs(num) < 100:\n            total += num\n    return total\n```",
+   "label": true,
+   "ms_gen": 42909.4,
+   "p": {
+    "L0.5": 0.9997880164022833,
+    "L0.75": 0.9257986481490429,
+    "L1": 0.9919690349173581,
+    "ridge-concat": 0.9772053984174689,
+    "mlp-concat": 0.862122812566165
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0015:hg",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n```",
+   "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    beginning_of_suffix = 0\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n    return string + string[:beginning_of_suffix][::-1]\n```",
+   "label": true,
+   "ms_gen": 43117.4,
+   "p": {
+    "L0.5": 0.5013348770108695,
+    "L0.75": 0.7805140391344993,
+    "L1": 0.37051013405679434,
+    "ridge-concat": 0.9705299493901908,
+    "mlp-concat": 0.06232801338810954
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0015:hg",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n```",
+   "draft": "```python\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:",
+   "label": false,
+   "ms_gen": 21438.0,
+   "p": {
+    "L0.5": 4.1286350895726135e-05,
+    "L0.75": 0.07648816014329053,
+    "L1": 1.5211678154641049e-05,
+    "ridge-concat": 0.008342249858926017,
+    "mlp-concat": 1.93465119307461e-06
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n```",
+   "draft": "```python\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    beginning_of_suffix = 0\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n    return string + string[:beginning_of_suffix][::-1]\n```",
+   "label": false,
+   "ms_gen": 21646.2,
+   "p": {
+    "L0.5": 0.4156758021269514,
+    "L0.75": 0.9658466377669594,
+    "L1": 0.924756873978568,
+    "ridge-concat": 0.9948963124178312,
+    "mlp-concat": 0.20777900423770107
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "prompt": "Complete the following Python function. Return only the full implementation in a single ```python code block.\n\n```python\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n```",
+   "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    for i in range(len(string), -1, -1):\n        if is_palindrome(string[i:]):\n            return string + string[:i][::-1]\n```",
+   "label": false,
+   "ms_gen": 43744.1,
+   "p": {
+    "L0.5": 0.0019114979315299208,
+    "L0.75": 0.33980119716417867,
+    "L1": 0.05604881336334743,
+    "ridge-concat": 0.08780976169074106,
+    "mlp-concat": 0.0036205356628374215
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "math-0020:hg",
+   "bucket": "reasoning",
+   "prompt": "Round $6287215$ to the nearest ten thousand.\n\nSolve the problem, showing your work. Put the final answer in \\boxed{}.",
+   "draft": "To round \\(6{,}287{,}215\\) to the nearest ten thousand:\n\n- The ten thousands digit is \\(8\\).\n- The digit just below it (thousands place) is \\(7\\).\n- Since \\(7 \\ge 5\\), round the ten thousands digit up from \\(8\\) to \\(9\\), and replace all lower digits with zeros.\n\nThus:\n\n\\[\n6{,}287{,}215 \\approx 6{,}290{,}000\n\\]\n\n\\[\n\\boxed{6{,}290{,}000}\n\\]",
+   "label": false,
+   "ms_gen": 26929.5,
+   "p": {
+    "L0.5": 0.04645841786374727,
+    "L0.75": 0.034161109479398793,
+    "L1": 0.7551309649432265,
+    "ridge-concat": 0.006141498333859158,
+    "mlp-concat": 0.638492684964451
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "math-0020:hg",
+   "bucket": "reasoning",
+   "prompt": "Round $6287215$ to the nearest ten thousand.\n\nSolve the problem, showing your work. Put the final answer in \\boxed{}.",
+   "draft": "To round **6,287,215** to the nearest **ten thousand**:\n\n1. Identify the digit in the **ten thousands** place: it is **8**.\n2. Look at the digit immediately to its right (the **thousands** digit): it is **7**.\n3. Since 7 \u2265 5, we **round up** the ten thousands digit from 8 \u2192 9.\n4. Set all digits to the right of the ten thousands place to **0**.\n\nThis gives: **6,290,000**.\n\n\\boxed{6290000}",
+   "label": true,
+   "ms_gen": 7496.7,
+   "p": {
+    "L0.5": 0.002270174485733474,
+    "L0.75": 0.22069363011593682,
+    "L1": 0.05324676094235298,
+    "ridge-concat": 0.0033670208998225182,
+    "mlp-concat": 2.519118659354107e-07
+   }
+  },
+  {
+   "run": "runner-cascade-gate-nothink-20261018",
+   "task_id": "math-0020:hg",
+   "bucket": "reasoning",
+   "prompt": "Round $6287215$ to the nearest ten thousand.\n\nSolve the problem, showing your work. Put the final answer in \\boxed{}.",
+   "draft": "To round $6,287,215$ to the nearest ten thousand, we look at the digit in the **thousands** place to decide whether to round the ten thousands digit up or down.\n\nThe digits are:\n- Ten thousands digit: $8$\n- Thousands digit: $7$\n\nSince the thousands digit is $7$, which is greater than or equal to $5$, we **round up** the ten thousands digit from $8$ to $9$, and set all lower digits to $0$.\n\nThus:\n$$6,287,215 \\to 6,290,000$$\n\nFinal answer:\n\\boxed{6,290,000}",
+   "label": false,
+   "ms_gen": 16103.9,
+   "p": {
+    "L0.5": 0.003387723788250077,
+    "L0.75": 0.4344989665282654,
+    "L1": 0.3588550035349136,
+    "ridge-concat": 0.00031470400597527254,
+    "mlp-concat": 0.0011137772022292792
+   }
+  }
+ ]
+}
