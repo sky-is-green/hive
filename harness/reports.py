@@ -494,7 +494,13 @@ def render_server_page() -> str:
 
 <!-- ==================== LEFT: tabs ==================== -->
 <div class="col">
-<div class="tabs">
+<div class="tabs" id="main-tabs">
+<button class="tab active" data-tab="tab-home">Home</button>
+<button class="tab" data-tab="tab-settings">Settings</button>
+<button class="tab" data-tab="tab-cascade" onclick="location.href='/cascade'">Cascade</button>
+<button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto">More tools ▾</button>
+</div>
+<div class="tabs" id="adv-tabs" style="display:none">
 <button class="tab" data-tab="tab-setup">Linux/Docker setup</button>
 <button class="tab" data-tab="tab-agent">Agent</button>
 <button class="tab" data-tab="tab-engines">Engines</button>
@@ -504,7 +510,19 @@ def render_server_page() -> str:
 <button class="tab" data-tab="tab-hub">Hub</button>
 <button class="tab" data-tab="tab-inspect">Inspector</button>
 <button class="tab" data-tab="tab-training">Training</button>
-<button class="tab active" data-tab="tab-settings">Settings</button>
+</div>
+
+<div id="tab-home" class="tabpane">
+<section>
+<h2 style="margin-top:0">Welcome to HiveBench Studio</h2>
+<p class="note">Your local-first AI harness. Pick a starting point:</p>
+<div class="cards" style="margin:1rem 0">
+  <a href="/cascade" style="text-decoration:none"><div class="card"><span>Run a cascade</span><b style="font-size:1.1rem">Hive Cascade →</b><span class="note">generate → detect → repair → escalate</span></div></a>
+  <a href="/runs" style="text-decoration:none"><div class="card"><span>Browse results</span><b style="font-size:1.1rem">Runs →</b><span class="note">view past run bundles</span></div></a>
+  <button onclick="showTab('tab-settings')" style="all:unset;cursor:pointer"><div class="card"><span>Configure</span><b style="font-size:1.1rem">Settings →</b><span class="note">models, providers, engines</span></div></button>
+</div>
+<p class="note">Advanced tools (Docker setup, agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
+</section>
 </div>
 
 <div id="tab-setup" class="tabpane" style="display:none">
@@ -788,7 +806,7 @@ providers.local.json (gitignored).</div>
 </section>
 </div>
 
-<div id="tab-settings" class="tabpane">
+<div id="tab-settings" class="tabpane" style="display:none">
 <section>
 <h2 style="margin-top:0">Settings</h2>
 <div class="row"><label class="inline" title="How: setTheme() writes localStorage. Does: Switches CSS tokens. Changing: Affects only UI chrome, no backend.">Theme  <select id="settings-theme" onchange="setTheme(this.value)"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></label></div>
@@ -916,7 +934,14 @@ function val(id) {{ const el=document.getElementById(id); if(!el){{ console.warn
 function num(id) {{ const v = val(id); return v === '' ? null : +v; }}
 function fmtCap(n) {{ if(n==null||n==='-') return '-'; n=Number(n); if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'K'; return String(n); }}
 
-/* ------------------------------ tabs -------------------------------- */
+function toggleAdvanced() {{
+  const el = document.getElementById('adv-tabs');
+  const btn = document.getElementById('adv-toggle');
+  if (!el) return;
+  const show = el.style.display === 'none' || el.style.display === '';
+  el.style.display = show ? 'flex' : 'none';
+  if (btn) btn.textContent = show ? 'Fewer tools ▴' : 'More tools ▾';
+}}
 for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
   btn.addEventListener('click', (e) => {{
     try{{
