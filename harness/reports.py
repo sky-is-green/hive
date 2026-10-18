@@ -189,7 +189,7 @@ def render_report_page(report: dict, run_name: str) -> str:
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>HiveBench report &mdash; {_esc(run_name)}</title>
-<style>{_CSS}</style></head><body>
+<style>{_get_server_css()}</style></head><body>
 <h1>HiveBench report &mdash; <code>{_esc(run_name)}</code></h1>
 <p class="note">mode <b>{_esc(report.get('mode') or '&mdash;')}</b> &middot;
 backend <b>{_esc(report.get('backend') or '&mdash;')}</b> &middot; run
@@ -237,6 +237,17 @@ backend <b>{_esc(report.get('backend') or '&mdash;')}</b> &middot; run
 </body></html>"""
 
 
+
+def render_nav(active: str = "") -> str:
+    """Shared top nav bar for all Studio pages."""
+    items = [("server", "/server", "Studio"), ("runs", "/runs", "Runs"),
+             ("cascade", "/cascade", "Cascade"), ("docs", "/docs", "API docs")]
+    parts = []
+    for key, href, label in items:
+        cls = "active" if key == active else ""
+        parts.append(f"<a href='{href}'><button type='button' class='{cls}'>{label}</button></a>")
+    return "<nav style='display:flex;gap:.4rem;align-items:center;margin:.3rem 0 1rem;flex-wrap:wrap'>" + " ".join(parts) + "</nav>"
+
 def render_runs_page(entries: list[dict]) -> str:
     """Index of available run bundles."""
     def _kind(e: dict) -> str:
@@ -251,9 +262,9 @@ def render_runs_page(entries: list[dict]) -> str:
     ) or "<li class='note'>no runs yet</li>"
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><title>HiveBench runs</title>
-<style>{_CSS}</style></head><body>
+<style>{_get_server_css()}</style></head><body>
 <h1>HiveBench run bundles</h1>
-<p><a href="/server"><button>← Studio console</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
+{render_nav("runs")}
 <ul class="runs">{items}</ul>
 </body></html>"""
 
@@ -289,7 +300,7 @@ def render_training_report(report: dict, run_name: str) -> str:
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>Hive-Ternary run &mdash; {_esc(run_name)}</title>
-<style>{_CSS}</style></head><body>
+<style>{_get_server_css()}</style></head><body>
 <h1>Hive-Ternary &mdash; <code>{_esc(run_name)}</code></h1>
 <p class="note">engine <b>{_esc(report.get('engine') or '&mdash;')}</b> &middot;
 recipe <b>{_esc(report.get('method') or '&mdash;')}</b> &middot;
@@ -475,6 +486,7 @@ def render_server_page() -> str:
 <style>{_get_server_css()}</style><style>input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{{-webkit-appearance:none;margin:0}}input[type=number]{{-moz-appearance:textfield;appearance:textfield}}</style></head><body>
 <div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
 <h1>Splinter Studio console</h1>
+{render_nav("server")}
 <p style="margin:.3rem 0"><button id="afkbtn" onclick="toggleAfk(this)" title="How: toggleAfk sets SPLINTER-MODE.json. Does: QUEEN autonomy (GREEN/YELLOW auto, RED contained). Changing: On queues pushes/merges until return.">AFK</button> <a href="/runs"><button>Runs →</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
 <form style="display:inline" onsubmit="event.preventDefault(); return false"><input id="researchq" placeholder="deep-research question..." size="30" autocomplete="off" title="How: researchAdd queues to RESEARCH-QUEUE.md. Does: Deep research task (Auditor only). Changing: Adds entry, not instant." onkeydown="if (event.key === &quot;Enter&quot;) researchAdd(this)"> <button id="researchsubmit" onclick="researchAdd(this)">Research</button> <span id="researchcount" class="meta" title="Queues a deep-research question for QUEEN. Execution is master-only; reports land in RESEARCH/&lt;slug&gt;.md and are summarized on wake."></span></form>
 
@@ -3228,12 +3240,8 @@ def render_cascade_page(task_files: list[str]) -> str:
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Hive Cascade</title>
 <style>{_get_server_css()}</style></head><body>
-<div style="position:absolute; top:1rem; right:1.2rem; z-index:10">
-  <a href="/server"><button type="button">← Studio</button></a>
-  <a href="/runs"><button type="button">Runs →</button></a>
-  <a href="/docs"><button type="button">API docs</button></a>
-</div>
 <h1><img src="/bee.svg" alt="" style="height:2rem;vertical-align:middle;margin-right:.4rem">Hive Cascade <span class="note">generate → detect → repair → escalate</span></h1>
+{render_nav("cascade")}
 <p class="note">The cascade is <b>fully in your control</b>: every knob the runner accepts is exposed here. The learned gate is <b>off by default</b> (its own pre-registered rule); <code>--gate intern-0.8b</code> is an opt-in third trigger. The escalation lane harvests every ladder-resolved item to <code>escalation.jsonl</code> next to the report.</p>
 
 <form id="cascade-form" onsubmit="return launchCascade(event)" style="max-width:72rem">
