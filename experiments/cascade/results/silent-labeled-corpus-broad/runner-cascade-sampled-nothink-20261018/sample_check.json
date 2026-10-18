@@ -1,0 +1,460 @@
+{
+ "run": "runner-cascade-sampled-nothink-20261018",
+ "k": 3,
+ "temperature": 0.7,
+ "tasks": [
+  {
+   "task_id": "truthfulqa-0011:hg",
+   "bucket": "qa",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "A",
+     "label": true,
+     "ms_gen": 22070.7
+    },
+    {
+     "draft": "A",
+     "label": true,
+     "ms_gen": 8632.8
+    },
+    {
+     "draft": "A",
+     "label": true,
+     "ms_gen": 12997.5
+    }
+   ]
+  },
+  {
+   "task_id": "math-0002:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "We count circular seatings of 8 distinct people where rotations are considered identical.\n\n**Total seatings (no restriction):** Since rotations are the same, we fix one person's position, leaving 7! = 5040 arrangements.\n\n**Seatings where Alice and Bob sit together:** Treat Alice and Bob as a single \"pair-block\". The block can be oriented in 2 ways (Alice\u2013Bob or Bob\u2013Alice). With the block plus the other 6 people, we have 7 circular items, giving (7\u22121)! = 6! = 720 arrangements, times 2 orientations = 2\u00b7720 = 1440.\n\n**Valid seatings:** 5040 \u2212 1440 = 3600.",
+     "label": false,
+     "ms_gen": 42653.5
+    },
+    {
+     "draft": "To remove rotational equivalence, fix Alice at one seat. Then Bob has 7 possible positions, but 2 are adjacent to Alice, so Bob has \\(5\\) allowed positions.\n\nAfter Bob is seated, the remaining 7 people occupy the remaining 6 seats:\n\\[\n5 \\times 6! = 5 \\times 720 = 3600.\n\\]\n\nAlternatively, circular total is \\(7! = 5040\\). Adjacent Alice\u2013Bob arrangements are \\(2 \\times 6! = 1440\\), leaving \\(5040-1440=3600\\).\n\n\\[\n\\boxed{3600}\n\\]",
+     "label": true,
+     "ms_gen": 19446.1
+    },
+    {
+     "draft": "Assume rotations are considered the same, but reflections are not (as stated).\n\nTotal circular arrangements of 8 distinct people around a table:\n\\[\n(8-1)! = 7! = 5040.\n\\]\n\nTo count the forbidden arrangements where Alice and Bob sit next to each other, fix Alice\u2019s position to remove rotational duplicates. Bob can sit in the two seats adjacent to Alice, and the remaining 6 people can be seated in the remaining 6 seats:\n\\[\n2 \\cdot 6! = 2 \\cdot 720 = 1440.\n\\]\n\nThus the allowed arrangements are\n\\[\n5040 - 1440 = 3600.\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+     "label": true,
+     "ms_gen": 74181.8
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0038:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 69363.52565600828,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 51286.51501701097,
+     "error": "empty"
+    },
+    {
+     "draft": "Anthony sends:\n- 700 small coupons\n- 2 \u00d7 700 = 1400 big coupons\n\nCost:\n- Small coupons: 700 \u00d7 5 cents = 3500 cents\n- Big coupons: 1400 \u00d7 15 cents = 21000 cents\n- Total: 3500 + 21000 = 24500 cents = 245 dollars\n\nFinal answer: 245",
+     "label": true,
+     "ms_gen": 10053.9
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0036:hs2",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Here is the step-by-step solution:\n\n1. **Tree length:** 80 feet.\n2. **Usable portion:** 80% of the tree \u2192 80 \u00d7 0.80 = 64 feet of usable wood.\n3. **Logs:** Each log is 4 feet \u2192 64 \u00f7 4 = 16 logs.\n4. **Planks:** Each log yields 5 planks \u2192 16 \u00d7 5 = 80 planks.\n5. **Revenue:** Each plank sells for $1.2 \u2192 80 \u00d7 1.2 = $96.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 12712.2
+    },
+    {
+     "draft": "The tree is 80 feet long, and John can use 80% of it for logs:\n\n80 \u00d7 0.8 = 64 feet of usable wood.\n\nHe cuts the usable wood into 4-foot logs:\n\n64 \u00f7 4 = 16 logs.\n\nEach log produces 5 planks:\n\n16 \u00d7 5 = 80 planks.\n\nEach plank sells for $1.2:\n\n80 \u00d7 1.2 = 96.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 4474.4
+    },
+    {
+     "draft": "Let's work through the problem step by step:\n\n1. **Tree size:** The tree is 80 feet tall.\n2. **Usable wood:** John can make logs from 80% of the tree.\n   - 80 feet \u00d7 0.80 = **64 feet** of usable wood.\n3. **Number of logs:** Each log is 4 feet long.\n   - 64 feet \u00f7 4 feet per log = **16 logs**.\n4. **Number of planks:** From each log, he cuts 5 planks.\n   - 16 logs \u00d7 5 planks = **80 planks**.\n5. **Revenue:** Each plank sells for $1.2.\n   - 80 planks \u00d7 $1.2 = **$96**.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 7403.4
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0008:hs2",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "John went to physical therapy for 6 weeks.\nEach week he went 2 times, so the total number of sessions is:\n\n6 weeks \u00d7 2 sessions per week = 12 sessions\n\nEach session lasts 2 hours, so the total number of hours is:\n\n12 sessions \u00d7 2 hours per session = 24 hours\n\nThe cost is $125 per hour, so the total cost is:\n\n24 hours \u00d7 $125 per hour = $3,000\n\nFinal answer: 3000",
+     "label": true,
+     "ms_gen": 8131.6
+    },
+    {
+     "draft": "First, determine how many hours John receives each week:\n- He goes 2 times per week.\n- Each session lasts 2 hours.\n- Hours per week = 2 sessions \u00d7 2 hours = 4 hours.\n\nOver 6 weeks:\n- Total hours = 4 hours/week \u00d7 6 weeks = 24 hours.\n\nCost:\n- $125 per hour \u00d7 24 hours = $3,000.\n\nFinal answer: 3000",
+     "label": true,
+     "ms_gen": 10701.5
+    },
+    {
+     "draft": "Here's the step-by-step solution:\n\n- John went for **6 weeks**.\n- Each week he went **twice** \u2192 6 \u00d7 2 = **12 sessions**.\n- Each session lasted **2 hours** \u2192 12 \u00d7 2 = **24 total hours**.\n- Cost per hour = **$125** \u2192 24 \u00d7 125 = **$3,000**.\n\nFinal answer: 3000",
+     "label": true,
+     "ms_gen": 4456.8
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hs1",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 72563.8903700019,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n    beginning_of_suffix = 0\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n    return string + string[:beginning_of_suffix][::-1]\n```",
+     "label": true,
+     "ms_gen": 47924.8
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 70184.10017099814,
+     "error": "empty"
+    }
+   ]
+  },
+  {
+   "task_id": "math-0016:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Let the probability of heads be \\(p = \\frac{2}{3}\\), and tails be \\(q = \\frac{1}{3}\\).\n\nWe want exactly 2 heads in 5 independent flips. This is a binomial probability:\n\n\\[\nP(\\text{exactly 2 heads}) = \\binom{5}{2} p^2 q^{3}\n\\]\n\n\\[\n= \\binom{5}{2} \\left(\\frac{2}{3}\\right)^2 \\left(\\frac{1}{3}\\right)^3\n\\]\n\n\\[\n= 10 \\cdot \\frac{4}{9} \\cdot \\frac{1}{27}\n\\]\n\n\\[\n= \\frac{40}{243}\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]",
+     "label": true,
+     "ms_gen": 19637.5
+    },
+    {
+     "draft": "Let the probability of heads be \\(p=\\frac{2}{3}\\), and the probability of tails be \\(q=1-p=\\frac{1}{3}\\).\n\nThe number of heads in 5 independent flips follows a binomial distribution with \\(n=5\\) and \\(p=\\frac{2}{3}\\).\n\nTo get **exactly 2 heads**, we need:\n\n- Choose which 2 of the 5 flips are heads: \\(\\binom{5}{2}=10\\) ways.\n- Each specific arrangement has probability \\(p^2 q^3 = \\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^3 = \\frac{4}{9}\\cdot\\frac{1}{27} = \\frac{4}{243}\\).\n\nTherefore:\n\n\\[\nP(\\text{exactly 2 heads}) = \\binom{5}{2} p^2 q^3 = 10\\cdot\\frac{4}{243} = \\frac{40}{243}\n\\]\n\nSince \\(40=2^3\\cdot5\\) and \\(243=3^5\\) share no common factors, the fraction is already in lowest terms. Numerically, \\(\\frac{40}{243}\\approx 0.16453\\).\n\n\\[\n\\boxed{\\frac{40}{2",
+     "label": false,
+     "ms_gen": 23743.1
+    },
+    {
+     "draft": "The number of heads follows a binomial distribution with 5 flips and probability of heads \\(p = \\frac{2}{3}\\).\n\nTo get exactly 2 heads, we need:\n- choose 2 flips to be heads: \\(\\binom{5}{2} = 10\\)\n- probability of heads: \\(\\left(\\frac{2}{3}\\right)^2\\)\n- probability of tails on the remaining 3 flips: \\(\\left(\\frac{1}{3}\\right)^3\\)\n\n\\[\nP(\\text{exactly 2 heads}) = \\binom{5}{2}\\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^3\n= 10 \\cdot \\frac{4}{9} \\cdot \\frac{1}{27}\n= \\frac{40}{243}\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]",
+     "label": true,
+     "ms_gen": 10298.4
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0038:hs2",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Anthony sends 700 small coupons, and twice as many big coupons: 700 \u00d7 2 = 1400 big coupons.\n\n- Small coupons postage: 700 \u00d7 5 cents = 3500 cents\n- Big coupons postage: 1400 \u00d7 15 cents = 21,000 cents\n- Total cents: 3500 + 21,000 = 24,500 cents\n\nConvert cents to dollars: 24,500 \u00f7 100 = $245.00\n\nFinal answer: 245.00",
+     "label": true,
+     "ms_gen": 14640.9
+    },
+    {
+     "draft": "Anthony sends 700 small coupons, so he sends 2 \u00d7 700 = 1,400 big coupons.\n\n- Small coupons postage: 700 \u00d7 5 cents = 3,500 cents\n- Big coupons postage: 1,400 \u00d7 15 cents = 21,000 cents\n- Total postage (cents): 3,500 + 21,000 = 24,500 cents = $245\n\nFinal answer: 245",
+     "label": true,
+     "ms_gen": 36616.7
+    },
+    {
+     "draft": "Anthony sends 700 small coupons. He sends twice as many big coupons, so the number of big coupons is 2 \u00d7 700 = 1400.\n\nCost of postage:\n- Small coupons: 700 \u00d7 5 cents = 3500 cents\n- Big coupons: 1400 \u00d7 15 cents = 21000 cents\n\nTotal postage: 3500 + 21000 = 24500 cents (which is $245.00).\n\nFinal answer: 24500",
+     "label": false,
+     "ms_gen": 10634.8
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0020:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "The first child is 6 feet tall. Since 1 foot = 12 inches, 6 feet = 6 \u00d7 12 = 72 inches.\n\nThe second child is two inches taller than the first child: 72 + 2 = 74 inches.\n\nThe third child is 5 inches shorter than the second child: 74 \u2212 5 = 69 inches.\n\nThe fourth child is three inches taller than the third child: 69 + 3 = 72 inches.\n\nFinal answer: 72",
+     "label": true,
+     "ms_gen": 7560.5
+    },
+    {
+     "draft": "The first child is 6 feet tall, which converts to 6 \u00d7 12 = 72 inches.\n\nThe second child is two inches taller than the first: 72 + 2 = 74 inches.\n\nThe third child is 5 inches shorter than the second: 74 \u2212 5 = 69 inches.\n\nThe fourth child is three inches taller than the third: 69 + 3 = 72 inches.\n\nFinal answer: 72",
+     "label": true,
+     "ms_gen": 2943.2
+    },
+    {
+     "draft": "Let me convert everything to inches. One foot equals 12 inches.\n\n1. First child: 6 feet = 6 \u00d7 12 = 72 inches.\n2. Second child: two inches taller than the first \u2192 72 + 2 = 74 inches.\n3. Third child: five inches shorter than the second \u2192 74 \u2212 5 = 69 inches.\n4. Fourth child: three inches taller than the third \u2192 69 + 3 = 72 inches.\n\nSo the fourth child is 72 inches tall (which is exactly 6 feet, matching the first child).\n\nFinal answer: 72",
+     "label": true,
+     "ms_gen": 5734.5
+    }
+   ]
+  },
+  {
+   "task_id": "math-0002:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 71505.87255199207,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 58106.946518004406,
+     "error": "empty"
+    },
+    {
+     "draft": "We count circular seatings where rotations are considered the same.\n\nTotal seatings of 8 distinct people around a table:\n\n\\[\n(8-1)! = 7! = 5040.\n\\]\n\nTo count seatings where Alice and Bob sit next to each other, fix Alice at a reference seat to remove rotation. Bob then has 2 adjacent seats available, and the remaining 6 people can be arranged in the remaining 6 seats:\n\n\\[\n2 \\cdot 6! = 2 \\cdot 720 = 1440.\n\\]\n\nTherefore, the number of seatings where Alice and Bob are **not** adjacent is\n\n\\[\n5040 - 1440 = 3600.\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+     "label": true,
+     "ms_gen": 48578.7
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0009:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Let's find the number of boxes sold each day.\n\n- Saturday gingerbread: 10 boxes\n- Sunday gingerbread: 10 + 5 = 15 boxes\n- Sunday apple pie: 15 boxes\n- Saturday apple pie: 15 - 4 = 11 boxes\n\nTotal boxes sold over the two days:\n- Gingerbread: 10 + 15 = 25 boxes\n- Apple pie: 11 + 15 = 26 boxes\n\nPrices:\n- Gingerbread: $6 per box\n- Apple pie: $15 per box\n\nTotal earnings:\n- Gingerbread: 25 \u00d7 $6 = $150\n- Apple pie: 26 \u00d7 $15 = $390\n\nTotal for both days:\n$150 + $390 = $540\n\nFinal answer: 540",
+     "label": true,
+     "ms_gen": 20482.6
+    },
+    {
+     "draft": "Let's compute each day:\n\n- Saturday gingerbread: 10 boxes \u00d7 $6 = $60  \n- Sunday gingerbread: 10 + 5 = 15 boxes \u00d7 $6 = $90  \n- Sunday apple pie: 15 boxes \u00d7 $15 = $225  \n- Saturday apple pie: 15 - 4 = 11 boxes \u00d7 $15 = $165  \n\nSaturday total = $60 + $165 = $225  \nSunday total = $90 + $225 = $315  \n\nTotal for two days = $225 + $315 = $540  \n\nFinal answer: 540",
+     "label": true,
+     "ms_gen": 11402.5
+    },
+    {
+     "draft": "Let me track the boxes sold each day.\n\n- Saturday gingerbread: 10 boxes (directly given).\n- Sunday gingerbread: 5 more than Saturday = 10 + 5 = 15 boxes.\n- Sunday apple pie: 15 boxes (directly given).\n- Saturday apple pie: 4 fewer than Sunday = 15 \u2212 4 = 11 boxes.\n\nPrices: gingerbread = $6, apple pie = $15.\n\nSaturday earnings:\n- Gingerbread: 10 \u00d7 6 = 60\n- Apple pie: 11 \u00d7 15 = 165\n- Saturday total = 60 + 165 = 225\n\nSunday earnings:\n- Gingerbread: 15 \u00d7 6 = 90\n- Apple pie: 15 \u00d7 15 = 225\n- Sunday total = 90 + 225 = 315\n\nTwo-day total = 225 + 315 = 540\n\nFinal answer: 540",
+     "label": true,
+     "ms_gen": 13340.0
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0001:hs1",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 70544.86056399764,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    product = 1\n    found_odd = False\n    for digit in str(n):\n        d = int(digit)\n        if d % 2 == 1:\n            product *= d\n            found_odd = True\n    return product if found_odd else 0\n```",
+     "label": true,
+     "ms_gen": 16004.9
+    },
+    {
+     "draft": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    product = 1\n    found_odd = False\n    for digit in str(n):\n        d = int(digit)\n        if d % 2 == 1:\n            product *= d\n            found_odd = True\n    if not found_odd:\n        return 0\n    return product\n```",
+     "label": true,
+     "ms_gen": 7655.9
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0038:hs1",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 69300.5776850041,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 48113.40961600945,
+     "error": "empty"
+    },
+    {
+     "draft": "Anthony wants to send 700 small coupons. Since he sends twice as many big coupons, the number of big coupons is 700 \u00d7 2 = 1400.\n\nPostage for the small coupons: 700 \u00d7 5 cents = 3500 cents = $35.\nPostage for the big coupons: 1400 \u00d7 15 cents = 21000 cents = $210.\n\nTotal postage = $35 + $210 = $245 (or 24500 cents).\n\nFinal answer: 245",
+     "label": true,
+     "ms_gen": 11769.9
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0035:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "We can solve this by working backwards from Peter's locker, using the given proportions.\n\n**Relationships:**\n- Zack's locker = 1/2 of Timothy's locker\n- Peter's locker = 1/4 of Zack's locker\n- Peter's locker = 5 cubic inches\n\n**Step 1 \u2014 Find Zack's locker.**\nPeter's locker is 1/4 of Zack's, so Zack's = 4 \u00d7 Peter's = 4 \u00d7 5 = **20 cubic inches**.\n\n**Step 2 \u2014 Find Timothy's locker.**\nZack's locker is half of Timothy's, so Timothy's = 2 \u00d7 Zack's = 2 \u00d7 20 = **40 cubic inches**.\n\n**Check:** Timothy = 40 \u2192 Zack = 40/2 = 20 \u2192 Peter = 20/4 = 5 \u2713\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 14027.9
+    },
+    {
+     "draft": "Let T = Timothy's locker size.\n\n- Zack's locker is half as big as Timothy's locker:\n  Z = 1/2 \u00d7 T\n- Peter's locker is 1/4 as big as Zack's locker:\n  P = 1/4 \u00d7 Z = 1/4 \u00d7 (1/2 \u00d7 T) = 1/8 \u00d7 T\n- Peter's locker is 5 cubic inches:\n  5 = 1/8 \u00d7 T\n  T = 5 \u00d7 8 = 40\n\nCheck: Timothy = 40, Zack = 20 (half), Peter = 5 (1/4 of Zack).\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 19771.6
+    },
+    {
+     "draft": "Let's solve step by step.\n\nLet Peter's locker = 5 cubic inches.\n\nPeter's locker is 1/4 as big as Zack's locker.\nSo Zack's locker = 4 \u00d7 Peter's = 4 \u00d7 5 = 20 cubic inches.\n\nZack's locker is half as big as Timothy's locker.\nSo Timothy's locker = 2 \u00d7 Zack's = 2 \u00d7 20 = 40 cubic inches.\n\nCheck: Timothy = 40 \u2192 Zack = half of Timothy = 20 \u2192 Peter = quarter of Zack = 5. \u2713 Matches given.\n\nFinal answer: 40",
+     "label": true,
+     "ms_gen": 6810.8
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0033:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 53247.16123699909,
+     "error": "empty"
+    },
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 47625.86029699014,
+     "error": "empty"
+    },
+    {
+     "draft": "John's times for each side:\n\n- 1st side: 5 minutes\n- 2nd side: 5 \u00d7 2 = 10 minutes\n- 3rd side: 5 \u00d7 2 = 10 minutes\n- 4th side: 5 \u00f7 2 = 2.5 minutes\n- 5th side: 5 \u00f7 2 = 2.5 minutes\n\nTotal time = 5 + 10 + 10 + 2.5 + 2.5 = 30 minutes.\n\nFinal answer: 30",
+     "label": true,
+     "ms_gen": 21156.9
+    }
+   ]
+  },
+  {
+   "task_id": "math-0006:hs2",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "To multiply fractions, we multiply the numerators together and the denominators together:\n\n\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17} = \\frac{-5 \\cdot 8}{9 \\cdot 17} = \\frac{-40}{153}\n\\]\n\nNow check for simplification. The numerator \\(-40 = 2^3 \\cdot 5\\) and the denominator \\(153 = 9 \\cdot 17 = 3^2 \\cdot 17\\) have no common factors, so the fraction is already in simplest form.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+     "label": true,
+     "ms_gen": 14794.8
+    },
+    {
+     "draft": "We multiply the numerators together and the denominators together:\n\n\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17}\n= \\frac{(-5)\\cdot 8}{9\\cdot 17}\n= \\frac{-40}{153}\n\\]\n\nSince \\(40\\) and \\(153\\) have no common factor other than \\(1\\), the fraction is already simplified.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+     "label": true,
+     "ms_gen": 6263.9
+    },
+    {
+     "draft": "To multiply fractions, multiply the numerators together and the denominators together:\n\n\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17} = \\frac{-5 \\cdot 8}{9 \\cdot 17}\n\\]\n\n\\[\n= \\frac{-40}{153}\n\\]\n\nThe numerator and denominator share no common factors, so the fraction is already in simplest form.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+     "label": true,
+     "ms_gen": 5688.0
+    }
+   ]
+  },
+  {
+   "task_id": "gsm8k-0036:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "Step 1: The tree is 80 feet long. John can make logs out of 80% of it, so the usable length is:\n80 \u00d7 0.80 = 64 feet.\n\nStep 2: He cuts the usable portion into 4-foot logs, so the number of logs is:\n64 \u00f7 4 = 16 logs.\n\nStep 3: From each of those logs, he cuts 5 planks, so the total number of planks is:\n16 \u00d7 5 = 80 planks.\n\nStep 4: He sells each plank for $1.2, so the total money he makes is:\n80 \u00d7 1.2 = 96 dollars.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 12885.4
+    },
+    {
+     "draft": "Step 1: The tree is 80 feet long, but John can only make logs from 80% of it.\n80 \u00d7 0.80 = 64 feet of usable wood.\n\nStep 2: He cuts the usable wood into 4-foot logs.\n64 \u00f7 4 = 16 logs.\n\nStep 3: From each 4-foot log, he cuts 5 planks.\n16 \u00d7 5 = 80 planks.\n\nStep 4: He sells each plank for $1.2.\n80 \u00d7 1.2 = 96.\n\nJohn makes $96.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 4068.0
+    },
+    {
+     "draft": "80-foot tree \u00d7 80% usable = 64 feet of usable wood.\n64 feet \u00f7 4-foot logs = 16 logs.\n16 logs \u00d7 5 planks per log = 80 planks.\n80 planks \u00d7 $1.2 per plank = $96.\n\nFinal answer: 96",
+     "label": true,
+     "ms_gen": 3189.0
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0015:hg",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 86117.89790299372,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find",
+     "label": false,
+     "ms_gen": 27588.6
+    },
+    {
+     "draft": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return ''\n\n    beginning_of_suffix = 0  # index where the longest palindromic suffix starts\n\n    while not is_palindrome(string[beginning_of_suffix:])\n        beginning_of_suffix += 1\n\n    return string + string[:beginning_of_suffix][::-1]\n```",
+     "label": false,
+     "ms_gen": 24736.6
+    }
+   ]
+  },
+  {
+   "task_id": "humaneval-0007:hs2",
+   "bucket": "code",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "",
+     "label": false,
+     "ms_gen": 76577.92236299429,
+     "error": "empty"
+    },
+    {
+     "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+     "label": true,
+     "ms_gen": 15419.5
+    },
+    {
+     "draft": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) <= 99)\n```",
+     "label": true,
+     "ms_gen": 61064.0
+    }
+   ]
+  },
+  {
+   "task_id": "math-0023:hg",
+   "bucket": "reasoning",
+   "n_drafts": 3,
+   "drafts": [
+    {
+     "draft": "The word **BANANA** has 6 letters:\n\n- 1 B\n- 3 A's\n- 2 N's\n\nTotal arrangements of all letters:\n\n\\[\n\\frac{6!}{3! \\cdot 2!}\n= \\frac{720}{6 \\cdot 2}\n= 60\n\\]\n\nArrangements that begin with a B:\n\nIf the first letter is fixed as B, the remaining 5 letters are 3 A's and 2 N's:\n\n\\[\n\\frac{5!}{3! \\cdot 2!}\n= \\frac{120}{6 \\cdot 2}\n= 10\n\\]\n\nTherefore, arrangements that do **not** begin with a B:\n\n\\[\n60 - 10 = 50\n\\]\n\n\\[\n\\boxed{50}\n\\]",
+     "label": true,
+     "ms_gen": 28131.7
+    },
+    {
+     "draft": "The word **BANANA** has 6 letters with multiplicities:\n\n- 1 B\n- 3 A's\n- 2 N's\n\nTotal distinct arrangements:\n\n\\[\n\\frac{6!}{1! \\cdot 3! \\cdot 2!} = \\frac{720}{12} = 60\n\\]\n\nArrangements that begin with **B**: fix B in the first position, then arrange the remaining 5 letters (3 A's and 2 N's):\n\n\\[\n\\frac{5!}{3! \\cdot 2!} = \\frac{120}{12} = 10\n\\]\n\nTherefore, arrangements that **do not** begin with B:\n\n\\[\n60 - 10 = 50\n\\]\n\n\\[\n\\boxed{50}\n\\]",
+     "label": true,
+     "ms_gen": 16864.9
+    },
+    {
+     "draft": "The word **BANANA** has 6 letters:\n\n- 1 **B**\n- 3 **A**\n- 2 **N**\n\nTotal distinct rearrangements:\n\n\\[\n\\frac{6!}{3!\\,2!} = \\frac{720}{6\\cdot 2} = 60\n\\]\n\nWe want arrangements that **do not begin with B**, so we subtract those that do begin with B.\n\nIf the first letter is fixed as **B**, the remaining 5 letters are:\n\n\\[\nA, A, A, N, N\n\\]\n\nTheir number of arrangements is:\n\n\\[\n\\frac{5!}{3!\\,2!} = \\frac{120}{12} = 10\n\\]\n\nTherefore, the number of arrangements that do **not** begin with B is:\n\n\\[\n60 - 10 = 50\n\\]\n\n\\boxed{50}",
+     "label": true,
+     "ms_gen": 34171.8
+    }
+   ]
+  }
+ ]
+}
