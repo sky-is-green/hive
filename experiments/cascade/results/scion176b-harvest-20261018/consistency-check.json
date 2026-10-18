@@ -1,0 +1,1895 @@
+{
+ "verifier": "self-asserted arithmetic equations: evaluate both sides, flag disagreement",
+ "gold_free": true,
+ "slices": {
+  "organic-66": {
+   "n": 66,
+   "wrong": 9,
+   "correct": 57,
+   "flagged": 2,
+   "flagged_and_wrong": 2,
+   "precision_on_flagged": 1.0,
+   "recall_of_wrongs": 0.2222222222222222,
+   "false_flag_rate_on_correct": 0.0,
+   "equations_checked_total": 70,
+   "flagged_items": [
+    {
+     "item_id": "gsm8k-0033:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "5 + 10 + 10 + 2.5 + 2.5 = 25",
+       "lhs": 30.0,
+       "rhs": 25.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0013:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2007 = 6 * 334 + 1",
+       "lhs": 2007.0,
+       "rhs": 2005.0
+      }
+     ]
+    }
+   ]
+  },
+  "harvest-train-871": {
+   "n": 871,
+   "wrong": 461,
+   "correct": 410,
+   "flagged": 38,
+   "flagged_and_wrong": 19,
+   "precision_on_flagged": 0.5,
+   "recall_of_wrongs": 0.04121475054229935,
+   "false_flag_rate_on_correct": 0.046341463414634146,
+   "equations_checked_total": 791,
+   "flagged_items": [
+    {
+     "item_id": "math-0004:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1",
+     "label": 1,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0010:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 5",
+       "lhs": 2.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "2 = 25",
+       "lhs": 2.0,
+       "rhs": 25.0
+      },
+      {
+       "equation": "2 = 16",
+       "lhs": 2.0,
+       "rhs": 16.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0010:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 5",
+       "lhs": 2.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "2 = 25",
+       "lhs": 2.0,
+       "rhs": 25.0
+      },
+      {
+       "equation": "2 = 16",
+       "lhs": 2.0,
+       "rhs": 16.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0011:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1995",
+       "lhs": 2.0,
+       "rhs": 1995.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0012:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "4 = 2",
+       "lhs": 4.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "4 = 2",
+       "lhs": 4.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0012:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 9",
+       "lhs": 1.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "2 = 6",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "3 = 5",
+       "lhs": 3.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "4 = 7",
+       "lhs": 4.0,
+       "rhs": 7.0
+      },
+      {
+       "equation": "4 = 3",
+       "lhs": 4.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "8 = 2",
+       "lhs": 8.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 3",
+       "lhs": 1.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "27 = 3",
+       "lhs": 27.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "216 = 2",
+       "lhs": 216.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "0 = 1",
+       "lhs": 0.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "0 = 8",
+       "lhs": 0.0,
+       "rhs": 8.0
+      },
+      {
+       "equation": "0 = 64",
+       "lhs": 0.0,
+       "rhs": 64.0
+      },
+      {
+       "equation": "0 = 27",
+       "lhs": 0.0,
+       "rhs": 27.0
+      },
+      {
+       "equation": "0 = 8 * 27",
+       "lhs": 0.0,
+       "rhs": 216.0
+      },
+      {
+       "equation": "0 = 64 * 27",
+       "lhs": 0.0,
+       "rhs": 1728.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0019:r2-hs2",
+     "label": 0,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "199 = 11 * 17",
+       "lhs": 199.0,
+       "rhs": 187.0
+      },
+      {
+       "equation": "398 = 7 * 56 + 2",
+       "lhs": 398.0,
+       "rhs": 394.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "1 = 7 - (398 - 7 * 56) * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 - 398 * 3 + 7 * 168",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * (1 + 168) - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * 169 - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "7 * 169 - 398 * 3 = 1",
+       "lhs": -11.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      },
+      {
+       "equation": "46656 = 36",
+       "lhs": 46656.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "3 = 36 * 36",
+       "lhs": 3.0,
+       "rhs": 1296.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      },
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 36",
+       "lhs": 2.0,
+       "rhs": 36.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg",
+     "label": 1,
+     "origin": "harvested:greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1",
+     "label": 1,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    }
+   ]
+  },
+  "harvest-937": {
+   "n": 937,
+   "wrong": 470,
+   "correct": 467,
+   "flagged": 40,
+   "flagged_and_wrong": 21,
+   "precision_on_flagged": 0.525,
+   "recall_of_wrongs": 0.04468085106382979,
+   "false_flag_rate_on_correct": 0.04068522483940043,
+   "equations_checked_total": 861,
+   "flagged_items": [
+    {
+     "item_id": "gsm8k-0033:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "5 + 10 + 10 + 2.5 + 2.5 = 25",
+       "lhs": 30.0,
+       "rhs": 25.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0004:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1",
+     "label": 1,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs1:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0008:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 1",
+       "lhs": 2.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "2 = 9",
+       "lhs": 2.0,
+       "rhs": 9.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0010:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 5",
+       "lhs": 2.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "2 = 25",
+       "lhs": 2.0,
+       "rhs": 25.0
+      },
+      {
+       "equation": "2 = 16",
+       "lhs": 2.0,
+       "rhs": 16.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0010:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 5",
+       "lhs": 2.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "2 = 25",
+       "lhs": 2.0,
+       "rhs": 25.0
+      },
+      {
+       "equation": "2 = 16",
+       "lhs": 2.0,
+       "rhs": 16.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0011:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 1995",
+       "lhs": 2.0,
+       "rhs": 1995.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0012:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "4 = 2",
+       "lhs": 4.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "4 = 2",
+       "lhs": 4.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0012:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "1 = 2",
+       "lhs": 1.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 9",
+       "lhs": 1.0,
+       "rhs": 9.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "2 = 6",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "3 = 5",
+       "lhs": 3.0,
+       "rhs": 5.0
+      },
+      {
+       "equation": "4 = 7",
+       "lhs": 4.0,
+       "rhs": 7.0
+      },
+      {
+       "equation": "4 = 3",
+       "lhs": 4.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "8 = 2",
+       "lhs": 8.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "1 = 3",
+       "lhs": 1.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "27 = 3",
+       "lhs": 27.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "216 = 2",
+       "lhs": 216.0,
+       "rhs": 2.0
+      },
+      {
+       "equation": "2 = 3",
+       "lhs": 2.0,
+       "rhs": 3.0
+      },
+      {
+       "equation": "0 = 1",
+       "lhs": 0.0,
+       "rhs": 1.0
+      },
+      {
+       "equation": "0 = 8",
+       "lhs": 0.0,
+       "rhs": 8.0
+      },
+      {
+       "equation": "0 = 64",
+       "lhs": 0.0,
+       "rhs": 64.0
+      },
+      {
+       "equation": "0 = 27",
+       "lhs": 0.0,
+       "rhs": 27.0
+      },
+      {
+       "equation": "0 = 8 * 27",
+       "lhs": 0.0,
+       "rhs": 216.0
+      },
+      {
+       "equation": "0 = 64 * 27",
+       "lhs": 0.0,
+       "rhs": 1728.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0013:hs1",
+     "label": 0,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2007 = 6 * 334 + 1",
+       "lhs": 2007.0,
+       "rhs": 2005.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0019:r2-hs2",
+     "label": 0,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "199 = 11 * 17",
+       "lhs": 199.0,
+       "rhs": 187.0
+      },
+      {
+       "equation": "398 = 7 * 56 + 2",
+       "lhs": 398.0,
+       "rhs": 394.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "2 = 398 - 7 * 56",
+       "lhs": 2.0,
+       "rhs": 6.0
+      },
+      {
+       "equation": "1 = 7 - (398 - 7 * 56) * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 - 398 * 3 + 7 * 168",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * (1 + 168) - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "1 = 7 * 169 - 398 * 3",
+       "lhs": 1.0,
+       "rhs": -11.0
+      },
+      {
+       "equation": "7 * 169 - 398 * 3 = 1",
+       "lhs": -11.0,
+       "rhs": 1.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      },
+      {
+       "equation": "46656 = 36",
+       "lhs": 46656.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "3 = 36 * 36",
+       "lhs": 3.0,
+       "rhs": 1296.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      },
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 36",
+       "lhs": 2.0,
+       "rhs": 36.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0024:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "3 = 36",
+       "lhs": 3.0,
+       "rhs": 36.0
+      },
+      {
+       "equation": "2 = 46656",
+       "lhs": 2.0,
+       "rhs": 46656.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg",
+     "label": 1,
+     "origin": "harvested:greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hg:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1",
+     "label": 1,
+     "origin": "harvested:ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs1:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2",
+     "label": 1,
+     "origin": "harvested:ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg1",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg2",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:hs2:neg3",
+     "label": 0,
+     "origin": "harvested-perturbed:boxed-edit",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hg",
+     "label": 1,
+     "origin": "harvested:r2-greedy",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hs1",
+     "label": 1,
+     "origin": "harvested:r2-ts1",
+     "inconsistent": [
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      },
+      {
+       "equation": "2 = 144",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    },
+    {
+     "item_id": "math-0025:r2-hs2",
+     "label": 1,
+     "origin": "harvested:r2-ts2",
+     "inconsistent": [
+      {
+       "equation": "2 = 100",
+       "lhs": 2.0,
+       "rhs": 100.0
+      },
+      {
+       "equation": "2 = 44",
+       "lhs": 2.0,
+       "rhs": 44.0
+      },
+      {
+       "equation": "2 = 100 + 44",
+       "lhs": 2.0,
+       "rhs": 144.0
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
