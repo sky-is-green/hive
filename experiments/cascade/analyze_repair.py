@@ -25,20 +25,41 @@ sys.path.insert(0, str(REPO / "experiments" / "cascade"))
 
 from checkers import _boxed, _math_equal  # noqa: E402
 
-FINAL_NUM = re.compile(r"final answer[^0-9\-+]*([-+]?\d[\d,]*(?:\.\d+)?)", re.I | re.S)
+CODE_BLOCK = re.compile(r"```(?:python|py)?\s*\n(.*?)```", re.S)
+# A "final answer" is only an answer when a value follows it on the same line.  The loose
+# alternative swallows prose ("The final answer requested is for the first set, which is 10"),
+# and finditer does not then re-try the real line further down.
+VALUE = re.compile(
+    r"final\s+answer[ \t]*[:=\-]?[ \t]*(?:\$\$?|\*\*)?"
+    r"(?P<val>-?\d[\d,]*(?:\.\d+)?(?:[ \t]*/[ \t]*\d[\d,]*(?:\.\d+)?)?"
+    r"|-?\\(?:d|t)?frac\{[^{}]*\}\{[^{}]*\})",
+    re.I,
+)
 LETTER = re.compile(r"\b([A-D])\b")
-BOXED = re.compile(r"\\boxed\{(.+?)\}", re.S)
 
 
-def extract(text: str) -> str | None:
-    m = BOXED.findall(text or "")
-    if m:
-        return m[-1].strip()
-    m = FINAL_NUM.findall(text or "")
-    if m:
-        return m[-1].replace(",", "")
-    m = LETTER.findall((text or "").upper())
-    return m[-1] if m else None
+def extract(text: str, kind: str | None = None) -> str | None:
+    """The answer's final value, as a consumer would read it.
+
+    Braces come from checkers' balanced `_boxed` (a regex cuts `\\boxed{\\frac{40}{243}}` at the
+    inner brace), a "final answer" tail must be a value on the same line (`-40/153` survives
+    whole, prose mentions do not win), and the bare-letter fallback fires only for choice tasks --
+    otherwise any capital A-D in the prose answers for the model.
+    """
+    text = text or ""
+    if kind == "code":
+        blocks = CODE_BLOCK.findall(text)
+        return blocks[-1].strip() if blocks else None
+    boxed = _boxed(text)
+    if boxed is not None:
+        return boxed.strip().replace(",", "")
+    values = list(VALUE.finditer(text))
+    if values:
+        return values[-1].group("val").replace(",", "").strip()
+    if kind == "choice":
+        letters = LETTER.findall(text.upper())
+        return letters[-1] if letters else None
+    return None
 
 
 def tolerant_ok(spec: dict, text: str) -> bool | None:
@@ -49,24 +70,22 @@ def tolerant_ok(spec: dict, text: str) -> bool | None:
     kind = ck["type"]
     if kind == "code":
         return None  # the strict run already executed the tests; framing is not a variable here
-    got = extract(text)
-    if got is None:
+    got = extract(text, kind)
+    if not got:
         return False
+    if kind == "choice":
+        return str(got).upper() == str(ck["expect"]).upper()
+    if kind == "contains":
+        return any(str(e).lower() in text.lower() for e in ck["expect"])
     if kind == "number":
         try:
             return abs(float(got) - float(ck["expect"])) <= float(ck.get("tol", 1e-6))
         except ValueError:
-            return False
-    if kind == "boxed":
-        try:
-            return _math_equal(got, str(ck["expect"]))
-        except Exception:  # noqa: BLE001
-            return False
-    if kind == "choice":
-        return str(got).upper() == str(ck["expect"]).upper()
-    if kind == "contains":
-        return any(str(e).lower() in (text or "").lower() for e in ck["expect"])
-    return None
+            pass  # a fraction or expression: fall through to the exact comparator
+    try:
+        return bool(_math_equal(got, str(ck["expect"])))
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def main() -> int:
@@ -132,7 +151,7 @@ def main() -> int:
             lines.append(f"| `{r['item_id']}` | {r['arm']} | "
                          f"{'pass' if r.get('gold_ok_after') else 'fail'} | "
                          f"{'pass' if r['tolerant'] else 'fail'} | {exp} | "
-                         f"{extract(r.get('text') or '') or '-'} |")
+                         f"{extract(r.get('text') or '', r.get('kind')) or '-'} |")
     else:
         lines.append("none")
     lines += ["", "## Per item", "",
