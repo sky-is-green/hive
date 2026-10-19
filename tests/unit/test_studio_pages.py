@@ -53,12 +53,18 @@ def test_page_scripts_are_valid_javascript(page):
         "(a lost block means the page silently stops working)"
     )
     for i, block in enumerate(blocks):
-        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as fh:
+        # UTF-8 explicitly: the page carries typographic characters (the
+        # command picker's caret, the session menu's dots) and the default
+        # encoding is the locale's - on Windows that is cp1252, and writing
+        # them raises UnicodeEncodeError before node ever sees the file.
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
+                                         encoding="utf-8") as fh:
             fh.write(block)
             path = fh.name
         try:
             proc = subprocess.run(
-                [NODE, "--check", path], capture_output=True, text=True, timeout=60
+                [NODE, "--check", path], capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=60,
             )
         finally:
             os.unlink(path)
