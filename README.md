@@ -14,8 +14,10 @@
 Evaluation suite + Studio sidecar harness for the [Splinter Memory](https://github.com/sky-is-green/splinter-memory) system.
 
 **Status: work in progress.** Carved out of splinter-memory on 2026-09-12 as its
-own repository. The offline suite is green (**1019 unit + integration**, verified
-Oct 19); the live batteries and Studio are under active development — expect
+own repository. The offline suite is green (**1054 unit** + **126 integration**
+passing, verified Oct 19; 5 integration tests need the optional
+`sentence-transformers` package that CI installs and a plain checkout does
+not); the live batteries and Studio are under active development — expect
 moving parts here.
 
 ## What it is
@@ -28,12 +30,13 @@ Two halves, one repo:
 
 - **HiveBench Studio** (`python -m harness`) — the console. Chat with your
   local models, manage engines/providers/models, run the cascade, inspect
-  retrieval, train, and browse results. **91 REST operations** across 84 paths,
-  documented live at `/docs` and mapped in [`docs/API.md`](docs/API.md).
+  retrieval, train, and browse results. **97 REST operations** across 89 paths
+  (88 operations under `/v1/`), documented live at `/docs` and mapped in
+  [`docs/API.md`](docs/API.md) — a test keeps that map honest.
 - **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
   escalate**. Deterministic verification, one greedy self-repair round, human
   gate, optional API escalation. Gold-free at runtime, fully user-controlled.
-- **The evaluation suite** — 1019 offline tests that falsify claims instead of
+- **The evaluation suite** — 1180 offline tests that falsify claims instead of
   asserting them. No LLM calls, no API keys, ~60 seconds.
 
 ## What makes it different
@@ -58,6 +61,7 @@ offline, and replayably.
 | | |
 |---|---|
 | **Chat** | Talk to a local model through the Studio, in Splinter (curated) or Agent (dsh, with tools) mode |
+| **Show the LLM a file** | `/import <path>` — the text rides along with your next message and stays in the conversation's memory |
 | **Switch backends** | One selector: Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API |
 | **Find models** | Search Hugging Face for GGUF repos, list their files, download with progress |
 | **Manage engines** | Reusable profiles (model, context, GPU layers, sampling) that reference a provider by name |
@@ -68,7 +72,7 @@ offline, and replayably.
 | **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
 | **Compact** | A conversation that outgrows its window becomes a checkpoint — and a checkpoint is a safe place to switch engines locally |
 | **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
-| **Extend** | 91 documented REST operations; the cascade is a CLI you can script |
+| **Extend** | 97 documented REST operations; the cascade is a CLI you can script |
 
 ### The hive architecture
 
@@ -78,10 +82,10 @@ HiveBench is designed as a **hive** — models with different roles cooperating:
 User → Encoder (small model, app-aware) → Studio backend → Worker (176B / GGUF) → Cascade (detect/repair/escalate)
 ```
 
-- **Encoder** — a small model (0.8B–2B) acting as app assistant: it can probe
-  your hardware, list your models, launch a server, and run a cascade. The
-  agent loop (dsh) already provides the tool-calling; the encoder just needs
-  app-aware tools.
+- **Encoder** — a small model (0.8B–2B) acting as app assistant. Today it is
+  the dsh agent with the Studio's own API map in its context: it can report
+  your hardware, models, engines and runs, and act on them. A dedicated
+  trained encoder is the next step (the agent loop is already there).
 - **Worker** — does the actual generation (176B strata, or any local GGUF).
 - **Cascade** — the quality layer between them.
 
@@ -102,10 +106,10 @@ it does it deterministically, offline, and replayably:
   assembled context was actually sufficient for the query, corroborates that
   evidence; because it shares the served model's biases, it never constitutes
   it (white paper section 9, Threat 1).
-- **The full test suite runs offline in ~30 seconds**: no LLM calls and no API
-  keys; CI-friendly via `--mock`. (Running the system *live* does require a
-  local model backend, LM Studio / llama.cpp, which on most rigs means a GPU;
-  the drones themselves stay on CPU.)
+- **The full test suite runs offline in ~2 minutes** (unit: ~60 s): no LLM calls
+  and no API keys; CI-friendly via `--mock`. (Running the system *live* does
+  require a local model backend, LM Studio / llama.cpp, which on most rigs
+  means a GPU; the drones themselves stay on CPU.)
 - **Paired head-to-head A/B** (`hivebench-ab`): the same turns, the same model,
   splinter-curated context vs the naive FIFO window, both answers scored
   deterministically (fixture-fact presence + context fidelity), with both
@@ -211,17 +215,17 @@ a single hive theme (yellow/black) across every page.
 | Page | What it does |
 |---|---|
 | `/` → `/runs` | Run bundle index |
-| `/server` | The console: chat, models, engines, providers, hub, library, inspector, training, settings |
+| `/server` | The console: **Home**, **Settings**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |
-| `/docs` | Live OpenAPI docs for all ~40 `/v1/` endpoints |
+| `/docs` | Live OpenAPI docs for all 97 operations |
 
 ### Console features
 
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
-- **Settings tab** — a searchable settings index: 32 settings across 9 nested
+- **Settings tab** — a searchable settings index: 30 settings across 8
   categories, each linking to where it lives.
 - **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
@@ -233,6 +237,11 @@ a single hive theme (yellow/black) across every page.
 - **`/import <path>`** — shows the LLM a file: the text rides along with your
   next message and lands in the conversation's store, so it is there for later
   turns too. Text files only; secrets in the file are redacted on the way in.
+- **Dev mode** — `/dev on` reveals the developer surface (the deep-research
+  queue, the Docker/VHDX setup tab, the raw server status). Off by default.
+- **Chat voices** — every message says who produced it: the model, the studio
+  encoder, the **Command Console** (cyan), and you (black on yellow, no label
+  — you know you typed it).
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
@@ -247,20 +256,23 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (~40 endpoints under `/v1/`)
+### API surface (88 operations across 80 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
-| Cascade | `/v1/cascade/run`, `/runs`, `/report/{run}`, `/registry`, `/roles`, `/paths`, `/plan`, `/frontier`, `/validate` |
+| Cascade | `/v1/cascade/run`, `/runs`, `/report/{run}`, `/registry`, `/roles`, `/paths`, `/plan`, `/frontier`, `/validate`, `/validator` |
 | Models | `/v1/models/local`, `/v1/models/local/path`, `/v1/models/linux`, `/v1/models/hub`, `/v1/models/hub/files/{repo}`, `/v1/models/hub/download`, `/v1/models/hub/downloads` |
-| Servers | `/v1/server/start`, `/stop`, `/unload`, `/status`, `/v1/server/metrics` |
-| Engines | `/v1/engines`, `/v1/engines/preset`, `/v1/engines/ab/bench` |
+| Servers | `/v1/server/start`, `/stop`, `/unload`, `/status`, `/log`, `/memory`, `/metrics` |
+| Engines | `/v1/engines`, `/v1/engines/preset`, `/v1/engines/bench`, `/v1/engines/ab/bench` |
 | Providers | `/v1/provider/config` |
 | Agent | `/v1/agent/stream`, `/status`, `/cancel`, `/v1/agent-presets/*` |
 | Commands | `/v1/commands`, `/v1/commands/run` |
+| Studio | `/v1/studio/settings`, `/v1/studio/strata` |
+| Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
+| Stacks | `/v1/stacks`, `/v1/stacks/{name}`, `/apply`, `/unload`, `/validate`, `/v1/stacks/status` |
 | Runs | `/v1/runs`, `/v1/report/{run}`, `/v1/protocol/run` |
-| Training | `/v1/training/engines`, `/launch`, `/status/{run}`, `/report/{run}` |
+| Training | `/v1/training/engines`, `/launch`, `/status/{run}`, `/report/{run}`, `/v1/trainer/*` |
 | Conversation | `/v1/splinter/*` (turn, stream, reset, mode), `/v1/openai/*` |
 
 Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`.
@@ -319,9 +331,14 @@ The live benchmark talks to an OpenAI-compatible backend (e.g. LM Studio on
 
 ## Where we're going
 
-- **S4/S5** — Studio provider row → sidecar (recall battery done; provider row
-  pending UI confirm); opencode provider config → sidecar with conversation id
-  = project name.
+- **The cascade in the chat path** — the cascade is a batch evaluation tool
+  today. Making it the always-on chat backend needs one thing first: a
+  measurement on *conversational* tasks that says it actually helps.
+- **A trained encoder** — the app assistant is the dsh agent plus the
+  Studio's own API map (prompt-context, v1). A dedicated small model tuned
+  for app navigation needs a usage-harvest → dataset → train pipeline.
+- **A file explorer and diff view** — OpenCode-style side panels; the model
+  can already read a file (`/import`), you cannot yet browse one.
 - Live batteries stay live-gated in CI (skipped without a backend); threshold
   benchmarks stay out of CI on purpose — shared runners flake them.
 
