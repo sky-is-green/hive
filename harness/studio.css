@@ -63,10 +63,10 @@ section {
 }
 .chatpane .chatlog {
   flex: 1 1 auto;
-  height: auto;
-  min-height: 320px;
+  min-height: 0;
   max-height: none;
   margin-bottom: .6rem;
+  overflow-y: auto;
 }
 @media (max-width: 900px) {
   body { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
@@ -149,7 +149,7 @@ th { background: #000000; color: #FFDD00; }
 .hint:hover, .hint:focus { outline: none; border-color: #22263a; color: #000; }
 .hint::after { content: attr(data-tip); position: absolute; left: -6px; top: calc(100% + 7px); z-index: 40; width: max-content; max-width: 300px; padding: .45rem .6rem; border-radius: 6px; background: #1c1e26; color: #f2f3f7; font-size: .78rem; line-height: 1.35; text-align: left; white-space: normal; letter-spacing: normal; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .12s ease .18s, transform .12s ease .18s; pointer-events: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .28); }
 .hint:hover::after, .hint:focus::after { opacity: 1; visibility: visible; transform: none; }
-.chatpane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.chatpane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .chat-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex: none; margin: .2rem 0 .6rem; }
 .chat-head h2 { margin: 0; font-size: 1.05rem; white-space: nowrap; }
 .chat-controls { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; justify-content: flex-end; }
@@ -180,15 +180,31 @@ button { background: #FFB703; color: #000000; border: 1.5px solid #000000; borde
 button:hover:not(:disabled) { background: #FFD54F; }
 #stopbtn { background: #b3372c; color: #fff; border: 1.5px solid #000000; }
 pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
-/* the chat is a black console surface; the bubbles carry the colour */
+/* the chat is a black console surface; each source has its own colour */
 .chatlog { background: #000000; border: 1.5px solid #FFB703; border-radius: 12px; padding: 1rem; gap: .7rem; }
 .msg { line-height: 1.5; font-size: .93rem; }
-.msg.ai { background: #000000; color: #FFDD00; border: 1px solid rgba(255,221,0,.28); border-radius: 4px 12px 12px 12px; }
-.msg.user { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-radius: 12px 4px 12px 12px; }
 .msg .meta { display: block; font-size: .7rem; margin-top: .35rem; letter-spacing: .02em; }
-.msg.ai .meta { color: rgba(255,221,0,.65); }
-.msg.user .meta { color: rgba(0,0,0,.6); }
 .msg .role { font-weight: 700; margin-right: .4rem; }
+
+/* the LLM: yellow on black.  Its top-left corner is square - the machine
+   voices (LLM, encoder, console) all share the shape, so the eye can tell
+   "this came from a system" at a glance. */
+.msg.llm { background: #000000; color: #FFDD00; border: 1px solid rgba(255,221,0,.28); border-radius: 4px 12px 12px 12px; }
+.msg.llm .role, .msg.llm .meta { color: rgba(255,221,0,.8); }
+
+/* the harness encoder: white on black (the app talking, not the model) */
+.msg.harness { background: #000000; color: #FFFFFF; border: 1px solid rgba(255,255,255,.30); border-radius: 4px 12px 12px 12px; }
+.msg.harness .role, .msg.harness .meta { color: rgba(255,255,255,.75); }
+
+/* the console: a soft red - errors and logs, so they never read as an answer */
+.msg.console { background: #000000; color: #FF9B9B; border: 1px solid rgba(255,155,155,.38); border-radius: 4px 12px 12px 12px; }
+.msg.console .role, .msg.console .meta { color: rgba(255,155,155,.8); }
+
+/* the user: black on yellow */
+.msg.user { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-radius: 12px 4px 12px 12px; }
+.msg.user .meta { color: rgba(0,0,0,.6); }
+
+/* a plain system note (still a pill, centred) */
 .msg.sys { align-self: center; background: rgba(255,221,0,.12); color: #FFDD00; border: 1px solid rgba(255,221,0,.35); font-size: .78rem; padding: .22rem .85rem; border-radius: 999px; }
 .msg.sys .meta { display: inline; margin-left: .4rem; }
 .tab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; }
@@ -285,34 +301,40 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 /* .note: black on yellow backgrounds, yellow on black sections */
 
 /* Catch-all: any yellow-background element inside a dark section uses black text */
-section .chatlog, section .chunkrow, section .sugbox, section .lib-tabpane,
-section .lib-container, section .fit-panel, section .toolstep,
-section .msg.ai, section pre, section input, section select,
+/* only the YELLOW-background elements take black text; the dark ones
+   (chatlog, msg, fit-panel) keep the light text */
+section .chunkrow, section .sugbox, section .lib-tabpane,
+section .lib-container, section .toolstep,
+section pre, section input, section select,
 section textarea, section button, section table, section .card,
-section .kv, section .kv-grid, section .chatlog .note,
-section .chunkrow .note, section .sugbox .note, section .lib-tabpane .note,
-section .lib-container .note, section .fit-panel .note, section .toolstep .note,
-section .msg.ai .note, section pre .note {
+section .kv, section .kv-grid, section .chunkrow .note,
+section .sugbox .note, section .lib-tabpane .note,
+section .lib-container .note, section .toolstep .note, section pre .note {
   color: #000000;
 }
 section .note { color: #FFDD00; opacity: .85; }
 table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color: #000000; opacity: .9; }
 
-/* ---- chat footer: the Studio toggles, next to the composer ---- */
-.chat-footer {
+/* ---- the Studio toggles, inside the composer box ---- */
+.composer-toggles {
   display: flex;
-  gap: .9rem;
+  gap: .55rem;
   align-items: center;
-  flex-wrap: wrap;
   flex: none;
-  margin-top: .35rem;
-  padding: .35rem .1rem 0;
-  border-top: 1px solid rgba(255, 221, 0, .18);
-  font-size: .85rem;
+  flex-wrap: wrap;
+  padding: 0 .35rem;
 }
-.chat-footer label.inline { color: #FFDD00; opacity: .9; cursor: pointer; }
-.chat-footer input[type="checkbox"] { accent-color: #FFB703; }
-.chat-footer .note { color: #FFDD00; opacity: .7; }
+.composer-toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  font-size: .76rem;
+  color: rgba(255, 221, 0, .8);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.composer-toggles input[type="checkbox"] { accent-color: #FFB703; margin: 0; }
 
 /* ---- composer: one bordered input, the send button inside it ---- */
 .composer-box {
@@ -344,3 +366,12 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 #sendbtn { background: #FFB703; color: #000000; font-weight: 700; border: 1.5px solid #000000; }
 .chat-hint { color: rgba(255,221,0,.55); font-size: .76rem; margin-top: .3rem; }
 .chat-hint kbd { background: rgba(255,221,0,.15); border: 1px solid rgba(255,221,0,.35); border-radius: 4px; padding: 0 .3rem; color: #FFDD00; }
+
+/* ---- the one-line mode explainer under the chat head ---- */
+.chat-mode-note {
+  color: rgba(255, 221, 0, .62);
+  font-size: .78rem;
+  line-height: 1.4;
+  margin: 0 0 .45rem;
+}
+.chat-mode-note b { color: #FFDD00; }
