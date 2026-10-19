@@ -147,7 +147,10 @@ def test_killed_run_resumes_from_the_checkpoint(bench, tmp_path):
         deadline, saved = time.time() + 20, 0
         while time.time() < deadline:
             if partial.exists():
-                saved = len(np.load(partial, allow_pickle=True)["item_ids"])
+                # close the archive: an open handle blocks the probe's own
+                # replace of this file on Windows
+                with np.load(partial, allow_pickle=True) as z:
+                    saved = len(z["item_ids"])
                 if saved >= 4:
                     break
             time.sleep(0.05)
@@ -168,10 +171,10 @@ def test_killed_run_resumes_from_the_checkpoint(bench, tmp_path):
         assert "resumed" in resumed.stdout
     finally:
         engine.close()
-    a = np.load(tmp_path / "clean/probe-states-resumetest.npz", allow_pickle=True)
-    b = np.load(tmp_path / "probe-states-resumetest.npz", allow_pickle=True)
-    assert list(b["item_ids"]) == list(a["item_ids"])
-    assert np.array_equal(b["L1"], a["L1"]), "resumed vectors differ from the clean run"
+    with np.load(tmp_path / "clean/probe-states-resumetest.npz", allow_pickle=True) as a, \
+            np.load(tmp_path / "probe-states-resumetest.npz", allow_pickle=True) as b:
+        assert list(b["item_ids"]) == list(a["item_ids"])
+        assert np.array_equal(b["L1"], a["L1"]), "resumed vectors differ from the clean run"
 
 
 def test_no_resume_ignores_the_checkpoint(bench, tmp_path):

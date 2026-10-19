@@ -68,6 +68,25 @@ def wait_healthy(url: str, timeout_s: float) -> bool:
     return False
 
 
+def _replace(src: Path, dst: Path, attempts: int = 10) -> None:
+    """os.replace with a short retry.
+
+    Windows refuses to replace a file that another handle still has open (a
+    reader, an indexer, the killed process), and the failure is transient.
+    """
+    import os
+    import time
+
+    for attempt in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.1)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--server", required=True)
@@ -104,12 +123,14 @@ def main() -> int:
                             labels=[i["label"] for i in done],
                             splits=[i["split"] for i in done],
                             L1=np.stack([states[i["item_id"]] for i in done]))
-        tmp.replace(partial)
+        _replace(tmp, partial)
 
     states: dict[str, np.ndarray] = {}
     if partial.exists() and not args.no_resume:
-        z = np.load(partial, allow_pickle=True)
-        states = {str(i): z["L1"][n] for n, i in enumerate(z["item_ids"])}
+        # close the archive: Windows refuses to replace a file that still has
+        # an open handle, and save_partial() replaces exactly this file
+        with np.load(partial, allow_pickle=True) as z:
+            states = {str(i): z["L1"][n] for n, i in enumerate(z["item_ids"])}
         print(f"resumed {len(states)}/{len(items)} states from {partial.name}", flush=True)
 
     t0 = time.time()
