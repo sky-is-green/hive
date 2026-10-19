@@ -242,3 +242,31 @@ series `abe76d3 · 773490e · 0bce5d6 · d242f81 · a52aace · b8d18df · 7b0199
 
 See [`FAILURES.md`](FAILURES.md) for every entry's status and the cost to
 revisit.
+
+## 10. Hive architecture and cascade (2026-10-19)
+
+HiveBench is designed as a **hive** — multiple models with different roles
+working together under a Studio console:
+
+- **Encoder** (small model, 0.8B–2B): app assistant with Studio-specific tools
+  (`get_hardware`, `list_models`, `launch_model`, `run_cascade`, `navigate`).
+  Handles navigation, auto-configuration, and orchestration.
+- **Worker** (176B strata / llama.cpp GGUFs): does the actual generation.
+- **Cascade** (quality layer): detect → repair → escalate. Currently a batch
+  evaluation tool; long-term goal is wiring into the chat path (pending a test
+  that confirms it helps on conversational tasks).
+- **Backend selector**: Strata (local 176B) / Llama.cpp (local GGUF) / API
+  (remote). Single source of truth on the Home tab.
+
+The Studio console exposes everything: `/cascade` (launch console), `/runs`
+(run bundles), `/server` (chat + models + engines + providers + hub + library +
+inspector + training + settings), command palette (Ctrl+K), sandbox
+(`/v1/sandbox/exec`), and a searchable settings index.
+
+### API surface
+
+The Studio exposes ~40 endpoints under `/v1/`. Full documentation at
+`/docs` (Swagger UI). Key additions: `/v1/cascade/run` (now accepts all
+runner knobs), `/v1/sandbox/exec` (Docker-backed code execution with local
+fallback), `/v1/commands` + `/v1/commands/run` (console command discovery and
+execution), `/v1/cascade/registry`, `/v1/cascade/plan`, `/v1/cascade/frontier`.

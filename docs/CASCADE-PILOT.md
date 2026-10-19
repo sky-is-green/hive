@@ -740,3 +740,68 @@ The cascade is now fully controllable from the Studio:
 - **Launch panel** — profile-driven or quick-start with model + ctx + gpu.
 - **Escalation lane** — harvested to `escalation.jsonl` next to the report.
 - **AFK mode** — removed (shelved). Docker/VHDX setup — deprecated.
+
+## Hive architecture & encoder (2026-10-19)
+
+The Studio is designed as a **hive** — multiple models with different roles
+working together:
+
+```
+User → Encoder (small model, app-aware) → Studio backend → Larger model (176B) → Cascade (detect/repair/escalate)
+```
+
+- **Encoder**: a smaller model (Qwen 0.8B–2B) that acts as an app assistant.
+  It has Studio-specific tools (`get_hardware`, `list_models`, `launch_model`,
+  `run_cascade`, `navigate`) and can auto-configure settings based on the PC.
+  The Studio's Agent mode (dsh) already provides the tool-calling loop; the
+  encoder just needs app-aware tools and a tuned system prompt.
+- **Larger model** (176B strata / llama.cpp GGUFs): does the actual generation.
+- **Cascade**: quality layer (detect → repair → escalate) that sits between
+  the encoder and the user. Currently a batch evaluation tool; the long-term
+  goal is wiring it into the chat path (pending a test that confirms it helps
+  on conversational tasks).
+- **Backend selector**: Strata (local 176B) / Llama.cpp (local GGUF) / API
+  (remote). Single source of truth on the Home tab.
+
+### API additions (console contract)
+
+New/extended endpoints since the cascade pilot:
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/v1/cascade/run` | POST | Now accepts all runner knobs (judge, repair, gate, gate_head, gate_threshold, local_temperature, local_max_tokens, local_reasoning_effort, human_gate, router, router_mode, api_fallback*, scion_base, no_escalation_lane, limit, tasks, run_name) |
+| `/v1/cascade/registry` | GET | Candidate catalog (26 candidates) + role coverage |
+| `/v1/cascade/plan` | GET | Route planning for a bucket/confidence/out_len |
+| `/v1/cascade/frontier` | GET | Frontier measurements |
+| `/v1/cascade/runs` | GET | List cascade runs |
+| `/v1/cascade/report/{run}` | GET | Read a run's report |
+| `/v1/sandbox/exec` | POST | Run a command in Docker (or local fallback). Params: command, timeout (1–120s), use_docker, image |
+| `/v1/sandbox/status` | GET | Docker availability + daemon status |
+| `/v1/commands` | GET | List console commands (10: help, new, save, model, mode, provider, engine, bench, train, status) |
+| `/v1/commands/run` | POST | Run a console command |
+| `/v1/models/hub` | GET | Search Hugging Face GGUF repos |
+| `/v1/models/hub/files/{repo}` | GET | List GGUF files in a repo |
+| `/v1/models/hub/download` | POST | Download a model from HF |
+| `/v1/models/hub/downloads` | GET | Download job status |
+| `/v1/models/local` | GET | List local GGUF models |
+| `/v1/models/local/path` | POST | Set local models directory |
+| `/v1/engines` | GET/POST | Engine profiles (CRUD) |
+| `/v1/provider/config` | GET/POST | Provider configuration |
+| `/v1/server/start` | POST | Launch llama-server with a profile |
+| `/v1/server/stop` | POST | Stop a server instance |
+| `/v1/server/status` | GET | Hardware + model health |
+
+### Console & UI
+
+- `/cascade` — full launch console with every runner knob, collapsible advanced settings.
+- `/runs` — run bundle index.
+- `/view/{run}` — rendered report page.
+- `/server` — Studio console (chat, models, engines, providers, hub, library, inspector, training, settings).
+- `/stacks` — stack management.
+- Settings tab — searchable settings index (32 settings, 9 categories, click-to-navigate).
+- Command palette (Ctrl+K) — all console commands searchable.
+- Backend selector (Home tab) — Strata / Llama.cpp / API.
+- Sandbox endpoint — Docker-backed code execution with local fallback.
+- Escalation lane — harvested to `escalation.jsonl` next to the report.
+- AFK mode — removed (shelved).
+- Docker/VHDX setup — deprecated (backend endpoints remain).
