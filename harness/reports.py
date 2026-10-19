@@ -1093,18 +1093,24 @@ providers.local.json (gitignored).</div>
 </div>
 </div>
 <div id="chatlog" class="chatlog"></div>
-<div class="composer">
-<span class="sugwrap composer-input"><input id="chatin" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
-       onkeydown="if (event.key === 'Enter') chatSubmit()" autocomplete="off">
-<div class="sugbox" id="sug-chat"></div></span>
-<button id="sendbtn" onclick="chatSubmit()">Send</button>
+<div class="chat-actions">
 <button id="stopbtn" onclick="cancelStream()">Stop</button>
-<button id="savebtn" onclick="saveSession()" title="How: saveSession prompts title → sessions[convId].title → localStorage. Does: Persists tab+transcript (restoreTranscript caps 400). Changing: Name to keep; close × deletes + POST /v1/splinter/reset.">Save session</button>
+<button id="savebtn" onclick="saveSession()" title="How: saveSession prompts title → sessions[convId].title → localStorage. Does: Persists tab+transcript (restoreTranscript caps 400). Changing: Name to keep; close × deletes + POST /v1/splinter/reset.">Save</button>
 <button onclick="compactConversation()" title="Compact this conversation into a checkpoint. At a checkpoint the Studio can offer to switch engines - safe locally, because the checkpoint is a free switch point.">Compact</button>
 <button onclick="exportSession()" title="Download this session as a JSON file you can import back later.">Export</button>
 <button onclick="document.getElementById('import-session-input').click()" title="Import a session JSON file.">Import</button>
 <input type="file" id="import-session-input" accept=".json" style="display:none" onchange="importSession(this)">
-<button onclick="newConversation()" title="How: Same as top New. Does: New session immediately. Changing: Same effect.">+ New session</button>
+<button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">+ New</button>
+</div>
+<div class="composer">
+<div class="composer-box">
+<span class="sugwrap composer-input"><textarea id="chatin" rows="1" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
+       onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
+<div class="sugbox" id="sug-chat"></div></span>
+<button id="sendbtn" onclick="chatSubmit()">Send</button>
+</div>
+<div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette</div>
+</div>
 </div>
 <div id="surgery-panel" style="display:none;margin-top:.5rem"></div>
 <div class="chat-footer">
@@ -1822,7 +1828,17 @@ function bubble(role, text, meta) {{
   const log = document.getElementById('chatlog');
   const div = document.createElement('div');
   div.className = 'msg ' + role;
-  div.textContent = text;
+  if (role !== 'sys') {{
+    // a role label, so a scroll-back reads as a transcript
+    const label = document.createElement('span');
+    label.className = 'role';
+    label.textContent = role === 'user' ? 'you' : 'assistant';
+    div.appendChild(label);
+  }}
+  const body = document.createElement('span');
+  body.className = 'body';
+  body.textContent = text;
+  div.appendChild(body);
   if (meta) {{
     const m = document.createElement('span');
     m.className = 'meta';
@@ -1834,6 +1850,19 @@ function bubble(role, text, meta) {{
   // Cap DOM growth: a long-lived tab must not accumulate every bubble.
   while (log.children.length > 200) log.removeChild(log.firstChild);
   return div;
+}}
+
+function setBubbleText(el, text) {{
+  // keep the role label: write into the body span, not the bubble
+  if (!el) return;
+  const body = el.querySelector('.body');
+  if (body) body.textContent = text;
+  else el.textContent = text;
+}}
+
+function autoGrow(el) {{
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, window.innerHeight * 0.3) + 'px';
 }}
 
 function chatMode() {{
@@ -1957,7 +1986,7 @@ async function sendChat() {{
         if (ev.type === 'delta') {{
           if (!text) ai.classList.remove('typing');
           text += ev.text;
-          ai.textContent = text;
+          setBubbleText(ai, text);
           log_scroll();
         }} else if (ev.type === 'meta') {{
           turn = ev.turn;
@@ -1975,9 +2004,9 @@ async function sendChat() {{
     ai.classList.remove('typing');
     if (!text && metaText) {{
       /* error-only turn: show the message itself, not an empty bubble */
-      ai.textContent = metaText;
+      setBubbleText(ai, metaText);
     }} else {{
-      ai.textContent = text || '(empty reply)';
+      setBubbleText(ai, text || '(empty reply)');
       const m = document.createElement('span');
       m.className = 'meta';
       m.textContent = metaText;
@@ -1993,7 +2022,7 @@ async function sendChat() {{
     const cancelled = e && e.name === 'AbortError';
     const msg = cancelled ? 'cancelled.'
       : 'request failed: ' + friendlyError(e.message);
-    ai.textContent = msg;
+    setBubbleText(ai, msg);
     record('ai', msg);
     if (!input.value) input.value = query;   /* give the draft back */
   }} finally {{
@@ -2068,7 +2097,7 @@ async function sendAgent(query) {{
         const ev = JSON.parse(frame.slice(6));
         if (ev.type === 'assistant') {{
           text = ev.text;                       // committed per agent step
-          ai.textContent = text;
+          setBubbleText(ai, text);
           log_scroll();
         }} else if (ev.type === 'tool') {{
           /* persistent collapsible step: stays in the transcript so a long
@@ -2091,22 +2120,22 @@ async function sendAgent(query) {{
           finish = ev.finish_reason || 'end';
           if (ev.final && ev.final !== text) {{
             text = ev.final;
-            ai.textContent = text;
+            setBubbleText(ai, text);
           }}
         }} else if (ev.type === 'error') {{
-          ai.textContent = 'agent error: ' + ev.error;
+          setBubbleText(ai, 'agent error: ' + ev.error);
           return;
         }}
       }}
     }}
-    ai.textContent = text || '(no response)';
+    setBubbleText(ai, text || '(no response)');
     const m = document.createElement('span');
     m.className = 'meta';
     m.textContent = 'dsh agent · ' + finish;
     ai.appendChild(m);
     record('ai', text || '(no response)', 'dsh agent · ' + finish);
   }} catch (e) {{
-    ai.textContent = 'agent request failed: ' + e.message;
+    setBubbleText(ai, 'agent request failed: ' + e.message);
     record('ai', 'agent request failed: ' + e.message);
   }} finally {{
     setBusy(false);
@@ -3541,11 +3570,13 @@ function renderInspection(d) {{
 async function refresh() {{
   api('/v1/server/status').then(s => {{
     show('status', s);
+    // "loaded" covers the Studio's own llama servers AND the strata engine
+    const loaded = s.loaded || [];
     const title = document.getElementById('chat-title');
-    if (s.running && s.healthy) {{
-      title.textContent = s.instances.length > 1
-        ? `${{s.instances.length}} models loaded`
-        : 'Loaded: ' + (s.model || 'model');
+    if (loaded.length) {{
+      title.textContent = loaded.length > 1
+        ? `${{loaded.length}} models loaded`
+        : 'Loaded: ' + (loaded[0].model || loaded[0].backend);
       title.className = 'ok';
     }} else {{
       title.textContent = s.running ? 'Loading…' : 'No model loaded';
@@ -3553,13 +3584,19 @@ async function refresh() {{
     }}
     const topStatus = document.getElementById('top-right-status');
     if (topStatus) {{
-      if (s.running && s.healthy) {{
-        topStatus.textContent = s.instances.length > 1
-          ? `Launch: ${{s.instances.length}} models loaded`
-          : 'Launch: Loaded ' + (s.model || 'model');
+      if (loaded.length) {{
+        topStatus.textContent = loaded.length > 1
+          ? `Launch: ${{loaded.length}} models loaded`
+          : 'Launch: Loaded ' + (loaded[0].model || loaded[0].backend);
       }} else {{
         topStatus.textContent = s.running ? 'Launch: Loading…' : 'Launch: No model loaded';
       }}
+    }}
+    // the chat header shows what is actually loaded
+    const modelName = document.getElementById('chat-model-name');
+    if (modelName) {{
+      const names = loaded.map(l => l.model || l.backend).filter(Boolean);
+      modelName.textContent = names.length ? names.join(' · ') : 'no model loaded';
     }}
     // Loaded-instance cards: per-model unload, port shown.
     const wrap = document.getElementById('instances');
@@ -3584,15 +3621,15 @@ async function refresh() {{
       row.appendChild(unload);
       wrap.appendChild(row);
     }}
-    // Chat model display: show the loaded model name (model selection lives in Engines/Launch).
-    api('/v1/provider/config').then(pc => {{
-      const el = document.getElementById('chat-model-name');
-      if (!el) return;
-      const locals = (s.instances || []).map(i => 'local-' + i.key);
-      const name = pc.default || (locals.length ? locals[0] : '');
-      const prov = pc.providers.find(p => p.name === name);
-      el.textContent = prov ? (prov.model || name) : (name || 'no model loaded');
-    }}).catch(() => {{}});
+    // nothing loaded? show what the default provider would serve
+    if (!loaded.length) {{
+      api('/v1/provider/config').then(pc => {{
+        const el = document.getElementById('chat-model-name');
+        if (!el) return;
+        const prov = (pc.providers || []).find(x => x.name === pc.default);
+        el.textContent = prov ? (prov.model || prov.name) : 'no model loaded';
+      }}).catch(() => {{}});
+    }}
   }}).catch(e => show('status', String(e)));
   api('/v1/server/log?tail=30').then(l => {{
     if (l.lines.length) show('srvlog', l.lines.join('\\n'));
