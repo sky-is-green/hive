@@ -6,6 +6,11 @@ Every endpoint the Studio serves, grouped by what it is for.
 (Swagger UI) or <http://127.0.0.1:8765/redoc>. The table below is the
 hand-maintained map; the live docs carry the request/response schemas.
 
+The map is checked against the running app: `tests/unit/test_api_docs.py`
+fails if an endpoint is missing from it, if it documents an endpoint that
+no longer exists, or if a method is wrong. **89 paths, 97 operations** (80
+of the paths under `/v1/`).
+
 ```sh
 python -m harness            # studio on :8765
 curl http://127.0.0.1:8765/health
@@ -115,6 +120,22 @@ curl http://127.0.0.1:8765/health
 |---|---|---|
 | `POST` | `/v1/sandbox/exec` | Run a command in the sandbox (Docker when the daemon is up, else a local subprocess). — body: `#/components/schemas/SandboxExecRequest` |
 | `GET` | `/v1/sandbox/status` | Sandbox availability: docker installed, daemon up, fallback mode. |
+
+### Studio — the console's own toggles
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/studio/settings` | The console's toggles: sandbox, tool use, auto-compact, dev mode, the Strata base URL. |
+| `PUT` | `/v1/studio/settings` | Change those toggles; returns the stored result. |
+| `GET` | `/v1/studio/strata` | Probe the local Strata engine: alive, base URL, model, health. Never raises. |
+
+### Compaction — checkpoints and engine surgery
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/compaction/run` | Compact a transcript into a checkpoint (manual or auto trigger). |
+| `POST` | `/v1/compaction/surgery` | Offer the engine switch at that checkpoint; commits only when the canary gate passes. |
+| `GET` | `/v1/compaction/status` | Whether automatic compaction is on, and the compaction settings. |
 
 ### Stacks — multi-tier model stacks
 
