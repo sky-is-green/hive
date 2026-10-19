@@ -660,25 +660,32 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 .chat-menu-items button:hover { background: #FFB703; color: #000; }
 
 /* ---- the load bar: the bottom half of the screen while a model moves --- */
+/* A bar, not a wall: it sits along the bottom and only grows when there is
+   an error to read.  The space it has is there if it needs it, not by
+   default. */
 .loadbar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 50vh;
   z-index: 900;
   background: rgba(0, 0, 0, .94);
   border-top: 2px solid #FFB703;
-  padding: 1.1rem 1.3rem 1.6rem;
+  padding: .5rem 1.1rem .65rem;
+  max-height: 40vh;
+  overflow: auto;
+}
+.loadbar-head {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  align-items: center;
+  gap: .6rem;
 }
 .loadbar-title {
   color: #FFDD00;
   font-weight: 700;
-  font-size: 1.05rem;
-  margin-bottom: .6rem;
+  font-size: .95rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .loadbar-strip {
   height: 7px;
@@ -698,22 +705,19 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   100% { transform: translateX(330%); }
 }
 .loadbar-detail {
-  margin-top: .6rem;
+  margin-top: .45rem;
   color: #FF9B9B;
-  font-size: .88rem;
+  font-size: .85rem;
   line-height: 1.5;
   white-space: pre-wrap;
-  overflow: auto;
-  max-height: 34vh;
 }
 .loadbar-detail:empty { display: none; }
 .loadbar-close {
-  position: absolute;
-  top: .7rem;
-  right: .9rem;
+  flex: none;
   margin: 0;
-  padding: .1rem .5rem;
-  font-size: .9rem;
+  padding: 0 .45rem;
+  font-size: .85rem;
+  line-height: 1.4;
   background: transparent;
   color: #FFDD00;
   border: 1px solid rgba(255, 221, 0, .4);
