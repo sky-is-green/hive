@@ -249,6 +249,9 @@ a single hive theme (yellow/black) across every page.
   the disconnect, and a closed tab stops the turn too. **Unload** (in the
   Launch panel) releases the model itself: the local llama.cpp instances and
   the Strata engine give their VRAM back, and the profiles stay.
+- **The load bar** — while a model loads or unloads, a bar across the bottom
+  half of the screen says what is happening (and, when a load fails, why it
+  failed). A successful unload says so in a toast.
 - **Chat voices** — every message says who produced it: the model, the studio
   encoder, the **Command Console** (cyan), and you (black on yellow, no label
   — you know you typed it).

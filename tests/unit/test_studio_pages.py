@@ -144,7 +144,10 @@ def test_a_message_is_a_label_gutter_plus_a_box():
     text = css.read_text(encoding="utf-8")
     assert ".msg.console .bubble" in text
     assert "#67E8F9" in text
-    assert "FF9B9B" not in text          # the old soft red is gone
+    # the console voice is not the old soft red (red is still right for
+    # errors - the load bar uses it for a failed load)
+    console_rules = [ln for ln in text.splitlines() if ".msg.console" in ln]
+    assert console_rules and all("FF9B9B" not in ln for ln in console_rules)
     assert ".msg .bubble" in text        # the box is its own element
     assert "align-self: flex-end" in text  # the user's row hugs the right
     # the speaker names the box from above, so the box keeps the full width

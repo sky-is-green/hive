@@ -1506,6 +1506,12 @@ class LlamaServerManager:
         return out
 
     def unload(self, key: str) -> dict:
+        """Unload one instance: stop its server and let the port go.
+
+        The process is waited for (and the port checked) so an unload really
+        ends the server: a half-dead llama-server still holding the port is
+        an orphan that the next Start would collide with.
+        """
         with self._lock:
             inst = self._instances.pop(key, None)
         if inst is None:
@@ -1517,11 +1523,22 @@ class LlamaServerManager:
                     inst.proc.wait(timeout=10)
                 except Exception:  # noqa: BLE001
                     inst.proc.kill()
+                    try:
+                        inst.proc.wait(timeout=5)
+                    except Exception:  # noqa: BLE001 - it is gone or unkillable
+                        pass
             except Exception:  # noqa: BLE001 - already gone
                 pass
         elif inst.pid:
             _terminate_pid(inst.pid)
-        return {"ok": True, "unloaded": key}
+        port = getattr(inst, "port", None)
+        if port:
+            for _ in range(40):        # up to 10 s for the port to be free
+                if not _port_in_use(self.host, port):
+                    break
+                time.sleep(0.25)
+        return {"ok": True, "unloaded": key,
+                "port_free": not _port_in_use(self.host, port) if port else True}
 
     def stop_all(self) -> dict:
         with self._lock:
