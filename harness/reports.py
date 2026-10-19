@@ -1135,8 +1135,8 @@ providers.local.json (gitignored).</div>
 <span class="sugwrap composer-input"><textarea id="chatin" rows="1" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
        onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
 <div class="sugbox" id="sug-chat"></div></span>
-<button id="sendbtn" onclick="chatSubmit()">Send</button>
-<button id="stopbtn" onclick="cancelStream()" style="display:none" title="Stop the model now. The provider connection is closed, so the engine stops generating (llama.cpp and strata both do) and the GPU is free at once. The turn ends where it is; the conversation stays.">Stop</button>
+<button id="sendbtn" class="iconbtn" onclick="chatSubmit()" aria-label="Send" title="How: Enter sends, Shift+Enter for a new line. Does: the message goes to the model. Changing: while the model is replying, the square next to this stops the turn.">&#9654;</button>
+<button id="stopbtn" class="iconbtn" onclick="cancelStream()" style="display:none" aria-label="Stop" title="Stop the model now. The provider connection is closed, so the engine stops generating (llama.cpp and strata both do) and the GPU is free at once. The turn ends where it is; the conversation stays.">&#9632;</button>
 </div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
@@ -2355,6 +2355,10 @@ async function sendChat() {{
             + (ev.tokens ? ` · ${{ev.tokens}} tok` : '')
             + (ev.tokens_per_sec ? ` · ${{ev.tokens_per_sec}} tok/s` : '')
             + (ev.stored ? '' : ' · not stored');
+        }} else if (ev.type === 'stopped') {{
+          /* the turn was stopped: the provider connection was closed, so the
+             engine stopped generating (the text so far is kept) */
+          metaText = 'stopped';
         }} else if (ev.type === 'error') {{
           metaText = 'error: ' + friendlyError(ev.error);
         }}
