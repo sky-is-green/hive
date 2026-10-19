@@ -141,3 +141,5 @@ def test_a_message_is_a_label_gutter_plus_a_box():
     assert "FF9B9B" not in text          # the old soft red is gone
     assert ".msg .bubble" in text        # the box is its own element
     assert "align-self: flex-end" in text  # the user's row hugs the right
+    # the speaker names the box from above, so the box keeps the full width
+    assert "flex-direction: column;" in text

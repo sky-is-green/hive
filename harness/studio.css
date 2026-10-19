@@ -110,9 +110,9 @@ section {
   .cmd-picker { width: min(320px, calc(100vw - 1.6rem)); right: 0; left: auto; }
   .cmd-picker-toggle { font-size: .72rem; }
   .chat-hint { font-size: .7rem; }
-  /* a narrow gutter on a phone: the name wraps, the box keeps the room */
-  .msg .role { width: 4.6rem; font-size: .66rem; padding-top: .45rem; }
-  .msg { gap: .35rem; }
+  /* the name sits above the box, so a phone only needs a smaller name */
+  .msg .role { font-size: .64rem; }
+  .msg { gap: .18rem; }
 }
 /* --- rest: keep original component styles (unchanged) --- */
 input, button, select { font: inherit; padding: .35rem .6rem; margin: .15rem .3rem .15rem 0; }
@@ -215,14 +215,15 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 /* the chat is a black console surface; each source has its own colour */
 .chatlog { background: #000000; border: 1.5px solid #FFB703; border-radius: 12px; padding: 1rem; gap: .7rem; }
 
-/* A message is a row: the speaker in its own gutter on the left, then the
-   box.  The box carries the message and nothing else, so its lines stay
-   uniform - no label sharing the first line - and it is only as wide as
-   the message needs. */
+/* A message is a column: the speaker names the box, then the box holds
+   the message.  The name sits above its output - clear at a glance, and
+   it costs the box no width - and the box keeps only the message, so its
+   lines stay uniform. */
 .msg {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: .5rem;
+  gap: .22rem;
   max-width: 100%;
   background: transparent;
   border: 0;
@@ -233,13 +234,11 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 }
 .msg .role {
   flex: 0 0 auto;
-  width: 7.2rem;
-  max-width: 38%;
-  text-align: right;
-  font-size: .72rem;
+  max-width: 100%;
+  text-align: left;
+  font-size: .7rem;
   font-weight: 700;
-  letter-spacing: .02em;
-  padding-top: .5rem;
+  letter-spacing: .04em;
   overflow-wrap: anywhere;
 }
 .msg .bubble {
@@ -273,7 +272,7 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 /* the user: black on yellow, hugging the right edge */
 .msg.user {
   align-self: flex-end;
-  justify-content: flex-end;
+  align-items: flex-end;
   background: transparent;
   border: 0;
   padding: 0;
