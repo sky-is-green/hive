@@ -802,6 +802,7 @@ in VRAM and sets the context for you &mdash; no knob-fiddling required.</p>
   <button onclick="wizardDetect(this)">Detect hardware &amp; recommend</button>
   <span id="wizard-hw" class="note"></span>
 </div>
+<div id="wizard-backends" style="margin:.6rem 0"></div>
 <div id="wizard-models" style="margin-top:.6rem"></div>
 </section>
 
@@ -1099,10 +1100,18 @@ providers.local.json (gitignored).</div>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
 <button id="stopbtn" onclick="cancelStream()">Stop</button>
 <button id="savebtn" onclick="saveSession()" title="How: saveSession prompts title → sessions[convId].title → localStorage. Does: Persists tab+transcript (restoreTranscript caps 400). Changing: Name to keep; close × deletes + POST /v1/splinter/reset.">Save session</button>
+<button onclick="compactConversation()" title="Compact this conversation into a checkpoint. At a checkpoint the Studio can offer to switch engines - safe locally, because the checkpoint is a free switch point.">Compact</button>
 <button onclick="exportSession()" title="Download this session as a JSON file you can import back later.">Export</button>
 <button onclick="document.getElementById('import-session-input').click()" title="Import a session JSON file.">Import</button>
 <input type="file" id="import-session-input" accept=".json" style="display:none" onchange="importSession(this)">
 <button onclick="newConversation()" title="How: Same as top New. Does: New session immediately. Changing: Same effect.">+ New session</button>
+</div>
+<div id="surgery-panel" style="display:none;margin-top:.5rem"></div>
+<div class="chat-footer">
+  <label class="inline" title="How: POST /v1/studio/settings sandbox_enabled. Does: lets the Studio run commands in the sandbox (Docker, network off) instead of refusing. Changing: off blocks the sandbox endpoint and the cascade's code_exec detector."><input type="checkbox" id="cfg-sandbox" onchange="saveStudioSetting('sandbox_enabled', this.checked)"> Sandbox</label>
+  <label class="inline" title="How: POST /v1/studio/settings tools_enabled. Does: lets the agent call tools (bash, files, code). Changing: off forces plain chat - the agent endpoint refuses."><input type="checkbox" id="cfg-tools" onchange="saveStudioSetting('tools_enabled', this.checked)"> Tool use</label>
+  <label class="inline" title="How: POST /v1/studio/settings auto_compact. Does: compacts a conversation into a checkpoint when it outgrows the window, and offers an engine switch at the checkpoint. Changing: off compacts only when you ask."><input type="checkbox" id="cfg-compact" onchange="saveStudioSetting('auto_compact', this.checked)"> Auto-compact</label>
+  <span class="note" id="cfg-note"></span>
 </div>
 <div class="note"><b>Splinter</b>: direct curated generation. <b>Agent (dsh)</b>:
 the full DeepSeek Harness agent loop — bash/files/code tools, multi-step
@@ -1222,11 +1231,27 @@ async function wizardDetect(btn) {{
   if (btn) btn.disabled = true;
   if (hwEl) hwEl.textContent = 'probing…';
   try {{
-    const st = await api('/v1/server/status');
+    const [st, strata] = await Promise.all([
+      api('/v1/server/status'),
+      api('/v1/studio/strata').catch(() => ({{alive: false, model: null, base_url: ''}})),
+    ]);
     const hw = st.hardware || {{}};
     const has = Number(hw.available_gb) || 0;
     const ram = Number(hw.available_ram_gb) || 0;
     if (hwEl) hwEl.textContent = `${{(hw.vram_gb||0).toFixed(1)}} GB VRAM (free ${{has.toFixed(1)}}), ${{(hw.available_ram_gb||ram).toFixed(1)}} GB RAM free, ${{hw.cpu_count||'?'}} CPU`;
+    // backend 1: strata (the local 176B serve)
+    const backends = document.getElementById('wizard-backends');
+    if (backends) {{
+      backends.innerHTML = strata.alive
+        ? `<div style="border:1.5px solid #000; border-radius:8px; padding:.6rem .8rem; margin:.4rem 0; background:#FFB703; color:#000; display:flex; justify-content:space-between; gap:.6rem; align-items:center; flex-wrap:wrap">
+             <span><b style="color:#000">Strata</b> <span class="note" style="color:#333">${{strata.model || 'local 176B'}} · ${{strata.base_url}}</span></span>
+             <button type="button" onclick="wizardUseStrata()">Use this backend</button>
+           </div>`
+        : `<div style="border:1.5px solid #555; border-radius:8px; padding:.6rem .8rem; margin:.4rem 0; color:#333; display:flex; justify-content:space-between; gap:.6rem; align-items:center; flex-wrap:wrap">
+             <span><b>Strata</b> <span class="note">not running on ${{strata.base_url || '127.0.0.1:8081'}}</span></span>
+             <span class="note">start the 176B serve to use it</span>
+           </div>`;
+    }}
     const KV = 0.25;               // GB of KV per 1k context tokens
     const models = (st.local_models || []).filter(m => (m.size_gb || 0) > 0.2);
     const ranked = models.map(m => {{
@@ -1252,6 +1277,27 @@ async function wizardDetect(btn) {{
     if (hwEl) hwEl.textContent = 'probe failed: ' + e;
   }} finally {{
     if (btn) btn.disabled = false;
+  }}
+}}
+
+async function wizardUseStrata() {{
+  const hwEl = document.getElementById('wizard-hw');
+  try {{
+    const strata = await api('/v1/studio/strata');
+    if (!strata.alive) throw new Error('the strata serve is not reachable');
+    // register it as a provider and make it the default
+    const cur = await api('/v1/provider/config');
+    const providers = (cur.providers || []).filter(p => p.name !== 'strata');
+    providers.push({{ name: 'strata', base_url: strata.base_url, api_key: '',
+                      model: strata.model || '', headers: {{}} }});
+    await api('/v1/provider/config', 'POST', {{
+      providers: providers, default: 'strata',
+      persist: true, expectedRevision: cur.revision,
+    }});
+    if (hwEl) hwEl.textContent = 'strata is now the default backend (' + strata.model + ')';
+    setBackend('strata');
+  }} catch (e) {{
+    if (hwEl) hwEl.textContent = 'could not use strata: ' + e;
   }}
 }}
 
@@ -1624,6 +1670,133 @@ function saveSession() {{
    model read-only, so there is no second place to pick one. */
 
 /* AFK mode removed (shelved). Revisit when we revisit the shelf. */
+/* --------------------- compaction + engine surgery ------------------ */
+async function maybeAutoCompact() {{
+  // the Studio compacts a conversation that outgrows the model's window
+  if (!document.getElementById('cfg-compact')?.checked) return;
+  const s = sessions[convId];
+  const transcript = (s && s.transcript) || [];
+  const messages = transcript
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => ({{ role: m.role, text: m.text }}));
+  if (messages.length < 4) return;
+  const approx = Math.ceil(messages.reduce((n, m) => n + (m.text || '').length, 0) / 4);
+  const limit = await studioContextLimit();
+  if (!limit || approx < Math.floor(limit * 0.85)) return;
+  const note = document.getElementById('cfg-note');
+  if (note) note.textContent = 'auto-compacting…';
+  try {{
+    const r = await api('/v1/compaction/run', 'POST', {{
+      messages: messages, trigger: 'auto', keep: Math.floor(limit * 0.4), limit: limit,
+    }});
+    if (r.status !== 'completed') return;
+    s.transcript = [{{ role: 'system', text: r.checkpoint.rendered }}];
+    persistSessions();
+    renderTabs();
+    restoreTranscript(convId);
+    if (note) note.textContent = 'auto-compacted';
+    await offerEngineSurgery(r.checkpoint);
+  }} catch (e) {{ /* compaction is best-effort */ }}
+}}
+
+async function studioContextLimit() {{
+  // the active engine profile's context, else the provider's model default
+  try {{
+    const eng = await api('/v1/engines');
+    const cur = eng.engines.find(e => e.name === eng.default) || eng.engines[0];
+    const ctx = cur && cur.load_options && (cur.load_options.context || cur.load_options.contextLength);
+    if (ctx) return Number(ctx) || 0;
+  }} catch (e) {{}}
+  return 8192;
+}}
+
+async function compactConversation() {{
+  const s = sessions[convId];
+  const transcript = (s && s.transcript) || [];
+  const messages = transcript
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => ({{ role: m.role, text: m.text }}));
+  if (messages.length < 2) {{ alert('Nothing to compact yet - send a few messages first.'); return; }}
+  const note = document.getElementById('cfg-note');
+  if (note) note.textContent = 'compacting…';
+  try {{
+    const r = await api('/v1/compaction/run', 'POST', {{
+      messages: messages, trigger: 'manual', keep: 2000,
+    }});
+    if (r.status !== 'completed') {{
+      if (note) note.textContent = 'nothing to compact: ' + (r.error || r.status);
+      return;
+    }}
+    // the checkpoint replaces the covered history
+    s.transcript = [{{ role: 'system', text: r.checkpoint.rendered }}];
+    persistSessions();
+    renderTabs();
+    restoreTranscript(convId);
+    if (note) note.textContent = 'compacted';
+    await offerEngineSurgery(r.checkpoint);
+  }} catch (e) {{
+    if (note) note.textContent = 'compaction failed: ' + e;
+  }}
+}}
+
+async function offerEngineSurgery(checkpoint) {{
+  let cfg;
+  try {{ cfg = await api('/v1/provider/config'); }} catch (e) {{ return; }}
+  const current = cfg.default || '';
+  const candidates = (cfg.providers || []).map(p => p.name).filter(n => n !== current);
+  if (!candidates.length) return;
+  const r = await api('/v1/compaction/surgery', 'POST', {{
+    checkpoint: checkpoint, current: current, candidates: candidates,
+  }});
+  const panel = document.getElementById('surgery-panel');
+  if (!panel) return;
+  const rows = (r.results || []).map(x =>
+    `<div style="margin:.2rem 0">· <b>${{x.name}}</b> — ${{x.probe_ok ? 'reachable (' + (x.probe_model || '?') + ')' : 'unreachable'}}; ` +
+    `${{x.gate_passed === null ? 'not gated' : (x.gate_passed ? 'gate passed' : 'gate failed')}}` +
+    `${{x.detail ? ' — ' + x.detail : ''}}</div>`).join('');
+  const head = r.status === 'committed'
+    ? `<b style="color:#157a3e">switched to ${{r.engine}}</b> — the checkpoint was a safe switch point`
+    : `<b>engine switch declined</b> — ${{r.reason || 'no candidate passed the gate'}}`;
+  panel.style.display = '';
+  panel.innerHTML = `<div style="border:1.5px solid #000; border-radius:8px; padding:.6rem .8rem; background:#FFB703; color:#000">
+      <div>${{head}}</div>${{rows}}
+      <div class="note" style="color:#333">at a checkpoint the local engine can be swapped safely - the summary and the recent context carry over</div>
+    </div>`;
+}}
+
+/* ------------------------- studio settings --------------------------- */
+async function loadStudioSettings() {{
+  try {{
+    const st = await api('/v1/studio/settings');
+    const set = (id, val) => {{ const el = document.getElementById(id); if (el) el.checked = !!val; }};
+    set('cfg-sandbox', st.sandbox_enabled);
+    set('cfg-tools', st.tools_enabled);
+    set('cfg-compact', st.auto_compact);
+    applyToolUseSetting(!!st.tools_enabled);
+  }} catch (e) {{ /* settings are optional */ }}
+}}
+
+async function saveStudioSetting(key, value) {{
+  try {{
+    const st = await api('/v1/studio/settings', 'PUT', {{[key]: !!value}});
+    if (key === 'tools_enabled') applyToolUseSetting(!!st.tools_enabled);
+    const note = document.getElementById('cfg-note');
+    if (note) note.textContent = 'saved';
+    setTimeout(() => {{ if (note) note.textContent = ''; }}, 1200);
+  }} catch (e) {{
+    const note = document.getElementById('cfg-note');
+    if (note) note.textContent = 'could not save: ' + e;
+  }}
+}}
+
+function applyToolUseSetting(on) {{
+  // with tools off the agent cannot run: force the plain chat path
+  const agentRadio = document.querySelector('input[name="chatmode"][value="agent"]');
+  const splinterRadio = document.querySelector('input[name="chatmode"][value="splinter"]');
+  if (agentRadio) agentRadio.disabled = !on;
+  if (!on && splinterRadio) splinterRadio.checked = true;
+}}
+
 /* --------------------------- research queue -------------------------- */
 async function researchAdd(btn) {{
   const inp = document.getElementById('researchq');
@@ -1826,6 +1999,7 @@ async function sendChat() {{
   }} finally {{
     streamAbort = null;
     setBusy(false);
+    maybeAutoCompact();
   }}
 }}
 
@@ -1936,6 +2110,7 @@ async function sendAgent(query) {{
     record('ai', 'agent request failed: ' + e.message);
   }} finally {{
     setBusy(false);
+    maybeAutoCompact();
   }}
 }}
 function log_scroll() {{
@@ -1966,6 +2141,7 @@ restoreTranscript(convId);
 loadEngines().catch(() => {{}});
 /* populate model dropdowns from local library */
 loadLibrarySystem().catch(() => {{}});
+loadStudioSettings();
 /* the model dropdown populates async from /v1/provider/config */
 
 /* ----------------------- cascade role coverage ----------------------- */

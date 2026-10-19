@@ -66,6 +66,7 @@ offline, and replayably.
 | **Isolate code** | `/v1/sandbox/exec` — Docker-backed execution with network off, or a local fallback |
 | **Inspect retrieval** | See exactly which chunks were selected, dropped, and why |
 | **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
+| **Compact** | A conversation that outgrows its window becomes a checkpoint — and a checkpoint is a safe place to switch engines locally |
 | **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
 | **Extend** | 91 documented REST operations; the cascade is a CLI you can script |
 

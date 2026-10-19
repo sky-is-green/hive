@@ -2580,6 +2580,8 @@ def create_app(
         message = (req.message or "").strip()
         if not message:
             raise HTTPException(422, "message must not be empty")
+        if not _load_studio_settings()["tools_enabled"]:
+            raise HTTPException(403, "tool use is off (Studio settings)")
         try:
             provider = st.registry.resolve(None)
         except LookupError as exc:
@@ -3802,10 +3804,215 @@ def create_app(
     # container when the daemon is up; fall back to a local subprocess with
     # a hard timeout otherwise.  Feeds the cascade's code_exec detector and
     # gives the agent a safe execution surface.
+    # ------------------------------------------------------------------
+    # Studio settings (the toggles the chat footer owns)
+    # ------------------------------------------------------------------
+    def _studio_settings_path() -> Path:
+        base = st.state_dir or (REPO_ROOT / "harness_state")
+        return Path(base) / "studio_settings.json"
+
+    def _load_studio_settings() -> dict:
+        """The Studio's own toggles (sandbox, tool use, auto-compaction)."""
+        try:
+            data = json.loads(_studio_settings_path().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+        return {
+            "sandbox_enabled": bool(data.get("sandbox_enabled", True)),
+            "tools_enabled": bool(data.get("tools_enabled", True)),
+            "auto_compact": bool(data.get("auto_compact", True)),
+            "strata_base": str(data.get("strata_base")
+                               or os.environ.get("CASCADE_SCION_BASE")
+                               or "http://127.0.0.1:8081/v1"),
+        }
+
+    def _save_studio_settings(data: dict) -> dict:
+        current = _load_studio_settings()
+        for key in ("sandbox_enabled", "tools_enabled", "auto_compact"):
+            if key in data:
+                current[key] = bool(data[key])
+        if "strata_base" in data and str(data["strata_base"]).strip():
+            current["strata_base"] = str(data["strata_base"]).strip()
+        path = _studio_settings_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(current, indent=1), encoding="utf-8")
+        return current
+
+    # ------------------------------------------------------------------
+    # Compaction + engine surgery (the /compact command and its offer)
+    # ------------------------------------------------------------------
+    def _chat(base_url: str, model: str, api_key: str, prompt: str,
+              messages: list[dict]) -> str:
+        """One OpenAI-compatible chat call; returns the reply text."""
+        import requests
+
+        payload = {"model": model or "local", "messages": messages,
+                   "temperature": 0, "max_tokens": 1200}
+        headers = {"content-type": "application/json"}
+        if api_key:
+            headers["authorization"] = f"Bearer {api_key}"
+        resp = requests.post(f"{base_url.rstrip('/')}/chat/completions",
+                             json=payload, headers=headers, timeout=180)
+        resp.raise_for_status()
+        data = resp.json()
+        return (data["choices"][0]["message"].get("content") or "").strip()
+
+    def _default_provider():
+        return st.registry.resolve(None)
+
+    @app.post("/v1/compaction/run")
+    def compaction_run(body: dict[str, Any] = Body(default={})):
+        """Compact a transcript into a checkpoint (manual or auto trigger)."""
+        from harness.compaction.core import Message, Settings, Trigger, compact
+
+        raw = body.get("messages") or []
+        messages = [Message(role=str(m.get("role") or "user"),
+                             text=str(m.get("text") or ""))
+                    for m in raw if isinstance(m, dict)]
+        if not messages:
+            raise HTTPException(422, "messages is required")
+        reason = str(body.get("trigger") or "manual")
+        trigger = (Trigger.manual() if reason == "manual"
+                   else Trigger.auto() if reason == "auto"
+                   else Trigger.overflow(float(reason) if reason.replace('.', '', 1).isdigit() else 1.0))
+        settings = Settings(auto=bool(body.get("auto", True)),
+                            keep=int(body.get("keep") or 15_000),
+                            buffer=body.get("buffer"))
+
+        def call_model(prompt: str, older) -> str:
+            try:
+                provider = _default_provider()
+            except LookupError:
+                return ""          # no model: the deterministic summary is used
+            msgs = [{"role": "user", "content": prompt}]
+            for m in older[-12:]:
+                msgs.append({"role": "user" if m.role == "user" else "assistant",
+                             "content": m.text})
+            return _chat(provider.base_url, provider.model, provider.api_key,
+                         prompt, msgs)
+
+        from harness.compaction.studio import make_summarizer
+
+        events: list[dict] = []
+        outcome = compact(messages, trigger, settings,
+                          summarize=make_summarizer(call_model),
+                          emit=lambda kind, payload: events.append({"event": kind, **payload}),
+                          limit=body.get("limit"))
+        out: dict[str, Any] = {"status": outcome.status, "events": events}
+        if outcome.error:
+            out["error"] = outcome.error
+        checkpoint = getattr(outcome, "checkpoint", None)
+        if checkpoint is not None:
+            out["checkpoint"] = {"summary": checkpoint.summary,
+                                 "recent": checkpoint.recent,
+                                 "rendered": checkpoint.render()}
+        return out
+
+    @app.post("/v1/compaction/surgery")
+    def compaction_surgery(body: dict[str, Any] = Body(default={})):
+        """Offer an engine switch at a checkpoint; commit only if the gate passes."""
+        from harness.compaction.core import Checkpoint
+        from harness.compaction.surgery import offer_surgery
+        from harness.compaction.studio import make_candidate
+
+        cp = body.get("checkpoint") or {}
+        checkpoint = Checkpoint(summary=str(cp.get("summary") or ""),
+                                recent=str(cp.get("recent") or ""))
+        current = str(body.get("current") or "")
+        names = [str(n) for n in (body.get("candidates") or [])]
+        try:
+            provider = _default_provider()
+        except LookupError as exc:
+            return {"status": "unavailable", "engine": "", "reason": str(exc),
+                    "events": [], "results": []}
+
+        def ask_for(base_url: str, model: str, key: str):
+            def ask(text: str) -> str:
+                return _chat(base_url, model, key, text,
+                             [{"role": "user", "content": text}])
+            return ask
+
+        candidates = []
+        for name in names:
+            if name == current:
+                continue
+            target = st.registry.resolve(name)
+            candidates.append(make_candidate(
+                name, target.base_url,
+                ask_for(target.base_url, target.model, target.api_key),
+                current_ask=(ask_for(provider.base_url, provider.model, provider.api_key)
+                             if current == provider.name else None),
+            ))
+
+        def apply(engine: str) -> None:
+            # the switch: this provider becomes the default
+            st.registry.default = engine
+            save_registry(st.registry, st.providers_file)
+
+        events: list[dict] = []
+        outcome = offer_surgery(str(body.get("session") or "default"),
+                                checkpoint, current, candidates, apply,
+                                emit=lambda kind, payload: events.append({"event": kind, **payload}))
+        return {
+            "status": outcome.status,
+            "engine": outcome.engine,
+            "reason": outcome.reason,
+            "events": events,
+            "results": [{"name": n, "probe_ok": p.ok, "probe_model": p.model,
+                          "gate_passed": (g.passed if g else None),
+                          "score": (g.score if g else None),
+                          "baseline": (g.baseline if g else None),
+                          "detail": (g.detail if g else None)}
+                         for n, p, g in outcome.results],
+        }
+
+    @app.get("/v1/compaction/status")
+    def compaction_status():
+        """Whether automatic compaction is on, and the default settings."""
+        from harness.compaction.core import SUMMARY_HEADINGS, Settings
+
+        settings = Settings(auto=bool(_load_studio_settings()["auto_compact"]))
+        return {"auto": settings.auto, "keep": settings.keep,
+                "buffer": settings.buffer,
+                "headings": list(SUMMARY_HEADINGS)}
+
+    @app.get("/v1/studio/settings")
+    def studio_settings():
+        """The Studio's toggles: sandbox, tool use, auto-compaction."""
+        return _load_studio_settings()
+
+    @app.get("/v1/studio/strata")
+    def studio_strata():
+        """Probe the Strata engine (the local 176B serve) and list its models."""
+        import requests
+
+        base = (_load_studio_settings().get("strata_base")
+                or os.environ.get("CASCADE_SCION_BASE")
+                or "http://127.0.0.1:8081/v1").rstrip("/")
+        out = {"base_url": base, "alive": False, "model": None, "models": []}
+        try:
+            resp = requests.get(f"{base}/models", timeout=4)
+            if resp.ok:
+                data = resp.json()
+                ids = [m.get("id") for m in (data.get("data") or []) if m.get("id")]
+                out["alive"] = True
+                out["models"] = ids
+                out["model"] = ids[0] if ids else None
+        except Exception:  # noqa: BLE001 - "not running" is a valid answer
+            pass
+        return out
+
+    @app.put("/v1/studio/settings")
+    def studio_settings_put(body: dict[str, Any] = Body(default={})):
+        """Update the Studio's toggles (sandbox, tool use, auto-compaction)."""
+        return _save_studio_settings(body or {})
+
     @app.post("/v1/sandbox/exec")
     def sandbox_exec(req: SandboxExecRequest):
         """Run a command in the sandbox (Docker when the daemon is up, else a local subprocess)."""
         import shutil, subprocess as _sp
+        if not _load_studio_settings()["sandbox_enabled"]:
+            raise HTTPException(403, "the sandbox is off (Studio settings)")
         command = req.command
         if not command.strip():
             raise HTTPException(422, "command is required")
