@@ -1056,9 +1056,9 @@ turns, durable session log.</div>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
 <div class="row">
-<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px"><option value="">— choose local model —</option></select></label>
-<label class="inline">ctx <input id="ctx" type="number" value="8192" size="6"></label>
-<label class="inline">gpu <input id="ngl" type="number" value="999" size="4"></label>
+<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px" title="Pick a local GGUF model to launch. Populated from your library (set path in Local Library tab)."><option value="">— choose local model —</option></select></label>
+<label class="inline">ctx <input id="ctx" type="number" value="8192" size="6" title="Context size in tokens (default 8192). Larger = more memory."></label>
+<label class="inline">gpu <input id="ngl" type="number" value="999" size="4" title="GPU layers to offload (999 = all). Lower if VRAM is tight."></label>
 <button onclick="startServer(this)">Start</button>
 </div>
 <div class="row">
@@ -3577,32 +3577,32 @@ def render_cascade_page(task_files: list[str]) -> str:
 <section>
 <h2 style="margin-top:0">Run</h2>
 <div class="grid-2col">
-  <label>Task file <select name="tasks">{opts}</select></label>
-  <label>Run name <input name="run_name" placeholder="cascade-YYYYMMDD-HHMMSS"></label>
-  <label>Limit (0 = all) <input name="limit" type="number" min="0" value="0"></label>
-  <label>Router <select name="router"><option value="local">local</option><option value="jev">jev</option></select></label>
-  <label>Router mode <select name="router_mode"><option value="gate">gate</option><option value="measure">measure</option></select></label>
+  <label title="Which task bundle to run.">Task file <select name="tasks">{opts}</select></label>
+  <label title="Name for this run (used for the output directory).">Run name <input name="run_name" placeholder="cascade-YYYYMMDD-HHMMSS"></label>
+  <label title="Run only the first N tasks (0 = all).">Limit (0 = all) <input name="limit" type="number" min="0" value="0"></label>
+  <label title="Router model: local (default) or jev (Tiny-Jev).">Router <select name="router"><option value="local">local</option><option value="jev">jev</option></select></label>
+  <label title="gate: router decisions skip local generation. measure: always generate locally.">Router mode <select name="router_mode"><option value="gate">gate</option><option value="measure">measure</option></select></label>
 </div>
 </section>
 
 <details style="margin:1rem 0">
-<summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#FFDD00">Advanced settings (judge, repair, gate, model, API) ▾</summary>
+<summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#000000">Advanced settings (judge, repair, gate, model, API) ▾</summary>
 <section>
 <h2>Judge &amp; repair</h2>
 <div class="grid-2col">
-  <label>Judge <select name="judge"><option value="deterministic">deterministic (consistency + code_exec)</option><option value="learned">learned</option></select></label>
-  <label>Judge threshold <input name="judge_threshold" type="number" step="0.01" value="0.5"></label>
-  <label>Repair <select name="repair"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
-  <label>Human gate <select name="human_gate"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
+  <label title="Verifier: deterministic (consistency + code_exec, gold-free) or learned.">Judge <select name="judge"><option value="deterministic">deterministic (consistency + code_exec)</option><option value="learned">learned</option></select></label>
+  <label title="Accept candidate when P(correct) >= this.">Judge threshold <input name="judge_threshold" type="number" step="0.01" value="0.5"></label>
+  <label title="Repair rejected answers: auto (on with deterministic judge), on, or off.">Repair <select name="repair"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
+  <label title="Ask a human before API escalation. auto = on only with TTY + API fallback.">Human gate <select name="human_gate"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
 </div>
 </section>
 
 <section>
 <h2>Learned gate (third trigger, blind-spot only)</h2>
 <div class="grid-2col">
-  <label>Gate <select name="gate"><option value="off">off (default)</option><option value="intern-0.8b">intern-0.8b</option><option value="scion">scion (needs serve restart)</option></select></label>
-  <label>Gate head <select name="gate_head"><option value="L0.5">L0.5</option><option value="L0.75" selected>L0.75</option><option value="L1">L1</option><option value="ridge-concat">ridge-concat</option><option value="mlp-concat">mlp-concat</option></select></label>
-  <label>Gate threshold <input name="gate_threshold" type="number" step="0.01" value="0.5"></label>
+  <label title="Learned gate (third trigger, blind-spot only). off by default.">Gate <select name="gate"><option value="off">off (default)</option><option value="intern-0.8b">intern-0.8b</option><option value="scion">scion (needs serve restart)</option></select></label>
+  <label title="Which readout head to use for the gate. L0.75 = precision-first default.">Gate head <select name="gate_head"><option value="L0.5">L0.5</option><option value="L0.75" selected>L0.75</option><option value="L1">L1</option><option value="ridge-concat">ridge-concat</option><option value="mlp-concat">mlp-concat</option></select></label>
+  <label title="Fire the gate when P(correct) < this threshold.">Gate threshold <input name="gate_threshold" type="number" step="0.01" value="0.5"></label>
 </div>
 <p class="note">Scores a draft only when the deterministic detectors are silent. A fired gate is one more rejection finding (greedy repair quotes it); the repaired answer is re-scored.</p>
 </section>
@@ -3610,19 +3610,19 @@ def render_cascade_page(task_files: list[str]) -> str:
 <section>
 <h2>Local model</h2>
 <div class="grid-2col">
-  <label>Temperature <input name="local_temperature" type="number" step="0.1" value="0.7"></label>
-  <label>Max tokens <input name="local_max_tokens" type="number" value="1024"></label>
-  <label>Reasoning effort <select name="local_reasoning_effort"><option value="none">none</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label>
-  <label>Reasoning budget tokens <input name="local_reasoning_budget_tokens" type="number" value="0"></label>
+  <label title="Sampling temperature for local drafts. Higher = more diverse.">Temperature <input name="local_temperature" type="number" step="0.1" value="0.7"></label>
+  <label title="Token budget per draft.">Max tokens <input name="local_max_tokens" type="number" value="1024"></label>
+  <label title="Reasoning effort for the local model. none = fastest.">Reasoning effort <select name="local_reasoning_effort"><option value="none">none</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label>
+  <label title="Token budget for reasoning (0 = auto).">Reasoning budget tokens <input name="local_reasoning_budget_tokens" type="number" value="0"></label>
 </div>
 </section>
 
 <section>
 <h2>API fallback (optional)</h2>
 <div class="grid-2col">
-  <label>Base URL <input name="api_fallback" placeholder="http://127.0.0.1:4000/v1"></label>
-  <label>Model <input name="api_fallback_model" placeholder="model name"></label>
-  <label>Key <input name="api_fallback_key" type="password" placeholder="bearer key"></label>
+  <label title="OpenAI-compatible API endpoint for escalated items.">Base URL <input name="api_fallback" placeholder="http://127.0.0.1:4000/v1"></label>
+  <label title="Model name for the API fallback.">Model <input name="api_fallback_model" placeholder="model name"></label>
+  <label title="Bearer key for the API fallback.">Key <input name="api_fallback_key" type="password" placeholder="bearer key"></label>
 </div>
 </section>
 
