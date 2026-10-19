@@ -168,6 +168,19 @@ def _read_zstd_lines(path: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# file attachment (/import)
+# ---------------------------------------------------------------------------
+#: the checkout this harness runs from (relative paths land here)
+HARNESS_ROOT = Path(__file__).resolve().parents[1]
+
+#: how much of a file the model gets to see (~2k tokens)
+MAX_ATTACH_CHARS = 8000
+#: the store caps a chunk at 4000 chars — keep a margin for the header
+ATTACH_CHUNK_CHARS = 3500
+#: a file bigger than this is refused before it is read
+MAX_FILE_BYTES = 4_000_000
+
+# ---------------------------------------------------------------------------
 # registry
 # ---------------------------------------------------------------------------
 Handler = Callable[[str, str], CommandResult]
@@ -198,6 +211,7 @@ class ConsoleCommands:
             "sandbox": self._sandbox,
             "compact": self._compact,
             "dev": self._dev,
+            "import": self._import,
         }
         self._descriptors = [
             CommandDescriptor("help", "list available commands"),
@@ -225,6 +239,8 @@ class ConsoleCommands:
                               input_hint=""),
             CommandDescriptor("dev", "developer mode: reveal the dev surface",
                               input_hint="[on|off]"),
+            CommandDescriptor("import", "show the LLM a file: attach it to the chat",
+                              input_hint="<path>"),
         ]
 
     # ------------------------------------------------------------------
@@ -507,6 +523,110 @@ class ConsoleCommands:
             f"compacted {len(messages)} messages → {out}\n"
             f"the checkpoint is a safe switch point: /engine <name> to swap the local engine",
             {"compact_browser": True})
+
+    def _import(self, args: str, conversation_id: str) -> CommandResult:
+        """Show the LLM a file: attach it to this conversation.
+
+        The file's text goes into the conversation's context store (Splinter
+        mode) and rides along with the next agent turn (dsh mode), so the
+        next reply can read it.  Text only: a binary file is refused rather
+        than turned into noise.  Secrets in the file are redacted on the way
+        in, the same way the store treats everything else.
+        """
+        raw = args.strip()
+        if not raw:
+            return CommandResult("error", "usage: /import <path>")
+        path = self._resolve_path(raw)
+        if path is None:
+            return CommandResult("error", f"no such file: {raw}")
+        if path.is_dir():
+            return CommandResult("error", f"{path.name} is a directory")
+        try:
+            size = path.stat().st_size
+            if size > MAX_FILE_BYTES:
+                return CommandResult(
+                    "error",
+                    f"{path.name} is {size / 1e6:.1f} MB — too big to show the model")
+            data = path.read_bytes()
+        except OSError as exc:
+            return CommandResult("error", f"cannot read {path.name}: {exc}")
+        if b"\x00" in data[:8192]:
+            return CommandResult(
+                "error",
+                f"{path.name} looks binary — only text can be shown to the model")
+        text = data.decode("utf-8", errors="replace")
+
+        from retention.hygiene import TRUNCATION_MARK, sanitize_for_storage
+
+        safe = sanitize_for_storage(text, max_chars=MAX_ATTACH_CHARS)
+        redacted = "[redacted-secret]" in safe or "[base64 blob stripped]" in safe
+        trimmed = safe.endswith(TRUNCATION_MARK)
+        header = (f"[attached file: {path.name} — {len(text)} chars"
+                  + (f", first {MAX_ATTACH_CHARS} shown" if trimmed else "")
+                  + "]")
+        body = f"{header}\n{safe}"
+
+        # the context store (Splinter mode) — chunked, because the store caps
+        # a chunk at 4000 chars
+        try:
+            chunks = self._attach_to_store(conversation_id, body)
+            store_note = f", {chunks} chunk(s) in the context store"
+        except Exception as exc:  # noqa: BLE001 - the agent path still works
+            chunks = 0
+            store_note = f" (not stored: {exc})"
+        # the next agent turn (dsh mode)
+        self.agent.queue_context(conversation_id, body)
+
+        notes = []
+        if trimmed:
+            notes.append(f"trimmed to the first {MAX_ATTACH_CHARS} chars")
+        if redacted:
+            notes.append("secrets redacted")
+        suffix = (" — " + ", ".join(notes)) if notes else ""
+        return CommandResult(
+            "success",
+            f"attached {path.name} ({len(text)} chars{store_note}){suffix}\n"
+            f"the next reply can see it — ask about the file.",
+            {"attachment": {"name": path.name, "path": str(path),
+                            "text": body}})
+
+    def _attach_to_store(self, conversation_id: str, body: str) -> int:
+        """Put an attachment into the conversation's context store.
+
+        The store is the conversation's memory, so the attachment is
+        retrievable on any later turn — not just the next one.  The splinter
+        is built without a backend (the chat's own route does the same: it
+        curates here and generates upstream), so this works even before a
+        provider is configured.
+        """
+        st = self.st
+        with st.lock_for(conversation_id):
+            splinter = st.splinter_for(conversation_id, None, with_backend=False)
+            turn = splinter.turn
+            count = 0
+            for start in range(0, len(body), ATTACH_CHUNK_CHARS):
+                piece = body[start:start + ATTACH_CHUNK_CHARS]
+                if splinter.store.add_chunk(turn, piece):
+                    count += 1
+            st.save_conversation(conversation_id, splinter)
+            return count
+
+    def _resolve_path(self, raw: str) -> Optional[Path]:
+        """A path the user can type: absolute, ~-relative, or relative to
+        the working directory or the checkout."""
+        candidate = Path(raw).expanduser()
+        if not candidate.is_absolute():
+            roots = [Path.cwd(), HARNESS_ROOT]
+            for root in roots:
+                probe = root / candidate
+                if probe.exists():
+                    candidate = probe
+                    break
+        try:
+            candidate = candidate.resolve()
+        except OSError:
+            return None
+        return candidate if candidate.exists() else None
 
     def _dev(self, args: str, _cid: str) -> CommandResult:
         """Turn the developer surface on or off.

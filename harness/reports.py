@@ -2180,6 +2180,10 @@ function chatSubmit() {{
   sendChat();
 }}
 
+/* An attached file waits for the next message: the model sees it for that
+   turn, and the conversation's store keeps it for later turns. */
+let pendingAttachment = null;
+
 async function runCommand(line) {{
   bubble('user', line);
   record('user', line);
@@ -2188,6 +2192,10 @@ async function runCommand(line) {{
                         {{line: line, conversation_id: convId}});
     bubble('sys', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
     record('sys', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
+    if (r.attachment) {{
+      pendingAttachment = r.attachment;
+      bubble('sys', `📎 ${{r.attachment.name}} is attached — it rides along with your next message.`);
+    }}
     if (r.new_conversation_id) {{
       convId = r.new_conversation_id;
       localStorage.setItem('splinter-console-conv', convId);
@@ -2254,6 +2262,12 @@ async function sendChat() {{
   const ctrl = new AbortController();
   streamAbort = ctrl;
   const body = {{query: query, conversation_id: convId}};
+  if (pendingAttachment) {{
+    /* the file's text goes in with the message, so the model really sees it
+       (the store keeps it too, but retrieval is not guaranteed) */
+    body.query = pendingAttachment.text + '\\n\\n' + query;
+    pendingAttachment = null;
+  }}
   const provSel = document.getElementById('chat-provider')?.value;
   if (provSel) body.provider = provSel;
   if (Object.keys(hiveOverrides).length) body.config = hiveOverrides;

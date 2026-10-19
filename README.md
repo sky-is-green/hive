@@ -223,9 +223,16 @@ a single hive theme (yellow/black) across every page.
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
 - **Settings tab** — a searchable settings index: 32 settings across 9 nested
   categories, each linking to where it lives.
-- **Command palette** (Ctrl+K) — every console command, searchable. Twelve
+- **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
-  `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`.
+  `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`, `compact`, `dev`,
+  `import`.
+- **Your commands, at hand** — the row above the chat bar holds the commands
+  you pick (the picker sits at its far right); every one carries a small red
+  `x` to take it off the row. Tabs work the same way: pin the ones you use.
+- **`/import <path>`** — shows the LLM a file: the text rides along with your
+  next message and lands in the conversation's store, so it is there for later
+  turns too. Text files only; secrets in the file are redacted on the way in.
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider

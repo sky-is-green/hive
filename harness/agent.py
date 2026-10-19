@@ -317,6 +317,11 @@ class DshAgentService:
         self._generation = 0  # bumped on every runtime rebuild
         self._generation_initialized = False
         self._handoff_done: set[str] = set()
+        #: context queued for a conversation's next turn (e.g. an attached
+        #: file).  It rides along with the next message instead of being a
+        #: turn the user has to ask for.
+        self._pending_context: dict[str, list[str]] = {}
+        self._context_lock = threading.Lock()
 
     def _init_generation(self) -> None:
         """Seed the generation counter from durable session dirs so a fresh
@@ -337,6 +342,21 @@ class DshAgentService:
         collision across restarts, so each runtime generation gets its own
         session; continuity comes from the transcript handoff instead."""
         return f"agent-{conversation_id}-g{self._generation}"
+
+    def queue_context(self, conversation_id: str, text: str) -> None:
+        """Queue context for this conversation's next agent turn."""
+        if not text.strip():
+            return
+        with self._context_lock:
+            self._pending_context.setdefault(conversation_id, []).append(text)
+
+    def _take_context(self, conversation_id: str) -> str:
+        """The queued context for this conversation (cleared as it is taken)."""
+        with self._context_lock:
+            items = self._pending_context.pop(conversation_id, [])
+        if not items:
+            return ""
+        return "\n\n".join(items) + "\n\n"
 
     def _prior_transcript(self, conversation_id: str,
                           max_messages: int = 10) -> list[tuple[str, str]]:
@@ -497,7 +517,9 @@ class DshAgentService:
         harness = self._ensure(base_url, api_key, model)
         session_id = self._session_id(conversation_id)
         handoff = self._handoff_prefix(conversation_id)
-        message_to_send = handoff + message if handoff else message
+        context = self._take_context(conversation_id)
+        prefix = handoff + context
+        message_to_send = prefix + message if prefix else message
 
         shaper = ActivityShaper(session_id, on_event) if on_event is not None else None
 
