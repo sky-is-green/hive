@@ -134,6 +134,20 @@ Control it from the **Studio UI** at `/cascade` (every runner knob exposed) or t
 
 Every ladder-resolved item is harvested to `escalation.jsonl` next to the report (training-side only), feeding repair SFT and local-tier distillation. See `docs/CASCADE-PILOT.md` and `experiments/cascade/LEARNED-GATE-PLAN.md`.
 
+## Console & UI (HiveBench Studio)
+
+The Studio (`python -m harness`) is the control surface for everything:
+
+- **Home tab** — orientation + quick links + **Backend selector** (Strata / Llama.cpp / API).
+- **Cascade page** (`/cascade`) — every runner knob exposed; defaults work out of the box. Advanced settings collapsed.
+- **Settings tab** — searchable settings index with nested categories (32 settings). Click to navigate.
+- **Command palette** (Ctrl+K) — all console commands searchable.
+- **Runs / view** — browse and inspect run bundles.
+- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution with local fallback.
+- **Shared dev server** — run on a port both you and the agent can view.
+
+The Studio serves the hive theme (yellow/black) consistently across all pages.
+
 ## Running the suite
 
 Offline, no LLM required (CI runs exactly this):

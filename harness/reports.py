@@ -684,13 +684,6 @@ SETTINGS_INDEX = [
     "href": "/runs"
   },
   {
-    "label": "Docker setup",
-    "desc": "VHDX, drives, compose",
-    "cat": "Setup",
-    "tab": "tab-setup",
-    "id": "tab-setup"
-  },
-  {
     "label": "Library path",
     "desc": "Local GGUF folder",
     "cat": "Setup",
@@ -732,7 +725,6 @@ def render_server_page() -> str:
 <button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto">More tools ▾</button>
 </div>
 <div class="tabs" id="adv-tabs" style="display:none">
-<button class="tab" data-tab="tab-setup">Linux/Docker setup</button>
 <button class="tab" data-tab="tab-agent">Agent</button>
 <button class="tab" data-tab="tab-engines">Engines</button>
 <button class="tab" data-tab="tab-library">Local Library</button>
@@ -752,7 +744,7 @@ def render_server_page() -> str:
   <a href="/runs" style="text-decoration:none"><div class="card"><span>Browse results</span><b style="font-size:1.1rem">Runs →</b><span class="note">view past run bundles</span></div></a>
   <button onclick="document.querySelector('[data-tab=\\'tab-settings\\']')?.click()" style="all:unset;cursor:pointer"><div class="card"><span>Configure</span><b style="font-size:1.1rem">Settings →</b><span class="note">models, providers, engines</span></div></button>
 </div>
-<p class="note">Advanced tools (Docker setup, agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
+<p class="note">Advanced tools (agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
 
 <section style="margin-top:1.5rem">
 <h2 style="margin-top:0">Backend</h2>
@@ -769,40 +761,9 @@ def render_server_page() -> str:
 
 <div id="tab-setup" class="tabpane" style="display:none">
 <section>
-<h2 style="margin-top:0">Docker Setup — WebUI ↔ Linux model <span class="note">ROCm + VHDX bare</span></h2>
-<div class="note" style="margin-bottom:.6rem; line-height:1.5">For extra large models (DeepSeek v4 or similar). Your chat app sends prompts to a Linux AI server that loads the model from a virtual drive <code>E:/dsh_storage.vhdx</code> (shown as <code>/mnt/dsh_storage</code> inside Linux). <span title="How: WebUI OPENAI_API_BASE_URLS includes http://dsh-compute-backend:8000/v1 (hivebench-studio defaults :3000 → :8000); Docker runs custom-dsh-rocm-backend with /dev/kfd + HSA 11.0.0 + FLASH3 FP8 on /mnt/dsh_storage/models. Does: Serves large model with tiered spill 20 VRAM+24 RAM+NVMe. Changing: No user action — Bootstrap sets it up." style="background:#000;color:#FFDD00;padding:.2rem .5rem;border-radius:4px;border:1px dashed #FFDD00;cursor:help;font-weight:700;text-decoration:underline dotted">Hover for technical details.</span> One click does: expose drive → mount in Linux → start AI container → WebUI connects.</div>
-<div class="note" style="margin-bottom:.6rem;background:#000;color:#FFDD00;border:2px solid #FFDD00;padding:.6rem .8rem;border-radius:8px"><b>Easy Setup (first time: have WSL2 + Docker, no drive yet):</b> 1) Select <b>drive</b> + <b>size</b> → <b>Create Drive</b> (creates selected GB dynamic sparse, formats to ext4 on first mount — no auto-create, initially small) → 2) <b>Mount AI Drive (Admin)</b> → <b>Yes</b> on UAC → 3) <b>Bootstrap Docker</b> → 4) Add model to <code style="background:#1a1a00;color:#FFDD00;border:1px solid #FFDD00">/mnt/dsh_storage/models</code> (via WSL) → 5) <b>Verify:live</b> green = WebUI talks to Linux model</div>
-<div id="setup-box" style="background:#000; border:1.5px solid #FFB703; color:#FFDD00; border-radius:8px; padding:12px; display:grid; gap:8px; margin-top:.7rem">
-  <div style="grid-column:1 / -1; font-weight:700; color:#FFDD00; border-bottom:1px solid rgba(255,221,0,.18); padding-bottom:.35rem; margin-bottom:.2rem">Linux/Docker Setup</div>
-  <ul style="list-style:none; padding:0; margin:0; display:grid; gap:8px">
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Engine</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><span class="note" style="color:#FFDD00">linux-rocm-docker (Docker)</span></div></div></li>
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Drive</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><label class="inline" title="How: GET /v1/setup/drives lists >50GB drives with free/total. Does: Lets you pick drive for LLM Linux storage — VHDX updates to X:/dsh_storage.vhdx on change. Changing: Choose your LLM drive (e.g. E:) — no auto-best, you decide; needs Create Drive after."><select id="setup-drive"><option>auto-detecting…</option></select></label></div></div></li>
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">VHDX</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><label class="inline" title="How: String path sent as ?vhdx to _setup_health and as vhdx to create/mount/bootstrap; health won't auto-pick best. Does: Selects which VHDX every check targets (default E:/dsh_storage.vhdx). Changing: Edit to D:/dsh_storage.vhdx to use different drive — health shows vhdxExists for that path, bootstrap/bare will target it."><input id="setup-vhdx" size="22" placeholder="E:/dsh_storage.vhdx"></label></div></div></li>
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Size</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><label class="inline" title="How: POST /v1/setup/create-vhdx size_gb. Does: Max size for the dynamic sparse VHDX (initially small, grows to this cap). Changing: Pick 50–1000; 250 is typical for a few 30B models."><select id="setup-vhdx-size"><option value="50">50GB</option><option value="100">100GB</option><option value="250" selected>250GB</option><option value="500">500GB</option><option value="1000">1000GB</option></select></label></div></div></li>
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Mount</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><label class="inline" title="How: Display only — backend hardcodes /mnt/dsh_storage and docker compose mounts /mnt/dsh_storage/models:/workspace/models:ro. Does: Where WSL exposes VHDX ext4 for Docker. Changing: No effect — bootstrap always tries mkdir+mount /dev/sdd1/sdd/sde→/mnt/dsh_storage."><input id="setup-mount" size="16" placeholder="/mnt/dsh_storage"></label></div></div></li>
-    <li><div style="display:flex; gap:8px 10px; align-items:center"><div style="flex:0 0 160px; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Ready to run?</div><div style="flex:1; color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem"><span id="setup-msg" class="note" style="color:#FFDD00"></span></div></div></li>
-  </ul>
-  <div class="row" style="display:flex; gap:.35rem; flex-wrap:nowrap; padding:8px 0; border-top:1px solid rgba(255,221,0,.12); border-bottom:1px solid rgba(255,221,0,.12); margin:4px 0; overflow:hidden">
-    <button onclick="createDrive()" title="How: POST /v1/setup/create-vhdx {{vhdx, size_gb}} → _ensure_vhdx creates selected GB dynamic sparse (New-VHD→diskpart→fsutil) only when you click — no free-space pre-check, OS creates sparse file then formats to ext4. Does: Materialises VHDX at chosen path — no mount/docker. Changing: Must pick drive + size first; if exists returns already." style="flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.78rem; padding:.3rem .35rem">Create Drive</button>
-    <button onclick="mountBare()" title="How: POST /v1/setup/mount-bare vhdx → wsl --mount --vhd {{vhdx}} --bare, checks sdd/sde already. Does: Exposes VHDX as bare block to WSL (no filesystem). Changing: Needs Admin — pops UAC (powershell Start-Process -Verb RunAs); if no vhdx auto-create disabled → 400 need Create Drive first." style="flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.78rem; padding:.3rem .35rem">Mount AI Drive</button>
-    <button onclick="bootstrapDocker()" title="How: POST /v1/setup/bootstrap → checks VHDX exists (fail 400 need Create Drive), bare sdd/sde exists (fail 400 need Mount Admin), mkdir+mount /dev/sdd1→/mnt/dsh_storage, docker compose up dsh-compute-backend (auto-tags server-rocm if missing) + checks /dev/kfd. Does: Mounts ext4 and starts Docker (no Admin). Changing: 400 if not bare/mounted; 500 if /dev/kfd missing → wsl --update + AMD driver." style="flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.78rem; padding:.3rem .35rem">Bootstrap Docker</button>
-    <button onclick="refreshStatus()" title="How: GET /v1/setup/status → health grid + Ready + tier, then harness GET /v1/setup/docker-models (proxies 8000/v1/models, no CORS) + fetch :3000 no-cors (merged Test). Does: Health + Verify:live + Docker/WebUI in one click. Changing: One click updates all." style="flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.78rem; padding:.3rem .35rem">Refresh Status</button>
-  </div>
-  <div id="setup-health" style="display:grid; gridTemplateColumns:160px 1fr; gap:8px 10px; border-top:1px solid rgba(255,221,0,.18); padding-top:8px; margin-top:4px"></div>
-</div>
-<details style="display:none"><summary>Docker details (compose + logs) — now in console (F12)</summary>
-<pre id="setup-docker" style="max-height:180px;overflow:auto; display:none">click Refresh to load</pre>
-<div class="row" style="gap:.4rem;flex-wrap:wrap;margin-top:.4rem; display:none"><code>wsl --mount --vhd E:/dsh_storage.vhdx --bare</code> → <code>mount /dev/sdX1 /mnt/dsh_storage</code> → <code>docker compose up -d dsh-compute-backend</code> → <code>curl http://127.0.0.1:8000/health</code></div>
-<div class="note" style="display:none">Compose: <code>dsh-compute-backend:8000</code> <code>/dev/kfd:/dev/kfd</code> <code>/dev/dri:/dev/dri</code> <code>seccomp:unconfined</code> <code>group_add video/render</code> <code>/mnt/dsh_storage/models:/workspace/models:ro</code> <code>OPENAI_API_BASE_URLS=http://dsh-compute-backend:8000/v1</code></div>
-</details>
-<div id="setup-tier" class="kv-grid" style="margin-top:.6rem"></div>
-<div class="row" style="gap:.6rem;margin-top:.5rem; flex-wrap:wrap">
-  <label class="inline">context <select id="setup-ctx" onchange="refreshStatus()"><option value="32768">32k</option><option value="131072">131k (dual)</option><option value="128000">128k</option><option value="1000000">1M</option></select></label>
-  <label class="inline"><input id="setup-dual" type="checkbox" onchange="refreshStatus()"> dual 2× GPU</label>
-  <span class="note">FP8 KV 0.07/1024 · spill to NVMe · cap from leftover</span>
-</div>
-<pre id="setup-raw" style="max-height:160px;overflow:auto;display:none"></pre>
-<div class="note" style="margin-top:.5rem">Docker <code>GET /health</code> + <code>/v1/models</code> must be 200 for WebUI <code>:3000</code> to list Linux model. VHDX bare bypasses 9P.</div>
+<h2 style="margin-top:0">Linux / Docker Setup <span class="note">(deprecated)</span></h2>
+<p class="note">This setup was for running very large models (DeepSeek v4, 27B+) via a Linux Docker container with VHDX storage. It is no longer needed for most users — the Studio runs models directly via llama.cpp or strata.</p>
+<p class="note">If you need it, the backend endpoints (<code>/v1/setup/*</code>) are still available. The UI has been simplified; see the README for large-model setup.</p>
 </section>
 </div>
 
@@ -943,19 +904,13 @@ def render_server_page() -> str:
 <div class="lib-container">
 <div class="tabs" style="margin-bottom:.6rem">
 <div class="lib-tab active" data-rtab="lib-system" onclick="switchLibraryTab('lib-system', event)" role="button" tabindex="0">System</div>
-<div class="lib-tab" data-rtab="lib-linux" onclick="switchLibraryTab('lib-linux', event)" role="button" tabindex="0">Linux / Docker</div>
 </div>
 <div id="lib-system" class="lib-tabpane">
-<div class="note" style="color:#000">System models on Windows host (<span id="library-path-note"></span>) — right-click to move to Linux</div>
+<div class="note" style="color:#000">System models on Windows host (<span id="library-path-note"></span>)</div>
 <div class="row"><input type="text" id="library-path" placeholder="C:/Users/you/.lmstudio/models" size="38" style="flex:1" title="How: POST /v1/models/local/path writes to harness_state/models_dir.txt, list_local scans there. Does: Sets local library root for GGUF dropdowns. Changing: Point to LM Studio folder to see your models; persists across restarts."> <button onclick="setLibraryPath()">Use this folder</button><span id="import-status" class="note" style="margin-left:.5rem; color:#000"></span></div>
 <div class="row" style="margin-top:.6rem"><input type="text" id="library-filter" placeholder="Filter by name…" size="28" style="flex:1" oninput="filterLibrary()" title="How: Client filterLibrary() substring on filenames. Does: Filters list + dropdown options, shows visible/total. Changing: Type qwen to narrow; clear to show all."> <span class="note" id="library-filter-count" style="margin-left:.5rem; color:#000"></span></div>
 <div id="local-system" class="liblist">loading…</div>
 <div id="local" style="display:none"></div>
-</div>
-<div id="lib-linux" class="lib-tabpane" style="display:none; margin-top:.8rem; border-top:1.5px solid #000; padding-top:.6rem">
-<h3 style="margin:.2rem 0 .4rem; color:#000">Linux / Docker — <code>/mnt/dsh_storage/models</code></h3>
-<div class="note" style="color:#000">Right-click to send back to Windows or delete</div>
-<div id="local-linux" class="liblist">loading…</div>
 </div>
 </div>
 </section>
@@ -3630,6 +3585,8 @@ def render_cascade_page(task_files: list[str]) -> str:
 </div>
 </section>
 
+<details style="margin:1rem 0">
+<summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#FFDD00">Advanced settings (judge, repair, gate, model, API) ▾</summary>
 <section>
 <h2>Judge &amp; repair</h2>
 <div class="grid-2col">
@@ -3675,6 +3632,7 @@ def render_cascade_page(task_files: list[str]) -> str:
 <p class="note">By default every ladder-resolved item is written to <code>escalation.jsonl</code> next to the report (training-side only).</p>
 </section>
 
+</details>
 <div class="row" style="margin-top:1rem">
   <button type="submit" style="background:#157a3e;color:#fff;font-weight:700;padding:.6rem 1.4rem">Launch cascade</button>
   <span id="cascade-status" class="note" style="margin-left:1rem"></span>
