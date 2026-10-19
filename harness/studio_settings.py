@@ -32,7 +32,7 @@ from typing import Any
 #: every boolean the Studio stores
 BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode")
 #: every string the Studio stores
-STR_KEYS = ("strata_base",)
+STR_KEYS = ("strata_base", "strata_repo")
 
 DEFAULTS: dict[str, Any] = {
     "sandbox_enabled": True,
@@ -40,6 +40,7 @@ DEFAULTS: dict[str, Any] = {
     "auto_compact": True,
     "dev_mode": False,
     "strata_base": os.environ.get("CASCADE_SCION_BASE") or "http://127.0.0.1:8081/v1",
+    "strata_repo": "",          # the Strata checkout (the sibling by default)
 }
 
 
