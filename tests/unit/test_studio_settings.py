@@ -93,3 +93,24 @@ def test_strata_probe_never_raises(client):
     body = client.get("/v1/studio/strata").json()
     assert "alive" in body
     assert "base_url" in body
+
+
+def test_dev_mode_defaults_off_and_toggles(client):
+    body = client.get("/v1/studio/settings").json()
+    assert body["dev_mode"] is False
+    r = client.post("/v1/commands/run", json={"line": "/dev on", "conversation_id": "c"})
+    assert r.json()["kind"] == "success"
+    assert client.get("/v1/studio/settings").json()["dev_mode"] is True
+    client.post("/v1/commands/run", json={"line": "/dev off", "conversation_id": "c"})
+    assert client.get("/v1/studio/settings").json()["dev_mode"] is False
+
+
+def test_dev_command_toggles_without_an_argument(client):
+    r = client.post("/v1/commands/run", json={"line": "/dev", "conversation_id": "c"})
+    assert r.json()["kind"] == "success"
+    assert client.get("/v1/studio/settings").json()["dev_mode"] is True
+
+
+def test_dev_command_is_discoverable(client):
+    names = {c["name"] for c in client.get("/v1/commands").json()["commands"]}
+    assert "dev" in names

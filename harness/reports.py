@@ -749,7 +749,7 @@ def render_server_page() -> str:
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Studio server &amp; models</title>
 <style>{_get_server_css()}</style><style>input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{{-webkit-appearance:none;margin:0}}input[type=number]{{-moz-appearance:textfield;appearance:textfield}}</style></head><body>
 <div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
-<h1>Splinter Studio console</h1>
+<h1>HiveBench Studio</h1>
 {render_nav("server")}
 
 <div class="grid">
@@ -771,6 +771,7 @@ def render_server_page() -> str:
 <button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto">More tools ▾</button>
 </div>
 <div class="tabs" id="adv-tabs" style="display:none">
+<button class="tab" data-tab="tab-setup" style="display:none">Docker setup</button>
 <button class="tab" data-tab="tab-agent">Agent</button>
 <button class="tab" data-tab="tab-engines">Engines</button>
 <button class="tab" data-tab="tab-library">Local Library</button>
@@ -804,8 +805,8 @@ in VRAM and sets the context for you &mdash; no knob-fiddling required.</p>
 <div id="wizard-models" style="margin-top:.6rem"></div>
 </section>
 
-<section style="margin-top:1.5rem">
-<h2 style="margin-top:0">Deep research <span class="note">queued for the background worker</span></h2>
+<section id="dev-research" style="margin-top:1.5rem; display:none">
+<h2 style="margin-top:0">Deep research <span class="note">dev mode · queued for the background worker</span></h2>
 <p class="note">Ask a question and it is queued for the deep-research worker. The worker is
 master-only: the report lands in <code>RESEARCH/&lt;slug&gt;.md</code> and is summarised on its next
 wake. Nothing runs in the foreground.</p>
@@ -1093,12 +1094,7 @@ providers.local.json (gitignored).</div>
 <div class="chat-head">
 <h2 id="chat-title">Loaded model</h2>
 <div class="chat-controls">
-<span class="modesel">
-<label class="inline" title="How: the encoder gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = the encoder is off, so Splinter and Agent cannot run either."><input type="checkbox" id="chat-assistant" onchange="applyEncoderToggle()"> App assistant</label>
-<label class="inline" title="How: POST /v1/splinter/stream → splinter.process_turn curates the context → one curated reply. Does: Fast, no tools. Changing: Needs the app assistant (the encoder drives it)."><input type="checkbox" id="cfg-splinter" onchange="saveChatToggles()"> Splinter</label>
-<label class="inline" title="How: POST /v1/agent/stream → the dsh agent loop with tools and a durable session log. Does: Full agent (bash, files, code, subagents). Changing: Needs the app assistant."><input type="checkbox" id="cfg-agent" onchange="saveChatToggles()"> Agent (dsh)</label>
-</span>
-<button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">New conversation</button>
+<span class="note" id="chat-mode-summary"></span>
 </div>
 </div>
 <div class="chat-mode-note note">
@@ -1116,8 +1112,13 @@ providers.local.json (gitignored).</div>
 <button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">+ New</button>
 </div>
 <div class="composer">
+<div id="pinned-commands" class="pinned-commands" style="display:none"></div>
 <div class="composer-box">
 <div class="composer-toggles">
+  <label class="inline" title="How: the encoder gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = the encoder is off, so Splinter and Agent cannot run either."><input type="checkbox" id="chat-assistant" onchange="applyEncoderToggle()"> App assistant</label>
+  <label class="inline" title="How: POST /v1/splinter/stream → splinter.process_turn curates the context → one curated reply. Does: Fast, no tools. Changing: Needs the app assistant (the encoder drives it)."><input type="checkbox" id="cfg-splinter" onchange="saveChatToggles()"> Splinter</label>
+  <label class="inline" title="How: POST /v1/agent/stream → the dsh agent loop with tools and a durable session log. Does: Full agent (bash, files, code, subagents). Changing: Needs the app assistant."><input type="checkbox" id="cfg-agent" onchange="saveChatToggles()"> Agent (dsh)</label>
+  <span class="toggle-sep"></span>
   <label title="How: POST /v1/studio/settings sandbox_enabled. Does: lets the Studio run commands in the sandbox (Docker, network off) instead of refusing. Changing: off blocks the sandbox endpoint and the cascade's code_exec detector."><input type="checkbox" id="cfg-sandbox" onchange="saveStudioSetting('sandbox_enabled', this.checked)"> Sandbox</label>
   <label title="How: POST /v1/studio/settings tools_enabled. Does: lets the agent call tools (bash, files, code). Changing: off forces plain chat - the agent endpoint refuses."><input type="checkbox" id="cfg-tools" onchange="saveStudioSetting('tools_enabled', this.checked)"> Tools</label>
   <label title="How: POST /v1/studio/settings auto_compact. Does: compacts a conversation into a checkpoint when it outgrows the window, and offers an engine switch at the checkpoint. Changing: off compacts only when you ask."><input type="checkbox" id="cfg-compact" onchange="saveStudioSetting('auto_compact', this.checked)"> Auto-compact</label>
@@ -1177,6 +1178,14 @@ providers.local.json (gitignored).</div>
 <div class="row" style="gap:.5rem;align-items:center"><button onclick="refreshProcesses()">Refresh processes</button><span id="proc-msg" class="note"></span><span id="proc-sidecar" class="note" style="margin-left:.4rem"></span></div>
 <table style="width:100%;margin-top:.4rem"><thead><tr><th>PID</th><th>Kind</th><th>Name</th><th title="CPU % (process)">CPU%</th><th title="Resident memory MB">RAM MB</th><th>Port</th><th>Status</th><th></th></tr></thead><tbody id="proc-table"><tr><td colspan="8" class="note">loading…</td></tr></tbody></table>
 </section>
+<details id="dev-raw-status" style="margin-top:1rem; display:none">
+<summary style="cursor:pointer;font-weight:700;padding:.45rem 0;color:#FFDD00">Raw server status <span class="note">(dev mode)</span></summary>
+<pre id="dev-raw-json" style="max-height:240px">…</pre>
+</details>
+<details id="commands-box" style="margin-top:1rem">
+<summary style="cursor:pointer;font-weight:700;padding:.45rem 0;color:#FFDD00">Commands <span class="note" id="commands-count"></span></summary>
+<div id="commands-list" class="note" style="margin-top:.3rem">loading…</div>
+</details>
 <h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Engine log (strata)</h3>
 <pre id="srvlog" title="strata engine log tail">log: loading…</pre>
 <details style="margin-top:.6rem">
@@ -1783,6 +1792,133 @@ async function offerEngineSurgery(checkpoint) {{
     </div>`;
 }}
 
+/* ------------------- commands: list, pin, run ----------------------- */
+let _commands = [];
+const PINNED_COMMANDS_KEY = 'hive-pinned-commands';
+
+function pinnedCommands() {{
+  try {{ return JSON.parse(localStorage.getItem(PINNED_COMMANDS_KEY) || '[]') || []; }}
+  catch (e) {{ return []; }}
+}}
+
+function togglePinnedCommand(name) {{
+  const pins = pinnedCommands();
+  const i = pins.indexOf(name);
+  if (i >= 0) pins.splice(i, 1); else pins.push(name);
+  localStorage.setItem(PINNED_COMMANDS_KEY, JSON.stringify(pins));
+  renderCommandsList();
+  renderPinnedCommands();
+}}
+
+function renderCommandsList() {{
+  const box = document.getElementById('commands-list');
+  if (!box) return;
+  const pins = pinnedCommands();
+  const count = document.getElementById('commands-count');
+  if (count) count.textContent = `${{_commands.length}} · ${{pins.length}} pinned`;
+  if (!_commands.length) {{ box.textContent = 'no commands'; return; }}
+  box.innerHTML = _commands.map(c => {{
+    const pinned = pins.includes(c.name);
+    return `<div style="display:flex; gap:.4rem; align-items:center; padding:.15rem 0; border-bottom:1px solid rgba(255,221,0,.10)">
+      <button type="button" title="Pin ${{c.name}} above the chat bar" onclick="togglePinnedCommand('${{c.name}}')" style="padding:.05rem .35rem; margin:0; font-size:.72rem; background:${{pinned ? '#FFDD00' : 'transparent'}}; color:${{pinned ? '#000' : '#FFDD00'}}; border:1px solid #FFDD00">${{pinned ? '★' : '☆'}}</button>
+      <span title="${{c.description}}${{c.input ? ' · ' + c.input.hint : ''}}" style="cursor:pointer; color:#FFDD00" onclick="runStudioCommand('${{c.name}}')"><code style="background:#000; color:#FFDD00; padding:0 .25rem; border-radius:3px">/${{c.name}}</code></span>
+      <span class="note" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${{c.description}}</span>
+    </div>`;
+  }}).join('');
+}}
+
+function renderPinnedCommands() {{
+  const row = document.getElementById('pinned-commands');
+  if (!row) return;
+  const pins = pinnedCommands().filter(n => _commands.some(c => c.name === n));
+  if (!pins.length) {{ row.style.display = 'none'; row.innerHTML = ''; return; }}
+  row.style.display = '';
+  row.innerHTML = pins.map(n =>
+    `<button type="button" title="Run /${{n}}" onclick="runStudioCommand('${{n}}')">/${{n}}</button>`).join('')
+    + `<button type="button" title="Unpin all commands" onclick="localStorage.setItem(PINNED_COMMANDS_KEY,'[]'); renderCommandsList(); renderPinnedCommands()" style="background:transparent;color:#FFDD00;border-color:rgba(255,221,0,.4)">×</button>`;
+}}
+
+async function loadStudioCommands() {{
+  try {{
+    const data = await api('/v1/commands');
+    _commands = data.commands || [];
+    renderCommandsList();
+    renderPinnedCommands();
+  }} catch (e) {{ /* the palette still works */ }}
+}}
+
+async function runStudioCommand(name) {{
+  const input = document.getElementById('chatin');
+  if (input) {{ input.value = '/' + name + ' '; input.focus(); }}
+  else {{ await api('/v1/commands/run', 'POST', {{line: '/' + name, conversation_id: convId}}); }}
+}}
+
+/* ------------------------- pinned tabs ------------------------------- */
+const PINNED_TABS_KEY = 'hive-pinned-tabs';
+const TAB_REGISTRY = [
+  ['tab-home', 'Home'], ['tab-settings', 'Settings'], ['tab-cascade', 'Cascade'],
+  ['tab-setup', 'Docker setup'], ['tab-agent', 'Agent'], ['tab-engines', 'Engines'],
+  ['tab-library', 'Local Library'], ['tab-splinter', 'Splinter'],
+  ['tab-providers', 'Providers'], ['tab-hub', 'Hub'], ['tab-inspect', 'Inspector'],
+  ['tab-training', 'Training'],
+];
+
+function pinnedTabs() {{
+  try {{ return JSON.parse(localStorage.getItem(PINNED_TABS_KEY) || '[]') || []; }}
+  catch (e) {{ return []; }}
+}}
+
+function togglePinnedTab(id) {{
+  const pins = pinnedTabs();
+  const i = pins.indexOf(id);
+  if (i >= 0) pins.splice(i, 1); else pins.push(id);
+  localStorage.setItem(PINNED_TABS_KEY, JSON.stringify(pins));
+  applyPinnedTabs();
+}}
+
+const DEFAULT_MAIN_TABS = ['tab-home', 'tab-settings', 'tab-cascade'];
+
+function applyPinnedTabs() {{
+  const main = document.getElementById('main-tabs');
+  const adv = document.getElementById('adv-tabs');
+  if (!main || !adv) return;
+  const pins = pinnedTabs();
+  for (const [id] of TAB_REGISTRY) {{
+    const btn = document.querySelector(`.tab[data-tab="${{id}}"]`);
+    if (!btn) continue;
+    // the main strip always holds the default tabs plus whatever is pinned
+    const inMain = DEFAULT_MAIN_TABS.includes(id) || pins.includes(id);
+    if (inMain) {{ if (btn.parentElement !== main) main.appendChild(btn); }}
+    else if (btn.parentElement === main) adv.appendChild(btn);
+  }}
+  // a pin marker on every tab
+  for (const [id, label] of TAB_REGISTRY) {{
+    const btn = document.querySelector(`.tab[data-tab="${{id}}"]`);
+    if (!btn) continue;
+    let mark = btn.querySelector('.pin-mark');
+    if (!mark) {{
+      mark = document.createElement('span');
+      mark.className = 'pin-mark';
+      mark.title = 'Pin this tab to the top row';
+      mark.onclick = (e) => {{ e.stopPropagation(); togglePinnedTab(id); }};
+      btn.appendChild(mark);
+    }}
+    mark.textContent = pins.includes(id) ? '★' : '☆';
+    mark.style.opacity = pins.includes(id) ? '1' : '.35';
+  }}
+}}
+
+/* ------------------------- dev mode --------------------------------- */
+function applyDevMode(on) {{
+  const research = document.getElementById('dev-research');
+  if (research) research.style.display = on ? '' : 'none';
+  const setupTab = document.querySelector('.tab[data-tab="tab-setup"]');
+  if (setupTab) setupTab.style.display = on ? '' : 'none';
+  const raw = document.getElementById('dev-raw-status');
+  if (raw) raw.style.display = on ? '' : 'none';
+  document.body.classList.toggle('dev-mode', !!on);
+}}
+
 /* ------------------------- studio settings --------------------------- */
 async function loadStudioSettings() {{
   try {{
@@ -1792,6 +1928,7 @@ async function loadStudioSettings() {{
     set('cfg-tools', st.tools_enabled);
     set('cfg-compact', st.auto_compact);
     applyToolUseSetting(!!st.tools_enabled);
+    applyDevMode(!!st.dev_mode);
   }} catch (e) {{ /* settings are optional */ }}
 }}
 
@@ -1940,6 +2077,14 @@ function applyEncoderToggle() {{
   if (composer) composer.placeholder = on
     ? 'Talk to the loaded AI…  (/ for commands)'
     : 'Turn on the app assistant to chat';
+  const summary = document.getElementById('chat-mode-summary');
+  if (summary) {{
+    const parts = [];
+    if (on) parts.push('encoder on');
+    if (on && document.getElementById('cfg-agent')?.checked) parts.push('agent');
+    else if (on) parts.push('splinter');
+    summary.textContent = on ? parts.join(' · ') : 'the app assistant is off';
+  }}
   saveChatToggles();
 }}
 
@@ -2252,6 +2397,8 @@ loadEngines().catch(() => {{}});
 loadLibrarySystem().catch(() => {{}});
 loadStudioSettings();
 loadChatToggles();
+loadStudioCommands();
+applyPinnedTabs();
 /* the model dropdown populates async from /v1/provider/config */
 
 /* ----------------------- cascade role coverage ----------------------- */
@@ -3651,6 +3798,8 @@ function renderInspection(d) {{
 async function refresh() {{
   api('/v1/server/status').then(s => {{
     show('status', s);
+    const rawEl = document.getElementById('dev-raw-json');
+    if (rawEl && rawEl.offsetParent !== null) rawEl.textContent = JSON.stringify(s, null, 1);
     // "loaded" covers the Studio's own llama servers AND the strata engine
     const loaded = s.loaded || [];
     const title = document.getElementById('chat-title');
