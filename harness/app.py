@@ -1440,6 +1440,38 @@ def _required_token() -> str:
     return os.environ.get("HARNESS_TOKEN", "").strip()
 
 
+def _title_from_docstrings(app: FastAPI) -> None:
+    """Use each route's docstring first line as its OpenAPI summary.
+
+    FastAPI otherwise titles an operation after the Python function name
+    ("get_providers" -> "Get Providers").  The docstring is the human
+    sentence we want, so promote its first line to the title and keep the
+    rest as the description.
+    """
+    import inspect
+
+    def _walk(routes):
+        # an included router is one node holding the original router
+        for route in routes:
+            original = getattr(route, "original_router", None)
+            if original is not None:
+                yield from _walk(original.routes)
+            else:
+                yield route
+
+    for route in _walk(app.routes):
+        doc = getattr(route, "description", None) or inspect.getdoc(
+            getattr(route, "endpoint", None) or (lambda: None))
+        if not doc:
+            continue
+        lines = [ln.strip() for ln in doc.strip().splitlines() if ln.strip()]
+        if not lines:
+            continue
+        route.summary = lines[0]
+        rest = " ".join(lines[1:]).strip()
+        route.description = rest or None
+
+
 def create_app(
     ultra_factory: Optional[Callable[[], object]] = None,
     backend_factory: Optional[Callable[[Optional[str]], object]] = None,
@@ -2468,6 +2500,7 @@ def create_app(
 
     @app.post("/v1/ab/bench")
     async def ab_bench_alias(request: Request):
+        """Alias of the A/B bench (kept for older clients)."""
         return await _ab_handle(request)
 
     def _stack_runtime_config() -> Optional[str]:
@@ -2655,6 +2688,7 @@ def create_app(
 
     @app.get("/v1/server/log")
     def server_log(tail: int = 120):
+        """Last lines of the llama-server logs (startup errors live here)."""
         return {"lines": models_manager.server_log(tail)}
 
     @app.get("/v1/gpu/processes")
@@ -2686,6 +2720,7 @@ def create_app(
 
     @app.get("/v1/server/metrics")
     def server_metrics():
+        """Proxy llama-server's prometheus /metrics (kv usage, throughput)."""
         return models_manager.server_metrics()
 
     @app.get("/v1/processes")
@@ -3855,5 +3890,8 @@ def create_app(
     # paths (/v1/splinter/*, /v1/openai/*, /v1/mcp) fall through to it. The
     # shared registry means one conversation store for host + splinter.
     app.mount("/", create_splinter_app(app_state=st))
+
+    # human titles for the OpenAPI docs (every route is registered by now)
+    _title_from_docstrings(app)
 
     return app

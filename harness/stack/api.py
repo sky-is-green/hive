@@ -76,18 +76,22 @@ def create_router(manager: StackManager, *, stacks_root: Any = None) -> APIRoute
     # NOTE: ``/status`` must precede ``/{name}`` — route order is matching order.
     @router.get("")
     def list_saved() -> list[dict[str, Any]]:
+        """List the saved stack definitions."""
         return _schema.list_stacks(root=schema_root)
 
     @router.get("/status")
     def stack_status() -> dict[str, Any]:
+        """Stack manager status: applied stack, tier, health."""
         return manager.status()
 
     @router.get("/{name}")
     def get_stack(name: str) -> dict[str, Any]:
+        """One saved stack definition by name."""
         return _load(name).to_dict()
 
     @router.put("/{name}")
     def put_stack(name: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Create or replace a saved stack definition."""
         payload = dict(body)
         payload.setdefault("name", name)
         if payload.get("name") != name:
@@ -110,6 +114,7 @@ def create_router(manager: StackManager, *, stacks_root: Any = None) -> APIRoute
 
     @router.delete("/{name}")
     def delete_saved(name: str) -> dict[str, Any]:
+        """Delete a saved stack definition."""
         try:
             removed = _schema.delete_stack(name, root=schema_root)
         except ValueError as exc:
@@ -120,6 +125,7 @@ def create_router(manager: StackManager, *, stacks_root: Any = None) -> APIRoute
 
     @router.post("/{name}/validate")
     def validate_stack(name: str) -> dict[str, Any]:
+        """Validate a saved stack against the local hardware."""
         stack = _load(name)
         try:
             plan = _residency.plan_residency(stack)
@@ -129,6 +135,7 @@ def create_router(manager: StackManager, *, stacks_root: Any = None) -> APIRoute
 
     @router.post("/{name}/apply")
     def apply_stack(name: str) -> dict[str, Any]:
+        """Apply a saved stack (load its models)."""
         stack = _load(name)
         try:
             return manager.apply(stack)
@@ -139,6 +146,7 @@ def create_router(manager: StackManager, *, stacks_root: Any = None) -> APIRoute
 
     @router.post("/{name}/unload")
     def unload_stack(name: str) -> dict[str, Any]:
+        """Unload a saved stack's models."""
         return manager.unload(name)
 
     return router
