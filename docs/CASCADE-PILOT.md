@@ -727,3 +727,16 @@ traces are ignored.
 - `LOCAL-STACKS.md` (local-only) — model-stack mechanics, KV math.
 - DeepSeek Harness (DSH) side — the agent bridge in `harness/agent.py`; the
   fork's sidecar/engine packages host the models the cascade picks from.
+
+## Console & UI (2026-10-19)
+
+The cascade is now fully controllable from the Studio:
+
+- **`/cascade` page** — every runner knob (judge, repair, gate, gate_head, gate_threshold, temperature, max_tokens, reasoning, human_gate, api_fallback, router, router_mode, escalation lane toggle) in one form. Defaults work out of the box; advanced settings collapsed.
+- **Settings tab** — searchable settings index (32 settings, 9 categories) with click-to-navigate.
+- **Command palette** (Ctrl+K) — all console commands discoverable.
+- **Backend selector** (Home tab) — Strata / Llama.cpp / API, single source of truth.
+- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution with local subprocess fallback.
+- **Launch panel** — profile-driven or quick-start with model + ctx + gpu.
+- **Escalation lane** — harvested to `escalation.jsonl` next to the report.
+- **AFK mode** — removed (shelved). Docker/VHDX setup — deprecated.
