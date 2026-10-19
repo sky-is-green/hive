@@ -10,6 +10,7 @@ from cortex.e2e import FakeUltraSmall, MockTransport
 from experiments.run_p1_p10 import PredictionSuite, _load_labels
 from auditor.auditor import Auditor
 from sieve.medium import MediumDrone
+from sieve.ultra_small import UltraSmallDrone
 
 
 def _suite():
@@ -23,6 +24,22 @@ def _suite():
         backend, FakeUltraSmall(), MediumDrone(score_pair_fn=lambda q, c: 0.5),
         convs, labels, auditor, live=False,
     )
+
+
+def _real_ultra_small():
+    """The real default ultra drone (paraphrase-MiniLM-L3-v2), or skip.
+
+    These measurements are about the *real* drone — a fake would not test the
+    same thing — so when the optional ``sentence-transformers`` package (or
+    the model itself) is missing, the honest outcome is a skip, not a
+    failure.  Same convention as ``test_drone_pipeline.py``.
+    """
+    try:
+        drone = UltraSmallDrone(confidence_mode="off")
+        drone._ensure_loaded()
+        return drone
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"default ultra drone unavailable: {exc}")
 
 
 @pytest.fixture(scope="module")
@@ -75,7 +92,6 @@ def test_p11_comb_return_protocol_pass():
     from experiments.run_p1_p10 import PredictionSuite, _load_labels
     from auditor.auditor import Auditor
     from sieve.medium import MediumDrone
-    from sieve.ultra_small import UltraSmallDrone
 
     from tests.fixtures.synthetic_conversations.generate import (
         RETURN_SEED,
@@ -85,7 +101,7 @@ def test_p11_comb_return_protocol_pass():
     if not load_conversations("tests/fixtures/generated_return"):
         generate_return("tests/fixtures/generated_return", seed=RETURN_SEED)
 
-    ultra = UltraSmallDrone(confidence_mode="off")
+    ultra = _real_ultra_small()
     convs = load_conversations("tests/fixtures/generated")
     labels = _load_labels(convs)
     suite = PredictionSuite(
@@ -118,9 +134,8 @@ def test_p3_long_conversations_close_sufficiency():
     from experiments.run_p1_p10 import PredictionSuite, _load_labels
     from auditor.auditor import Auditor
     from sieve.medium import MediumDrone
-    from sieve.ultra_small import UltraSmallDrone
 
-    ultra = UltraSmallDrone(confidence_mode="off")
+    ultra = _real_ultra_small()
     convs = [c for c in load_conversations("tests/fixtures/generated")
              if c.get("profile") == "long"]
     labels = _load_labels(convs)
@@ -156,7 +171,6 @@ def test_p4_horizon_corpus_separates_domains():
     from experiments.run_p1_p10 import PredictionSuite, _load_labels
     from auditor.auditor import Auditor
     from sieve.medium import MediumDrone
-    from sieve.ultra_small import UltraSmallDrone
 
     from tests.fixtures.synthetic_conversations.generate import generate_horizon
 
@@ -167,7 +181,7 @@ def test_p4_horizon_corpus_separates_domains():
         if not load_conversations(horizon_dir):
             generate_horizon(horizon_dir, seed=seed, domain=domain)
 
-    ultra = UltraSmallDrone(confidence_mode="off")
+    ultra = _real_ultra_small()
     convs = load_conversations("tests/fixtures/generated")
     labels = _load_labels(convs)
     suite = PredictionSuite(
@@ -259,7 +273,6 @@ def test_p9_duplicate_pairs_merge():
     import numpy as np
 
     from cortex.baselines.runner import load_conversations
-    from sieve.ultra_small import UltraSmallDrone
     from tests.fixtures.synthetic_conversations.generate import P9_SEED, generate_p9
 
     from experiments.p9_densest_duplicate import DUPLICATE_THRESHOLD
@@ -269,7 +282,7 @@ def test_p9_duplicate_pairs_merge():
         generate_p9("tests/fixtures/generated_p9", seed=P9_SEED)
         convs = load_conversations("tests/fixtures/generated_p9")
 
-    ultra = UltraSmallDrone(confidence_mode="off")
+    ultra = _real_ultra_small()
     pairs = 0
     below = []
     for conv in convs:
@@ -299,7 +312,6 @@ def test_p9_densest_beats_recency():
     from experiments.run_p1_p10 import PredictionSuite, _load_labels
     from auditor.auditor import Auditor
     from sieve.medium import MediumDrone
-    from sieve.ultra_small import UltraSmallDrone
     from tests.fixtures.synthetic_conversations.generate import P9_SEED, generate_p9
 
     from experiments.p9_densest_duplicate import DUPLICATE_THRESHOLD
@@ -309,7 +321,7 @@ def test_p9_densest_beats_recency():
         generate_p9("tests/fixtures/generated_p9", seed=P9_SEED)
         convs = load_conversations("tests/fixtures/generated_p9")
 
-    ultra = UltraSmallDrone(confidence_mode="off")
+    ultra = _real_ultra_small()
     base = load_conversations("tests/fixtures/generated")
     labels = _load_labels(base)
     suite = PredictionSuite(
