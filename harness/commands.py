@@ -68,6 +68,25 @@ def _safe_name(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_\-]+", "-", text).strip("-") or "conversation"
 
 
+def local_shell_command(command: str) -> list[str]:
+    """The argv that runs ``command`` in the local shell.
+
+    The sandbox's fallback is a local subprocess, and the local shell is not
+    the same everywhere: POSIX runs ``sh -c``, Windows runs ``cmd /c``.
+    Hard-coding ``/bin/sh`` made every local sandbox call fail on Windows
+    with a WinError 2 ("the system cannot find the file specified").
+    """
+    import os
+    import shutil
+
+    if os.name == "nt":
+        shell = shutil.which("cmd") or shutil.which("cmd.exe")
+        if shell is None:
+            raise OSError("no local shell found (cmd.exe)")
+        return [shell, "/c", command]
+    return [shutil.which("sh") or "/bin/sh", "-c", command]
+
+
 # ---------------------------------------------------------------------------
 # transcript export (/save)
 # ---------------------------------------------------------------------------
@@ -674,7 +693,10 @@ class ConsoleCommands:
                    "--memory", "512m", "--cpus", "1", "python:3.12-slim",
                    "sh", "-c", command]
         else:
-            cmd = ["/bin/sh", "-c", command]
+            try:
+                cmd = local_shell_command(command)
+            except OSError as exc:
+                return CommandResult("error", f"sandbox failed: {exc}")
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         except subprocess.TimeoutExpired:

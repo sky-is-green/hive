@@ -43,6 +43,31 @@ def test_sandbox_command_runs_a_shell_command(client):
     assert "hello-sandbox" in body["text"]
 
 
+def test_local_shell_command_is_platform_aware(monkeypatch):
+    """The sandbox's local fallback must use the platform's own shell.
+
+    Hard-coding ``/bin/sh`` made every local sandbox call fail on Windows
+    ("the system cannot find the file specified"), so the argv is built from
+    the platform: ``sh -c`` on POSIX, ``cmd /c`` on Windows.
+    """
+    import os
+
+    from harness.commands import local_shell_command
+
+    argv = local_shell_command("echo hello-sandbox")
+    assert argv[-1] == "echo hello-sandbox"
+    assert argv[1] in ("-c", "/c")
+
+    monkeypatch.setattr(os, "name", "nt")
+    try:
+        win = local_shell_command("echo hello-sandbox")
+    except OSError:
+        win = None          # no cmd.exe on this box - also a valid outcome
+    if win is not None:
+        assert win[1] == "/c"
+        assert win[-1] == "echo hello-sandbox"
+
+
 def test_sandbox_command_needs_an_argument(client):
     r = client.post("/v1/commands/run", json={"line": "/sandbox"})
     assert r.json()["kind"] == "error"

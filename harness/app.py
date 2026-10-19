@@ -47,6 +47,7 @@ import queue
 
 from harness.agent import DshAgentService
 from harness.commands import ConsoleCommands
+from harness.commands import local_shell_command
 from harness.studio_settings import load_settings as load_studio_settings
 from harness.studio_settings import save_settings as save_studio_settings
 from harness.trainer import (
@@ -4089,7 +4090,7 @@ def create_app(
                    "sh", "-c", command]
             backend = "docker"
         else:
-            cmd = ["/bin/sh", "-c", command]
+            cmd = local_shell_command(command)
             backend = "local"
 
         try:
