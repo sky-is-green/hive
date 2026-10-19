@@ -1098,6 +1098,9 @@ providers.local.json (gitignored).</div>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
 <button id="stopbtn" onclick="cancelStream()">Stop</button>
 <button id="savebtn" onclick="saveSession()" title="How: saveSession prompts title → sessions[convId].title → localStorage. Does: Persists tab+transcript (restoreTranscript caps 400). Changing: Name to keep; close × deletes + POST /v1/splinter/reset.">Save session</button>
+<button onclick="exportSession()" title="Download this session as a JSON file you can import back later.">Export</button>
+<button onclick="document.getElementById('import-session-input').click()" title="Import a session JSON file.">Import</button>
+<input type="file" id="import-session-input" accept=".json" style="display:none" onchange="importSession(this)">
 <button onclick="newConversation()" title="How: Same as top New. Does: New session immediately. Changing: Same effect.">+ New session</button>
 </div>
 <div class="note"><b>Splinter</b>: direct curated generation. <b>Agent (dsh)</b>:
@@ -1594,7 +1597,6 @@ async function switchSession(id) {{
   localStorage.setItem('splinter-console-conv', convId);
   restoreTranscript(id);
   renderTabs();
-  applyConvProvider();
   try {{ await api('/v1/splinter/state?conversation_id=' + encodeURIComponent(id)); }} catch (e) {{}}
 }}
 function closeSession(id) {{
@@ -1616,20 +1618,9 @@ function saveSession() {{
   persistSessions();
   renderTabs();
 }}
-/* per-conversation inference target (the header model dropdown) */
-function convProviderStore() {{
-  try {{ return JSON.parse(localStorage.getItem('splinter-console-convprov') || '{{}}'); }}
-  catch (e) {{ return {{}}; }}
-}}
-function saveConvProvider(value) {{
-  const per = convProviderStore();
-  if (value) per[convId] = value;
-  else delete per[convId];
-  localStorage.setItem('splinter-console-convprov', JSON.stringify(per));
-}}
-function applyConvProvider() {{
-  /* model selection now lives in Engines/Launch; chat shows the loaded model */
-}}
+/* Per-conversation inference target: removed.  Model selection lives in the
+   Engines tab (and the Launch panel); the chat header shows the loaded
+   model read-only, so there is no second place to pick one. */
 
 /* AFK mode removed (shelved). Revisit when we revisit the shelf. */
 /* --------------------------- research queue -------------------------- */
@@ -1974,7 +1965,6 @@ loadEngines().catch(() => {{}});
 /* populate model dropdowns from local library */
 loadLibrarySystem().catch(() => {{}});
 /* the model dropdown populates async from /v1/provider/config */
-setTimeout(applyConvProvider, 2000);
 
 /* ----------------------- cascade role coverage ----------------------- */
 async function loadCascadeRoles() {{

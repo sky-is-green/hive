@@ -16,6 +16,8 @@ from __future__ import annotations
 import html
 import json
 import re
+import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -164,6 +166,8 @@ class ConsoleCommands:
             "bench": self._bench,
             "train": self._train,
             "status": self._status,
+            "cascade": self._cascade,
+            "sandbox": self._sandbox,
         }
         self._descriptors = [
             CommandDescriptor("help", "list available commands"),
@@ -183,6 +187,10 @@ class ConsoleCommands:
             CommandDescriptor("train", "list training engines/recipes or show one",
                               input_hint="[engine]"),
             CommandDescriptor("status", "server / agent / provider summary"),
+            CommandDescriptor("cascade", "list cascade runs, or start one",
+                              input_hint="[tasks.json]"),
+            CommandDescriptor("sandbox", "run a command in the sandbox",
+                              input_hint="<shell command>"),
         ]
 
     # ------------------------------------------------------------------
@@ -360,6 +368,91 @@ class ConsoleCommands:
         lines.append(f"python: {ternary_python()}")
         lines.append("launch from the Training tab, or POST /v1/training/launch")
         return CommandResult("success", "\n".join(lines))
+
+    def _cascade(self, args: str, _cid: str) -> CommandResult:
+        """List cascade runs, or launch one on a task bundle."""
+        runs_root = Path(getattr(self.st, "runs_root", "runs"))
+        tasks = args.strip()
+        if not tasks:
+            rows = []
+            if runs_root.is_dir():
+                for d in sorted(runs_root.iterdir(), reverse=True):
+                    if not d.is_dir():
+                        continue
+                    report = d / "report.json"
+                    if not report.is_file():
+                        continue
+                    try:
+                        data = json.loads(report.read_text(encoding="utf-8"))
+                    except (OSError, ValueError):
+                        continue
+                    summary = data.get("summary") or {}
+                    rows.append(
+                        f"{d.name} · {summary.get('tasks', '?')} tasks · "
+                        f"cascade {summary.get('cascade_accuracy', '?')} · "
+                        f"escalated {summary.get('escalation_rate', '?')}")
+            return CommandResult(
+                "success",
+                "cascade runs:\n" + ("\n".join(rows) or "(none yet)") +
+                "\nstart one: /cascade tasks-bench.json")
+        from harness.app import REPO_ROOT
+
+        if not tasks.endswith(".json"):
+            return CommandResult("error", "usage: /cascade <tasks.json>")
+        task_file = REPO_ROOT / "experiments" / "cascade" / tasks
+        if not task_file.is_file():
+            return CommandResult("error", f"no such task file: {tasks}")
+        run_name = "cascade-" + time.strftime("%Y%m%d-%H%M%S")
+        run_dir = runs_root / run_name
+        run_dir.mkdir(parents=True, exist_ok=True)
+        cmd = [sys.executable, str(REPO_ROOT / "experiments" / "cascade" / "run_cascade.py"),
+               "--tasks", str(task_file), "--out", str(runs_root),
+               "--run-name", run_name]
+        log = run_dir / "run_stdout.log"
+        try:
+            with open(log, "ab") as fh:
+                proc = subprocess.Popen(cmd, cwd=str(REPO_ROOT), stdout=fh,
+                                        stderr=subprocess.STDOUT)
+        except OSError as exc:
+            return CommandResult("error", f"could not launch: {exc}")
+        return CommandResult("success",
+                              f"cascade started: {run_name} (pid {proc.pid}) → {run_dir}")
+
+    def _sandbox(self, args: str, _cid: str) -> CommandResult:
+        """Run a command in the sandbox (Docker when the daemon is up)."""
+        command = args.strip()
+        if not command:
+            return CommandResult("error", "usage: /sandbox <shell command>")
+        import shutil
+
+        docker_bin = shutil.which("docker")
+        daemon = False
+        if docker_bin:
+            try:
+                subprocess.run([docker_bin, "info"], capture_output=True,
+                               timeout=5, check=True)
+                daemon = True
+            except Exception:  # noqa: BLE001
+                daemon = False
+        if daemon:
+            cmd = [docker_bin, "run", "--rm", "--network", "none",
+                   "--memory", "512m", "--cpus", "1", "python:3.12-slim",
+                   "sh", "-c", command]
+        else:
+            cmd = ["/bin/sh", "-c", command]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            return CommandResult("error", "sandbox command timed out (60s)")
+        except OSError as exc:
+            return CommandResult("error", f"sandbox failed: {exc}")
+        out = (proc.stdout or "").strip()
+        err = (proc.stderr or "").strip()
+        body = out + (("\nstderr: " + err) if err else "")
+        if not body:
+            body = f"(no output, exit {proc.returncode})"
+        return CommandResult("success",
+                              f"[{'docker' if daemon else 'local'}] exit {proc.returncode}\n{body}")
 
     def _status(self, _args: str, _cid: str) -> CommandResult:
         s = self.models.status()
