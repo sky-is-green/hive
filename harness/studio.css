@@ -194,6 +194,7 @@ body { background: #FFB703; color: #000000; }
 h1 { color: #000000; }
 section { background: #000000; border: 2px solid #000000; color: #FFDD00; box-shadow: 0 12px 32px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.25); }
 section h2 { color: #FFDD00; }
+.note { color: #000000; }
 section .note, section label.inline, section summary { color: rgba(255,221,0,.72); }
 section b { color: #FFDD00; }
 input, select, textarea { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-radius: 4px; }
@@ -296,7 +297,16 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 
 /* .note: black on yellow backgrounds, yellow on black sections */
 
-/* .note color: black on yellow panels, yellow on black sections */
-.note { color: #000000; }
+/* Catch-all: any yellow-background element inside a dark section uses black text */
+section .chatlog, section .chunkrow, section .sugbox, section .lib-tabpane,
+section .lib-container, section .fit-panel, section .toolstep,
+section .msg.ai, section pre, section input, section select,
+section textarea, section button, section table, section .card,
+section .kv, section .kv-grid, section .chatlog .note,
+section .chunkrow .note, section .sugbox .note, section .lib-tabpane .note,
+section .lib-container .note, section .fit-panel .note, section .toolstep .note,
+section .msg.ai .note, section pre .note {
+  color: #000000;
+}
 section .note { color: #FFDD00; opacity: .85; }
 table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color: #000000; opacity: .9; }
