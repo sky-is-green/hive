@@ -75,3 +75,34 @@ def test_assistant_context_points_at_the_studio_api():
     assert "/v1/engines" in _ASSISTANT_CONTEXT
     assert "8765" in _ASSISTANT_CONTEXT
     assert "never guess" in _ASSISTANT_CONTEXT
+
+
+def test_chat_row_above_the_bar_is_the_command_row():
+    """The picked commands ARE the row above the chat bar.
+
+    The old action row (Stop / Save / Compact / Export / Import / +New) is
+    gone: the row above the composer holds the commands the user picked plus
+    the picker toggle, and the session-file actions moved into the chat
+    head's session menu.
+    """
+    html = render_server_page()
+    assert "chat-actions" not in html
+    assert 'id="pinned-commands"' in html
+    assert 'id="cmd-picker-toggle"' in html
+    # the session actions live in the head menu now
+    assert 'class="chat-menu"' in html
+    for label in ("Save session", "Export session", "Import session"):
+        assert label in html
+    # and the functions those buttons call actually exist
+    assert "function exportSession(" in html
+    assert "function importSession(" in html
+
+
+def test_pinned_command_buttons_carry_a_removable_x():
+    """Every pinned command is a container with a run button and a red x."""
+    html = render_server_page()
+    assert 'class="pin-cmd"' in html
+    assert 'class="pin-run"' in html
+    assert 'class="pin-x"' in html
+    # the x removes the command, it does not run it
+    assert "onclick=\"togglePinnedCommand(" in html

@@ -459,8 +459,12 @@ class ConsoleCommands:
 
         raw = _agent_messages(self.agent.session_root, conversation_id)
         if len(raw) < 2:
-            return CommandResult("error",
-                                 "nothing to compact yet for this conversation")
+            # no agent log (the chat is in Splinter mode): the visible
+            # transcript is still compactable, so hand the job to the UI
+            return CommandResult(
+                "success",
+                "compacting the visible transcript",
+                {"compact_browser": True})
         messages = [Message(role=m["role"], text=m["text"]) for m in raw]
         events: list[dict] = []
 
@@ -501,7 +505,8 @@ class ConsoleCommands:
         return CommandResult(
             "success",
             f"compacted {len(messages)} messages → {out}\n"
-            f"the checkpoint is a safe switch point: /engine <name> to swap the local engine")
+            f"the checkpoint is a safe switch point: /engine <name> to swap the local engine",
+            {"compact_browser": True})
 
     def _dev(self, args: str, _cid: str) -> CommandResult:
         """Turn the developer surface on or off.

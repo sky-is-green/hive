@@ -1095,6 +1095,15 @@ providers.local.json (gitignored).</div>
 <h2 id="chat-title">Loaded model</h2>
 <div class="chat-controls">
 <span class="note" id="chat-mode-summary"></span>
+<details class="chat-menu">
+<summary title="Session actions: name it, take it out, bring one back.">&#8942;</summary>
+<div class="chat-menu-items">
+<button type="button" onclick="saveSession()" title="How: saveSession prompts for a title and keeps it in localStorage. Does: names the current session tab. Changing: the name only; the transcript is untouched.">Save session</button>
+<button type="button" onclick="exportSession()" title="How: exportSession builds a JSON file from this session and downloads it. Does: a copy you can open later. Changing: nothing in the session changes.">Export session</button>
+<button type="button" onclick="document.getElementById('import-session-input').click()" title="How: picks a session JSON file and restores it as a new tab. Does: brings a session back. Changing: the imported copy is added; the original stays.">Import session</button>
+<input type="file" id="import-session-input" accept=".json" style="display:none" onchange="importSession(this)">
+</div>
+</details>
 </div>
 </div>
 <div class="chat-mode-note note">
@@ -1102,21 +1111,14 @@ providers.local.json (gitignored).</div>
   agent loop with bash, files and code, multi-step turns, a durable session log.
 </div>
 <div id="chatlog" class="chatlog"></div>
-<div class="chat-actions">
-<button id="stopbtn" onclick="cancelStream()">Stop</button>
-<button id="savebtn" onclick="saveSession()" title="How: saveSession prompts title → sessions[convId].title → localStorage. Does: Persists tab+transcript (restoreTranscript caps 400). Changing: Name to keep; close × deletes + POST /v1/splinter/reset.">Save</button>
-<button onclick="compactConversation()" title="Compact this conversation into a checkpoint. At a checkpoint the Studio can offer to switch engines - safe locally, because the checkpoint is a free switch point.">Compact</button>
-<button onclick="exportSession()" title="Download this session as a JSON file you can import back later.">Export</button>
-<button onclick="document.getElementById('import-session-input').click()" title="Import a session JSON file.">Import</button>
-<input type="file" id="import-session-input" accept=".json" style="display:none" onchange="importSession(this)">
-<button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">+ New</button>
-</div>
 <div class="composer">
 <div class="chat-pick">
   <div id="pinned-commands" class="pinned-commands" style="display:none"></div>
-  <button type="button" id="cmd-picker-toggle" class="cmd-picker-toggle" onclick="toggleCmdPicker()" title="Pick the commands you want at hand above the chat bar. Click a command in the list to add or remove it.">Commands <span class="note" id="commands-count"></span> ▾</button>
-  <div id="cmd-picker" class="cmd-picker" style="display:none">
-    <div id="commands-list" class="note">loading…</div>
+  <div class="cmd-pick-anchor">
+    <button type="button" id="cmd-picker-toggle" class="cmd-picker-toggle" onclick="toggleCmdPicker()" title="Pick the commands you want at hand above the chat bar. Click a command in the list to add or remove it.">Commands <span class="note" id="commands-count"></span> ▾</button>
+    <div id="cmd-picker" class="cmd-picker" style="display:none">
+      <div id="commands-list" class="note">loading…</div>
+    </div>
   </div>
 </div>
 <div class="composer-box">
@@ -1134,6 +1136,7 @@ providers.local.json (gitignored).</div>
        onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
 <div class="sugbox" id="sug-chat"></div></span>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
+<button id="stopbtn" onclick="cancelStream()" style="display:none" title="Stop the running reply. The turn ends where it is; the conversation stays.">Stop</button>
 </div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
@@ -1695,6 +1698,54 @@ function saveSession() {{
   persistSessions();
   renderTabs();
 }}
+/* The session file is the tab itself: id, title and the transcript.  Export
+   writes it out as JSON, import brings it back as a new tab. */
+function exportSession() {{
+  const cur = ensureSession(convId);
+  const payload = {{
+    kind: 'hivebench-studio-session', version: 1,
+    exported: new Date().toISOString(),
+    session: {{ id: convId, title: cur.title, updated: cur.updated,
+                transcript: cur.transcript }},
+  }};
+  const blob = new Blob([JSON.stringify(payload, null, 1)],
+                        {{type: 'application/json'}});
+  const slug = (cur.title || 'session').replace(/[^A-Za-z0-9_-]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'session';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = slug + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}}
+function importSession(input) {{
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {{
+    let data = null;
+    try {{ data = JSON.parse(reader.result); }} catch (e) {{ /* not JSON */ }}
+    const s = (data && data.session) || data;
+    if (!s || !Array.isArray(s.transcript)) {{
+      alert('That file has no session transcript in it.');
+      input.value = '';
+      return;
+    }}
+    const id = 'import-' + Date.now().toString(16);
+    sessions[id] = {{
+      title: (s.title ? s.title : 'Session') + ' (imported)',
+      updated: Date.now(),
+      transcript: s.transcript.slice(-400),
+    }};
+    persistSessions();
+    renderTabs();
+    switchSession(id);
+    input.value = '';
+  }};
+  reader.readAsText(file);
+}}
 /* Per-conversation inference target: removed.  Model selection lives in the
    Engines tab (and the Launch panel); the chat header shows the loaded
    model read-only, so there is no second place to pick one. */
@@ -1848,9 +1899,14 @@ function renderPinnedCommands() {{
   const pins = pinnedCommands().filter(n => _commands.some(c => c.name === n));
   if (!pins.length) {{ row.style.display = 'none'; row.innerHTML = ''; return; }}
   row.style.display = '';
+  // each command is its own container: the run button, plus a tiny red x
+  // inside it so one click takes the command off the row.
   row.innerHTML = pins.map(n =>
-    `<button type="button" title="Run /${{n}}" onclick="runStudioCommand('${{n}}')">/${{n}}</button>`).join('')
-    + `<button type="button" title="Unpin all commands" onclick="localStorage.setItem(PINNED_COMMANDS_KEY,'[]'); renderCommandsList(); renderPinnedCommands()" style="background:transparent;color:#FFDD00;border-color:rgba(255,221,0,.4)">×</button>`;
+    `<div class="pin-cmd" title="Run /${{n}}">
+       <button type="button" class="pin-run" onclick="runStudioCommand('${{n}}')">/${{n}}</button>
+       <button type="button" class="pin-x" title="Take /${{n}} off this row"
+               onclick="togglePinnedCommand('${{n}}')">×</button>
+     </div>`).join('');
 }}
 
 async function loadStudioCommands() {{
@@ -2143,6 +2199,11 @@ async function runCommand(line) {{
     if (r.mode) {{
       const el = document.getElementById(r.mode === 'agent' ? 'cfg-agent' : 'cfg-splinter');
       if (el) {{ el.checked = true; saveChatToggles(); }}
+    }}
+    if (r.compact_browser) {{
+      /* the command compacted the durable log; the visible transcript is
+         compacted here so the chat pane shows the checkpoint too */
+      await compactConversation();
     }}
   }} catch (e) {{
     bubble('sys', 'command failed: ' + e.message);
