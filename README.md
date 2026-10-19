@@ -14,9 +14,59 @@
 Evaluation suite + Studio sidecar harness for the [Splinter Memory](https://github.com/sky-is-green/splinter-memory) system.
 
 **Status: work in progress.** Carved out of splinter-memory on 2026-09-12 as its
-own repository. The offline suite is green (546 unit + 53 integration, verified
-Sep 12); the live batteries and Studio are under active development — expect
+own repository. The offline suite is green (1010 unit + integration, verified
+Oct 19); the live batteries and Studio are under active development — expect
 moving parts here.
+
+## What it is
+
+HiveBench is a **local-first AI harness**: a Studio console that runs, measures,
+and self-corrects models entirely on your own hardware — plus the deterministic
+evaluation suite that proves the measurements.
+
+Two halves, one repo:
+
+- **HiveBench Studio** (`python -m harness`) — the console. Chat with your
+  local models, manage engines/providers/models, run the cascade, inspect
+  retrieval, train, and browse results. ~40 REST endpoints under `/v1/`,
+  documented live at `/docs`.
+- **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
+  escalate**. Deterministic verification, one greedy self-repair round, human
+  gate, optional API escalation. Gold-free at runtime, fully user-controlled.
+- **The evaluation suite** — 1010 offline tests that falsify claims instead of
+  asserting them. No LLM calls, no API keys, ~60 seconds.
+
+## What makes it different
+
+Most harnesses tell you *how a model performed*. HiveBench tells you **whether
+the context you feed the model is the reason it works**, and it tells you
+**whether the answer it produced is actually right** — deterministically,
+offline, and replayably.
+
+| | Typical harness | HiveBench |
+|---|---|---|
+| **Correctness** | Judge by another LLM (circular, biased) | Deterministic verifiers: arithmetic consistency, the task's own tests, canonical-form checks — no judge model in the evidence path |
+| **Self-correction** | Manual re-prompting | Built-in **cascade**: detect → repair → escalate, with a human gate before any paid API call |
+| **Where the answer key lives** | Sometimes in the prompt path | **Nowhere.** The runtime reads a gold-stripped `runtime_spec`; the checker never sees the answer key |
+| **Evidence** | Vague scores | Every number is reproduced by a command; falsifiable predictions ship as executable tests with measured PASS/FAIL |
+| **Hardware** | Cloud GPU assumed | Runs on CPU or whatever GPU you have; the drones stay on CPU; offline CI in ~60 s |
+| **Backends** | One vendor | Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API — one selector, three backends |
+| **Your data** | Sent to a provider | Stays on your machine unless you explicitly enable API escalation |
+
+### The hive architecture
+
+HiveBench is designed as a **hive** — models with different roles cooperating:
+
+```
+User → Encoder (small model, app-aware) → Studio backend → Worker (176B / GGUF) → Cascade (detect/repair/escalate)
+```
+
+- **Encoder** — a small model (0.8B–2B) acting as app assistant: it can probe
+  your hardware, list your models, launch a server, and run a cascade. The
+  agent loop (dsh) already provides the tool-calling; the encoder just needs
+  app-aware tools.
+- **Worker** — does the actual generation (176B strata, or any local GGUF).
+- **Cascade** — the quality layer between them.
 
 ## What it aims to achieve
 
@@ -136,17 +186,60 @@ Every ladder-resolved item is harvested to `escalation.jsonl` next to the report
 
 ## Console & UI (HiveBench Studio)
 
-The Studio (`python -m harness`) is the control surface for everything:
+The Studio (`python -m harness`) is the control surface for everything. It serves
+a single hive theme (yellow/black) across every page.
 
-- **Home tab** — orientation + quick links + **Backend selector** (Strata / Llama.cpp / API).
-- **Cascade page** (`/cascade`) — every runner knob exposed; defaults work out of the box. Advanced settings collapsed.
-- **Settings tab** — searchable settings index with nested categories (32 settings). Click to navigate.
-- **Command palette** (Ctrl+K) — all console commands searchable.
-- **Runs / view** — browse and inspect run bundles.
-- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution with local fallback.
-- **Shared dev server** — run on a port both you and the agent can view.
+### Pages
 
-The Studio serves the hive theme (yellow/black) consistently across all pages.
+| Page | What it does |
+|---|---|
+| `/` → `/runs` | Run bundle index |
+| `/server` | The console: chat, models, engines, providers, hub, library, inspector, training, settings |
+| `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
+| `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
+| `/stacks` | Stack management (multi-tier model stacks) |
+| `/docs` | Live OpenAPI docs for all ~40 `/v1/` endpoints |
+
+### Console features
+
+- **Home tab** — orientation, quick links, and the **backend selector**
+  (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
+- **Settings tab** — a searchable settings index: 32 settings across 9 nested
+  categories, each linking to where it lives.
+- **Command palette** (Ctrl+K) — every console command, searchable. Ten commands
+  ship today: `help`, `new`, `save`, `model`, `mode`, `provider`, `engine`,
+  `bench`, `train`, `status`.
+- **Model library** — search Hugging Face for GGUF repos, list files, download
+  with progress, manage the local folder.
+- **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
+  reference) instead of re-typing launch settings each time.
+- **Provider references** — engine profiles point at a provider by name; raw
+  credentials live in exactly one place.
+- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution (network off,
+  512 MiB / 1 CPU, hard timeout) with a local-subprocess fallback.
+- **Escalation lane** — every ladder-resolved item is harvested to
+  `escalation.jsonl` next to the report: task, draft, findings, repair, and the
+  resolution. Training-side only; the runtime never reads it.
+- **Dev server** — run it on a port you and your agent can both open, and
+  iterate on the UI together.
+
+### API surface (~40 endpoints under `/v1/`)
+
+| Area | Endpoints |
+|---|---|
+| Cascade | `/v1/cascade/run`, `/runs`, `/report/{run}`, `/registry`, `/roles`, `/paths`, `/plan`, `/frontier`, `/validate` |
+| Models | `/v1/models/local`, `/v1/models/local/path`, `/v1/models/linux`, `/v1/models/hub`, `/v1/models/hub/files/{repo}`, `/v1/models/hub/download`, `/v1/models/hub/downloads` |
+| Servers | `/v1/server/start`, `/stop`, `/unload`, `/status`, `/v1/server/metrics` |
+| Engines | `/v1/engines`, `/v1/engines/preset`, `/v1/engines/ab/bench` |
+| Providers | `/v1/provider/config` |
+| Agent | `/v1/agent/stream`, `/status`, `/cancel`, `/v1/agent-presets/*` |
+| Commands | `/v1/commands`, `/v1/commands/run` |
+| Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
+| Runs | `/v1/runs`, `/v1/report/{run}`, `/v1/protocol/run` |
+| Training | `/v1/training/engines`, `/launch`, `/status/{run}`, `/report/{run}` |
+| Conversation | `/v1/splinter/*` (turn, stream, reset, mode), `/v1/openai/*` |
+
+Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`.
 
 ## Running the suite
 
