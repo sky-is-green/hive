@@ -751,8 +751,10 @@ def render_server_page() -> str:
 <h1>HiveBench Studio</h1>
 <!-- the load bar: the bottom half of the screen while a model loads or unloads -->
 <div id="loadbar" class="loadbar" style="display:none">
-  <button class="loadbar-close" onclick="hideLoadBar()" title="Hide this bar (the work keeps going)">&#10005;</button>
-  <div class="loadbar-title" id="loadbar-title">Loading&hellip;</div>
+  <div class="loadbar-head">
+    <div class="loadbar-title" id="loadbar-title">Loading&hellip;</div>
+    <button class="loadbar-close" onclick="hideLoadBar()" title="Hide this bar (the work keeps going)">&#10005;</button>
+  </div>
   <div class="loadbar-strip"><i></i></div>
   <div class="loadbar-detail" id="loadbar-detail"></div>
 </div>
@@ -2860,7 +2862,9 @@ function showToast(msg) {{
   t.classList.remove('fade');
   t.onclick=()=>{{ t.style.display='none'; }};
   clearTimeout(t._timer);
-  t._timer=setTimeout(()=>{{ t.classList.add('fade'); setTimeout(()=>{{ t.style.display='none'; }},300); }},3000);
+  // long enough to be read: the confirmation comes at the moment the bar
+  // closes, and the eye is on the bottom of the screen
+  t._timer=setTimeout(()=>{{ t.classList.add('fade'); setTimeout(()=>{{ t.style.display='none'; }},300); }},4500);
 }}
 let _ctxMenu=null;
 function hideContextMenu(){{ if(_ctxMenu){{ _ctxMenu.remove(); _ctxMenu=null; }} }}
