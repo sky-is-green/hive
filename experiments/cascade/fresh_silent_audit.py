@@ -137,14 +137,15 @@ def main():
         for h in HEADS:
             caught05 = sum(1 for x in wrongs if x["p"][h] < 0.5)
             flags05 = sum(1 for x in corrects if x["p"][h] < 0.5)
-            # best threshold: largest threshold with flags <= 2
+            # best cut: a threshold just above an observed p catches that
+            # item, so evaluate "p <= v" per observed v (trying only the
+            # observed values with a strict < misses those cuts).
             best_catch, best_flags, best_t = 0, 0, None
-            cand_ts = sorted({x["p"][h] for x in items})
-            for t in cand_ts:
-                c = sum(1 for x in wrongs if x["p"][h] < t)
-                f = sum(1 for x in corrects if x["p"][h] < t)
+            for v in sorted({x["p"][h] for x in items}):
+                c = sum(1 for x in wrongs if x["p"][h] <= v)
+                f = sum(1 for x in corrects if x["p"][h] <= v)
                 if f <= 2 and c > best_catch:
-                    best_catch, best_flags, best_t = c, f, t
+                    best_catch, best_flags, best_t = c, f, v
             lines.append(f"| {h} | {caught05} | {flags05} | {best_catch} | {best_flags} |")
         lines.append("")
 
@@ -161,7 +162,8 @@ def main():
         ws = [x["p"][h] for x in all_items if not x["truth"]]
         cs = sorted(x["p"][h] for x in all_items if x["truth"])
         p10 = cs[max(0, len(cs) // 10)] if cs else float("nan")
-        lines.append(f"| {h} | {min(ws):.4f}-{max(ws):.4f} | {p10:.4f} (n={len(cs)}) |")
+        w_range = f"{min(ws):.4f}-{max(ws):.4f}" if ws else "n/a"
+        lines.append(f"| {h} | {w_range} | {p10:.4f} (n={len(cs)}) |")
     lines.append("")
 
     lines.append("## Per-item p (pooled), sorted by L0.75")

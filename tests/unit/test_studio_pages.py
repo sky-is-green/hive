@@ -1,0 +1,66 @@
+"""Studio page rendering must produce syntactically valid JavaScript.
+
+The Studio's UI is server-rendered: the inline ``<script>`` blocks live inside
+Python f-strings, where a literal brace must be written ``{{``/``}}``.  A
+mismatched brace, or an ``await`` in a non-async function, is a *parse* error
+that silently kills the whole script block — the console then renders but
+nothing works (no tab switching, no chat, no saves).
+
+This test renders every Studio page and runs ``node --check`` on each script
+block.  It is skipped when node is unavailable.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+
+import pytest
+
+from harness.reports import (
+    render_cascade_page,
+    render_report_page,
+    render_runs_page,
+    render_server_page,
+    render_training_pane,
+)
+
+NODE = shutil.which("node")
+
+#: page name -> (renderer, expected script block count).  A count of 0 means the
+#: page is static HTML (no behaviour to break).
+PAGES = {
+    "server": (render_server_page, 2),
+    "cascade": (lambda: render_cascade_page(["tasks-hard.json"]), 1),
+    "runs": (lambda: render_runs_page([]), 0),
+    "report": (lambda: render_report_page({"kind": "benchmark"}, "run-x"), 0),
+    "training": (lambda: render_training_pane(), 1),
+}
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+@pytest.mark.parametrize("page", sorted(PAGES))
+def test_page_scripts_are_valid_javascript(page):
+    render, expected = PAGES[page]
+    html = render()
+    blocks = re.findall(r"<script>(.*?)</script>", html, re.S)
+    assert len(blocks) == expected, (
+        f"{page}: expected {expected} script block(s), found {len(blocks)} "
+        "(a lost block means the page silently stops working)"
+    )
+    for i, block in enumerate(blocks):
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as fh:
+            fh.write(block)
+            path = fh.name
+        try:
+            proc = subprocess.run(
+                [NODE, "--check", path], capture_output=True, text=True, timeout=60
+            )
+        finally:
+            os.unlink(path)
+        assert proc.returncode == 0, (
+            f"{page} script block {i} is not valid JavaScript:\n{proc.stderr[:2000]}"
+        )

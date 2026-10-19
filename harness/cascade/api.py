@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from harness.cascade.oracle import CandidateMeasurement, frontier_by_role
 from harness.cascade.paths import PATHS, ROUTE_TABLE
@@ -116,6 +117,46 @@ def _run_summary(run_dir: Path) -> dict[str, Any]:
     return row
 
 
+
+_SECRET_FLAGS = ("--api-fallback-key", "--api-key")
+
+
+def _redact_cmd(cmd: list[str]) -> list[str]:
+    """Copy an argv with secret-bearing values replaced by ``***``."""
+    out = list(cmd)
+    for i, arg in enumerate(out):
+        if arg in _SECRET_FLAGS and i + 1 < len(out):
+            out[i + 1] = "***"
+    return out
+
+
+class CascadeRunRequest(BaseModel):
+    """Every knob the cascade runner accepts. All optional: the runner's
+    defaults apply for anything omitted."""
+
+    tasks: str = Field("tasks-hard.json", description="Task bundle file name in the cascade dir.")
+    run_name: str = Field("", description="Output directory name (default: timestamped).")
+    limit: int = Field(0, ge=0, description="Run only the first N tasks (0 = all).")
+    judge: str = Field("", description="Verifier: deterministic | learned.")
+    judge_threshold: float = Field(0.5, ge=0, le=1, description="Accept when P(correct) >= this.")
+    repair: str = Field("", description="Repair leg: auto | on | off.")
+    gate: str = Field("", description="Learned gate: off | intern-0.8b | scion.")
+    gate_head: str = Field("", description="Gate head: L0.5 | L0.75 | L1 | ridge-concat | mlp-concat.")
+    gate_threshold: float = Field(0.5, ge=0, le=1, description="Fire the gate when P(correct) < this.")
+    human_gate: str = Field("", description="Human gate before API escalation: auto | on | off.")
+    router: str = Field("", description="Router model: local | jev.")
+    router_mode: str = Field("", description="gate | measure.")
+    local_temperature: float = Field(0.7, description="Sampling temperature for local drafts.")
+    local_max_tokens: int = Field(1024, ge=1, description="Token budget per draft.")
+    local_reasoning_effort: str = Field("", description="none | low | medium | high.")
+    local_reasoning_budget_tokens: int = Field(0, ge=0, description="Reasoning token budget (0 = auto).")
+    scion_base: str = Field("", description="Local model server base URL (the local tier).")
+    api_fallback: str = Field("", description="OpenAI-compatible endpoint for escalated items.")
+    api_fallback_model: str = Field("", description="Model name for the API fallback.")
+    api_fallback_key: str = Field("", description="Bearer key for the API fallback.")
+    no_escalation_lane: bool = Field(False, description="Skip writing escalation.jsonl (lean runs).")
+
+
 def create_router(
     *,
     runs_root: Any = None,
@@ -142,10 +183,12 @@ def create_router(
 
     @router.get("/roles")
     def roles() -> dict[str, Any]:
+        """The role taxonomy (A1, B1, C1, D3, E4, ...) with descriptions."""
         return {"count": len(ROLES), "roles": [role.to_dict() for role in ROLES]}
 
     @router.get("/paths")
     def paths() -> dict[str, Any]:
+        """The route table: path ids, escalation paths, and expected costs."""
         return {
             "paths": [path.to_dict() for path in PATHS],
             "route_table": dict(ROUTE_TABLE),
@@ -153,6 +196,7 @@ def create_router(
 
     @router.get("/registry")
     def registry_view() -> dict[str, Any]:
+        """The candidate catalog: every model candidate with the roles it covers."""
         candidates = [c.to_dict() for c in catalog]
         return {
             "count": len(candidates),
@@ -162,6 +206,7 @@ def create_router(
 
     @router.get("/validator")
     def validator_status() -> dict[str, Any]:
+        """Validator service state (model, device, loaded)."""
         if validator is None:
             return {"configured": False, "loaded": False,
                     "note": "no validator attached to this sidecar"}
@@ -169,6 +214,7 @@ def create_router(
 
     @router.post("/validate")
     def validate(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Validate a candidate answer against a task with the validator model."""
         if validator is None:
             raise HTTPException(503, "no validator attached to this sidecar")
         task = body.get("task")
@@ -190,6 +236,7 @@ def create_router(
         confidence: float = Query(1.0, ge=0.0, le=1.0),
         out_len: int = Query(0, ge=0, le=1_000_000),
     ) -> dict[str, Any]:
+        """Plan the route for a bucket + confidence + output length."""
         decision = RouteDecision(bucket=bucket, confidence=confidence)
         result = plan_request(decision, out_len=out_len)
         return {
@@ -204,6 +251,7 @@ def create_router(
 
     @router.get("/frontier")
     def frontier(file: str = Query("oracle.json")) -> dict[str, Any]:
+        """Frontier measurements per role (quality vs latency curves)."""
         # A basename only: the query cannot escape the cascade directory.
         name = Path(file).name
         if not name.endswith(".json"):
@@ -249,7 +297,9 @@ def create_router(
         }
 
     @router.post("/run")
-    def launch(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    def launch(req: CascadeRunRequest) -> dict[str, Any]:
+        body = req.model_dump()
+        """Launch a cascade run: tasks, run name, limit, and every runner knob."""
         tasks_name = str(body.get("tasks") or "tasks-hard.json")
         if Path(tasks_name).name != tasks_name or not tasks_name.endswith(".json"):
             raise HTTPException(422, "tasks must be a .json file name in the cascade dir")
@@ -321,7 +371,8 @@ def create_router(
             "run_dir": str(run_dir),
             "log": str(run_dir / "run_stdout.log"),
             "pid": pid,
-            "cmd": cmd,
+            # the argv is echoed for transparency, but secrets never are
+            "cmd": _redact_cmd(cmd),
         }
 
     @router.get("/runs")

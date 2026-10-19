@@ -398,6 +398,7 @@ def run_status(run_dir) -> dict:
         "pid": pid,
         "progress": progress,
         "argv": manifest.get("argv", []),
+        "log": log_text[-8000:],
     }
     if eval_result is not None:
         out["aggregate"] = eval_result.get("aggregate", {})

@@ -76,10 +76,14 @@ def main():
         p10 = cs[max(0, len(cs) // 10)] if cs else float("nan")
         caught05 = sum(1 for m in wrongs if m["p"][h] < 0.5)
         flags05 = sum(1 for m in corrects if m["p"][h] < 0.5)
+        # The operating point is a threshold t; items with p < t are caught.
+        # Every achievable cut sits just above an observed p, so evaluate
+        # "p <= v" for each observed v (a cut just above v catches it) --
+        # trying only the observed values with a strict < misses those cuts.
         best_c, best_f = 0, 0
-        for t in sorted({m["p"][h] for m in meta}):
-            c = sum(1 for m in wrongs if m["p"][h] < t)
-            f = sum(1 for m in corrects if m["p"][h] < t)
+        for v in sorted({m["p"][h] for m in meta}):
+            c = sum(1 for m in wrongs if m["p"][h] <= v)
+            f = sum(1 for m in corrects if m["p"][h] <= v)
             if f <= 2 and c > best_c:
                 best_c, best_f = c, f
         w_range = f"{min(ws):.4f}-{max(ws):.4f}" if ws else "n/a"

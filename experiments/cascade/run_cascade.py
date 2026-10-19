@@ -1080,7 +1080,12 @@ def main() -> int:
 
     usage = Usage()
     measure = args.router_mode == "measure"
-    needs_api = measure or args.router == "api" or args.judge == "api"
+    # The frontier (paid tier) is needed whenever a task can be answered by
+    # the API: the measure mode always compares, an api router/judge always
+    # uses it, and router-mode "gate" uses it for every router decision that
+    # routes to the API (the default router-mode is "gate").
+    needs_api = (measure or args.router == "api" or args.judge == "api"
+                 or args.router_mode == "gate")
     frontier = Frontier(usage) if needs_api else None
     fallback = None
     if args.api_fallback:

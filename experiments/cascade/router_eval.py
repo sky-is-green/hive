@@ -48,22 +48,6 @@ CRITERIA = {
 }
 
 
-def _probability(result: Any) -> float:
-    """Read a probability out of Tiny-Jev's return shape."""
-    if isinstance(result, (int, float)):
-        return float(result)
-    if hasattr(result, "item"):
-        return float(result.item())
-    if isinstance(result, dict):
-        for key in ("probability", "prob", "p", "confidence", "score"):
-            value = result.get(key)
-            if isinstance(value, (int, float)):
-                return float(value)
-        for value in result.values():
-            if isinstance(value, (int, float)):
-                return float(value)
-    raise ValueError(f"cannot read a probability from {result!r}")
-
 
 class TinyJev:
     """The lite decision model: structured state + question -> probability."""

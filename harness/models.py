@@ -1060,18 +1060,6 @@ class LlamaServerManager:
     # ------------------------------------------------------------------
     # local library
     # ------------------------------------------------------------------
-    def server_log(self, tail: int = 120) -> list[str]:
-        """Last lines of the llama-server output (startup errors land here).
-
-        Logs are per-port (``llama_server_<port>.log``); the most recently
-        written file wins."""
-        candidates = sorted(self.log_dir.glob("llama_server*.log"),
-                            key=lambda p: p.stat().st_mtime, reverse=True)
-        if not candidates:
-            return []
-        text = candidates[0].read_text(encoding="utf-8", errors="replace")
-        return text.splitlines()[-max(1, tail):]
-
     def _raise_startup_exit(self, proc, log_path: Path) -> None:
         """Raise the right error when llama-server dies before becoming healthy.
 
@@ -1170,7 +1158,8 @@ class LlamaServerManager:
                 # already linked
                 try:
                     if dest.resolve() == src:
-                        return {"imported": [str(p.relative_to(self.models_dir)) for p in self.list_local() if link_name in str(p)], "linked": False, "models_dir": str(self.models_dir)}
+                        # list_local() returns dicts ({"file": rel, ...}), not paths
+                        return {"imported": [p["file"] for p in self.list_local() if link_name in str(p.get("file", ""))], "linked": False, "models_dir": str(self.models_dir)}
                 except OSError:
                     pass
             # collision with different target — use unique name
@@ -1431,10 +1420,6 @@ class LlamaServerManager:
             cmd += ["-m", str(resolved)]
         elif hf_repo and hf_file:
             cmd += ["--hf-repo", hf_repo, "--hf-file", hf_file]
-        if embedding:
-            cmd += ["--embedding"]
-            if pooling:
-                cmd += ["--pooling", pooling]
         cmd += [
             "--host", self.host,
             "--port", str(use_port),
@@ -1590,12 +1575,16 @@ class LlamaServerManager:
         return {"ok": True, "deleted": str(target)}
 
     def server_log(self, tail: int = 120) -> list[str]:
-        """Last lines of the llama-server logs (startup errors live here)."""
+        """Last ``tail`` lines of the llama-server logs (startup errors live here).
+
+        Logs are per-port (``llama_server_<port>.log``); the tail spans every
+        file, newest last, and the cap applies to the whole result.
+        """
         lines: list[str] = []
         for path in sorted(self.log_dir.glob("llama_server*.log")):
             lines += path.read_text(encoding="utf-8",
-                                    errors="replace").splitlines()[-max(1, tail):]
-        return lines
+                                    errors="replace").splitlines()
+        return lines[-max(1, tail):]
 
     def server_metrics(self, key: Optional[str] = None) -> dict:
         """Proxy llama-server's prometheus /metrics (kv usage, throughput)."""
