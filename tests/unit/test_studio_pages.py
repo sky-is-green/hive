@@ -114,3 +114,13 @@ def test_an_attached_file_rides_into_the_next_message():
     assert "pendingAttachment" in html
     assert "r.attachment" in html
     assert "body.query = pendingAttachment.text" in html
+
+
+def test_the_console_names_itself_and_the_user_does_not():
+    """Command output is a labelled console bubble; the user needs no label."""
+    html = render_server_page()
+    assert "label: 'Command Console'" in html
+    # the user bubble carries no label — you know you typed it
+    assert "user:    {cls: 'user',    label: ''}" in html
+    # and the command output uses the console voice, not the status pill
+    assert "bubble('console', (r.kind === 'error'" in html
