@@ -106,3 +106,11 @@ def test_pinned_command_buttons_carry_a_removable_x():
     assert 'class="pin-x"' in html
     # the x removes the command, it does not run it
     assert "onclick=\"togglePinnedCommand(" in html
+
+
+def test_an_attached_file_rides_into_the_next_message():
+    """``/import`` hands the file's text back; the chat carries it along."""
+    html = render_server_page()
+    assert "pendingAttachment" in html
+    assert "r.attachment" in html
+    assert "body.query = pendingAttachment.text" in html
