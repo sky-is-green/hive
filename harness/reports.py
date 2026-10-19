@@ -961,7 +961,7 @@ in VRAM and sets the context for you &mdash; no knob-fiddling required.</p>
 
 <div id="tab-library" class="tabpane" style="display:none">
 <section>
-<h2 style="margin-top:0">Local Library</h2>
+<h2 style="margin-top:0">Local Library <span class="note">models on disk &mdash; not loaded until you start one</span></h2>
 <div class="lib-container">
 <div class="tabs" style="margin-bottom:.6rem">
 <div class="lib-tab active" data-rtab="lib-system" onclick="switchLibraryTab('lib-system', event)" role="button" tabindex="0">System</div>
@@ -1092,6 +1092,10 @@ providers.local.json (gitignored).</div>
 <button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">New conversation</button>
 </div>
 </div>
+<div class="chat-mode-note note">
+  <b>Chat</b> = one curated reply (splinter picks the context). <b>Agent (dsh)</b> = a full
+  agent loop with bash, files and code, multi-step turns, a durable session log.
+</div>
 <div id="chatlog" class="chatlog"></div>
 <div class="chat-actions">
 <button id="stopbtn" onclick="cancelStream()">Stop</button>
@@ -1107,18 +1111,17 @@ providers.local.json (gitignored).</div>
 <span class="sugwrap composer-input"><textarea id="chatin" rows="1" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
        onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
 <div class="sugbox" id="sug-chat"></div></span>
+<div class="composer-toggles">
+  <label title="How: POST /v1/studio/settings sandbox_enabled. Does: lets the Studio run commands in the sandbox (Docker, network off) instead of refusing. Changing: off blocks the sandbox endpoint and the cascade's code_exec detector."><input type="checkbox" id="cfg-sandbox" onchange="saveStudioSetting('sandbox_enabled', this.checked)"> Sandbox</label>
+  <label title="How: POST /v1/studio/settings tools_enabled. Does: lets the agent call tools (bash, files, code). Changing: off forces plain chat - the agent endpoint refuses."><input type="checkbox" id="cfg-tools" onchange="saveStudioSetting('tools_enabled', this.checked)"> Tools</label>
+  <label title="How: POST /v1/studio/settings auto_compact. Does: compacts a conversation into a checkpoint when it outgrows the window, and offers an engine switch at the checkpoint. Changing: off compacts only when you ask."><input type="checkbox" id="cfg-compact" onchange="saveStudioSetting('auto_compact', this.checked)"> Auto-compact</label>
+</div>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
 </div>
-<div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette</div>
+<div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
 </div>
 </div>
 <div id="surgery-panel" style="display:none;margin-top:.5rem"></div>
-<div class="chat-footer">
-  <label class="inline" title="How: POST /v1/studio/settings sandbox_enabled. Does: lets the Studio run commands in the sandbox (Docker, network off) instead of refusing. Changing: off blocks the sandbox endpoint and the cascade's code_exec detector."><input type="checkbox" id="cfg-sandbox" onchange="saveStudioSetting('sandbox_enabled', this.checked)"> Sandbox</label>
-  <label class="inline" title="How: POST /v1/studio/settings tools_enabled. Does: lets the agent call tools (bash, files, code). Changing: off forces plain chat - the agent endpoint refuses."><input type="checkbox" id="cfg-tools" onchange="saveStudioSetting('tools_enabled', this.checked)"> Tool use</label>
-  <label class="inline" title="How: POST /v1/studio/settings auto_compact. Does: compacts a conversation into a checkpoint when it outgrows the window, and offers an engine switch at the checkpoint. Changing: off compacts only when you ask."><input type="checkbox" id="cfg-compact" onchange="saveStudioSetting('auto_compact', this.checked)"> Auto-compact</label>
-  <span class="note" id="cfg-note"></span>
-</div>
 <div class="note"><b>Splinter</b>: direct curated generation. <b>Agent (dsh)</b>:
 the full DeepSeek Harness agent loop — bash/files/code tools, multi-step
 turns, durable session log.</div>
@@ -1294,7 +1297,10 @@ async function wizardUseStrata() {{
     // register it as a provider and make it the default
     const cur = await api('/v1/provider/config');
     const providers = (cur.providers || []).filter(p => p.name !== 'strata');
-    providers.push({{ name: 'strata', base_url: strata.base_url, api_key: '',
+    // a provider's base_url is the server ROOT: the clients append /v1
+    let root = (strata.base_url || '').replace(/\\/+$/, '');
+    if (root.endsWith('/v1')) root = root.slice(0, -3);
+    providers.push({{ name: 'strata', base_url: root, api_key: '',
                       model: strata.model || '', headers: {{}} }});
     await api('/v1/provider/config', 'POST', {{
       providers: providers, default: 'strata',
@@ -1824,15 +1830,25 @@ async function loadResearchCount() {{
 }}
 loadResearchCount();
 /* ------------------------------ chat -------------------------------- */
+/* every source that can print in the chat gets its own colour + label */
+const CHAT_SPEAKERS = {{
+  user:    {{cls: 'user',    label: 'you'}},
+  ai:      {{cls: 'llm',     label: 'model'}},
+  harness: {{cls: 'harness', label: 'studio'}},
+  console: {{cls: 'console', label: 'console'}},
+  sys:     {{cls: 'sys',     label: ''}},
+}};
+
 function bubble(role, text, meta) {{
   const log = document.getElementById('chatlog');
+  const speaker = CHAT_SPEAKERS[role] || CHAT_SPEAKERS.sys;
   const div = document.createElement('div');
-  div.className = 'msg ' + role;
-  if (role !== 'sys') {{
+  div.className = 'msg ' + speaker.cls;
+  if (speaker.label) {{
     // a role label, so a scroll-back reads as a transcript
     const label = document.createElement('span');
     label.className = 'role';
-    label.textContent = role === 'user' ? 'you' : 'assistant';
+    label.textContent = speaker.label;
     div.appendChild(label);
   }}
   const body = document.createElement('span');
@@ -1850,6 +1866,11 @@ function bubble(role, text, meta) {{
   // Cap DOM growth: a long-lived tab must not accumulate every bubble.
   while (log.children.length > 200) log.removeChild(log.firstChild);
   return div;
+}}
+
+function consoleLine(text) {{
+  // errors and logs print as the console voice, never as the model's answer
+  return bubble('console', text);
 }}
 
 function setBubbleText(el, text) {{
@@ -2002,8 +2023,12 @@ async function sendChat() {{
       }}
     }}
     ai.classList.remove('typing');
-    if (!text && metaText) {{
-      /* error-only turn: show the message itself, not an empty bubble */
+    if (!text && metaText && metaText.startsWith('error:')) {{
+      /* error-only turn: print it as the console voice, not as an answer */
+      ai.remove();
+      consoleLine(metaText);
+      record('console', metaText);
+    }} else if (!text && metaText) {{
       setBubbleText(ai, metaText);
     }} else {{
       setBubbleText(ai, text || '(empty reply)');
@@ -2022,8 +2047,9 @@ async function sendChat() {{
     const cancelled = e && e.name === 'AbortError';
     const msg = cancelled ? 'cancelled.'
       : 'request failed: ' + friendlyError(e.message);
-    setBubbleText(ai, msg);
-    record('ai', msg);
+    ai.remove();
+    consoleLine(msg);
+    record('console', msg);
     if (!input.value) input.value = query;   /* give the draft back */
   }} finally {{
     streamAbort = null;
@@ -2123,7 +2149,8 @@ async function sendAgent(query) {{
             setBubbleText(ai, text);
           }}
         }} else if (ev.type === 'error') {{
-          setBubbleText(ai, 'agent error: ' + ev.error);
+          ai.remove();
+          consoleLine('agent error: ' + ev.error);
           return;
         }}
       }}
@@ -2135,8 +2162,9 @@ async function sendAgent(query) {{
     ai.appendChild(m);
     record('ai', text || '(no response)', 'dsh agent · ' + finish);
   }} catch (e) {{
-    setBubbleText(ai, 'agent request failed: ' + e.message);
-    record('ai', 'agent request failed: ' + e.message);
+    ai.remove();
+    consoleLine('agent request failed: ' + e.message);
+    record('console', 'agent request failed: ' + e.message);
   }} finally {{
     setBusy(false);
     maybeAutoCompact();

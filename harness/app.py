@@ -4003,6 +4003,58 @@ def create_app(
                 or os.environ.get("CASCADE_SCION_BASE")
                 or "http://127.0.0.1:8081/v1").rstrip("/")
 
+    def _sync_strata_provider() -> dict:
+        """Keep a provider for the Strata engine, and prefer it when nothing else serves.
+
+        The Strata serve is external to the Studio: the user starts it, and the
+        chat has to be able to reach it.  When it is the only live backend, it
+        becomes the default so the chat is not talking to a dead endpoint.
+        """
+        info = _probe_strata()
+        if not info.get("alive"):
+            return info
+        default = st.registry.default
+        if not default or default.lower() == "strata":
+            return info
+        prov = next((p for p in st.registry.providers
+                     if p.name.lower() == default.lower()), None)
+        if prov is None or not prov.base_url.startswith("auto://"):
+            return info
+        # auto:// points at the Studio's own llama-server: if none is running,
+        # strata is the only thing that can serve, so take it over as default.
+        if models_manager.status().get("running"):
+            return info
+        _register_strata_provider(info)
+        st.registry.default = "strata"
+        return info
+
+    def _register_strata_provider(info: dict) -> None:
+        """Add (or refresh) the provider that points at the Strata engine.
+
+        A provider's base_url is the server ROOT: the clients append
+        ``/v1/chat/completions`` themselves, so a base that already ends in
+        ``/v1`` would produce ``/v1/v1/...``.
+        """
+        base = (info.get("base_url") or "").rstrip("/")
+        if base.endswith("/v1"):
+            base = base[:-3]
+        model = info.get("model") or ""
+        existing = [p for p in st.registry.providers
+                    if p.name.lower() == "strata" or p.base_url.rstrip("/") == base]
+        if existing:
+            for p in existing:
+                if p.model != model:
+                    p.model = model
+                if p.base_url.rstrip("/") != base:
+                    p.base_url = base
+            return
+        try:
+            st.registry.providers.append(
+                Provider.from_dict({"name": "strata", "base_url": base,
+                                    "api_key": "", "model": model}))
+        except ValueError:
+            pass
+
     def _probe_strata() -> dict:
         """Is the Strata engine (the local 176B serve) up, and what does it serve?"""
         import requests
@@ -4024,7 +4076,7 @@ def create_app(
     @app.get("/v1/studio/strata")
     def studio_strata():
         """Probe the Strata engine (the local 176B serve) and list its models."""
-        return _probe_strata()
+        return _sync_strata_provider()
 
     @app.put("/v1/studio/settings")
     def studio_settings_put(body: dict[str, Any] = Body(default={})):
@@ -4155,5 +4207,15 @@ def create_app(
 
     # human titles for the OpenAPI docs (every route is registered by now)
     _title_from_docstrings(app)
+
+    # pick up the Strata engine in the background: the chat must be able to
+    # reach whatever is actually running, not a dead auto:// endpoint
+    def _sync_strata_bg() -> None:
+        try:
+            _sync_strata_provider()
+        except Exception:  # noqa: BLE001 - never block startup
+            pass
+
+    threading.Thread(target=_sync_strata_bg, daemon=True).start()
 
     return app
