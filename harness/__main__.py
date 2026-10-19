@@ -112,7 +112,7 @@ def _stop(pidfile: Path) -> int:
 from backend.providers import providers_path
 from cortex.e2e import FakeUltraSmall, MockTransport
 from harness.app import DEFAULT_PORT, OpenAICompatBackend, create_app
-from harness.models import launch_extra_args, LlamaServerManager
+from harness.models import LlamaServerManager
 
 
 def _protect_git_excludes(root: Path, names: list[str]) -> None:

@@ -533,9 +533,3 @@ class DshAgentService:
         }
 
 
-def summarize_activity(events: list[dict]) -> str:
-    """One-line human summary for a batch of shaped activity events."""
-    tools = [e.get("tool") for e in events if e.get("type") == "tool"]
-    if tools:
-        return "tools: " + ", ".join(tools)
-    return json.dumps(events)[:120]

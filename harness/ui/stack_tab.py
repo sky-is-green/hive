@@ -165,10 +165,6 @@ def _attr(name: str, value: Any) -> str:
     return ' {}="{}"'.format(name, html.escape(_raw(value), quote=True))
 
 
-def _json_attr(obj: Any) -> str:
-    """A JSON payload as an escaped attribute value."""
-    return html.escape(json.dumps(obj, default=str), quote=True)
-
 
 def _count(value: Any) -> int:
     """Tier count that tolerates both shapes ``list_stacks`` may hand back."""

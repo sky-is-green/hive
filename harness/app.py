@@ -3,7 +3,7 @@
 State model
 -----------
 - One ``Splinter`` instance per conversation_id (fresh store + comb per
-  conversation â€” per-conversation isolation is mandatory).
+  conversation — per-conversation isolation is mandatory).
   Instances are created lazily on the first turn and dropped by /v1/splinter/reset.
 - Conversations persist to ``state_dir`` (default ./harness_state, one atomic
   JSON per conversation using the same store serialization as the benchmark's
@@ -13,7 +13,7 @@ State model
   would multiply VRAM/RAM for nothing); inference is read-only.
 - Per-conversation locks serialize turns within a conversation; different
   conversations may proceed in parallel. Generation calls are blocking
-  (streaming is a v2 concern) â€” sync endpoints run in FastAPI's threadpool.
+  (streaming is a v2 concern) — sync endpoints run in FastAPI's threadpool.
 - Providers: loaded from providers.local.json at startup (or --providers-file),
   replaceable at runtime via POST /v1/provider/config.
 
@@ -42,7 +42,7 @@ import requests
 from fastapi import Body, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import queue
 
 from harness.agent import DshAgentService
@@ -51,9 +51,7 @@ from harness.trainer import (
     draft_candidate,
     evaluate_candidate,
     mine_evidence,
-    promote,
-    summarize_evidence,
-)
+    summarize_evidence,)
 
 from backend.engines import (
     EngineProfile,
@@ -1279,6 +1277,15 @@ class ProviderConfigRequest(BaseModel):
     persist: bool = False
 
 
+class SandboxExecRequest(BaseModel):
+    """A command to run in the sandbox."""
+
+    command: str = Field(..., min_length=1, description="Shell command to execute.")
+    timeout: int = Field(30, ge=1, le=120, description="Hard timeout in seconds.")
+    use_docker: bool = Field(True, description="Use Docker isolation when the daemon is up.")
+    image: str = Field("python:3.12-slim", description="Container image for the Docker path.")
+
+
 class ServerStartRequest(BaseModel):
     model: Optional[str] = None  # local library name or path
     hf_repo: Optional[str] = None  # passthrough to llama-server --hf-repo
@@ -1394,7 +1401,7 @@ class EngineConfigRequest(BaseModel):
 
 
 def _cors_origins() -> list[str]:
-    """Console origins. Default: localhost dev origins only â€” agent mode can
+    """Console origins. Default: localhost dev origins only — agent mode can
     execute code, so blanket CORS (*) is opt-in via HARNESS_CORS_ORIGINS=*."""
     raw = os.environ.get("HARNESS_CORS_ORIGINS", "").strip()
     if raw == "*":
@@ -1842,8 +1849,8 @@ def create_app(
     # Built-in mock OpenAI-compatible chat completions: pairs with
     # `python -m harness --mock` so a dsh shell (pi-ai openai-completions
     # route) can run end-to-end offline. The reply deterministically echoes
-    # what the request actually contained â€” context size and whether splinter
-    # content reached the model â€” which makes it a live probe of Seam A.
+    # what the request actually contained — context size and whether splinter
+    # content reached the model — which makes it a live probe of Seam A.
     # When the conversation asks for the benchmark, it emits a proper
     # hive_bench_run tool call and then acknowledges the tool result, so the
     # full agent loop (request -> tool_call -> tool/result -> answer) is
@@ -1905,7 +1912,7 @@ def create_app(
             str(m.get("content") or "") for m in messages if m.get("role") == "user"
         ).lower()
         if "hive_bench" in user_text or "benchmark" in user_text \
-                or "p1-p11" in user_text or "p1â€“p11" in user_text:
+                or "p1-p11" in user_text or "p1–p11" in user_text:
             match = re.search(r"(\d+)\s+conv", user_text)
             max_convs = int(match.group(1)) if match else 2
             return {"tool_call": (
@@ -2007,7 +2014,7 @@ def create_app(
         return StreamingResponse(sse(), media_type="text/event-stream")
 
     # ------------------------------------------------------------------
-    # Real OpenAI-compatible passthrough (curated) â€” Mode A integration
+    # Real OpenAI-compatible passthrough (curated) — Mode A integration
     # (OpenCode, dsh, any OpenAI client): standard /chat/completions wire
     # shape, curated system context, the reply observed back into the
     # store. Conversation key: X-Splinter-Conversation header > payload "user"
@@ -2023,7 +2030,7 @@ def create_app(
         for entry in req.providers:
             data = entry.model_dump()
             if data.get("api_key") == MASK:
-                # the UI echoes the mask back for untouched keys â€” keep the
+                # the UI echoes the mask back for untouched keys — keep the
                 # stored secret instead of overwriting it with "***"
                 previous = [p for p in st.registry.providers
                             if p.name.lower() == str(data.get("name", "")).lower()]
@@ -3667,19 +3674,15 @@ def create_app(
     # a hard timeout otherwise.  Feeds the cascade's code_exec detector and
     # gives the agent a safe execution surface.
     @app.post("/v1/sandbox/exec")
-    def sandbox_exec(body: dict[str, Any] = Body(default={})):
+    def sandbox_exec(req: SandboxExecRequest):
         """Run a command in the sandbox (Docker when the daemon is up, else a local subprocess)."""
         import shutil, subprocess as _sp
-        command = str(body.get("command") or "")
+        command = req.command
         if not command.strip():
             raise HTTPException(422, "command is required")
-        try:
-            timeout = int(body.get("timeout") or 30)
-        except (TypeError, ValueError):
-            raise HTTPException(422, "timeout must be an integer")
-        timeout = max(1, min(timeout, 120))
-        use_docker = bool(body.get("use_docker", True))
-        image = str(body.get("image") or "python:3.12-slim")
+        timeout = max(1, min(int(req.timeout), 120))
+        use_docker = bool(req.use_docker)
+        image = req.image
         docker_bin = shutil.which("docker")
         daemon_ok = False
         if use_docker and docker_bin:

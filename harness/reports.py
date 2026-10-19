@@ -375,6 +375,20 @@ _TRAINING_PANE = r"""
 <p class="note">One 512-token window per step &mdash; batch size is not a control here.
 History lives in <a href="/runs">Runs</a>; ternary reports render at <code>/view/&lt;run&gt;</code>.</p>
 </section>
+
+<section>
+<h2 style="margin-top:0">Preset trainer <span class="note">evidence-driven composition iteration</span></h2>
+<p class="note">Your agent gets better at your workflow the more you use it: mine session logs for
+successful tool-use patterns, draft a candidate preset, then compare it against the baseline.</p>
+<div class="row">
+  <button onclick="trMineEvidence(this)">Mine evidence</button>
+  <label class="inline" style="flex:1">Baseline preset <input id="tr-trainer-baseline" size="34"
+    placeholder="/path/to/baseline-preset.yml" title="How: POST /v1/trainer/draft baseline. Does: The preset the candidate is derived from. Changing: Point at the preset you want to improve."></label>
+  <button onclick="trDraftCandidate(this)">Draft candidate</button>
+</div>
+<div id="tr-trainer-summary" class="note" style="margin:.5rem 0"></div>
+<pre id="tr-trainer-log" style="max-height:200px;overflow:auto;display:none"></pre>
+</section>
 <script>
 const TR_CATALOG = __CATALOG__;
 let trRun = null, trTimer = null;
@@ -434,6 +448,8 @@ async function trPoll(){
     document.getElementById('tr-status').innerHTML = rows.map(([k,v]) =>
       "<div class='kv'><span>" + k + "</span><b>" +
       (v === undefined || v === null ? '&mdash;' : v) + "</b></div>").join('');
+    const logEl = document.getElementById('tr-log');
+    if (logEl) logEl.textContent = s.log || '';
     if(s.state === 'finished' || s.state === 'stopped'){
       if(trTimer){ clearInterval(trTimer); trTimer = null; }
       document.getElementById('tr-msg').innerHTML =
@@ -444,6 +460,45 @@ async function trPoll(){
 document.addEventListener('DOMContentLoaded', trFillEngines);
 const trTabBtn = document.querySelector('[data-tab="tab-training"]');
 if(trTabBtn) trTabBtn.addEventListener('click', () => setTimeout(trFillEngines, 10));
+
+/* ------------------------- preset trainer -------------------------- */
+function trTrainerLog(text) {
+  const el = document.getElementById('tr-trainer-log');
+  if (el) { el.style.display = 'block'; el.textContent = text; }
+}
+async function trMineEvidence(btn) {
+  const out = document.getElementById('tr-trainer-summary');
+  if (btn) btn.disabled = true;
+  if (out) out.textContent = 'mining session logs…';
+  try {
+    const r = await api('/v1/trainer/evidence');
+    const s = r.summary || {};
+    const ev = r.evidence || [];
+    if (out) out.innerHTML = 'Mined <b>' + ev.length + '</b> evidence item(s) from your sessions. '
+      + Object.entries(s).map(([k,v]) => k + ': ' + (typeof v === 'object' ? JSON.stringify(v) : v)).join(' · ');
+  } catch (e) {
+    if (out) out.textContent = 'evidence mining failed: ' + e;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+async function trDraftCandidate(btn) {
+  const baseline = (document.getElementById('tr-trainer-baseline')?.value || '').trim();
+  const out = document.getElementById('tr-trainer-summary');
+  if (!baseline) { if (out) out.textContent = 'set a baseline preset path first'; return; }
+  if (btn) btn.disabled = true;
+  if (out) out.textContent = 'drafting candidate…';
+  try {
+    const r = await api('/v1/trainer/draft', 'POST', {baseline: baseline});
+    trTrainerLog(JSON.stringify(r, null, 2));
+    if (out) out.textContent = 'Drafted ' + (r.candidate || r.name || 'candidate')
+      + ' — evaluate it with POST /v1/trainer/evaluate, then promote it from the candidate directory.';
+  } catch (e) {
+    if (out) out.textContent = 'draft failed: ' + e;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 </script>
 </div>
 """
@@ -468,13 +523,6 @@ def _get_server_css() -> str:
         extra = ""
     return _CSS + extra
 
-# Backwards compat: keep _SERVER_CSS as snapshot at import, but renderers call _get_server_css()
-_SERVER_CSS = _get_server_css()
-
-
-def tip(text: str) -> str:
-    """One inline help glyph whose hover/focus tooltip explains the control it follows."""
-    return ""
 
 
 SETTINGS_INDEX = [
@@ -791,7 +839,7 @@ def render_server_page() -> str:
   <div class="engine-group">
     <h3 title="How: GET /v1/models/local lists GGUFs from models_dir; resolve checks file else needs hf. Does: Sets weights for -m (size_gb for fit). Changing: Pick different GGUF changes VRAM need — Save+Load to restart.">Model </h3>
     <div class="grid-2col">
-      <label title="How: GET /v1/models/local scans models_dir. Does: Selects GGUF for -m (advisory, on Start). Changing: Different file → different size_gb/KV fit — Save+Load required.">Model  <select id="eng-model" onchange="engDirty=true; updateFit();"><option value="">— choose local model —</option></select></label>
+      <label title="How: GET /v1/models/local scans models_dir. Does: Selects GGUF for -m (advisory, on Start). Changing: Different file → different size_gb/KV fit — Save+Load required.">Model  <select id="eng-model" onchange="engDirty=true; updateFit(); updateEngModelDisplay();"><option value="">— choose local model —</option></select></label>
       <span class="note">Selected: <b id="eng-model-display">—</b> <span id="eng-model-note" class="note" style="margin-left:.5rem"></span></span>
     </div>
   </div>
@@ -909,6 +957,7 @@ def render_server_page() -> str:
 <div id="lib-system" class="lib-tabpane">
 <div class="note" style="color:#000">System models on Windows host (<span id="library-path-note"></span>)</div>
 <div class="row"><input type="text" id="library-path" placeholder="C:/Users/you/.lmstudio/models" size="38" style="flex:1" title="How: POST /v1/models/local/path writes to harness_state/models_dir.txt, list_local scans there. Does: Sets local library root for GGUF dropdowns. Changing: Point to LM Studio folder to see your models; persists across restarts."> <button onclick="setLibraryPath()">Use this folder</button><span id="import-status" class="note" style="margin-left:.5rem; color:#000"></span></div>
+<div class="row"><button onclick="document.getElementById('import-folder-input').click()" title="How: POST /v1/models/local/import (multipart). Does: Copies the chosen folder's .gguf files into the library. Changing: Use when the folder is not reachable as a path (e.g. a download).">Import folder…</button><input type="file" id="import-folder-input" webkitdirectory directory multiple accept=".gguf" style="display:none" onchange="importFolder(this)"><span class="note" style="margin-left:.5rem">copies .gguf files into the library</span></div>
 <div class="row" style="margin-top:.6rem"><input type="text" id="library-filter" placeholder="Filter by name…" size="28" style="flex:1" oninput="filterLibrary()" title="How: Client filterLibrary() substring on filenames. Does: Filters list + dropdown options, shows visible/total. Changing: Type qwen to narrow; clear to show all."> <span class="note" id="library-filter-count" style="margin-left:.5rem; color:#000"></span></div>
 <div id="local-system" class="liblist">loading…</div>
 <div id="local" style="display:none"></div>
@@ -1272,7 +1321,6 @@ for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
       if(pane) pane.style.display = '';
       // Defer library load to avoid blocking tab switch
       if (btn.dataset.tab === 'tab-library') setTimeout(loadLibrary, 10);
-      else if (btn.dataset.tab === 'tab-setup') {{ loadSetup(); loadDrives(); }}
       else if (btn.dataset.tab === 'tab-agent') loadAgentPresets();
       else if (btn.dataset.tab === 'tab-engines') loadEngines();
       else if (btn.dataset.tab === 'tab-splinter') loadHiveDefaults();
@@ -1319,357 +1367,6 @@ function switchLibraryTab(tab, ev) {{
   return false;
 }}
 
-/* ------------------------------ setup wizard (splinter console) ------------------------------ */
-async function loadSetup() {{
-  const ctxSel = document.getElementById('setup-ctx');
-  const dualCb = document.getElementById('setup-dual');
-  const ctx = ctxSel ? ctxSel.value : '32768';
-  const dual = dualCb ? dualCb.checked : false;
-  await refreshSetup(ctx, dual);
-}}
-async function refreshSetup(ctx, dual) {{
-  if (ctx === undefined) {{
-    const c = document.getElementById('setup-ctx');
-    ctx = c ? c.value : '32768';
-  }}
-  if (dual === undefined) {{
-    const d = document.getElementById('setup-dual');
-    dual = d ? d.checked : false;
-  }}
-  const msg = document.getElementById('setup-msg');
-  const healthEl = document.getElementById('setup-health');
-  const tierEl = document.getElementById('setup-tier');
-  const rawEl = document.getElementById('setup-raw');
-  if (msg) msg.textContent = 'loading…';
-  try {{
-    const vhdxQ = document.getElementById('setup-vhdx')?.value.trim() || '';
-    const modelGbQ = document.getElementById('setup-model-gb')?.value.trim() || '';
-    const s = await api('/v1/setup/status?context=' + encodeURIComponent(ctx) + '&dual=' + (dual ? 'true' : 'false') + (vhdxQ ? '&vhdx=' + encodeURIComponent(vhdxQ) : '') + (modelGbQ ? '&model_gb=' + encodeURIComponent(modelGbQ) : ''));
-    const eng = document.getElementById('setup-engine');
-    if (eng && s.state) eng.value = s.state.engine || 'windows-vulkan';
-    const vhdx = document.getElementById('setup-vhdx');
-    if (vhdx && s.state) vhdx.value = s.state.vhdxPath || 'E:/dsh_storage.vhdx';
-    const mdir = document.getElementById('setup-modelsdir');
-    if (mdir && s.state) mdir.value = s.state.modelsDir || 'E:/models';
-    const mp = document.getElementById('setup-mount');
-    if (mp && s.state) mp.value = s.state.mountPoint || '/mnt/dsh_storage';
-    const lin = s.health?.linux || {{}};
-    const win = s.health?.windows || {{}};
-    if (healthEl && s.health) {{
-      const orderFor=(key, ok)=> {{
-        if (ok) return '';
-        if (key==='vhdx-missing') return ' → Fix: 1. Create Drive';
-        if (key==='vhdx-not-mounted') return ' → Fix: 1. Mount AI Drive → 2. Bootstrap Docker';
-        if (key==='linux-stopped') {{
-          if (!lin.vhdxExists) return ' → Fix: 1. Create Drive → 2. Mount AI Drive → 3. Bootstrap Docker';
-          if (!lin.vhdxMounted) return ' → Fix: 1. Mount AI Drive → 2. Bootstrap Docker';
-          return ' → Fix: 1. Bootstrap Docker';
-        }}
-        if (key==='docker-down') {{
-          if (!lin.vhdxExists) return ' → Fix: 1. Create Drive → 2. Mount AI Drive → 3. Bootstrap Docker';
-          if (!lin.vhdxMounted) return ' → Fix: 1. Mount AI Drive → 2. Bootstrap Docker';
-          return ' → Fix: 1. Bootstrap Docker';
-        }}
-        if (key==='complete' || key==='ready') {{
-          if (!lin.vhdxExists) return ' → Fix: 1. Create Drive → 2. Mount AI Drive → 3. Bootstrap Docker';
-          if (!lin.vhdxMounted) return ' → Fix: 1. Mount AI Drive → 2. Bootstrap Docker';
-          if (!lin.shardsFound) return ' → Fix: add .gguf to /mnt/dsh_storage/models (no button)';
-          if (!lin.dockerRunning) return ' → Fix: 1. Bootstrap Docker';
-          return ' → Fix: check diskFull';
-        }}
-        return '';
-      }};
-      const st=(ok,msg, key)=> {{
-        const tip = msg + (ok ? '' : orderFor(key, ok));
-        const esc = tip.replace(/"/g, '&quot;');
-        return ok?`<b style="color:#157a3e" title="${{esc}}">✔ ${{msg.split(' — ')[0]}}</b>`:`<b style="color:#b3372c" title="${{esc}}">✘ ${{msg}}</b>`;
-      }};
-      healthEl.style.display='grid'; healthEl.style.gridTemplateColumns='160px 1fr'; healthEl.style.gap='8px 10px'; healthEl.style.padding='0'; healthEl.style.background='transparent'; healthEl.style.border='none'; healthEl.style.color='#FFDD00';
-      healthEl.innerHTML = ''
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Windows</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(win.state==='running', win.state==='running'?'running — Windows sidecar on :'+(win.port||8765):'Windows not running — start Splinter Studio', 'windows') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Linux</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.state==='running', lin.state==='running'?'Linux running — Docker on :'+(lin.port||8000):'Linux stopped — Bootstrap Docker', 'linux-stopped') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">VHDX</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.vhdxExists, lin.vhdxExists?(lin.vhdxMounted?'VHDX mounted — ready':'VHDX exists but not mounted — click Mount AI Drive and approve UAC'):'VHDX missing — click Create Drive and pick size', lin.vhdxExists ? 'vhdx-not-mounted' : 'vhdx-missing') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Shards</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.shardsFound, lin.shardsFound?'Shards found — '+(lin.shardPath||'').split('/').pop():'Shards missing — add .gguf to /mnt/dsh_storage/models via WSL or move from System', 'shards') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Docker 8000</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.dockerRunning, lin.dockerRunning?'Docker healthy — :8000 200':'Docker down — Bootstrap Docker or docker compose up dsh-compute-backend', 'docker-down') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Complete</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(s.complete, s.complete?'Complete — WebUI :3000 → :8000 ready':'Not complete — fix VHDX/mount/shards/docker above', 'complete') + '</div>';
-    }}
-    if (tierEl && s.tier) {{
-      const m = s.tier.metrics || {{}};
-      const f = s.tier.flags || {{}};
-      tierEl.style.display='grid'; tierEl.style.gridTemplateColumns='160px 1fr'; tierEl.style.gap='8px 10px'; tierEl.style.padding='12px'; tierEl.style.background='#000'; tierEl.style.border='1.5px solid #FFB703'; tierEl.style.borderRadius='8px'; tierEl.style.color='#FFDD00';
-      tierEl.innerHTML = ''
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Combined VRAM — cross-platform">VRAM</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier1VramGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Total RAM — cross-platform">RAM</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier2RamGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem; display:flex; flex-direction:column; gap:.35rem" title="T3 spill estimator: model+KV - VRAM - RAM. Change model GB here."><span>T3 spill estimator</span><label class="inline" style="margin:0; display:flex; gap:.2rem; align-items:center; background:rgba(0,0,0,.25); border:1px solid rgba(255,221,0,.18); border-radius:4px; padding:.15rem .3rem; width:fit-content">model <input id="setup-model-gb" type="number" value="' + (m.modelGb ?? 104) + '" min="1" max="2000" step="1" style="width:45px; text-align:right; background:#000; color:#FFDD00; border:1px solid rgba(255,221,0,.4); border-radius:3px; padding:.1rem .2rem; -moz-appearance:textfield; appearance:textfield" onchange="refreshStatus()"><span style="color:#FFDD00; opacity:.9; font-size:.85em">GB</span></label></div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier3NvmeGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Max context from leftover without clamp">Max context</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + fmtCap(f.recommendCap) + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Effective bandwidth weighted by tiers">Speed</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.estEffectiveBw ?? '-') + ' GB/s</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Space left after spill">Free space</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.freeAfterSpillGb ?? '-') + ' GB</div>';
-    }}
-    if (rawEl) {{
-      rawEl.textContent = JSON.stringify(s, null, 1);
-      rawEl.style.display = 'none';
-      console.log('[Splinter] setup status', s);
-    }}
-    const dockerEl = document.getElementById('setup-docker');
-    if (dockerEl) {{
-      const lin2 = s.health.linux || {{}};
-      dockerEl.textContent = 'VHDX ' + (lin2.vhdxExists ? 'exists' : 'missing') + ' (' + (s.state.vhdxPath || '-') + ')\\n'
-        + 'Mount ' + (lin2.vhdxMounted ? 'mounted' : 'not mounted') + ' → ' + (s.state.mountPoint || '/mnt/dsh_storage') + '\\n'
-        + 'Shards ' + (lin2.shardsFound ? 'found ' + (lin2.shardPath || '').split('/').pop() : 'missing') + '\\n'
-        + 'Docker http://127.0.0.1:8000/health → ' + (lin2.dockerRunning ? '200 healthy' : 'down — docker compose up dsh-compute-backend') + '\\n'
-        + 'WebUI :3000 → dsh-compute-backend:8000/v1 ' + (lin2.dockerRunning ? 'route ready' : 'route down');
-      console.log('[Splinter] Docker details', dockerEl.textContent);
-    }} else {{
-      const lin2 = s.health.linux || {{}};
-      console.log('[Splinter] Docker details', 'VHDX ' + (lin2.vhdxExists ? 'exists' : 'missing') + ' (' + (s.state.vhdxPath || '-') + ') — Mount ' + (lin2.vhdxMounted ? 'mounted' : 'not mounted'));
-    }}
-    if (msg) {{
-      const readyTip = s.complete ? 'Ready to run — WebUI :3000 → :8000 ready' : 'Not ready — fix: ' + (!lin.vhdxExists ? '1. Create Drive' : !lin.vhdxMounted ? '1. Mount AI Drive → 2. Bootstrap Docker' : !lin.shardsFound ? 'add .gguf to /mnt/dsh_storage/models (no button)' : !lin.dockerRunning ? '1. Bootstrap Docker' : 'check diskFull');
-      const readyEsc = readyTip.replace(/"/g, '&quot;');
-      msg.innerHTML = s.complete ? '<b style="color:#157a3e" title="'+readyEsc+'">✔</b>' : '<b style="color:#b3372c" title="'+readyEsc+'">✘</b>';
-      console.log('[Splinter] Ready', msg.textContent);
-    }}
-    try {{ if (typeof updateFit === 'function') updateFit(); }} catch(e) {{}}
-  }} catch(e) {{
-    if (msg) msg.textContent = 'load failed: ' + String(e).slice(0,120);
-    if (healthEl) healthEl.textContent = String(e).slice(0,200);
-  }}
-}}
-async function verifySetup() {{
-  const msg = document.getElementById('setup-msg');
-  const rawEl = document.getElementById('setup-raw');
-  if (msg) msg.innerHTML = '<b style="color:#5a6b7d">…</b> verifying…';
-  try {{
-    const ctx = document.getElementById('setup-ctx')?.value || '32768';
-    const dual = document.getElementById('setup-dual')?.checked ? 'true' : 'false';
-    const vhdxV = document.getElementById('setup-vhdx')?.value.trim() || '';
-    const modelGbV = document.getElementById('setup-model-gb')?.value.trim() || '';
-    const s = await api('/v1/setup/status?context=' + encodeURIComponent(ctx) + '&dual=' + dual + (vhdxV ? '&vhdx=' + encodeURIComponent(vhdxV) : '') + (modelGbV ? '&model_gb=' + encodeURIComponent(modelGbV) : ''));
-    const lin = s.health.linux || {{}};
-    const ok = lin.vhdxExists && lin.vhdxMounted && lin.shardsFound && lin.dockerRunning && !s.tier.flags.diskFull;
-    if (msg) msg.innerHTML = ok ? '<b style="color:#157a3e">✔</b> verify:live LINKED — ready to launch (32k)' : '<b style="color:#b3372c">✘</b> verify:live NOT LINKED — fix: ' + (!lin.vhdxExists ? 'VHDX missing' : !lin.vhdxMounted ? 'not mounted → wsl --mount --vhd E:/dsh_storage.vhdx --bare' : !lin.shardsFound ? 'shards missing at ' + (s.state.mountPoint || '/mnt/dsh_storage') : !lin.dockerRunning ? 'docker 8000 down → docker compose up dsh-compute-backend' : s.tier.flags.diskFull ? 'disk >80% full' : 'check');
-    if (rawEl) {{
-      rawEl.textContent = JSON.stringify(s, null, 1);
-      rawEl.style.display = rawEl.style.display === 'none' ? 'block' : 'none';
-    }}
-    try {{
-      const vhdxH = document.getElementById('setup-vhdx')?.value.trim() || '';
-      const h = await api('/v1/setup/health' + (vhdxH ? '?vhdx=' + encodeURIComponent(vhdxH) : ''));
-      if (rawEl && rawEl.style.display !== 'none') rawEl.textContent += '\\n\\nhealth: ' + JSON.stringify(h, null, 1);
-    }} catch(e) {{}}
-  }} catch(e) {{
-    if (msg) msg.textContent = 'verify failed: ' + String(e).slice(0,150);
-  }}
-}}
-async function refreshStatus() {{
-  const msg = document.getElementById('setup-msg');
-  const healthEl = document.getElementById('setup-health');
-  const tierEl = document.getElementById('setup-tier');
-  const rawEl = document.getElementById('setup-raw');
-  const dockerEl = document.getElementById('setup-docker');
-  if (msg) msg.innerHTML = '<b style="color:#5a6b7d">…</b>';
-  try {{
-    const ctx = document.getElementById('setup-ctx')?.value || '32768';
-    const dual = document.getElementById('setup-dual')?.checked ? 'true' : 'false';
-    const vhdxV = document.getElementById('setup-vhdx')?.value.trim() || '';
-    const modelGbV = document.getElementById('setup-model-gb')?.value.trim() || '';
-    const s = await api('/v1/setup/status?context=' + encodeURIComponent(ctx) + '&dual=' + dual + (vhdxV ? '&vhdx=' + encodeURIComponent(vhdxV) : '') + (modelGbV ? '&model_gb=' + encodeURIComponent(modelGbV) : ''));
-    // Update health/tier like refreshSetup (single fetch, no double load)
-    const lin = s.health.linux || {{}};
-    const win = s.health.windows || {{}};
-    const st=(ok,mm)=> ok?`<b style="color:#157a3e" title="${{mm}}">✔ ${{mm.split(' — ')[0]}}</b>`:`<b style="color:#b3372c" title="${{mm}}">✘ ${{mm}}</b>`;
-    if (healthEl && s.health) {{
-      healthEl.style.display='grid'; healthEl.style.gridTemplateColumns='160px 1fr'; healthEl.style.gap='8px 10px'; healthEl.style.padding='0'; healthEl.style.background='transparent'; healthEl.style.border='none'; healthEl.style.color='#FFDD00';
-      healthEl.innerHTML = ''
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Windows</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(win.state==='running', win.state==='running'?'running — Windows sidecar on :'+(win.port||8765):'Windows not running — start Splinter Studio') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Linux</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.state==='running', lin.state==='running'?'Linux running — Docker on :'+(lin.port||8000):'Linux stopped — Bootstrap Docker') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">VHDX</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.vhdxExists, lin.vhdxExists?(lin.vhdxMounted?'VHDX mounted — ready':'VHDX exists but not mounted — click Mount AI Drive and approve UAC'):'VHDX missing — click Create Drive and pick size') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Shards</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.shardsFound, lin.shardsFound?'Shards found — '+(lin.shardPath||'').split('/').pop():'Shards missing — add .gguf to /mnt/dsh_storage/models via WSL or move from System') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Docker 8000</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(lin.dockerRunning, lin.dockerRunning?'Docker healthy — :8000 200':'Docker down — Bootstrap Docker or docker compose up dsh-compute-backend') + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">Complete</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + st(s.complete, s.complete?'Complete — WebUI :3000 → :8000 ready':'Not complete — fix VHDX/mount/shards/docker above') + '</div>';
-    }}
-    if (tierEl && s.tier) {{
-      const m = s.tier.metrics || {{}};
-      const f = s.tier.flags || {{}};
-      tierEl.style.display='grid'; tierEl.style.gridTemplateColumns='160px 1fr'; tierEl.style.gap='8px 10px'; tierEl.style.padding='12px'; tierEl.style.background='#000'; tierEl.style.border='1.5px solid #FFB703'; tierEl.style.borderRadius='8px'; tierEl.style.color='#FFDD00';
-      tierEl.innerHTML = ''
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Combined VRAM — cross-platform">VRAM</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier1VramGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Total RAM — cross-platform">RAM</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier2RamGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem; display:flex; flex-direction:column; gap:.35rem" title="T3 spill estimator: model+KV - VRAM - RAM. Change model GB here."><span>T3 spill estimator</span><label class="inline" style="margin:0; display:flex; gap:.2rem; align-items:center; background:rgba(0,0,0,.25); border:1px solid rgba(255,221,0,.18); border-radius:4px; padding:.15rem .3rem; width:fit-content">model <input id="setup-model-gb" type="number" value="' + (m.modelGb ?? 104) + '" min="1" max="2000" step="1" style="width:45px; text-align:right; background:#000; color:#FFDD00; border:1px solid rgba(255,221,0,.4); border-radius:3px; padding:.1rem .2rem; -moz-appearance:textfield; appearance:textfield" onchange="refreshStatus()"><span style="color:#FFDD00; opacity:.9; font-size:.85em">GB</span></label></div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.tier3NvmeGb ?? '-') + ' GB</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Max context from leftover without clamp">Max context</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + fmtCap(f.recommendCap) + '</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Effective bandwidth weighted by tiers">Speed</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.estEffectiveBw ?? '-') + ' GB/s</div>'
-        + '<div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem" title="Space left after spill">Free space</div><div style="color:#FFDD00; background:rgba(255,255,255,.04); border:1px solid rgba(255,221,0,.18); border-radius:6px; padding:.45rem .6rem">' + (m.freeAfterSpillGb ?? '-') + ' GB</div>';
-    }}
-    if (dockerEl) {{
-      const lin2 = s.health.linux || {{}};
-      dockerEl.textContent = 'VHDX ' + (lin2.vhdxExists ? 'exists' : 'missing') + ' (' + (s.state.vhdxPath || '-') + ')\\n'
-        + 'Mount ' + (lin2.vhdxMounted ? 'mounted' : 'not mounted') + ' → ' + (s.state.mountPoint || '/mnt/dsh_storage') + '\\n'
-        + 'Shards ' + (lin2.shardsFound ? 'found ' + (lin2.shardPath || '').split('/').pop() : 'missing') + '\\n'
-        + 'Docker http://127.0.0.1:8000/health → ' + (lin2.dockerRunning ? '200 healthy' : 'down — docker compose up dsh-compute-backend') + '\\n'
-        + 'WebUI :3000 → dsh-compute-backend:8000/v1 ' + (lin2.dockerRunning ? 'route ready' : 'route down');
-      console.log('[Splinter] Docker details', dockerEl.textContent, s.health, s.state);
-    }} else {{
-      console.log('[Splinter] Docker details', s.health.linux, s.state);
-    }}
-    const ok = lin.vhdxExists && lin.vhdxMounted && lin.shardsFound && lin.dockerRunning && !s.tier.flags.diskFull;
-    const orderTip = !ok ? (!lin.vhdxExists ? 'Fix: 1. Create Drive' : !lin.vhdxMounted ? 'Fix: 1. Mount AI Drive → 2. Bootstrap Docker' : !lin.shardsFound ? 'Fix: add .gguf (no button)' : !lin.dockerRunning ? 'Fix: 1. Bootstrap Docker' : 'Fix: check diskFull') : 'Ready — WebUI :3000 → :8000 ready';
-    const orderEsc = orderTip.replace(/"/g, '&quot;');
-    const tick = ok ? '<b style="color:#157a3e" title="'+orderEsc+'">✔</b>' : '<b style="color:#b3372c" title="'+orderEsc+'">✘</b>';
-    const baseDetail = ok ? 'verify:live LINKED — ready to launch' : 'fix: ' + (!lin.vhdxExists ? 'VHDX missing' : !lin.vhdxMounted ? 'not mounted → wsl --mount --vhd E:/dsh_storage.vhdx --bare' : !lin.shardsFound ? 'shards missing' : !lin.dockerRunning ? 'docker down' : 'disk >80%');
-    if (rawEl) {{ rawEl.textContent = JSON.stringify(s, null, 1); rawEl.style.display = 'none'; console.log('[Splinter] setup status', s); }}
-    // merged Test WebUI ↔ Docker — wait for Docker 8000 + WebUI 3000, then merge into one sentence (Docker loads last) — console only (details hidden)
-    let dockerExtra = '';
-    let webuiExtra = '';
-    let dockerModels = null;
-    let dockerErr = null;
-    let webuiOk = false;
-    try {{
-      dockerModels = await api('/v1/setup/docker-models').catch(e => {{ throw new Error('Docker 8000 /v1/models failed: ' + (e.message || e)); }});
-      const count = dockerModels && dockerModels.data ? dockerModels.data.length : 0;
-      dockerExtra = ' · Docker ' + (count ? count + ' model' + (count===1?'':'s') : 'reachable') + ' (' + (lin.dockerRunning ? '8000 ok' : '8000 ok but health says down') + ')';
-      if (dockerEl) dockerEl.textContent += '\\n\\nTest WebUI ↔ Docker:\\nDocker /v1/models:\\n' + JSON.stringify(dockerModels, null, 1).slice(0,1200);
-      console.log('[Splinter] Docker /v1/models (via harness proxy, no CORS)', dockerModels);
-    }} catch(e) {{
-      dockerErr = String(e.message || e).slice(0,600);
-      dockerExtra = ' · Docker unreachable (http://127.0.0.1:8000/health — ' + (lin.dockerRunning ? 'health says up but fetch failed' : 'docker down') + ')';
-      if (dockerEl) dockerEl.textContent += '\\n\\nTest WebUI ↔ Docker failed:\\n' + dockerErr + '\\nDocker health: http://127.0.0.1:8000/health';
-      console.warn('[Splinter] Docker fetch failed (via harness proxy)', dockerErr);
-    }}
-    try {{
-      webuiOk = await fetch('http://127.0.0.1:3000', {{method: 'GET', mode: 'no-cors'}}).then(() => true).catch(() => false);
-      webuiExtra = ' · WebUI :3000 ' + (webuiOk ? 'reachable → dsh-compute-backend:8000/v1' : 'not reachable — open http://127.0.0.1:3000');
-      if (dockerEl) dockerEl.textContent += '\\n\\nWebUI :3000 → dsh-compute-backend:8000/v1 — ' + (webuiOk ? 'reachable (no-cors) route likely ok' : 'open http://127.0.0.1:3000 and check Settings → Connections');
-      console.log('[Splinter] WebUI :3000', webuiOk ? 'reachable' : 'not reachable');
-      if (dockerEl) console.log('[Splinter] Docker details (full)', dockerEl.textContent);
-    }} catch(e) {{
-      webuiExtra = ' · WebUI check failed';
-      console.warn('[Splinter] WebUI check failed', e);
-    }}
-    // single merged sentence — wait until Docker (slowest) completes
-    const finalDetail = baseDetail + dockerExtra + webuiExtra;
-    const finalTip = (orderTip + dockerExtra + webuiExtra).replace(/"/g, '&quot;');
-    if (msg) msg.innerHTML = '<span style="display:inline-flex; gap:.6rem; align-items:center; flex-wrap:wrap" title="'+finalTip+'">' + tick + ' ' + (ok ? 'Ready' : 'Not ready') + ' <span style="opacity:.6">·</span> ' + finalDetail + '</span>';
-    console.log('[Splinter] Ready', finalDetail);
-  }} catch(e) {{
-    if (msg) msg.textContent = 'load failed: ' + String(e).slice(0,120);
-  }}
-}}
-async function createDrive() {{
-  const vhdxEl = document.getElementById('setup-vhdx');
-  const vhdx = vhdxEl ? vhdxEl.value.trim() : '';
-  const sizeEl = document.getElementById('setup-vhdx-size');
-  const size_gb = sizeEl ? parseInt(sizeEl.value, 10) : 250;
-  const msg = document.getElementById('setup-msg');
-  const dockerEl = document.getElementById('setup-docker');
-  if (!vhdx) {{ if (msg) msg.textContent = 'select a drive first'; return; }}
-  if (!confirm('Create ' + size_gb + 'GB dynamic VHDX at ' + vhdx + '?\\n\\nThis creates a sparse virtual drive (initially small, max ' + size_gb + 'GB, grows as needed) at the chosen location and formats it to ext4 on first mount. Proceed?')) return;
-  if (msg) msg.textContent = 'creating VHDX at ' + vhdx + ' (' + size_gb + 'GB dynamic, sparse)…';
-  if (dockerEl) dockerEl.textContent = 'calling POST /v1/setup/create-vhdx for ' + vhdx + ' (' + size_gb + 'GB)…';
-  console.log('[Splinter] Create Drive', vhdx, size_gb);
-  try {{
-    const r = await api('/v1/setup/create-vhdx', 'POST', {{vhdx, size_gb}});
-    if (msg) msg.textContent = r.already ? 'VHDX already exists at ' + vhdx : 'VHDX created at ' + vhdx + ' via ' + (r.method || 'New-VHD');
-    if (dockerEl) dockerEl.textContent = 'Create result:\\n' + JSON.stringify(r, null, 1).slice(0,1200);
-    console.log('[Splinter] Create result', r);
-    await refreshSetup();
-  }} catch(e) {{
-    const txt = String(e.message || e);
-    if (msg) msg.textContent = 'create failed: ' + txt.slice(0,150);
-    if (dockerEl) dockerEl.textContent = 'Create failed:\\n' + txt.slice(0,800);
-    console.warn('[Splinter] Create failed', txt);
-  }}
-}}
-async function mountBare() {{
-  const msg = document.getElementById('setup-msg');
-  const dockerEl = document.getElementById('setup-docker');
-  const vhdxEl = document.getElementById('setup-vhdx');
-  const vhdx = vhdxEl ? vhdxEl.value.trim() : '';
-  if (msg) msg.textContent = 'mounting VHDX as bare device (Admin UAC may pop)…';
-  if (dockerEl) dockerEl.textContent = 'calling POST /v1/setup/mount-bare' + (vhdx ? ' for ' + vhdx : '') + '…';
-  console.log('[Splinter] Mount bare', vhdx || '(default)');
-  try {{
-    const r = await api('/v1/setup/mount-bare', 'POST', vhdx ? {{vhdx}} : {{}});
-    if (r.needs_elevation) {{
-      if (msg) msg.textContent = 'UAC shown on host — click Yes, then Bootstrap Docker';
-      if (dockerEl) dockerEl.textContent = 'UAC prompt shown on host desktop — click Yes in the Windows dialog, then click Bootstrap Docker.\\n' + (r.error || '').slice(0,500);
-      console.log('[Splinter] Mount needs UAC', r);
-    }} else {{
-      if (msg) msg.textContent = 'bare mount OK';
-      if (dockerEl) dockerEl.textContent = 'Bare mount OK:\\n' + (r.output || '').slice(0,800);
-      console.log('[Splinter] Bare mount OK', r);
-      await refreshSetup();
-    }}
-  }} catch(e) {{
-    const txt = String(e.message || e);
-    if (msg) msg.textContent = 'mount failed: ' + txt.slice(0,150);
-    if (dockerEl) dockerEl.textContent = 'Mount failed:\\n' + txt.slice(0,800) + '\\nFix: Right-click Mount_AI_Drive.bat → Run as administrator';
-    console.warn('[Splinter] Mount failed', txt);
-  }}
-}}
-async function bootstrapDocker() {{
-  const dockerEl = document.getElementById('setup-docker');
-  const msg = document.getElementById('setup-msg');
-  const rawEl = document.getElementById('setup-raw');
-  const vhdxEl = document.getElementById('setup-vhdx');
-  const vhdx = vhdxEl ? vhdxEl.value.trim() : '';
-  if (msg) msg.textContent = 'bootstrapping — mounting + docker compose up…';
-  if (dockerEl) dockerEl.textContent = 'calling POST /v1/setup/bootstrap' + (vhdx ? ' for ' + vhdx : '') + '…\\n';
-  console.log('[Splinter] Bootstrap Docker', vhdx || '(default)');
-  try {{
-    const r = await api('/v1/setup/bootstrap', 'POST', vhdx ? {{vhdx}} : {{}});
-    if (dockerEl) dockerEl.textContent = 'Bootstrap steps:\\n' + JSON.stringify(r.steps, null, 1).slice(0,1800) + '\\n\\nhealth: ' + JSON.stringify(r.health, null, 1).slice(0,800);
-    if (msg) msg.textContent = r.ok ? 'bootstrap LINKED — docker healthy' : 'bootstrap done but docker not healthy — check docker logs dsh-compute-backend';
-    if (rawEl) {{ rawEl.textContent = JSON.stringify(r, null, 1); rawEl.style.display = 'block'; }}
-    console.log('[Splinter] Bootstrap result', r);
-    await refreshSetup();
-  }} catch(e) {{
-    const txt = String(e.message || e);
-    if (txt.includes('bare') || txt.includes('Administrator') || txt.includes('Mount_AI_Drive')) {{
-      if (dockerEl) dockerEl.textContent = 'Needs Admin bare mount first:\\n'
-        + '1) Right-click Mount_AI_Drive.bat → Run as administrator\\n'
-        + '   (or: wsl --mount --vhd E:/dsh_storage.vhdx --bare)\\n'
-        + '2) Then click Bootstrap Docker again (no Admin needed)\\n\\n'
-        + 'Error: ' + txt.slice(0,700);
-      if (msg) msg.textContent = 'needs Admin: run Mount_AI_Drive.bat as Admin, then Bootstrap again';
-      console.warn('[Splinter] Bootstrap needs Admin', txt);
-    }} else {{
-      if (msg) msg.textContent = 'bootstrap failed: ' + txt.slice(0,150);
-      if (dockerEl) dockerEl.textContent = 'Bootstrap failed:\\n' + txt.slice(0,1200);
-      console.warn('[Splinter] Bootstrap failed', txt);
-    }}
-    if (rawEl) rawEl.style.display = 'none';
-  }}
-}}
-async function testWebUI() {{
-  // kept for compat — merged into refreshStatus (Refresh now does health + WebUI check)
-  return refreshStatus();
-}}
-async function loadDrives() {{
-  const sel = document.getElementById('setup-drive');
-  const vhdxEl = document.getElementById('setup-vhdx');
-  if (!sel) return;
-  try {{
-    const data = await api('/v1/setup/drives');
-    sel.innerHTML = '';
-    for (const d of data.drives) {{
-      const o = document.createElement('option');
-      o.value = d.mount;
-      o.textContent = d.mount + ' — ' + d.free_gb + 'GB free / ' + d.total_gb + 'GB';
-      sel.appendChild(o);
-    }}
-    // No auto-best: leave VHDX as-is (default E:/dsh_storage.vhdx) so user explicitly picks drive for LLM storage
-    sel.addEventListener('change', () => {{
-      const drive = sel.value;
-      let base = drive;
-      if (!base.endsWith('/') && !base.endsWith('\\\\')) base += '/';
-      base = base.replace(/\\\\/g, '/');
-      if (vhdxEl) vhdxEl.value = base + 'dsh_storage.vhdx';
-    }});
-  }} catch(e) {{
-    sel.innerHTML = '<option>auto-detect failed</option>';
-  }}
-}}
-setTimeout(() => {{ try {{ loadSetup(); loadDrives(); }} catch(e) {{}} }}, 900);
 
 /* ---------------- typeahead (hub repos + local library) --------------- */
 let suggestTimer = null;
@@ -1985,7 +1682,7 @@ async function sendChat() {{
   const ctrl = new AbortController();
   streamAbort = ctrl;
   const body = {{query: query, conversation_id: convId}};
-  const provSel = document.getElementById('chat-provider').value;
+  const provSel = document.getElementById('chat-provider')?.value;
   if (provSel) body.provider = provSel;
   if (Object.keys(hiveOverrides).length) body.config = hiveOverrides;
   let text = '';
@@ -2195,6 +1892,31 @@ loadLibrarySystem().catch(() => {{}});
 /* the model dropdown populates async from /v1/provider/config */
 setTimeout(applyConvProvider, 2000);
 
+/* ----------------------- cascade role coverage ----------------------- */
+async function loadCascadeRoles() {{
+  const box = document.getElementById('cascade-roles');
+  if (!box) return;
+  try {{
+    const [reg, roles] = await Promise.all([
+      api('/v1/cascade/registry'), api('/v1/cascade/roles'),
+    ]);
+    const roleRows = (roles.roles || []).map(r => {{
+      const cands = (reg.candidates || []).filter(c => (c.roles || []).includes(r.id));
+      const names = cands.map(c => c.id).slice(0, 6).join(', ') || '<span class="note">no candidate</span>';
+      return `<tr><td><code>${{r.id}}</code></td><td>${{names}}</td><td class="note">${{r.description || ''}}</td></tr>`;
+    }}).join('');
+    const missing = (reg.missing_roles || []);
+    box.innerHTML =
+      (missing.length
+        ? `<p class="note" style="color:#FFDD00">Uncovered role(s): <b>${{missing.join(', ')}}</b> (the deterministic policy fills these by design).</p>`
+        : '<p class="note">Every role has a candidate.</p>') +
+      `<table style="width:100%;margin-top:.5rem"><thead><tr><th>Role</th><th>Candidates</th><th>Description</th></tr></thead><tbody>${{roleRows}}</tbody></table>`;
+  }} catch (e) {{
+    box.textContent = 'Could not load the role registry: ' + e;
+  }}
+}}
+setTimeout(loadCascadeRoles, 300);
+
 /* --------------------------- server panel ---------------------------- */
 function launchBody() {{
   const lo = {{}};
@@ -2254,6 +1976,26 @@ async function download(btn) {{
       body: JSON.stringify({{repo: val('drepo'), file: val('dfile')}})}});
     show('downloads', await r.text());
   }} finally {{ if (btn) btn.disabled = false; }}
+}}
+
+async function importFolder(input) {{
+  const status = document.getElementById('import-status');
+  const files = Array.from(input.files || []).filter(f => f.name.toLowerCase().endsWith('.gguf'));
+  if (!files.length) {{ if (status) status.textContent = 'no .gguf files in that folder'; input.value=''; return; }}
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f, f.webkitRelativePath || f.name);
+  if (status) status.textContent = `importing ${{files.length}} file(s)…`;
+  try {{
+    const r = await fetch('/v1/models/local/import', {{method: 'POST', body: fd}});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.detail || j.error || await r.text());
+    if (status) status.textContent = `imported ${{(j.imported||[]).length}} model(s)`;
+    input.value = '';
+    await loadLibrarySystem();
+  }} catch (e) {{
+    if (status) status.textContent = 'import failed: ' + e;
+    input.value = '';
+  }}
 }}
 
 async function setLibraryPath() {{
@@ -2640,6 +2382,30 @@ function currentEngineIndex() {{
   return +document.getElementById('eng-select').value;
 }}
 
+async function loadProviders() {{
+  try {{
+    const pc = await api('/v1/provider/config');
+    window._providers = pc.providers || [];
+    window._provDefault = pc.default || '';
+  }} catch (err) {{
+    window._providers = [];
+    window._provDefault = '';
+  }}
+  return window._providers;
+}}
+
+function fillProviderSelect(sel, selected) {{
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— none (use base URL below) —</option>';
+  for (const p of (window._providers || [])) {{
+    const o = document.createElement('option');
+    o.value = p.name;
+    o.textContent = p.name + (p.model ? ' — ' + p.model.split('/').pop() : '');
+    sel.appendChild(o);
+  }}
+  sel.value = selected || '';
+}}
+
 function engineSelected() {{
   const e = engines[currentEngineIndex()];
   if (!e) return;
@@ -2647,21 +2413,12 @@ function engineSelected() {{
   document.getElementById('eng-kind').value = e.kind;
   document.getElementById('eng-url').value = e.base_url || '';
   document.getElementById('eng-apikey').value = '';
-  // populate provider dropdown
+  // populate provider dropdown (providers are cached separately — this
+  // function stays synchronous so callers can rely on it)
   const provSel = document.getElementById('eng-provider');
   if (provSel) {{
-    // fetch providers if not cached
-    if (!window._providers) {{
-      try {{ const pc = await api('/v1/provider/config'); window._providers = pc.providers || []; window._provDefault = pc.default || ''; }} catch(err) {{ window._providers = []; }}
-    }}
-    provSel.innerHTML = '<option value="">— none (use base URL below) —</option>';
-    for (const p of (window._providers || [])) {{
-      const o = document.createElement('option');
-      o.value = p.name;
-      o.textContent = p.name + (p.model ? ' — ' + p.model.split('/').pop() : '');
-      provSel.appendChild(o);
-    }}
-    provSel.value = e.provider || '';
+    if (!window._providers) {{ loadProviders().then(() => fillProviderSelect(provSel, e.provider)); }}
+    else fillProviderSelect(provSel, e.provider);
   }}
   document.getElementById('eng-default').checked =
     e.name.toLowerCase() === engDefault.toLowerCase();
@@ -3173,6 +2930,25 @@ function formatCtx(v) {{
   if (n>=1024) return (n/1024)|0 + 'k';
   return String(n);
 }}
+function updateEngModelDisplay() {{
+  const sel = document.getElementById('eng-model');
+  const disp = document.getElementById('eng-model-display');
+  const note = document.getElementById('eng-model-note');
+  if (!sel) return;
+  const file = sel.value;
+  if (disp) disp.textContent = file ? file.split('/').pop().split('\\\\').pop() : '—';
+  if (!note) return;
+  const local = (window._fitModels && window._fitModels.models) || [];
+  const entry = local.find(m => m.file === file);
+  if (!entry) {{ note.textContent = ''; return; }}
+  const bits = [];
+  if (entry.size_gb != null) bits.push(entry.size_gb + ' GB');
+  if (entry.architecture) bits.push(entry.architecture);
+  if (entry.quantization) bits.push(entry.quantization);
+  if (entry.context_length) bits.push(entry.context_length + ' ctx');
+  note.textContent = bits.join(' · ');
+}}
+
 async function updateFit() {{
   const selFile = window._selectedFile || (document.getElementById('launch-model-select') ? document.getElementById('launch-model-select').value : '');
   const box = document.getElementById('eng-fit');
@@ -3183,9 +2959,11 @@ async function updateFit() {{
   let size_gb = 0;
   try {{
     const local = await getFitModels();
+    window._fitModels = local;
     const entry = (local.models||[]).find(m=>m.file===selFile);
     if (entry && entry.size_gb!=null) size_gb = Number(entry.size_gb)||0;
   }} catch(e) {{}}
+  updateEngModelDisplay();
   const ctx = parseInt(ctxEl.value,10)||8192;
   const label = document.getElementById('fit-ctx-label');
   if (label) label.textContent = formatCtx(ctx);
@@ -3223,7 +3001,7 @@ function engineLoadFromFit() {{
   const selFile = window._selectedFile || (document.getElementById('launch-model-select') ? document.getElementById('launch-model-select').value : '');
   const ctx = parseInt(document.getElementById('fit-ctx')?.value||'8192',10);
   if (!selFile) return;
-  const modelInput = document.getElementById('model');
+  const modelInput = document.getElementById('eng-model');
   const ctxInput = document.getElementById('ctx');
   if (modelInput) modelInput.value = selFile;
   if (ctxInput) ctxInput.value = String(ctx);
@@ -3623,6 +3401,11 @@ def render_cascade_page(task_files: list[str]) -> str:
 
 <details style="margin:1rem 0">
 <summary style="cursor:pointer;font-weight:700;padding:.5rem 0;color:#000000">Advanced settings (judge, repair, gate, model, API) ▾</summary>
+<section>
+<h2>Role coverage</h2>
+<p class="note">Which candidate models cover which measurement role, and what the router table costs. Read-only — the runner uses the local tier for generation and the API for escalation.</p>
+<div id="cascade-roles" class="note" style="margin:.5rem 0">loading…</div>
+</section>
 <section>
 <h2>Judge &amp; repair</h2>
 <div class="grid-2col">

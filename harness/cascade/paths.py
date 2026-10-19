@@ -238,10 +238,6 @@ def async_steps(path: Path) -> tuple[PathStep, ...]:
     return tuple(step for step in resolve_steps(path) if step.async_)
 
 
-def paths_for_device(device: Device | str) -> tuple[Path, ...]:
-    value = device.value if isinstance(device, Device) else str(device)
-    return tuple(p for p in PATHS if any(d.value == value for d in p.devices))
-
 
 def validate_paths(paths: tuple[Path, ...] = PATHS) -> list[str]:
     """Structural checks over the path registry; empty list means valid."""
