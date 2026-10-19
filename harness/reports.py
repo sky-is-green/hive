@@ -2091,10 +2091,12 @@ loadResearchCount();
 /* ------------------------------ chat -------------------------------- */
 /* every source that can print in the chat gets its own colour + label */
 const CHAT_SPEAKERS = {{
-  user:    {{cls: 'user',    label: 'you'}},
+  /* the user needs no label — the text says who wrote it */
+  user:    {{cls: 'user',    label: ''}},
   ai:      {{cls: 'llm',     label: 'model'}},
   harness: {{cls: 'harness', label: 'studio'}},
-  console: {{cls: 'console', label: 'console'}},
+  /* the console speaks for the commands: it says so */
+  console: {{cls: 'console', label: 'Command Console'}},
   sys:     {{cls: 'sys',     label: ''}},
 }};
 
@@ -2234,11 +2236,11 @@ async function runCommand(line) {{
   try {{
     const r = await api('/v1/commands/run', 'POST',
                         {{line: line, conversation_id: convId}});
-    bubble('sys', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
-    record('sys', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
+    bubble('console', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
+    record('console', (r.kind === 'error' ? '⚠ ' : '') + (r.text || r.kind));
     if (r.attachment) {{
       pendingAttachment = r.attachment;
-      bubble('sys', `📎 ${{r.attachment.name}} is attached — it rides along with your next message.`);
+      bubble('console', `📎 ${{r.attachment.name}} is attached — it rides along with your next message.`);
     }}
     if (r.new_conversation_id) {{
       convId = r.new_conversation_id;
@@ -2258,7 +2260,7 @@ async function runCommand(line) {{
       await compactConversation();
     }}
   }} catch (e) {{
-    bubble('sys', 'command failed: ' + e.message);
+    bubble('console', 'command failed: ' + e.message);
   }}
 }}
 
