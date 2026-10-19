@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -124,3 +125,19 @@ def test_the_console_names_itself_and_the_user_does_not():
     assert "user:    {cls: 'user',    label: ''}" in html
     # and the command output uses the console voice, not the status pill
     assert "bubble('console', (r.kind === 'error'" in html
+
+
+def test_a_message_is_a_label_gutter_plus_a_box():
+    """The speaker sits in its own gutter; the box holds only the message."""
+    html = render_server_page()
+    assert "box.className = 'bubble'" in html
+    assert "row.className = 'msg ' + speaker.cls" in html
+    # the console is cyan now, not red (red reads as failure)
+    assert "#67E8F9" in html or True  # the colour lives in the stylesheet
+    css = Path(__file__).resolve().parents[2] / "harness" / "studio.css"
+    text = css.read_text(encoding="utf-8")
+    assert ".msg.console .bubble" in text
+    assert "#67E8F9" in text
+    assert "FF9B9B" not in text          # the old soft red is gone
+    assert ".msg .bubble" in text        # the box is its own element
+    assert "align-self: flex-end" in text  # the user's row hugs the right
