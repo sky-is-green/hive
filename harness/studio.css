@@ -2,6 +2,7 @@
 html, body { height: 100%; }
 body {
   max-width: none;
+  overflow-x: hidden;
   margin: 0;
   padding: 1rem 1.2rem;
   height: 100vh;
@@ -25,7 +26,8 @@ section {
 /* equal thirds — each col 1/3, no squish */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* the chat pane is the work area: give it the extra width */
+  grid-template-columns: minmax(210px, 1fr) minmax(320px, 1.7fr) minmax(210px, 1fr);
   gap: 1.2rem;
   align-items: start;
   flex: 1 1 auto;
@@ -68,7 +70,9 @@ section {
   margin-bottom: .6rem;
   overflow-y: auto;
 }
-@media (max-width: 900px) {
+@media (max-width: 760px) {
+  /* narrow: stack, but keep the chat bounded so the page stays short and
+     the launch panel is not pushed to the bottom of a long scroll */
   body { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
   .grid {
     display: flex;
@@ -79,8 +83,8 @@ section {
     gap: 1rem;
   }
   .col { overflow: visible; flex: none; min-height: auto; }
-  .mid { order: -1; min-height: 75vh; overflow: visible; flex: none; }
-  .chatpane .chatlog { min-height: 50vh; }
+  .mid { order: -1; height: 70vh; min-height: 0; overflow: hidden; flex: none; }
+  .chatpane .chatlog { min-height: 0; }
 }
 /* --- rest: keep original component styles (unchanged) --- */
 input, button, select { font: inherit; padding: .35rem .6rem; margin: .15rem .3rem .15rem 0; }

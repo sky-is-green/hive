@@ -1084,10 +1084,9 @@ providers.local.json (gitignored).</div>
 <h2 id="chat-title">Loaded model</h2>
 <div class="chat-controls">
 <span class="modesel">
-<label class="inline">model <span class="note" id="chat-model-name">no model loaded</span></label>
-<label class="inline"><input type="radio" name="chatmode" value="splinter" checked title="How: POST /v1/splinter/stream → splinter.process_turn curates assembled_content → single generate. Does: No tools, fast curated. Changing: Good for chat/memory; Agent needed for bash/code."> Splinter </label>
-<label class="inline"><input type="radio" name="chatmode" value="agent" title="How: POST /v1/agent/stream → DshAgentService loop with tools/session log. Does: Full agent (bash/fs/web/subagent). Changing: Use for code/tasks; slower but multi-step."> Agent (dsh) </label>
-<label class="inline" title="How: the agent gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = a plain agent."><input type="checkbox" id="chat-assistant"> App assistant</label>
+<label class="inline" title="How: the encoder gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = the encoder is off, so Splinter and Agent cannot run either."><input type="checkbox" id="chat-assistant" onchange="applyEncoderToggle()"> App assistant</label>
+<label class="inline" title="How: POST /v1/splinter/stream → splinter.process_turn curates the context → one curated reply. Does: Fast, no tools. Changing: Needs the app assistant (the encoder drives it)."><input type="checkbox" id="cfg-splinter" onchange="saveChatToggles()"> Splinter</label>
+<label class="inline" title="How: POST /v1/agent/stream → the dsh agent loop with tools and a durable session log. Does: Full agent (bash, files, code, subagents). Changing: Needs the app assistant."><input type="checkbox" id="cfg-agent" onchange="saveChatToggles()"> Agent (dsh)</label>
 </span>
 <button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">New conversation</button>
 </div>
@@ -1120,11 +1119,7 @@ providers.local.json (gitignored).</div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
 </div>
-</div>
 <div id="surgery-panel" style="display:none;margin-top:.5rem"></div>
-<div class="note"><b>Splinter</b>: direct curated generation. <b>Agent (dsh)</b>:
-the full DeepSeek Harness agent loop — bash/files/code tools, multi-step
-turns, durable session log.</div>
 </section>
 </div>
 
@@ -1802,11 +1797,11 @@ async function saveStudioSetting(key, value) {{
 }}
 
 function applyToolUseSetting(on) {{
-  // with tools off the agent cannot run: force the plain chat path
-  const agentRadio = document.querySelector('input[name="chatmode"][value="agent"]');
-  const splinterRadio = document.querySelector('input[name="chatmode"][value="splinter"]');
-  if (agentRadio) agentRadio.disabled = !on;
-  if (!on && splinterRadio) splinterRadio.checked = true;
+  // with tools off the agent cannot run: the agent toggle is disabled
+  const ag = document.getElementById('cfg-agent');
+  if (!ag) return;
+  ag.disabled = !on;
+  if (!on) ag.checked = false;
 }}
 
 /* --------------------------- research queue -------------------------- */
@@ -1887,7 +1882,53 @@ function autoGrow(el) {{
 }}
 
 function chatMode() {{
-  return document.querySelector('input[name="chatmode"]:checked').value;
+  // the agent wins when both are on; the encoder is the prerequisite for both
+  return document.getElementById('cfg-agent')?.checked ? 'agent' : 'splinter';
+}}
+
+const CHAT_TOGGLE_KEY = 'hive-chat-toggles';
+
+function saveChatToggles() {{
+  try {{
+    localStorage.setItem(CHAT_TOGGLE_KEY, JSON.stringify({{
+      assistant: !!document.getElementById('chat-assistant')?.checked,
+      splinter: !!document.getElementById('cfg-splinter')?.checked,
+      agent: !!document.getElementById('cfg-agent')?.checked,
+    }}));
+  }} catch (e) {{}}
+}}
+
+function loadChatToggles() {{
+  let saved = {{}};
+  try {{ saved = JSON.parse(localStorage.getItem(CHAT_TOGGLE_KEY) || '{{}}') || {{}}; }} catch (e) {{}}
+  const a = document.getElementById('chat-assistant');
+  const sp = document.getElementById('cfg-splinter');
+  const ag = document.getElementById('cfg-agent');
+  if (!a || !sp || !ag) return;
+  a.checked = saved.assistant !== false;      // on by default
+  sp.checked = saved.splinter !== false;
+  ag.checked = !!saved.agent;
+  applyEncoderToggle();
+}}
+
+function applyEncoderToggle() {{
+  // the encoder drives both chat modes: without it, neither can be turned on
+  const a = document.getElementById('chat-assistant');
+  const sp = document.getElementById('cfg-splinter');
+  const ag = document.getElementById('cfg-agent');
+  if (!a || !sp || !ag) return;
+  const on = a.checked;
+  sp.disabled = !on;
+  ag.disabled = !on;
+  if (!on) {{ sp.checked = false; ag.checked = false; }}
+  const note = document.getElementById('cfg-note');
+  if (note && !on) note.textContent = 'the app assistant is off - Splinter and Agent need it';
+  else if (note) note.textContent = '';
+  const composer = document.getElementById('chatin');
+  if (composer) composer.placeholder = on
+    ? 'Talk to the loaded AI…  (/ for commands)'
+    : 'Turn on the app assistant to chat';
+  saveChatToggles();
 }}
 
 /* ------------------------- slash commands ---------------------------- */
@@ -1928,9 +1969,8 @@ async function runCommand(line) {{
       document.getElementById('chatlog').innerHTML = '';
     }}
     if (r.mode) {{
-      const radio = document.querySelector(
-        `input[name="chatmode"][value="${{r.mode}}"]`);
-      if (radio) radio.checked = true;
+      const el = document.getElementById(r.mode === 'agent' ? 'cfg-agent' : 'cfg-splinter');
+      if (el) {{ el.checked = true; saveChatToggles(); }}
     }}
   }} catch (e) {{
     bubble('sys', 'command failed: ' + e.message);
@@ -2199,6 +2239,7 @@ loadEngines().catch(() => {{}});
 /* populate model dropdowns from local library */
 loadLibrarySystem().catch(() => {{}});
 loadStudioSettings();
+loadChatToggles();
 /* the model dropdown populates async from /v1/provider/config */
 
 /* ----------------------- cascade role coverage ----------------------- */
