@@ -2103,30 +2103,35 @@ const CHAT_SPEAKERS = {{
 function bubble(role, text, meta) {{
   const log = document.getElementById('chatlog');
   const speaker = CHAT_SPEAKERS[role] || CHAT_SPEAKERS.sys;
-  const div = document.createElement('div');
-  div.className = 'msg ' + speaker.cls;
+  // a message is a row: the speaker in its own gutter on the left, then
+  // the box.  The box holds the message and nothing else, so its lines
+  // stay uniform — and it is only as wide as the message needs.
+  const row = document.createElement('div');
+  row.className = 'msg ' + speaker.cls;
   if (speaker.label) {{
-    // a role label, so a scroll-back reads as a transcript
     const label = document.createElement('span');
     label.className = 'role';
     label.textContent = speaker.label;
-    div.appendChild(label);
+    row.appendChild(label);
   }}
+  const box = document.createElement('div');
+  box.className = 'bubble';
   const body = document.createElement('span');
   body.className = 'body';
   body.textContent = text;
-  div.appendChild(body);
+  box.appendChild(body);
   if (meta) {{
     const m = document.createElement('span');
     m.className = 'meta';
     m.textContent = meta;
-    div.appendChild(m);
+    box.appendChild(m);
   }}
-  log.appendChild(div);
+  row.appendChild(box);
+  log.appendChild(row);
   log.scrollTop = log.scrollHeight;
   // Cap DOM growth: a long-lived tab must not accumulate every bubble.
   while (log.children.length > 200) log.removeChild(log.firstChild);
-  return div;
+  return box;
 }}
 
 function consoleLine(text) {{
