@@ -45,6 +45,12 @@ STRATA_REPORTS = [
 ]
 
 
+def _mean_or_none(values):
+    """Mean of a list, or None when it is empty (NaN is not valid JSON)."""
+    vals = [float(v) for v in values]
+    return float(np.mean(vals)) if vals else None
+
+
 def post(url: str, path: str, body: dict, timeout: float = 600.0) -> dict:
     req = urllib.request.Request(url.rstrip("/") + path,
                                  data=json.dumps(body).encode(),
@@ -127,9 +133,11 @@ def main() -> int:
         out[src] = {
             "n": len(s),
             "auc": auc([x["score"] for x in s], [x["label"] for x in s]),
-            "mean_score_correct": float(np.mean([x["score"] for x in s if x["label"]])),
-            "mean_score_wrong": float(np.mean([x["score"] for x in s if not x["label"]])),
-            "accept_rate": float(np.mean([x["score"] >= 0.5 for x in s])),
+            # np.mean of an empty list is NaN, which is not valid JSON
+            # (JSON.parse rejects the bare token) — emit null instead.
+            "mean_score_correct": _mean_or_none([x["score"] for x in s if x["label"]]),
+            "mean_score_wrong": _mean_or_none([x["score"] for x in s if not x["label"]]),
+            "accept_rate": float(np.mean([x["score"] >= 0.5 for x in s])) if s else None,
         }
     # self-preference delta = own minus foreign at equal label
     def delta(label: int) -> float | None:

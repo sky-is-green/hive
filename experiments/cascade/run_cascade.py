@@ -217,8 +217,10 @@ class Frontier:
         for attempt in range(3):
             try:
                 data, ms = _post(self.base_url, payload | {"max_tokens": budget}, headers, timeout=180)
-                self.usage.add(tag, data.get("usage"))
+                # count usage only for a response we can actually use: a
+                # retried call would otherwise double-count the tokens
                 choice = data["choices"][0]
+                self.usage.add(tag, data.get("usage"))
                 msg = choice["message"]
                 content = msg.get("content") or ""
                 finish = choice.get("finish_reason")
@@ -1360,392 +1362,396 @@ def main() -> int:
 
     registry = default_registry()
     records: list[dict[str, Any]] = []
-    for index, task in enumerate(tasks, 1):
-        route_result = routes.get(task["id"])
-        planned = plan_request(
-            RouteDecision(task["bucket"], confidence=(route_result.confidence if route_result else 1.0)),
-            out_len=256,
-        )
-        gated = (
-            args.router_mode == "gate"
-            and route_result is not None
-            and route_result.decision == "api"
-        )
-        suffix = "  [gate->api]" if gated else ""
-        print(f"[{index}/{len(tasks)}] {task['id']}  path={planned.path}{suffix}")
-
-        if gated:
-            # The router sent this to the API: skip local generation and the
-            # verifier entirely; the API answer is the cascade answer.
-            api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
-            api_ok = check(task, api_direct["content"])
-            telemetry.log(
-                task["id"], planned.path, "E4-api", "api", api_direct["latency_ms"],
-                outcome="ok" if api_ok else "wrong", escalated=True,
+    try:
+        for index, task in enumerate(tasks, 1):
+            route_result = routes.get(task["id"])
+            planned = plan_request(
+                RouteDecision(task["bucket"], confidence=(route_result.confidence if route_result else 1.0)),
+                out_len=256,
             )
-            records.append(
-                {
-                    "id": task["id"], "bucket": task["bucket"],
-                    "planned_path": planned.path,
-                    "scion_answer": None, "scion_ok": None, "scion_ms": None,
-                    "scion_tokens": 0,
-                    "human_answer": None, "human_gate": None,
-                    "human_corrected": False,
-                    "router_route": route_result.decision,
-                    "router_confidence": route_result.confidence,
-                    "router_agrees": None,
-                    "verdict": "gated", "verdict_confidence": None,
-                    "verdict_reason": "router sent this task to the API",
-                    "escalated": True, "gated": True,
-                    "api_ok": api_ok, "api_answer": api_direct["content"][:4000],
-                    "api_finish": api_direct.get("finish_reason"),
-                    "api_ms": round(api_direct["latency_ms"], 1),
-                    "api_direct_correct": api_ok,
-                    "cascade_ok": api_ok,
-                    "false_accept": False, "false_reject": False, "corrected": False,
-                    "judge": None,
-                    "gate": args.gate, "gate_scored": False, "gate_fired": None,
-                    "gate_p": None, "gate_cleared": None,
-                    "fallback_available": fallback is not None,
-                    "flagged": False,
-                }
+            gated = (
+                args.router_mode == "gate"
+                and route_result is not None
+                and route_result.decision == "api"
             )
-            continue
+            suffix = "  [gate->api]" if gated else ""
+            print(f"[{index}/{len(tasks)}] {task['id']}  path={planned.path}{suffix}")
 
-        local = scion.chat(answer_prompt(task))
-        truncated = local.get("finish_reason") == "length"
-        if truncated:
-            # The truncation rule: a cap hit is the harness's ceiling, not an
-            # answer.  Retry once at twice the budget; if it is still cut off,
-            # the verdict below rejects it and it is never served as-is.
-            print(f"[cascade] {task['id']}: local answer hit the token cap; "
-                  "retrying at double budget", file=sys.stderr, flush=True)
-            local = scion.chat(answer_prompt(task),
-                               max_tokens=max(2048, args.local_max_tokens * 2))
-            truncated = local.get("finish_reason") == "length"
-        local_ok = check(task, local["content"])
-        telemetry.log(
-            task["id"], planned.path, "E4-local", "dgpu1", local["latency_ms"],
-            tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
-            outcome="ok" if local_ok else "wrong",
-            detail="truncated at 2x budget" if truncated else "",
-        )
-
-        if verify_enabled:
-            broker.submit(
-                Judgement(
-                    id=f"verify-{task['id']}", request_id=task["id"], generation_id=0,
-                    role="D3", kind="verify",
-                    payload={"task": task, "candidate": local["content"]},
+            if gated:
+                # The router sent this to the API: skip local generation and the
+                # verifier entirely; the API answer is the cascade answer.
+                api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
+                api_ok = check(task, api_direct["content"])
+                telemetry.log(
+                    task["id"], planned.path, "E4-api", "api", api_direct["latency_ms"],
+                    outcome="ok" if api_ok else "wrong", escalated=True,
                 )
+                records.append(
+                    {
+                        "id": task["id"], "bucket": task["bucket"],
+                        "planned_path": planned.path,
+                        "scion_answer": None, "scion_ok": None, "scion_ms": None,
+                        "scion_tokens": 0,
+                        "human_answer": None, "human_gate": None,
+                        "human_corrected": False,
+                        "router_route": route_result.decision,
+                        "router_confidence": route_result.confidence,
+                        "router_agrees": None,
+                        "verdict": "gated", "verdict_confidence": None,
+                        "verdict_reason": "router sent this task to the API",
+                        "escalated": True, "gated": True,
+                        "api_ok": api_ok, "api_answer": api_direct["content"][:4000],
+                        "api_finish": api_direct.get("finish_reason"),
+                        "api_ms": round(api_direct["latency_ms"], 1),
+                        "api_direct_correct": api_ok,
+                        "cascade_ok": api_ok,
+                        "false_accept": False, "false_reject": False, "corrected": False,
+                        "judge": None,
+                        "gate": args.gate, "gate_scored": False, "gate_fired": None,
+                        "gate_p": None, "gate_cleared": None,
+                        "fallback_available": fallback is not None,
+                        "flagged": False,
+                    }
+                )
+                continue
+
+            local = scion.chat(answer_prompt(task))
+            truncated = local.get("finish_reason") == "length"
+            if truncated:
+                # The truncation rule: a cap hit is the harness's ceiling, not an
+                # answer.  Retry once at twice the budget; if it is still cut off,
+                # the verdict below rejects it and it is never served as-is.
+                print(f"[cascade] {task['id']}: local answer hit the token cap; "
+                      "retrying at double budget", file=sys.stderr, flush=True)
+                local = scion.chat(answer_prompt(task),
+                                   max_tokens=max(2048, args.local_max_tokens * 2))
+                truncated = local.get("finish_reason") == "length"
+            local_ok = check(task, local["content"])
+            telemetry.log(
+                task["id"], planned.path, "E4-local", "dgpu1", local["latency_ms"],
+                tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
+                outcome="ok" if local_ok else "wrong",
+                detail="truncated at 2x budget" if truncated else "",
             )
-            broker.run_pending()
-            verdicts = {r.request_id: r for r in broker.consume()}
-            verdict = verdicts.get(task["id"])
-            if verdict is None:
+
+            if verify_enabled:
+                broker.submit(
+                    Judgement(
+                        id=f"verify-{task['id']}", request_id=task["id"], generation_id=0,
+                        role="D3", kind="verify",
+                        payload={"task": task, "candidate": local["content"]},
+                    )
+                )
+                broker.run_pending()
+                verdicts = {r.request_id: r for r in broker.consume()}
+                verdict = verdicts.get(task["id"])
+                if verdict is None:
+                    verdict = result_for(
+                        Judgement(id=f"verify-{task['id']}", request_id=task["id"],
+                                  generation_id=0, role="D3", kind="verify"),
+                        "reject", 0.0, payload={"error": "no verdict"},
+                    )
+            else:
                 verdict = result_for(
                     Judgement(id=f"verify-{task['id']}", request_id=task["id"],
                               generation_id=0, role="D3", kind="verify"),
-                    "reject", 0.0, payload={"error": "no verdict"},
+                    "accept", 1.0, latency_ms=0.0, payload={"judge": "none"},
                 )
-        else:
-            verdict = result_for(
-                Judgement(id=f"verify-{task['id']}", request_id=task["id"],
-                          generation_id=0, role="D3", kind="verify"),
-                "accept", 1.0, latency_ms=0.0, payload={"judge": "none"},
-            )
-        rejected = verifier_rejects(verdict, policy) if verify_enabled else False
-        if truncated:
-            verdict = truncation_verdict(
-                verdict, task["id"], args.judge,
-                max(2048, args.local_max_tokens * 2),
-            )
-            rejected = True
-
-        # The learned gate, blind-spot-only: it scores a draft only when the
-        # deterministic detectors are silent (the measured blind spot, where
-        # the +1..+2 catch lives).  A fired gate is one more rejection
-        # finding — findings, digest, repair and ladder all behave as for a
-        # detector; a truncated draft is never scored (no answer to score).
-        gate_row: Optional[dict[str, Any]] = None
-        if gate is not None and not rejected and not truncated:
-            try:
-                verdict, gate_row = apply_learned_gate(
-                    gate, task["id"], task, local["content"], verdict,
-                    args.gate_threshold,
+            rejected = verifier_rejects(verdict, policy) if verify_enabled else False
+            if truncated:
+                verdict = truncation_verdict(
+                    verdict, task["id"], args.judge,
+                    max(2048, args.local_max_tokens * 2),
                 )
-            except Exception as exc:  # noqa: BLE001 - a failed score is not a verdict
-                gate_row = {"scored": False, "fired": None, "error": str(exc)[:200]}
-                print(f"[cascade] {task['id']}: gate scoring failed "
-                      f"({gate_row['error']}); gate skipped", file=sys.stderr)
-            if gate_row.get("fired"):
                 rejected = True
-        telemetry.log(
-            task["id"], planned.path, "D3-verify",
-            "api" if args.judge == "api" else args.judge_device,
-            verdict.latency_ms,
-            outcome="ok" if not rejected else "reject", async_=True,
-            detail=(
-                f"gate p={gate_row['p']:.4f}"
-                + (", fired" if gate_row.get("fired") else "")
-            ) if gate_row and gate_row.get("scored") else "",
-        )
 
-        # The repair leg: one greedy local re-attempt with the finding quoted.
-        # It runs before the gate, so the wrong answers it can fix never
-        # reach the human or the API; what it cannot clear is what the gate
-        # and the fallback are for.
-        repair_record: Optional[dict[str, Any]] = None
-        repaired_answer: Optional[str] = None
-        if rejected and repair_on and not truncated:
-            rescore = None
-            if gate is not None and any(
-                f.get("detector") == "learned_gate"
-                for f in (verdict.payload or {}).get("findings") or []
-            ):
-                def _rescore(candidate_text: str, _task=task):
-                    p2, ms2 = gate.score(str(_task["prompt"]), candidate_text)
-                    return {"p": p2, "ms": ms2, "threshold": args.gate_threshold}
-
-                rescore = _rescore
-            repair_record = attempt_repair(
-                scion, task, local["content"],
-                list((verdict.payload or {}).get("findings") or []),
-                runtime_specs.get(task["id"]) or {"kind": None},
-                max_tokens=args.local_max_tokens,
-                rescore=rescore,
-            )
-            if repair_record["cleared"]:
-                repaired_answer = repair_record["canonical"]
-                rejected = False
+            # The learned gate, blind-spot-only: it scores a draft only when the
+            # deterministic detectors are silent (the measured blind spot, where
+            # the +1..+2 catch lives).  A fired gate is one more rejection
+            # finding — findings, digest, repair and ladder all behave as for a
+            # detector; a truncated draft is never scored (no answer to score).
+            gate_row: Optional[dict[str, Any]] = None
+            if gate is not None and not rejected and not truncated:
+                try:
+                    verdict, gate_row = apply_learned_gate(
+                        gate, task["id"], task, local["content"], verdict,
+                        args.gate_threshold,
+                    )
+                except Exception as exc:  # noqa: BLE001 - a failed score is not a verdict
+                    gate_row = {"scored": False, "fired": None, "error": str(exc)[:200]}
+                    print(f"[cascade] {task['id']}: gate scoring failed "
+                          f"({gate_row['error']}); gate skipped", file=sys.stderr)
+                if gate_row.get("fired"):
+                    rejected = True
             telemetry.log(
-                task["id"], planned.path, "D3-repair", "dgpu1",
-                repair_record["ms"],
-                outcome="ok" if repair_record["cleared"] else "flagged",
-                tokens=repair_record["completion_tokens"], async_=True,
-                detail=repair_record["finding"][:200],
+                task["id"], planned.path, "D3-verify",
+                "api" if args.judge == "api" else args.judge_device,
+                verdict.latency_ms,
+                outcome="ok" if not rejected else "reject", async_=True,
+                detail=(
+                    f"gate p={gate_row['p']:.4f}"
+                    + (", fired" if gate_row.get("fired") else "")
+                ) if gate_row and gate_row.get("scored") else "",
             )
 
-        # Escalate only when there is somewhere to escalate to.  With the API
-        # fallback unset (the default), a reject is recorded and the local
-        # answer is returned; measure mode uses the measurement API instead.
-        escalate = rejected and (measure or fallback is not None)
-        human_decision: Optional[dict[str, Any]] = None
-        human_attempts = 0
-        human_gate_first = False
-        human_checked_answer: Optional[str] = None
-        display_answer = local["content"]
-        display_checker_ok: Optional[bool] = local_ok
+            # The repair leg: one greedy local re-attempt with the finding quoted.
+            # It runs before the gate, so the wrong answers it can fix never
+            # reach the human or the API; what it cannot clear is what the gate
+            # and the fallback are for.
+            repair_record: Optional[dict[str, Any]] = None
+            repaired_answer: Optional[str] = None
+            if rejected and repair_on and not truncated:
+                rescore = None
+                if gate is not None and any(
+                    f.get("detector") == "learned_gate"
+                    for f in (verdict.payload or {}).get("findings") or []
+                ):
+                    def _rescore(candidate_text: str, _task=task):
+                        p2, ms2 = gate.score(str(_task["prompt"]), candidate_text)
+                        return {"p": p2, "ms": ms2, "threshold": args.gate_threshold}
 
-        if escalate and human_gate is not None and fallback is not None:
-            while True:
-                human_attempts += 1
-                was_first = not human_stats["first_triggered"]
-                human_decision = human_gate.ask(
-                    task=task,
-                    local_answer=display_answer,
-                    verdict=verdict,
-                    checker_ok=display_checker_ok,
-                    still_failing=human_attempts > 1,
-                    repair=repair_record,
+                    rescore = _rescore
+                repair_record = attempt_repair(
+                    scion, task, local["content"],
+                    list((verdict.payload or {}).get("findings") or []),
+                    runtime_specs.get(task["id"]) or {"kind": None},
+                    max_tokens=args.local_max_tokens,
+                    rescore=rescore,
                 )
-                human_stats["asked"] += 1
-                if was_first:
-                    human_stats["first_triggered"] = True
-                    human_gate_first = True
-                reason = str(human_decision.get("reason", "") or "")
-                record_human_reason(human_stats, reason)
+                if repair_record["cleared"]:
+                    repaired_answer = repair_record["canonical"]
+                    rejected = False
                 telemetry.log(
-                    task["id"], planned.path, "HUMAN", "human", 0.0,
-                    outcome="ok" if human_decision["choice"] == "solve" else "escalate",
-                    detail=(
-                        f"mode={human_decision['mode']}"
-                        + (f"; {reason}" if reason else "")
-                    )[:300],
+                    task["id"], planned.path, "D3-repair", "dgpu1",
+                    repair_record["ms"],
+                    outcome="ok" if repair_record["cleared"] else "flagged",
+                    tokens=repair_record["completion_tokens"], async_=True,
+                    detail=repair_record["finding"][:200],
                 )
 
-                if human_decision["choice"] == "escalate":
-                    human_stats["escalated"] += 1
-                    break
+            # Escalate only when there is somewhere to escalate to.  With the API
+            # fallback unset (the default), a reject is recorded and the local
+            # answer is returned; measure mode uses the measurement API instead.
+            escalate = rejected and (measure or fallback is not None)
+            human_decision: Optional[dict[str, Any]] = None
+            human_attempts = 0
+            human_gate_first = False
+            human_checked_answer: Optional[str] = None
+            display_answer = local["content"]
+            display_checker_ok: Optional[bool] = local_ok
 
-                human_stats["solve_attempts"] += 1
-                mode = human_decision["mode"]
-                if mode == "keep":
-                    human_stats["kept"] += 1
-                    human_stats["solved"] += 1
-                    human_checked_answer = local["content"]
-                    escalate = False
-                    break
-                if mode == "hint":
-                    print(
-                        "[cascade] retrying local with the human hint ...",
-                        file=sys.stderr, flush=True,
+            if escalate and human_gate is not None and fallback is not None:
+                while True:
+                    human_attempts += 1
+                    was_first = not human_stats["first_triggered"]
+                    human_decision = human_gate.ask(
+                        task=task,
+                        local_answer=display_answer,
+                        verdict=verdict,
+                        checker_ok=display_checker_ok,
+                        still_failing=human_attempts > 1,
+                        repair=repair_record,
                     )
-                    local = scion.chat(answer_prompt(task, hint=human_decision["hint"]))
-                    local_ok = check(task, local["content"])
-                    display_answer = local["content"]
-                    display_checker_ok = local_ok
+                    human_stats["asked"] += 1
+                    if was_first:
+                        human_stats["first_triggered"] = True
+                        human_gate_first = True
+                    reason = str(human_decision.get("reason", "") or "")
+                    record_human_reason(human_stats, reason)
                     telemetry.log(
-                        task["id"], planned.path, "E4-local-retry", "dgpu1",
-                        local["latency_ms"],
-                        tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
-                        outcome="ok" if local_ok else "wrong",
-                        detail="human hint",
+                        task["id"], planned.path, "HUMAN", "human", 0.0,
+                        outcome="ok" if human_decision["choice"] == "solve" else "escalate",
+                        detail=(
+                            f"mode={human_decision['mode']}"
+                            + (f"; {reason}" if reason else "")
+                        )[:300],
                     )
-                    if local_ok:
+
+                    if human_decision["choice"] == "escalate":
+                        human_stats["escalated"] += 1
+                        break
+
+                    human_stats["solve_attempts"] += 1
+                    mode = human_decision["mode"]
+                    if mode == "keep":
+                        human_stats["kept"] += 1
                         human_stats["solved"] += 1
                         human_checked_answer = local["content"]
                         escalate = False
                         break
+                    if mode == "hint":
+                        print(
+                            "[cascade] retrying local with the human hint ...",
+                            file=sys.stderr, flush=True,
+                        )
+                        local = scion.chat(answer_prompt(task, hint=human_decision["hint"]))
+                        local_ok = check(task, local["content"])
+                        display_answer = local["content"]
+                        display_checker_ok = local_ok
+                        telemetry.log(
+                            task["id"], planned.path, "E4-local-retry", "dgpu1",
+                            local["latency_ms"],
+                            tokens=int((local["usage"] or {}).get("completion_tokens") or 0),
+                            outcome="ok" if local_ok else "wrong",
+                            detail="human hint",
+                        )
+                        if local_ok:
+                            human_stats["solved"] += 1
+                            human_checked_answer = local["content"]
+                            escalate = False
+                            break
+                        continue
+
+                    # mode == "answer"
+                    human_checked_answer = str(human_decision["answer"])
+                    human_ok = check(task, human_checked_answer)
+                    display_answer = human_checked_answer
+                    display_checker_ok = human_ok
+                    if human_ok:
+                        human_stats["solved"] += 1
+                        escalate = False
+                        break
+                    # The human's answer failed the checker; show the gate again.
                     continue
 
-                # mode == "answer"
-                human_checked_answer = str(human_decision["answer"])
-                human_ok = check(task, human_checked_answer)
-                display_answer = human_checked_answer
-                display_checker_ok = human_ok
-                if human_ok:
-                    human_stats["solved"] += 1
-                    escalate = False
-                    break
-                # The human's answer failed the checker; show the gate again.
-                continue
+            api_direct = None
+            if measure:
+                api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
+            elif escalate:
+                reviewer_note = (
+                    str(human_decision.get("reason", "") or "")
+                    if human_decision is not None else ""
+                )
+                api_direct = fallback.chat(
+                    answer_prompt(task, reviewer_note=reviewer_note),
+                    tag="fallback", max_tokens=700,
+                )
+            api_ok = check(task, api_direct["content"]) if api_direct is not None else None
 
-        api_direct = None
-        if measure:
-            api_direct = frontier.chat(answer_prompt(task), tag="answer", max_tokens=700)
-        elif escalate:
-            reviewer_note = (
-                str(human_decision.get("reason", "") or "")
-                if human_decision is not None else ""
-            )
-            api_direct = fallback.chat(
-                answer_prompt(task, reviewer_note=reviewer_note),
-                tag="fallback", max_tokens=700,
-            )
-        api_ok = check(task, api_direct["content"]) if api_direct is not None else None
-
-        if human_decision is not None and not escalate:
-            if human_decision["mode"] in ("keep", "hint"):
-                cascade_answer = local["content"]
-                cascade_ok = local_ok
+            if human_decision is not None and not escalate:
+                if human_decision["mode"] in ("keep", "hint"):
+                    cascade_answer = local["content"]
+                    cascade_ok = local_ok
+                else:
+                    cascade_answer = human_checked_answer or local["content"]
+                    cascade_ok = check(task, cascade_answer)
             else:
-                cascade_answer = human_checked_answer or local["content"]
-                cascade_ok = check(task, cascade_answer)
-        else:
+                if escalate:
+                    cascade_answer = api_direct["content"]
+                    cascade_ok = api_ok
+                elif repaired_answer is not None:
+                    # the repair cleared the detectors: the canonical re-framing
+                    # is the served answer (the draft was wrong)
+                    cascade_answer = repaired_answer
+                    cascade_ok = check(task, repaired_answer)
+                else:
+                    cascade_answer = local["content"]
+                    cascade_ok = local_ok
+            flagged = rejected and not measure and fallback is None
+
             if escalate:
-                cascade_answer = api_direct["content"]
-                cascade_ok = api_ok
-            elif repaired_answer is not None:
-                # the repair cleared the detectors: the canonical re-framing
-                # is the served answer (the draft was wrong)
-                cascade_answer = repaired_answer
-                cascade_ok = check(task, repaired_answer)
-            else:
-                cascade_answer = local["content"]
-                cascade_ok = local_ok
-        flagged = rejected and not measure and fallback is None
+                telemetry.log(
+                    task["id"], planned.path,
+                    "E4-api" if measure else "E4-fallback",
+                    "api", api_direct["latency_ms"],
+                    outcome="ok" if api_ok else "wrong", escalated=True,
+                    detail=(
+                        f"human reason: {human_decision.get('reason', '')}"
+                        if human_decision is not None
+                        and human_decision.get("choice") == "escalate"
+                        else ""
+                    )[:300],
+                )
 
-        if escalate:
-            telemetry.log(
-                task["id"], planned.path,
-                "E4-api" if measure else "E4-fallback",
-                "api", api_direct["latency_ms"],
-                outcome="ok" if api_ok else "wrong", escalated=True,
-                detail=(
-                    f"human reason: {human_decision.get('reason', '')}"
-                    if human_decision is not None
-                    and human_decision.get("choice") == "escalate"
-                    else ""
-                )[:300],
+            human_record = None
+            if human_decision is not None:
+                human_record = {
+                    "asked": True,
+                    "first": human_gate_first,
+                    "choice": human_decision["choice"],
+                    "mode": human_decision["mode"],
+                    "reason": str(human_decision.get("reason", "") or ""),
+                    "hint": str(human_decision.get("hint", "") or ""),
+                    "human_answer": human_checked_answer,
+                    "attempts": human_attempts,
+                    "accepted_locally": not escalate,
+                    "api_target": (human_gate.api_target if human_gate else None),
+                    "api_model": (human_gate.api_model if human_gate else None),
+                }
+
+            records.append(
+                {
+                    "id": task["id"],
+                    "bucket": task["bucket"],
+                    "planned_path": planned.path,
+                    "scion_answer": local["content"][:4000],
+                    "scion_ok": local_ok,
+                    "scion_ms": round(local["latency_ms"], 1),
+                    "scion_tokens": int((local["usage"] or {}).get("completion_tokens") or 0),
+                    "truncated": truncated,
+                    "human_answer": human_checked_answer,
+                    "human_gate": human_record,
+                    "repair": repair_record,
+                    "repaired_answer": repaired_answer,
+                    "router_route": (route_result.decision if route_result else None),
+                    "router_confidence": (route_result.confidence if route_result else None),
+                    "router_agrees": ((route_result.decision == "local") == local_ok)
+                    if route_result
+                    else None,
+                    "verdict": verdict.decision,
+                    "verdict_confidence": verdict.confidence,
+                    "verdict_reason": verdict.payload.get("reason", ""),
+                    "findings": list((verdict.payload or {}).get("findings") or []),
+                    "escalated": escalate,
+                    "gated": False,
+                    "api_ok": api_ok,
+                    "api_answer": (api_direct["content"][:4000] if api_direct else None),
+                    "api_finish": (api_direct.get("finish_reason") if api_direct else None),
+                    "api_ms": (round(api_direct["latency_ms"], 1) if api_direct else None),
+                    "api_direct_correct": api_ok,
+                    "cascade_ok": cascade_ok,
+                    "false_accept": (not escalate) and (not cascade_ok),
+                    "false_reject": escalate and local_ok,
+                    "corrected": escalate and local_ok is False and api_ok,
+                    "human_corrected": bool(
+                        human_decision is not None
+                        and not escalate
+                        and human_decision["mode"] in ("answer", "hint")
+                        and cascade_ok
+                    ),
+                    "judge": args.judge,
+                    "gate": args.gate,
+                    "gate_scored": bool(gate_row and gate_row.get("scored")),
+                    "gate_fired": (gate_row.get("fired") if gate_row else None),
+                    "gate_p": (gate_row.get("p") if gate_row else None),
+                    "gate_cleared": (
+                        repair_record.get("gate_cleared") if repair_record else None
+                    ),
+                    "fallback_available": fallback is not None,
+                    "flagged": flagged,
+                }
             )
 
-        human_record = None
-        if human_decision is not None:
-            human_record = {
-                "asked": True,
-                "first": human_gate_first,
-                "choice": human_decision["choice"],
-                "mode": human_decision["mode"],
-                "reason": str(human_decision.get("reason", "") or ""),
-                "hint": str(human_decision.get("hint", "") or ""),
-                "human_answer": human_checked_answer,
-                "attempts": human_attempts,
-                "accepted_locally": not escalate,
-                "api_target": (human_gate.api_target if human_gate else None),
-                "api_model": (human_gate.api_model if human_gate else None),
-            }
-
-        records.append(
-            {
-                "id": task["id"],
-                "bucket": task["bucket"],
-                "planned_path": planned.path,
-                "scion_answer": local["content"][:4000],
-                "scion_ok": local_ok,
-                "scion_ms": round(local["latency_ms"], 1),
-                "scion_tokens": int((local["usage"] or {}).get("completion_tokens") or 0),
-                "truncated": truncated,
-                "human_answer": human_checked_answer,
-                "human_gate": human_record,
-                "repair": repair_record,
-                "repaired_answer": repaired_answer,
-                "router_route": (route_result.decision if route_result else None),
-                "router_confidence": (route_result.confidence if route_result else None),
-                "router_agrees": ((route_result.decision == "local") == local_ok)
-                if route_result
-                else None,
-                "verdict": verdict.decision,
-                "verdict_confidence": verdict.confidence,
-                "verdict_reason": verdict.payload.get("reason", ""),
-                "findings": list((verdict.payload or {}).get("findings") or []),
-                "escalated": escalate,
-                "gated": False,
-                "api_ok": api_ok,
-                "api_answer": (api_direct["content"][:4000] if api_direct else None),
-                "api_finish": (api_direct.get("finish_reason") if api_direct else None),
-                "api_ms": (round(api_direct["latency_ms"], 1) if api_direct else None),
-                "api_direct_correct": api_ok,
-                "cascade_ok": cascade_ok,
-                "false_accept": (not escalate) and (not cascade_ok),
-                "false_reject": escalate and local_ok,
-                "corrected": escalate and local_ok is False and api_ok,
-                "human_corrected": bool(
-                    human_decision is not None
-                    and not escalate
-                    and human_decision["mode"] in ("answer", "hint")
-                    and cascade_ok
-                ),
-                "judge": args.judge,
-                "gate": args.gate,
-                "gate_scored": bool(gate_row and gate_row.get("scored")),
-                "gate_fired": (gate_row.get("fired") if gate_row else None),
-                "gate_p": (gate_row.get("p") if gate_row else None),
-                "gate_cleared": (
-                    repair_record.get("gate_cleared") if repair_record else None
-                ),
-                "fallback_available": fallback is not None,
-                "flagged": flagged,
-            }
-        )
-
-        if in_lane(records[-1]):
-            try:
-                lane.append(
-                    lane_record(
-                        records[-1], task,
-                        run=(args.run_name.strip() or stamp),
-                        draft=local["content"],
-                        cascade_answer=cascade_answer,
-                        findings=records[-1]["findings"],
+            if in_lane(records[-1]):
+                try:
+                    lane.append(
+                        lane_record(
+                            records[-1], task,
+                            run=(args.run_name.strip() or stamp),
+                            draft=local["content"],
+                            cascade_answer=cascade_answer,
+                            findings=records[-1]["findings"],
+                        )
                     )
-                )
-            except Exception as exc:  # noqa: BLE001 - never kill the run over the harvest
-                print(
-                    f"[cascade] escalation lane write failed ({exc})",
-                    file=sys.stderr,
-                )
+                except Exception as exc:  # noqa: BLE001 - never kill the run over the harvest
+                    print(
+                        f"[cascade] escalation lane write failed ({exc})",
+                        file=sys.stderr,
+                    )
 
+    finally:
+        # the lane handle must be closed even if a task raised
+        lane.close()
     # -- aggregate -----------------------------------------------------
     n = len(records)
     measured = [r for r in records if r["scion_ok"] is not None]
@@ -1825,7 +1831,6 @@ def main() -> int:
         "records": records,
     }
     (out_dir / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
-    lane.close()
 
     print("\n=== cascade pilot ===")
     header = f"{'task':26} {'bucket':10} {'scion':>5} {'api':>4} {'route':>5} {'verdict':>8} {'esc':>4} {'cascade':>7}"

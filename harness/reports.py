@@ -1178,7 +1178,9 @@ async function api(path, method, body, signal) {{
   }}
   const t = await r.text();
   if (!r.ok) throw new Error(r.status + ': ' + t.slice(0, 400));
-  return t.startsWith('{{') ? JSON.parse(t) : t;
+  if (!t) return t;
+  const first = t.trimStart()[0];
+  return (first === '{{' || first === '[') ? JSON.parse(t) : t;
 }}
 window.onerror=(msg, src, line, col, err)=>{{ console.error('ONERROR', msg, src+':'+line+':'+col, err); const t=document.getElementById('top-right-status'); if(t) t.textContent='JS ERROR: '+msg.slice(0,120); alert('JS ERROR: '+msg+'\\n'+src+':'+line); }};
 window.onunhandledrejection=(e)=>{{ console.error('UNHANDLED REJECTION', e.reason); alert('UNHANDLED: '+String(e.reason).slice(0,300)); }};
@@ -1269,7 +1271,7 @@ async function openCmdPalette() {{
   const pal = document.getElementById('cmd-palette');
   const input = document.getElementById('cmd-palette-input');
   const list = document.getElementById('cmd-palette-list');
-  if (!pal) return;
+  if (!pal || !input || !list) return;
   pal.style.display = 'flex';
   input.value = '';
   input.focus();
@@ -1371,8 +1373,10 @@ function switchLibraryTab(tab, ev) {{
 /* ---------------- typeahead (hub repos + local library) --------------- */
 let suggestTimer = null;
 function hideSuggestions() {{
-  for (const id of ['sug-q', 'sug-drepo', 'sug-hfrepo'])
-    document.getElementById(id).innerHTML = '';
+  for (const id of ['sug-q', 'sug-drepo', 'sug-hfrepo']) {{
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  }}
 }}
 
 async function suggestRepos(value, targetId) {{
@@ -2645,7 +2649,6 @@ async function saveEngineProfile() {{
   eng.load_options.cache_type_k = val('eng-ctk') || undefined;
   eng.load_options.cache_type_v = val('eng-ctv') || undefined;
   eng.load_options.alias = val('eng-alias') || undefined;
-  if (val('eng-alias')) eng.load_options.alias = val('eng-alias');
   // Sampling 4x2
   eng.sampling = formToSampling();
   // Advanced (mirostat etc already in sampling)
@@ -2681,11 +2684,10 @@ async function saveEngineProfile() {{
     no_mmap: eng.load_options.no_mmap ?? false,
   }};
   try {{
-    // single Save that atomically mutates both namespaces + lifecycle
-    // ctx.models lifecycle + ctx.llm provider profile
+    // one Save mutates both namespaces + the lifecycle, with the
+    // expectedRevision guard on each (409 = someone else changed it first)
     await Promise.all([
-
-    // single Save: Promise.all([settings.mutate(llm), settings.mutate(models), requestLoad]) with expectedRevision guard      settings.mutate('llm', llmPayload, provRevision),
+      settings.mutate('llm', llmPayload, provRevision),
       settings.mutate('models', modelsPayload, engRevision),
       requestLoad(loadOpts),
     ]);
@@ -3176,17 +3178,10 @@ async function saveProviders() {{
   }} catch (e) {{ document.getElementById('prov-msg').textContent = String(e); }}
 }}
 
-/* --------------------------- inspector ------------------------------- */
-for (const btn of document.querySelectorAll('[data-rtab]')) {{
-  btn.addEventListener('click', () => {{
-    for (const b of document.querySelectorAll('[data-rtab]')) b.classList.remove('active');
-    for (const p of document.querySelectorAll('[data-rtab] + .tabpane, .tabpane[data-rtab]')) {{}}
-    document.querySelectorAll('.col .tabpane').forEach(p => p.style.display = 'none');
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.rtab).style.display = '';
-    if (btn.dataset.rtab === 'rtab-inspect') fetchInspection();
-  }});
-}}
+/* The Inspector is a regular tab (tab-inspect) now; the old [data-rtab]
+   sub-tab handler (which hid every .col .tabpane, including the library)
+   is gone — the only data-rtab left is the library's "System" sub-tab,
+   handled by switchLibraryTab(). */
 
 async function fetchInspection() {{
   try {{

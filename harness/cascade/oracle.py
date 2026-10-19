@@ -81,12 +81,20 @@ def frontier_by_role(
 
     Grouping is ``(role, unit)``: a frontier only compares like with like.
     Candidates of the same id measured on two devices both stay in their
-    group's frontier (they are different placement options).
+    group's frontier (they are different placement options).  The returned
+    mapping is keyed by role; a role measured on several units keeps the
+    union of every unit's frontier.
     """
     groups: dict[tuple[str, str], list[CandidateMeasurement]] = {}
     for row in rows:
         groups.setdefault((row.role, row.unit), []).append(row)
-    return {role: pareto_frontier(group) for (role, _unit), group in groups.items()}
+    # Each (role, unit) group gets its own frontier (a frontier only compares
+    # like with like); the per-role result is the UNION of its units' frontiers
+    # so a second unit for the same role cannot silently drop the first.
+    per_role: dict[str, list[CandidateMeasurement]] = {}
+    for (role, _unit), group in groups.items():
+        per_role.setdefault(role, []).extend(pareto_frontier(group))
+    return {role: tuple(rows) for role, rows in per_role.items()}
 
 
 def best_per_candidate(

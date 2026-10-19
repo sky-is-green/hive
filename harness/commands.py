@@ -315,14 +315,19 @@ class ConsoleCommands:
         from harness.app import REPO_ROOT
 
         run_dir.mkdir(parents=True, exist_ok=True)
-        subprocess.Popen(
-            [_sys.executable, "-m", "experiments.generate_data",
-             "--mock", "--protocol", "--max-convs", str(max_convs),
-             "--output", str(run_dir)],
-            cwd=str(REPO_ROOT),
-            stdout=open(run_dir / "run_stdout.log", "ab"),
-            stderr=subprocess.STDOUT,
-        )
+        # the child inherits the log fd; the parent's copy must be closed
+        log_fh = open(run_dir / "run_stdout.log", "ab")
+        try:
+            subprocess.Popen(
+                [_sys.executable, "-m", "experiments.generate_data",
+                 "--mock", "--protocol", "--max-convs", str(max_convs),
+                 "--output", str(run_dir)],
+                cwd=str(REPO_ROOT),
+                stdout=log_fh,
+                stderr=subprocess.STDOUT,
+            )
+        finally:
+            log_fh.close()
         return CommandResult(
             "success",
             f"mock benchmark launched ({max_convs} convs) -> {run_dir.name}; "

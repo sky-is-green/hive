@@ -1209,6 +1209,10 @@ class _State:
             if not candidates:
                 break
             oldest = min(candidates, key=lambda c: self._last_access.get(c, 0.0))
+            if oldest in self._inflight:
+                # a turn started since the scan — skip it this round
+                candidates.remove(oldest)
+                continue
             self.save_conversation(oldest, self.hives[oldest])
             logger = self._loggers.pop(oldest, None)
             if logger is not None:
@@ -1275,6 +1279,10 @@ class ProviderConfigRequest(BaseModel):
     providers: list[ProviderEntry]
     default: str = ""
     persist: bool = False
+    expected_revision: str = Field(
+        "", alias="expectedRevision",
+        description="Revision the edit was based on; a mismatch is a 409 conflict.",
+    )
 
 
 class SandboxExecRequest(BaseModel):
@@ -1398,6 +1406,20 @@ class EngineConfigRequest(BaseModel):
     engines: list[EngineEntry]
     default: str = ""
     persist: bool = False
+    expected_revision: str = Field(
+        "", alias="expectedRevision",
+        description="Revision the edit was based on; a mismatch is a 409 conflict.",
+    )
+
+
+def _config_revision(payload: object) -> str:
+    """A short, stable hash of a config payload (the optimistic-concurrency token).
+
+    Derived from the content, so it survives restarts and needs no extra
+    persisted state.
+    """
+    blob = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
 
 
 def _cors_origins() -> list[str]:
@@ -2026,6 +2048,15 @@ def create_app(
     @app.post("/v1/provider/config")
     def set_providers(req: ProviderConfigRequest):
         """Replace the provider list (name, base_url, api_key, model)."""
+        current = _config_revision({
+            "providers": st.registry.redacted(), "default": st.registry.default,
+        })
+        if req.expected_revision and req.expected_revision != current:
+            raise HTTPException(
+                409,
+                "stale provider revision — reload and retry "
+                f"(expected {req.expected_revision}, current {current})",
+            )
         reg = ProviderRegistry(default=req.default)
         for entry in req.providers:
             data = entry.model_dump()
@@ -2045,7 +2076,10 @@ def create_app(
             path = save_registry(reg, st.providers_file)
             persisted = str(path)
         return {"ok": True, "default": reg.default,
-                "providers": reg.redacted(), "persisted_to": persisted}
+                "providers": reg.redacted(), "persisted_to": persisted,
+                "revision": _config_revision({
+                    "providers": reg.redacted(), "default": reg.default,
+                })}
 
     @app.get("/v1/provider/config")
     def get_providers():
@@ -2054,12 +2088,25 @@ def create_app(
             "default": st.registry.default,
             "providers": st.registry.redacted(),
             "file": str(providers_path(st.providers_file)),
+            "revision": _config_revision({
+                "providers": st.registry.redacted(), "default": st.registry.default,
+            }),
         }
 
     # ------------------------------------------------------------------
     @app.post("/v1/engines")
     def set_engines(req: EngineConfigRequest):
         """Replace the engine profile list (name, kind, model, load options, sampling)."""
+        current = _config_revision({
+            "engines": [e.to_dict() for e in st.engines.engines],
+            "default": st.engines.default,
+        })
+        if req.expected_revision and req.expected_revision != current:
+            raise HTTPException(
+                409,
+                "stale engine revision — reload and retry "
+                f"(expected {req.expected_revision}, current {current})",
+            )
         reg = EngineRegistry(default=req.default)
         for entry in req.engines:
             try:
@@ -2073,7 +2120,11 @@ def create_app(
             persisted = str(path)
         return {"ok": True, "default": reg.default,
                 "engines": [e.to_dict() for e in reg.engines],
-                "persisted_to": persisted}
+                "persisted_to": persisted,
+                "revision": _config_revision({
+                    "engines": [e.to_dict() for e in reg.engines],
+                    "default": reg.default,
+                })}
 
     @app.get("/v1/engines")
     def get_engines():
@@ -2082,6 +2133,10 @@ def create_app(
             "default": st.engines.default,
             "engines": [e.to_dict() for e in st.engines.engines],
             "file": str(engines_path(st.engines_file)),
+            "revision": _config_revision({
+                "engines": [e.to_dict() for e in st.engines.engines],
+                "default": st.engines.default,
+            }),
         }
 
     @app.get("/v1/engines/preset")
@@ -2473,6 +2528,7 @@ def create_app(
         q: "queue.Queue[dict]" = queue.Queue()
 
         def worker():
+            st.begin(req.conversation_id)
             try:
                 out = agent_service.run_turn(
                     req.conversation_id, message,
@@ -2484,6 +2540,8 @@ def create_app(
                 q.put({"type": "done", **out})
             except Exception as exc:  # noqa: BLE001 - surfaced as an event
                 q.put({"type": "error", "error": str(exc)})
+            finally:
+                st.end(req.conversation_id)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -3591,11 +3649,16 @@ def create_app(
             if a.get(key):
                 cmd.append(flag)
         run_dir.mkdir(parents=True, exist_ok=True)
-        proc = _popen(
-            cmd, cwd=str(REPO_ROOT),
-            stdout=open(run_dir / "run_stdout.log", "ab"),
-            stderr=subprocess.STDOUT,
-        )
+        # the child inherits the log fd; the parent's copy must be closed
+        log_fh = open(run_dir / "run_stdout.log", "ab")
+        try:
+            proc = _popen(
+                cmd, cwd=str(REPO_ROOT),
+                stdout=log_fh,
+                stderr=subprocess.STDOUT,
+            )
+        finally:
+            log_fh.close()
         return {"run_dir": str(run_dir), "pid": proc.pid}
 
     # ------------------------------------------------------------------

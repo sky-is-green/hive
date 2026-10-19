@@ -1268,7 +1268,12 @@ class LlamaServerManager:
             instances = [i.to_dict() for i in
                          sorted(self._instances.values(), key=lambda i: i.key)]
         for inst_dict in instances:
-            inst = self._instances[inst_dict["key"]]
+            with self._lock:
+                # the instance may have been unloaded since the snapshot
+                inst = self._instances.get(inst_dict["key"])
+            if inst is None:
+                inst_dict["healthy"] = False
+                continue
             probe = self._probe_instance(inst)
             inst_dict["healthy"] = bool(probe)
             if probe and probe is not True:
