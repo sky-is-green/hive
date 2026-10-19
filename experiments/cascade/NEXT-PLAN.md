@@ -84,6 +84,37 @@ endpoint, AFK removal, model consolidation, Docker deprecation.
 - **Docker/VHDX setup** — deprecated; sandbox uses Docker but the VHDX flow is unused.
 - **AFK mode** — shelved.
 
+## Progress (2026-10-19)
+
+Done since the plan was written:
+
+- **Step 1** — Launch panel is profile-driven; quick-start with model + ctx + gpu.
+- **Step 2** — engine profiles reference providers by name (splinter-memory gained
+  an optional `provider` field; the raw url/key inputs are read-only, auto-filled).
+- **Step 3** — the per-conversation provider override is gone; the chat header shows
+  the loaded model read-only.
+- **Setup wizard** — the Home tab probes the hardware, ranks the local models by
+  what actually fits in VRAM, and creates + starts the engine profile in one click.
+- **HF integration** — the Hub tab is a model browser: cards with metadata, a
+  per-file list with sizes, per-file download, and live job progress.
+- **App assistant (encoder v1)** — the dsh agent already has bash, so it is given
+  the Studio's own API map and can read and drive it.  A training phase for a
+  dedicated encoder model is still open (this is the prompt-context v1).
+- **OpenCode-style extras** — session export/import, `/cascade` and `/sandbox`
+  console commands.
+- **Repo-wide audit** — two audits (dead code + bugs) ran; the findings are fixed
+  and there is now a regression test for the Studio's JavaScript.
+- **API docs** — every route has a human title, and `docs/API.md` maps all 84
+  paths / 91 operations by purpose.
+
+Still open:
+
+- **Encoder training** — a dedicated small model tuned for app navigation, trained
+  on the Studio's own API map and real usage.
+- **Documentation sweep** — ENGINE.md, TRAINING-TAB.md, HUMAN-GATE.md still
+  describe the pre-UI shape.
+- **File explorer / diff view** — OpenCode-style side panels.
+
 ## Recommended order
 
 1. Step 2 + 3 (settings consolidation) — small, clear, improves UX.
