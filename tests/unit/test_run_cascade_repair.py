@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import io
 
+import pytest
+
 import experiments.cascade.run_cascade as rc
 from experiments.cascade.cascade import detect, runtime_spec
 from harness.cascade import Judgement
