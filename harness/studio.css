@@ -71,20 +71,41 @@ section {
   overflow-y: auto;
 }
 @media (max-width: 760px) {
-  /* narrow: stack, but keep the chat bounded so the page stays short and
-     the launch panel is not pushed to the bottom of a long scroll */
-  body { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+  /* narrow: stack, but keep every part bounded and readable - the chat stays
+     a fixed-height console, the tab strip scrolls sideways, and the panels
+     below it are compact */
+  body { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; padding: .6rem; }
+  h1 { font-size: 1.1rem; }
   .grid {
     display: flex;
     flex-direction: column;
     flex: none;
     min-height: 0;
     overflow: visible;
-    gap: 1rem;
+    gap: .7rem;
   }
   .col { overflow: visible; flex: none; min-height: auto; }
-  .mid { order: -1; height: 70vh; min-height: 0; overflow: hidden; flex: none; }
+  /* stacked order: the chat first, the launch panel next (it is the action
+     you want), the reference tabs last - so nothing hides below a long column */
+  .mid { order: -3; height: 72vh; min-height: 0; overflow: hidden; flex: none; }
+  #right-col { order: -2; }
+  #left-col { order: -1; }
   .chatpane .chatlog { min-height: 0; }
+  .chat-head { flex-wrap: wrap; gap: .35rem; }
+  .chat-controls { width: 100%; justify-content: flex-start; }
+  .modesel { flex-wrap: wrap; gap: .5rem; }
+  /* the tab strip scrolls sideways instead of wrapping into a tall stack */
+  .tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin; padding-bottom: .2rem; }
+  .tabs .tab { flex: 0 0 auto; }
+  .tabs button { white-space: nowrap; }
+  /* the launch panel: compact, not a wall */
+  .col section { padding: .8rem .9rem; margin-bottom: .6rem; }
+  .engine-grid { gap: .6rem; }
+  .cards { gap: .6rem; }
+  .card { padding: .7rem .8rem; }
+  .composer-toggles { order: 3; width: 100%; padding: .25rem 0 0; }
+  .composer-box { flex-wrap: wrap; }
+  .chat-hint { font-size: .7rem; }
 }
 /* --- rest: keep original component styles (unchanged) --- */
 input, button, select { font: inherit; padding: .35rem .6rem; margin: .15rem .3rem .15rem 0; }
@@ -157,7 +178,7 @@ th { background: #000000; color: #FFDD00; }
 .chat-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex: none; margin: .2rem 0 .6rem; }
 .chat-head h2 { margin: 0; font-size: 1.05rem; white-space: nowrap; }
 .chat-controls { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; justify-content: flex-end; }
-.composer { display: flex; gap: .4rem; align-items: center; margin-top: auto; flex: none; }
+.composer { display: flex; gap: .4rem; align-items: stretch; margin-top: auto; flex: none; width: 100%; min-width: 0; }
 .composer-input { flex: 1 1 auto; display: flex; min-width: 0; }
 .composer-input input { width: 100%; min-width: 0; flex: 1; }
 #stopbtn { display: none; }
@@ -322,11 +343,12 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 /* ---- the Studio toggles, inside the composer box ---- */
 .composer-toggles {
   display: flex;
-  gap: .55rem;
+  gap: .8rem;
   align-items: center;
   flex: none;
   flex-wrap: wrap;
-  padding: 0 .35rem;
+  padding: 0 0 .35rem;
+  order: -1;
 }
 .composer-toggles label {
   display: inline-flex;
@@ -343,15 +365,19 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 /* ---- composer: one bordered input, the send button inside it ---- */
 .composer-box {
   display: flex;
-  align-items: flex-end;
-  gap: .4rem;
+  flex-direction: column;   /* toggles on their own row, the input takes the width */
+  align-items: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   background: #000000;
   border: 1.5px solid #FFB703;
   border-radius: 12px;
-  padding: .45rem .5rem .45rem .7rem;
+  padding: .4rem .5rem .45rem .7rem;
   margin-top: .5rem;
   flex: none;
 }
+.composer-row { display: flex; align-items: flex-end; gap: .4rem; width: 100%; min-width: 0; }
 .composer-box:focus-within { box-shadow: 0 0 0 2px rgba(255,183,3,.35); }
 .composer-box textarea, .composer-box input {
   background: transparent;

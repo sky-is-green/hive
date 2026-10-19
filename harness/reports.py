@@ -751,8 +751,6 @@ def render_server_page() -> str:
 <div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
 <h1>Splinter Studio console</h1>
 {render_nav("server")}
-<p style="margin:.3rem 0"><a href="/runs"><button>Runs →</button></a> <a href="/cascade"><button>Cascade →</button></a> <a href="/docs"><button>API docs</button></a></p>
-<form style="display:inline" onsubmit="event.preventDefault(); return false"><input id="researchq" placeholder="deep-research question..." size="30" autocomplete="off" title="How: researchAdd queues to RESEARCH-QUEUE.md. Does: Deep research task (Auditor only). Changing: Adds entry, not instant." onkeydown="if (event.key === &quot;Enter&quot;) researchAdd(this)"> <button id="researchsubmit" onclick="researchAdd(this)">Research</button> <span id="researchcount" class="meta" title="Queues a deep-research question for QUEEN. Execution is master-only; reports land in RESEARCH/&lt;slug&gt;.md and are summarized on wake."></span></form>
 
 <div class="grid">
 
@@ -765,7 +763,7 @@ def render_server_page() -> str:
 </div>
 
 <!-- ==================== LEFT: tabs ==================== -->
-<div class="col">
+<div class="col" id="left-col">
 <div class="tabs" id="main-tabs">
 <button class="tab active" data-tab="tab-home">Home</button>
 <button class="tab" data-tab="tab-settings">Settings</button>
@@ -804,6 +802,18 @@ in VRAM and sets the context for you &mdash; no knob-fiddling required.</p>
 </div>
 <div id="wizard-backends" style="margin:.6rem 0"></div>
 <div id="wizard-models" style="margin-top:.6rem"></div>
+</section>
+
+<section style="margin-top:1.5rem">
+<h2 style="margin-top:0">Deep research <span class="note">queued for the background worker</span></h2>
+<p class="note">Ask a question and it is queued for the deep-research worker. The worker is
+master-only: the report lands in <code>RESEARCH/&lt;slug&gt;.md</code> and is summarised on its next
+wake. Nothing runs in the foreground.</p>
+<div class="row">
+  <input id="researchq" placeholder="ask a research question…" style="flex:1;min-width:180px" autocomplete="off" title="How: researchAdd queues to RESEARCH-QUEUE.md. Does: Deep research task (Auditor only). Changing: Adds an entry - it does not run now." onkeydown="if (event.key === &quot;Enter&quot;) researchAdd(this)">
+  <button id="researchsubmit" onclick="researchAdd(this)">Queue</button>
+  <span id="researchcount" class="meta" title="Queues a deep-research question for the worker. Reports land in RESEARCH/&lt;slug&gt;.md."></span>
+</div>
 </section>
 
 <section style="margin-top:1.5rem">
@@ -1107,15 +1117,17 @@ providers.local.json (gitignored).</div>
 </div>
 <div class="composer">
 <div class="composer-box">
-<span class="sugwrap composer-input"><textarea id="chatin" rows="1" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
-       onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
-<div class="sugbox" id="sug-chat"></div></span>
 <div class="composer-toggles">
   <label title="How: POST /v1/studio/settings sandbox_enabled. Does: lets the Studio run commands in the sandbox (Docker, network off) instead of refusing. Changing: off blocks the sandbox endpoint and the cascade's code_exec detector."><input type="checkbox" id="cfg-sandbox" onchange="saveStudioSetting('sandbox_enabled', this.checked)"> Sandbox</label>
   <label title="How: POST /v1/studio/settings tools_enabled. Does: lets the agent call tools (bash, files, code). Changing: off forces plain chat - the agent endpoint refuses."><input type="checkbox" id="cfg-tools" onchange="saveStudioSetting('tools_enabled', this.checked)"> Tools</label>
   <label title="How: POST /v1/studio/settings auto_compact. Does: compacts a conversation into a checkpoint when it outgrows the window, and offers an engine switch at the checkpoint. Changing: off compacts only when you ask."><input type="checkbox" id="cfg-compact" onchange="saveStudioSetting('auto_compact', this.checked)"> Auto-compact</label>
 </div>
+<div class="composer-row">
+<span class="sugwrap composer-input"><textarea id="chatin" rows="1" placeholder="Talk to the loaded AI…  (/ for commands)" title="How: Enter → chatSubmit routes / → /v1/commands/run else sendChat/sendAgent via Splinter vs Agent. Does: Sends prompt through splinter curate+generate or agent loop. Changing: /command vs message decides path."
+       onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
+<div class="sugbox" id="sug-chat"></div></span>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
+</div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
 </div>
