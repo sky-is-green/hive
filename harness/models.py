@@ -1544,20 +1544,32 @@ class LlamaServerManager:
     # Hugging Face (live hub API — nothing cached/hardcoded)
     # ------------------------------------------------------------------
     def hub_search(self, query: str = "", limit: int = 12) -> list[dict]:
+        """Search Hugging Face for GGUF repos, with the metadata a card needs."""
         params = {"filter": "gguf", "sort": "downloads", "limit": limit}
         if query:
             params["search"] = query
         resp = requests.get(f"{HF_API}/models", params=params, timeout=15)
         resp.raise_for_status()
-        return [
-            {
+        out = []
+        for m in resp.json():
+            tags = [str(t) for t in (m.get("tags") or [])]
+            base = next((t.split(":", 1)[1] for t in tags
+                         if t.startswith("base_model:")), "")
+            license_ = next((t.split(":", 1)[1] for t in tags
+                              if t.startswith("license:")), "")
+            out.append({
                 "repo": m.get("id", ""),
                 "downloads": m.get("downloads", 0),
                 "likes": m.get("likes", 0),
                 "last_modified": (m.get("lastModified") or "")[:10],
-            }
-            for m in resp.json()
-        ]
+                "created_at": (m.get("createdAt") or "")[:10],
+                "pipeline_tag": m.get("pipeline_tag") or "",
+                "base_model": base,
+                "license": license_,
+                "tags": [t for t in tags
+                         if not t.startswith(("base_model:", "license:", "gguf:"))][:8],
+            })
+        return out
 
     def hub_files(self, repo: str) -> list[dict]:
         resp = requests.get(f"{HF_API}/models/{repo}/tree/main", timeout=20)

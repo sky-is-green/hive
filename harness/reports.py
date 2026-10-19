@@ -1037,15 +1037,11 @@ providers.local.json (gitignored).</div>
 <div id="tab-hub" class="tabpane" style="display:none">
 <section>
 <h2 style="margin-top:0">Hugging Face hub <span class="note">(live)</span></h2>
-<div class="row"><span class="sugwrap" style="width:100%"><input id="q" placeholder="search gguf repos…" style="width:100%" title="How: GET /v1/models/hub?q=2+chars → HF API 8 results. Does: Live search repos. Changing: Type to get suggestions; click to fill repo field.">
+<div class="row"><span class="sugwrap" style="width:100%"><input id="q" placeholder="search gguf repos…" style="width:100%" oninput="searchHub()" title="Search the Hub for GGUF repos. Click a result to list its files.">
 <div class="sugbox" id="sug-q"></div></span></div>
-<datalist id="repo-suggestions"></datalist>
-<pre id="hub">(search above)</pre>
-<div class="row"><span class="sugwrap" style="width:100%"><input id="drepo" placeholder="repo id (type for suggestions)" style="width:100%" title="How: Input for --hf-repo, suggestions from hub search. Does: Sets HF repo for download/start. Changing: Different repo → different weights; needs exact file next.">
-<div class="sugbox" id="sug-drepo"></div></span><br>
-<input id="dfile" placeholder="file.gguf" size="24" title="How: Value for --hf-file exact filename. Does: Picks file inside repo. Changing: Wrong name → 400 not found; copy from search.">
-<button onclick="download(this)">Download</button></div>
-<pre id="downloads"></pre>
+<div id="hub-cards" style="margin-top:.6rem"></div>
+<h3 style="margin:1rem 0 .3rem; color:#FFDD00">Downloads</h3>
+<div id="hub-downloads" class="note">no downloads yet</div>
 </section>
 </div>
 
@@ -1410,6 +1406,7 @@ for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
       else if (btn.dataset.tab === 'tab-engines') loadEngines();
       else if (btn.dataset.tab === 'tab-splinter') loadHiveDefaults();
       else if (btn.dataset.tab === 'tab-providers') loadProviders();
+      else if (btn.dataset.tab === 'tab-hub') {{ pollHubDownloads(); searchHub(); }}
     }} catch(err){{ console.error('tab click failed', err); alert('tab error: '+err.message); }}
   }});
 }}
@@ -2046,23 +2043,84 @@ async function startServer(btn) {{
 }}
 
 async function searchHub() {{
-  show('hub', 'searching…');
+  const box = document.getElementById('hub-cards');
+  if (!box) return;
+  const q = (document.getElementById('q')?.value || '').trim();
+  if (q.length < 2) {{ box.innerHTML = '<p class="note">Type at least 2 characters.</p>'; return; }}
+  box.innerHTML = '<p class="note">searching…</p>';
   try {{
-    const res = await api('/v1/models/hub?q=' +
-      encodeURIComponent(val('q')) + '&limit=12');
-    show('hub', res.results.map(r =>
-      `${{r.repo}} · ↓${{r.downloads}} · ★${{r.likes}} · ${{r.last_modified}}`).join('\\n'));
-  }} catch (e) {{ show('hub', String(e)); }}
+    const res = await api('/v1/models/hub?q=' + encodeURIComponent(q) + '&limit=12');
+    const rows = (res.results || []).map(r => `
+      <div style="border:1.5px solid #000; border-radius:8px; padding:.6rem .8rem; margin:.4rem 0; background:#FFB703; color:#000">
+        <div style="display:flex; justify-content:space-between; gap:.6rem; align-items:baseline">
+          <b style="color:#000">${{r.repo}}</b>
+          <span class="note" style="color:#333">↓${{r.downloads}} · ★${{r.likes}} · ${{r.last_modified}}</span>
+        </div>
+        ${{r.pipeline_tag ? `<div class="note" style="color:#333">${{r.pipeline_tag}}</div>` : ''}}
+        ${{r.base_model ? `<div class="note" style="color:#333">from ${{r.base_model}}</div>` : ''}}
+        ${{(r.tags||[]).length ? `<div style="margin-top:.3rem">${{r.tags.slice(0,5).map(t => `<span class="note" style="color:#333">#${{t}}</span>`).join(' ')}}</div>` : ''}}
+        <button type="button" style="margin-top:.5rem" onclick="hubFiles('${{r.repo}}', this)">Show files</button>
+        <span class="note" style="color:#333; margin-left:.5rem" id="files-of-${{r.repo.replace(/[^a-zA-Z0-9]/g,'_')}}"></span>
+      </div>`).join('');
+    box.innerHTML = rows || '<p class="note">no repos matched</p>';
+  }} catch (e) {{
+    box.innerHTML = '<p class="note">search failed: ' + e + '</p>';
+  }}
 }}
 
-async function download(btn) {{
-  if (btn) btn.disabled = true;          /* slow POST — no double submits */
+async function hubFiles(repo, btn) {{
+  if (btn) btn.disabled = true;
   try {{
-    const r = await fetch('/v1/models/hub/download', {{method: 'POST',
-      headers: {{'content-type': 'application/json'}},
-      body: JSON.stringify({{repo: val('drepo'), file: val('dfile')}})}});
-    show('downloads', await r.text());
+    const res = await api('/v1/models/hub/files/' + encodeURIComponent(repo));
+    const files = res.files || [];
+    const key = 'files-of-' + repo.replace(/[^a-zA-Z0-9]/g, '_');
+    const target = document.getElementById(key);
+    if (!target) return;
+    if (!files.length) {{ target.textContent = 'no .gguf files in this repo'; return; }}
+    target.innerHTML = files.map(f =>
+      `<div style="display:flex; gap:.5rem; align-items:center; margin-top:.3rem; flex-wrap:wrap">
+         <code style="background:#000; color:#FFDD00; padding:.1rem .35rem; border-radius:4px">${{f.file}}</code>
+         <span class="note" style="color:#333">${{f.size_gb}} GB</span>
+         <button type="button" onclick="download('${{repo}}','${{f.file}}', this)">Download</button>
+       </div>`).join('');
+  }} catch (e) {{
+    const box = document.getElementById('hub-cards');
+    if (box) box.insertAdjacentHTML('afterbegin', '<p class="note">file list failed: ' + e + '</p>');
   }} finally {{ if (btn) btn.disabled = false; }}
+}}
+
+async function download(repo, file, btn) {{
+  if (btn) btn.disabled = true;
+  try {{
+    await api('/v1/models/hub/download', 'POST', {{repo: repo, file: file}});
+    pollHubDownloads();
+  }} catch (e) {{
+    const box = document.getElementById('hub-downloads');
+    if (box) box.textContent = 'download failed: ' + e;
+  }} finally {{ if (btn) btn.disabled = false; }}
+}}
+
+let _hubPoll = null;
+async function pollHubDownloads() {{
+  const box = document.getElementById('hub-downloads');
+  if (!box) return;
+  try {{
+    const res = await api('/v1/models/hub/downloads');
+    const jobs = res.downloads || res.jobs || [];
+    if (!jobs.length) {{ box.textContent = 'no downloads yet'; return; }}
+    box.innerHTML = jobs.map(j => `
+      <div style="display:flex; gap:.6rem; align-items:center; margin:.25rem 0; flex-wrap:wrap">
+        <span style="color:${{j.state === 'done' ? '#157a3e' : (j.state === 'error' ? '#b3372c' : '#000')}}; font-weight:600">${{j.state}}</span>
+        <code style="background:#000; color:#FFDD00; padding:.1rem .35rem; border-radius:4px">${{(j.repo||'') + '/' + (j.filename||'')}}</code>
+        ${{j.error ? `<span class="note" style="color:#b3372c">${{j.error}}</span>` : ''}}
+      </div>`).join('');
+    if (jobs.some(j => j.state === 'queued' || j.state === 'downloading')) {{
+      clearTimeout(_hubPoll);
+      _hubPoll = setTimeout(pollHubDownloads, 1500);
+    }}
+  }} catch (e) {{
+    box.textContent = 'download status failed: ' + e;
+  }}
 }}
 
 async function importFolder(input) {{
