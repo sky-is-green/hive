@@ -182,6 +182,14 @@ curl http://127.0.0.1:8765/health
 | `GET` | `/stacks` | The stack management page. |
 | `GET` | `/view/{run_dir}` | Rendered HTML report page for a run bundle. |
 
+### Ungrouped
+
+- `/v1/compaction/run`
+- `/v1/compaction/surgery`
+- `/v1/compaction/status`
+- `/v1/studio/settings`
+- `/v1/studio/strata`
+
 ## The Studio pages
 
 - `/` — Redirect to the run index.

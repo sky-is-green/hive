@@ -41,7 +41,26 @@ Nothing here spawns a server or loads a model; probes, gates and the switch are 
 ## Status
 
 Implemented and tested: `harness/compaction/` (core + surgery), `tests/unit/test_compaction.py`
-(13 tests; full suite 946 passed, 1 skipped). Not wired yet: the `harness/stack` listener that calls
-`offer_surgery` on the compaction event, and the measurement that makes the gate meaningful — the
-35B mid-conversation hand-off between engines, where the continuation drifts by the engines'
-numeric difference and the canary score decides whether the switch is worth committing.
+(13 tests).
+
+**Wired into the Studio (2026-10-19).** `harness/compaction/studio.py` supplies the Studio side of
+the contract — the summarizer (the loaded model, with a deterministic extractive fallback that
+always carries the template headings), the engine probe (`GET {base}/models`), the canary gate
+(the candidate must reproduce the current engine's answer for the newest user message), and the
+switch (the candidate becomes the default provider). Three endpoints:
+
+- `POST /v1/compaction/run` — compact a transcript into a checkpoint (manual or auto trigger).
+- `POST /v1/compaction/surgery` — offer the engine switch at that checkpoint; commit only when
+  the gate passes.
+- `GET /v1/compaction/status` — whether automatic compaction is on, and the settings.
+
+The console has a **Compact** button (next to the composer) and a `/compact` command; after a
+compaction the Studio shows the surgery offer in the chat pane, and automatic compaction fires when
+a conversation outgrows the active engine profile's context (the "Auto-compact" toggle in the chat
+footer).
+
+Still open: the measurement that makes the gate *meaningful* — the 35B mid-conversation hand-off
+between engines, where the continuation drifts by the engines' numeric difference and the canary
+score decides whether the switch is worth committing. The gate implemented here is the conservative
+one: a candidate must reproduce the current engine's answer on the canary before the switch is
+committed, so a local engine swap cannot change what the session is doing.

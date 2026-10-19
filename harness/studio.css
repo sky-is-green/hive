@@ -288,3 +288,19 @@ section .msg.ai .note, section pre .note {
 }
 section .note { color: #FFDD00; opacity: .85; }
 table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color: #000000; opacity: .9; }
+
+/* ---- chat footer: the Studio toggles, next to the composer ---- */
+.chat-footer {
+  display: flex;
+  gap: .9rem;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: none;
+  margin-top: .35rem;
+  padding: .35rem .1rem 0;
+  border-top: 1px solid rgba(255, 221, 0, .18);
+  font-size: .85rem;
+}
+.chat-footer label.inline { color: #FFDD00; opacity: .9; cursor: pointer; }
+.chat-footer input[type="checkbox"] { accent-color: #FFB703; }
+.chat-footer .note { color: #FFDD00; opacity: .7; }

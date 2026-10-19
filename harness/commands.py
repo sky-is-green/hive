@@ -129,6 +129,34 @@ def _agent_markdown(session_root: Path, conversation_id: str) -> list[str]:
     return lines
 
 
+def _agent_messages(session_root: Path, conversation_id: str) -> list[dict]:
+    """The agent-side turns as structured messages (role + text)."""
+    out: list[dict] = []
+    root = Path(session_root)
+    if not root.is_dir():
+        return out
+    for path in root.glob(f"*/agent-{conversation_id}/session.jsonl.zstd"):
+        for raw in _read_zstd_lines(path):
+            try:
+                record = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            kind = record.get("type")
+            if kind == "user/message":
+                blocks = record.get("data", {}).get("content") or []
+                text = "".join(b.get("text", "") for b in blocks
+                               if isinstance(b, dict) and b.get("type") == "text")
+                if text.strip() and "splinter-curated-context" not in text:
+                    out.append({"role": "user", "text": text.strip()})
+            elif kind == "assistant/message":
+                blocks = record.get("data", {}).get("message", {}).get("content") or []
+                text = "".join(b.get("text", "") for b in blocks
+                               if isinstance(b, dict) and b.get("type") == "text")
+                if text.strip():
+                    out.append({"role": "assistant", "text": text.strip()})
+    return out
+
+
 def _read_zstd_lines(path: Path) -> list[str]:
     import zstandard
 
@@ -168,6 +196,7 @@ class ConsoleCommands:
             "status": self._status,
             "cascade": self._cascade,
             "sandbox": self._sandbox,
+            "compact": self._compact,
         }
         self._descriptors = [
             CommandDescriptor("help", "list available commands"),
@@ -191,6 +220,8 @@ class ConsoleCommands:
                               input_hint="[tasks.json]"),
             CommandDescriptor("sandbox", "run a command in the sandbox",
                               input_hint="<shell command>"),
+            CommandDescriptor("compact", "compact the conversation into a checkpoint",
+                              input_hint=""),
         ]
 
     # ------------------------------------------------------------------
@@ -417,6 +448,57 @@ class ConsoleCommands:
             return CommandResult("error", f"could not launch: {exc}")
         return CommandResult("success",
                               f"cascade started: {run_name} (pid {proc.pid}) → {run_dir}")
+
+    def _compact(self, args: str, conversation_id: str) -> CommandResult:
+        """Compact the conversation into a checkpoint and offer the engine switch."""
+        from harness.compaction.core import Message, Settings, Trigger, compact
+        from harness.compaction.studio import make_summarizer
+
+        raw = _agent_messages(self.agent.session_root, conversation_id)
+        if len(raw) < 2:
+            return CommandResult("error",
+                                 "nothing to compact yet for this conversation")
+        messages = [Message(role=m["role"], text=m["text"]) for m in raw]
+        events: list[dict] = []
+
+        def call_model(prompt: str, older) -> str:
+            try:
+                provider = self.st.registry.resolve(None)
+            except LookupError:
+                return ""
+            import requests
+
+            msgs = [{"role": "user", "content": prompt}]
+            for m in older[-12:]:
+                msgs.append({"role": "user" if m.role == "user" else "assistant",
+                             "content": m.text})
+            payload = {"model": provider.model or "local", "messages": msgs,
+                       "temperature": 0, "max_tokens": 1200}
+            headers = {"content-type": "application/json"}
+            if provider.api_key:
+                headers["authorization"] = f"Bearer {provider.api_key}"
+            resp = requests.post(f"{provider.base_url.rstrip('/')}/chat/completions",
+                                 json=payload, headers=headers, timeout=180)
+            resp.raise_for_status()
+            data = resp.json()
+            return (data["choices"][0]["message"].get("content") or "").strip()
+
+        outcome = compact(messages, Trigger.manual(), Settings(auto=True),
+                          summarize=make_summarizer(call_model),
+                          emit=lambda kind, payload: events.append(kind))
+        if outcome.status != "completed":
+            return CommandResult("error", f"compaction {outcome.status}: {outcome.error or ''}")
+        checkpoint = getattr(outcome, "checkpoint", None)
+        if checkpoint is None:
+            return CommandResult("error", "compaction produced no checkpoint")
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        self.transcripts_dir.mkdir(parents=True, exist_ok=True)
+        out = self.transcripts_dir / f"{stamp}-checkpoint-{_safe_name(conversation_id)}.md"
+        out.write_text(checkpoint.rendered, encoding="utf-8")
+        return CommandResult(
+            "success",
+            f"compacted {len(messages)} messages → {out}\n"
+            f"the checkpoint is a safe switch point: /engine <name> to swap the local engine")
 
     def _sandbox(self, args: str, _cid: str) -> CommandResult:
         """Run a command in the sandbox (Docker when the daemon is up)."""
