@@ -39,6 +39,8 @@ from typing import Callable, List, Optional
 
 import psutil
 import requests
+import anyio
+import asyncio
 from fastapi import Body, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
@@ -1386,6 +1388,16 @@ class ServerUnloadRequest(BaseModel):
     key: str
 
 
+class ChatTurnRequest(BaseModel):
+    query: str
+    conversation_id: str = "default"
+    config: Optional[dict] = None
+
+
+class ChatStopRequest(BaseModel):
+    conversation_id: str = "default"
+
+
 class AgentMessageRequest(BaseModel):
     message: str
     conversation_id: str = "default"
@@ -2577,6 +2589,208 @@ def create_app(
         result = commands.run(req.line, req.conversation_id)
         return result.to_dict()
 
+    # ------------------------------------------------------------------
+    # The chat turn: the Studio owns the provider connection
+    # ------------------------------------------------------------------
+    # Both engines stop generating when the client connection drops —
+    # llama.cpp through its should_stop check, strata through its client
+    # watcher — so the Studio keeps the provider request itself instead of
+    # handing it to the mount below.  That is what makes Stop a real stop:
+    # it closes this connection and the engine actually stops, instead of
+    # the tokens merely disappearing from the browser.
+    _live_chats: dict[str, dict] = {}
+
+    @app.post("/v1/chat/stop")
+    def chat_stop(req: ChatStopRequest):
+        """Stop the running turn by closing the provider connection.
+
+        The engine sees the disconnect and stops generating (llama.cpp and
+        strata both do), so the GPU is freed at once rather than after the
+        model finishes the sentence nobody is waiting for.
+        """
+        live = _live_chats.get(req.conversation_id)
+        if live is None:
+            return {"stopped": False, "conversation_id": req.conversation_id}
+        live["stopped"] = True
+        response = live.get("response")
+        if response is not None:
+            try:
+                response.close()      # the socket drops; the engine stops
+            except Exception:  # noqa: BLE001 - best effort
+                pass
+        return {"stopped": True, "conversation_id": req.conversation_id}
+
+    @app.post("/v1/splinter/stream")
+    async def splinter_stream(req: ChatTurnRequest, request: Request):
+        """One chat turn: curate here, generate upstream, stream the deltas."""
+        query = (req.query or "").strip()
+        if not query:
+            raise HTTPException(422, "query must not be empty")
+        try:
+            provider = st.registry.resolve(None)
+        except LookupError as exc:
+            raise HTTPException(502, f"no provider configured: {exc}")
+        base_url = provider.base_url.rstrip("/")
+        headers = {"Authorization": f"Bearer {provider.api_key or 'lm-studio'}",
+                   **provider.extra_headers}
+        splinter = st.splinter_for(req.conversation_id, req.config, with_backend=False)
+        st.begin(req.conversation_id)
+        try:
+            with st.lock_for(req.conversation_id):
+                result = splinter.process_turn(query,
+                                               conversation_id=req.conversation_id)
+                st.save_conversation(req.conversation_id, splinter)
+        finally:
+            st.end(req.conversation_id)
+        assembled = result.assembled
+        curated = assembled.content if assembled is not None else ""
+        payload = {
+            "model": provider.model or "local",
+            "messages": [
+                {"role": "system",
+                 "content": curated or "You are a helpful assistant."},
+                {"role": "user", "content": query},
+            ],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+            **(splinter.config.sampling or {}),
+        }
+        if splinter.config.max_tokens:
+            payload["max_tokens"] = splinter.config.max_tokens
+
+        live: dict = {"response": None, "stopped": False, "done": False}
+
+        def close_live() -> None:
+            """Close the provider connection - the engine stops on the drop."""
+            response = live.get("response")
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:  # noqa: BLE001 - best effort
+                    pass
+
+        async def watch_client() -> None:
+            """Close the provider connection when the browser goes away.
+
+            A closed tab must not leave the engine generating into the void:
+            both engines stop on the disconnect (llama.cpp through its
+            should_stop check, strata through its client watcher), so the
+            connection is closed as soon as the client is gone.  This runs as
+            its own task because the response task is cancelled on a
+            disconnect - the generator's own cleanup never gets to run.
+            """
+            while not live.get("done"):
+                try:
+                    if await request.is_disconnected():
+                        live["stopped"] = True
+                        close_live()
+                        return
+                except Exception:  # noqa: BLE001 - the request is over
+                    return
+                await anyio.sleep(0.2)
+
+        def sse():
+            yield "data: " + json.dumps({
+                "type": "meta", "turn": result.turn,
+                "token_count": result.token_count, "budget": result.budget,
+                "curated_chars": len(curated), "mode": result.mode,
+            }) + "\n\n"
+            started = time.time()
+            parts: list[str] = []
+            usage: dict = {}
+            response = None
+            _live_chats[req.conversation_id] = live
+            try:
+                response = requests.post(
+                    f"{base_url}/v1/chat/completions", json=payload,
+                    headers=headers, stream=True, timeout=600,
+                )
+                live["response"] = response
+                response.raise_for_status()
+                for raw in response.iter_lines(decode_unicode=True):
+                    if not raw:
+                        continue
+                    line = raw[6:].strip() if raw.startswith("data:") else raw.strip()
+                    if not line or line == "[DONE]":
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    usage = chunk.get("usage") or usage
+                    for choice in chunk.get("choices") or []:
+                        delta = choice.get("delta") or {}
+                        text = delta.get("content")
+                        if text:
+                            parts.append(text)
+                            yield "data: " + json.dumps({
+                                "type": "delta", "text": text}) + "\n\n"
+            except Exception as exc:  # noqa: BLE001 - surfaced as an event
+                if not live["stopped"]:
+                    yield "data: " + json.dumps({
+                        "type": "error", "error": str(exc)}) + "\n\n"
+            finally:
+                live["done"] = True
+                # closing the response is what stops the engine when the
+                # browser goes away (or when Stop closes it)
+                if response is not None:
+                    try:
+                        response.close()
+                    except Exception:  # noqa: BLE001
+                        pass
+                if _live_chats.get(req.conversation_id) is live:
+                    _live_chats.pop(req.conversation_id, None)
+
+            if live["stopped"]:
+                yield "data: " + json.dumps({
+                    "type": "stopped", "text": "".join(parts)}) + "\n\n"
+                return
+
+            reply = "".join(parts)
+            stored = False
+            if reply.strip() and not (
+                splinter.config.filter_hedge_replies
+                and Splinter._is_hedge_reply(reply)
+            ):
+                stored = splinter.store.add_chunk(splinter.turn, reply) is not None
+                if stored:
+                    st.save_conversation(req.conversation_id, splinter)
+            elapsed = max(time.time() - started, 1e-6)
+            completion_tokens = (usage or {}).get("completion_tokens") or 0
+            yield "data: " + json.dumps({
+                "type": "done", "stored": stored,
+                "tokens": completion_tokens,
+                "seconds": round(elapsed, 2),
+                "tokens_per_sec": round(completion_tokens / elapsed, 1)
+                if completion_tokens else None,
+            }) + "\n\n"
+
+        watcher = asyncio.create_task(watch_client())
+
+        async def stream():
+            # The provider read blocks, so it runs in a thread; between
+            # chunks the client is checked, and a client that went away
+            # closes the provider connection - the engine stops instead of
+            # finishing a reply nobody is reading.
+            iterator = sse()
+            try:
+                while True:
+                    if await request.is_disconnected():
+                        live["stopped"] = True
+                        close_live()
+                        break
+                    chunk = await anyio.to_thread.run_sync(
+                        lambda: next(iterator, None))
+                    if chunk is None:
+                        break
+                    yield chunk
+            finally:
+                live["stopped"] = True
+                close_live()
+                await anyio.to_thread.run_sync(iterator.close)
+
+        return StreamingResponse(stream(), media_type="text/event-stream")
+
     @app.post("/v1/agent/stream")
     async def agent_stream(req: AgentMessageRequest):
         """Stream an agent (dsh) turn with tool use over SSE."""
@@ -3248,6 +3462,35 @@ def create_app(
             save_registry(st.registry, st.providers_file)
         return {**info, "provider": prov_name,
                 "provider_registered": bool(req.register_provider)}
+
+    @app.post("/v1/server/unload-loaded")
+    def server_unload_loaded():
+        """Free the VRAM: unload whatever model is loaded.
+
+        This is not the same as stopping a turn (that is the Stop button in
+        the chat).  It releases the model itself: the local llama.cpp
+        instances and the Strata engine (the 176B serve frees its own VRAM
+        and reloads on the next request).  The engine profiles and the
+        providers stay, so Start works again right away.
+        """
+        out: dict = {"instances": [], "strata": None}
+        for inst in list(models_manager.status()["instances"]):
+            try:
+                models_manager.unload(inst["key"])
+                out["instances"].append(inst["key"])
+            except RuntimeError:
+                pass
+        base = _strata_base()
+        root = base[:-3] if base.endswith("/v1") else base
+        try:
+            resp = requests.post(f"{root}/v1/unload", json={}, timeout=15)
+            out["strata"] = resp.status_code
+            if resp.status_code >= 400:
+                # "busy" (a request is running) is a valid answer, not a failure
+                out["strata"] = f"{resp.status_code}: {resp.text[:120]}"
+        except Exception as exc:  # noqa: BLE001 - "not running" is valid
+            out["strata"] = f"not reachable: {exc}"
+        return out
 
     @app.post("/v1/server/unload")
     def server_unload(req: ServerUnloadRequest):

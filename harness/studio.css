@@ -291,6 +291,11 @@ pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
 .msg.sys .meta { display: inline; margin-left: .4rem; }
 .tab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; }
 .tab.active { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-bottom-color: #FFB703; }
+/* A black tab carries yellow text, so the yellow hover would swallow the
+   label.  The yellow glow stays for what is already yellow (the active
+   tab); on black, the hover lightens the black instead. */
+.tab:hover:not(.active):not(:disabled) { background: #1c1c1c; color: #FFDD00; }
+#tab-library .lib-container .tabs .lib-tab:hover:not(.active) { background: #1c1c1c; color: #FFDD00; }
 .sesstab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; transition: transform .15s ease; }
 .sesstab:hover { transform: translateY(-1px); }
 .sesstab.active { background: #FFB703; border: 1.5px solid #000000; color: #000000; transform: translateY(-2px); }

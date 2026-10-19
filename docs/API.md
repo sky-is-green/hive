@@ -76,6 +76,7 @@ curl http://127.0.0.1:8765/health
 | `GET` | `/v1/server/status` | Hardware (VRAM/RAM) plus loaded model health and instances. |
 | `POST` | `/v1/server/stop` | Unload one instance (key) or the whole local fleet (no key). |
 | `POST` | `/v1/server/unload` | Unload one instance and retire its provider + engine profile. — body: `#/components/schemas/ServerUnloadRequest` |
+| `POST` | `/v1/server/unload-loaded` | Free the VRAM: unload the local llama.cpp instances and the Strata engine. The profiles and providers stay. |
 
 ### Engines — reusable model profiles
 
@@ -106,6 +107,13 @@ curl http://127.0.0.1:8765/health
 | `POST` | `/v1/agent/cancel` | Cancel the in-flight agent turn for a conversation. |
 | `GET` | `/v1/agent/status` | Agent service state: running, model, last error. |
 | `POST` | `/v1/agent/stream` | Stream an agent (dsh) turn with tool use over SSE. — body: `#/components/schemas/AgentMessageRequest` |
+
+### Chat — one turn, and how to stop it
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/splinter/stream` | One chat turn: the Studio curates the context, then streams the provider's deltas over SSE. The Studio owns the provider connection, so a disconnect stops the engine. — body: `#/components/schemas/ChatTurnRequest` |
+| `POST` | `/v1/chat/stop` | Stop the running turn: close the provider connection, so the engine stops generating at once. — body: `#/components/schemas/ChatStopRequest` |
 
 ### Commands — console command palette
 
