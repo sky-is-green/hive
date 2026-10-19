@@ -54,10 +54,12 @@ switch (the candidate becomes the default provider). Three endpoints:
   the gate passes.
 - `GET /v1/compaction/status` — whether automatic compaction is on, and the settings.
 
-The console has a **Compact** button (next to the composer) and a `/compact` command; after a
-compaction the Studio shows the surgery offer in the chat pane, and automatic compaction fires when
-a conversation outgrows the active engine profile's context (the "Auto-compact" toggle in the chat
-footer).
+The console compacts through the **`/compact` command** (it is the row of
+commands above the chat bar, or the palette); after a compaction the Studio
+shows the surgery offer in the chat pane, and automatic compaction fires when
+a conversation outgrows the active engine profile's context (the "Auto-compact"
+toggle in the chat footer).  The command compacts both the durable agent log
+and the visible transcript, so what you read is what the model will see.
 
 Still open: the measurement that makes the gate *meaningful* — the 35B mid-conversation hand-off
 between engines, where the continuation drifts by the engines' numeric difference and the canary

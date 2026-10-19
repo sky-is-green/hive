@@ -259,14 +259,17 @@ working together under a Studio console:
   (remote). Single source of truth on the Home tab.
 
 The Studio console exposes everything: `/cascade` (launch console), `/runs`
-(run bundles), `/server` (chat + models + engines + providers + hub + library +
-inspector + training + settings), command palette (Ctrl+K), sandbox
+(run bundles), `/server` (Home / Settings / Cascade + a "More tools" group:
+Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training),
+a command palette (Ctrl+K), a command row above the chat bar, the sandbox
 (`/v1/sandbox/exec`), and a searchable settings index.
 
 ### API surface
 
-The Studio exposes ~40 endpoints under `/v1/`. Full documentation at
-`/docs` (Swagger UI). Key additions: `/v1/cascade/run` (now accepts all
-runner knobs), `/v1/sandbox/exec` (Docker-backed code execution with local
-fallback), `/v1/commands` + `/v1/commands/run` (console command discovery and
-execution), `/v1/cascade/registry`, `/v1/cascade/plan`, `/v1/cascade/frontier`.
+The Studio exposes 88 operations across 80 paths under `/v1/`. Full
+documentation at `/docs` (Swagger UI). Key additions: `/v1/cascade/run` (now
+accepts all runner knobs), `/v1/sandbox/exec` (Docker-backed code execution
+with local fallback), `/v1/commands` + `/v1/commands/run` (console command
+discovery and execution), `/v1/compaction/*` (checkpoints and engine surgery),
+`/v1/studio/settings` (the console's own toggles), `/v1/cascade/registry`,
+`/v1/cascade/plan`, `/v1/cascade/frontier`.

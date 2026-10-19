@@ -110,10 +110,21 @@ Done since the plan was written:
 Still open:
 
 - **Encoder training** — a dedicated small model tuned for app navigation, trained
-  on the Studio's own API map and real usage.
-- **Documentation sweep** — ENGINE.md, TRAINING-TAB.md, HUMAN-GATE.md still
-  describe the pre-UI shape.
+  on the Studio's own API map and real usage.  (v1 is the dsh agent with the
+  API map in its context: it works, it is not a trained model.)
 - **File explorer / diff view** — OpenCode-style side panels.
+- **The cascade in the chat path** — it needs one measurement first: a
+  conversational task set that says whether the cascade actually helps on
+  chat-shaped tasks.  That verdict is what makes it the always-on backend.
+
+Closed since this list was written:
+
+- **Documentation sweep** — the README, `docs/API.md`, `COMPACTION.md`,
+  `TRAINING-TAB.md`, `ENGINE.md`, `CASCADE-PILOT.md` and `WHITEPAPER.md` now
+  describe the shipped Studio.  `docs/API.md` is checked against the running
+  app by `tests/unit/test_api_docs.py`: an endpoint without a row, a row for
+  an endpoint that is gone, a wrong method, or a row with no description all
+  fail the suite.
 
 ## Recommended order
 

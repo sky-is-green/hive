@@ -733,12 +733,14 @@ traces are ignored.
 The cascade is now fully controllable from the Studio:
 
 - **`/cascade` page** — every runner knob (judge, repair, gate, gate_head, gate_threshold, temperature, max_tokens, reasoning, human_gate, api_fallback, router, router_mode, escalation lane toggle) in one form. Defaults work out of the box; advanced settings collapsed.
-- **Settings tab** — searchable settings index (32 settings, 9 categories) with click-to-navigate.
+- **Settings tab** — searchable settings index (30 settings, 8 categories) with click-to-navigate.
 - **Command palette** (Ctrl+K) — all console commands discoverable.
+- **Command row** — the row above the chat bar holds the commands you pick; the picker sits at its far right and opens into the space beside the chat column.
 - **Backend selector** (Home tab) — Strata / Llama.cpp / API, single source of truth.
 - **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution with local subprocess fallback.
 - **Launch panel** — profile-driven or quick-start with model + ctx + gpu.
 - **Escalation lane** — harvested to `escalation.jsonl` next to the report.
+- **Dev mode** — `/dev on` reveals the deep-research queue, the Docker/VHDX setup tab and the raw server status.
 - **AFK mode** — removed (shelved). Docker/VHDX setup — deprecated.
 
 ## Hive architecture & encoder (2026-10-19)
@@ -796,12 +798,14 @@ New/extended endpoints since the cascade pilot:
 - `/cascade` — full launch console with every runner knob, collapsible advanced settings.
 - `/runs` — run bundle index.
 - `/view/{run}` — rendered report page.
-- `/server` — Studio console (chat, models, engines, providers, hub, library, inspector, training, settings).
+- `/server` — Studio console (Home, Settings, Cascade + a "More tools" group: Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training). Chat in the middle column, launch panel on the right.
 - `/stacks` — stack management.
-- Settings tab — searchable settings index (32 settings, 9 categories, click-to-navigate).
+- Settings tab — searchable settings index (30 settings, 8 categories, click-to-navigate).
 - Command palette (Ctrl+K) — all console commands searchable.
+- Command row above the chat bar — the commands you pick, each with a red `x` to take it off the row.
 - Backend selector (Home tab) — Strata / Llama.cpp / API.
 - Sandbox endpoint — Docker-backed code execution with local fallback.
 - Escalation lane — harvested to `escalation.jsonl` next to the report.
+- Dev mode (`/dev on`) — the deep-research queue, the Docker/VHDX setup tab, the raw status.
 - AFK mode — removed (shelved).
 - Docker/VHDX setup — deprecated (backend endpoints remain).
