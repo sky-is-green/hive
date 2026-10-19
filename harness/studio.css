@@ -442,11 +442,14 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   border: 1px solid rgba(255, 221, 0, .45);
 }
 .cmd-picker-toggle:hover, .cmd-picker-toggle.open { background: #FFB703; color: #000; }
-/* the picker opens upward and to the right, into the open space beside
-   the chat column (the right column's lower half is free) */
+/* The picker is a viewport-anchored popover: the chat column clips its
+   overflow (overflow-x: hidden), so an absolutely positioned panel would be
+   cut off at the column's edge.  Fixed positioning lets it reach into the
+   open space beside the chat, where it belongs. */
 .cmd-picker {
-  position: absolute;
-  bottom: calc(100% + .4rem);
+  position: fixed;
+  top: auto;
+  bottom: 0;
   left: 0;
   right: auto;
   width: min(340px, 42vw);
@@ -538,8 +541,8 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 
 /* ---- small-viewport overrides (last, so they win) --------------------- */
 @media (max-width: 760px) {
-  /* no room to the right on a phone: the panel opens to the left instead */
-  .cmd-picker { width: min(300px, calc(100vw - 2rem)); right: 0; left: auto; }
+  /* a phone has no room to the right: the panel opens to the left instead */
+  .cmd-picker { width: min(300px, calc(100vw - 2rem)); }
   .cmd-picker-toggle { font-size: .72rem; padding: .15rem .4rem; }
   .pinned-commands .pin-run { font-size: .72rem; padding: .12rem .4rem; }
   .pinned-commands .pin-x { font-size: .68rem; padding: .12rem .3rem; }
