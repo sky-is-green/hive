@@ -1112,7 +1112,13 @@ providers.local.json (gitignored).</div>
 <button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">+ New</button>
 </div>
 <div class="composer">
-<div id="pinned-commands" class="pinned-commands" style="display:none"></div>
+<div class="chat-pick">
+  <div id="pinned-commands" class="pinned-commands" style="display:none"></div>
+  <button type="button" id="cmd-picker-toggle" class="cmd-picker-toggle" onclick="toggleCmdPicker()" title="Pick the commands you want at hand above the chat bar. Click a command in the list to add or remove it.">Commands <span class="note" id="commands-count"></span> ▾</button>
+  <div id="cmd-picker" class="cmd-picker" style="display:none">
+    <div id="commands-list" class="note">loading…</div>
+  </div>
+</div>
 <div class="composer-box">
 <div class="composer-toggles">
   <label class="inline" title="How: the encoder gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = the encoder is off, so Splinter and Agent cannot run either."><input type="checkbox" id="chat-assistant" onchange="applyEncoderToggle()"> App assistant</label>
@@ -1181,10 +1187,6 @@ providers.local.json (gitignored).</div>
 <details id="dev-raw-status" style="margin-top:1rem; display:none">
 <summary style="cursor:pointer;font-weight:700;padding:.45rem 0;color:#FFDD00">Raw server status <span class="note">(dev mode)</span></summary>
 <pre id="dev-raw-json" style="max-height:240px">…</pre>
-</details>
-<details id="commands-box" style="margin-top:1rem">
-<summary style="cursor:pointer;font-weight:700;padding:.45rem 0;color:#FFDD00">Commands <span class="note" id="commands-count"></span></summary>
-<div id="commands-list" class="note" style="margin-top:.3rem">loading…</div>
 </details>
 <h3 style="margin:.6rem 0 .3rem; color:#FFDD00">Engine log (strata)</h3>
 <pre id="srvlog" title="strata engine log tail">log: loading…</pre>
@@ -1815,16 +1817,29 @@ function renderCommandsList() {{
   if (!box) return;
   const pins = pinnedCommands();
   const count = document.getElementById('commands-count');
-  if (count) count.textContent = `${{_commands.length}} · ${{pins.length}} pinned`;
+  if (count) count.textContent = `${{_commands.length}}`;
   if (!_commands.length) {{ box.textContent = 'no commands'; return; }}
+  // this is a SELECTOR: click a command to add or remove it from the row
+  // above the chat bar.  (The buttons there are what you run.)
   box.innerHTML = _commands.map(c => {{
     const pinned = pins.includes(c.name);
-    return `<div style="display:flex; gap:.4rem; align-items:center; padding:.15rem 0; border-bottom:1px solid rgba(255,221,0,.10)">
-      <button type="button" title="Pin ${{c.name}} above the chat bar" onclick="togglePinnedCommand('${{c.name}}')" style="padding:.05rem .35rem; margin:0; font-size:.72rem; background:${{pinned ? '#FFDD00' : 'transparent'}}; color:${{pinned ? '#000' : '#FFDD00'}}; border:1px solid #FFDD00">${{pinned ? '★' : '☆'}}</button>
-      <span title="${{c.description}}${{c.input ? ' · ' + c.input.hint : ''}}" style="cursor:pointer; color:#FFDD00" onclick="runStudioCommand('${{c.name}}')"><code style="background:#000; color:#FFDD00; padding:0 .25rem; border-radius:3px">/${{c.name}}</code></span>
+    const hint = c.input ? ` · ${{c.input.hint}}` : '';
+    return `<label title="${{c.description}}${{hint}}" style="display:flex; gap:.45rem; align-items:center; padding:.2rem .1rem; border-bottom:1px solid rgba(255,221,0,.10); cursor:pointer">
+      <input type="checkbox" ${{pinned ? 'checked' : ''}} onchange="togglePinnedCommand('${{c.name}}')" style="accent-color:#FFB703; margin:0">
+      <code style="background:#000; color:#FFDD00; padding:0 .25rem; border-radius:3px">/${{c.name}}</code>
       <span class="note" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${{c.description}}</span>
-    </div>`;
+    </label>`;
   }}).join('');
+}}
+
+function toggleCmdPicker() {{
+  const panel = document.getElementById('cmd-picker');
+  const btn = document.getElementById('cmd-picker-toggle');
+  if (!panel) return;
+  const show = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = show ? 'block' : 'none';
+  if (btn) btn.classList.toggle('open', show);
+  if (show) renderCommandsList();
 }}
 
 function renderPinnedCommands() {{
