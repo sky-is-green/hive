@@ -1510,6 +1510,7 @@ def create_app(
 
     @app.get("/health")
     def health():
+        """Liveness probe: the sidecar is up."""
         return {"ok": True, "conversations": len(st.hives)}
 
     @app.get("/v1/setup/status")
@@ -1820,6 +1821,7 @@ def create_app(
         provider: Optional[str] = Query(default=None),
         base_url: Optional[str] = Query(default=None),
     ):
+        """List served models and their status (setup tooling shape)."""
         target = base_url
         if not target:
             try:
@@ -1943,6 +1945,7 @@ def create_app(
 
     @app.post("/v1/chat/completions")
     async def mock_chat_completions(request: Request):
+        """OpenAI-compatible chat passthrough for the mock backend."""
         payload = await request.json()
         debug_dir = os.environ.get("HARNESS_DEBUG_CHAT")
         if debug_dir:
@@ -2015,6 +2018,7 @@ def create_app(
     # this one is the wire shape external clients expect.
     @app.post("/v1/provider/config")
     def set_providers(req: ProviderConfigRequest):
+        """Replace the provider list (name, base_url, api_key, model)."""
         reg = ProviderRegistry(default=req.default)
         for entry in req.providers:
             data = entry.model_dump()
@@ -2038,6 +2042,7 @@ def create_app(
 
     @app.get("/v1/provider/config")
     def get_providers():
+        """List configured providers and the default one."""
         return {
             "default": st.registry.default,
             "providers": st.registry.redacted(),
@@ -2047,6 +2052,7 @@ def create_app(
     # ------------------------------------------------------------------
     @app.post("/v1/engines")
     def set_engines(req: EngineConfigRequest):
+        """Replace the engine profile list (name, kind, model, load options, sampling)."""
         reg = EngineRegistry(default=req.default)
         for entry in req.engines:
             try:
@@ -2064,6 +2070,7 @@ def create_app(
 
     @app.get("/v1/engines")
     def get_engines():
+        """List engine profiles and the default one."""
         return {
             "default": st.engines.default,
             "engines": [e.to_dict() for e in st.engines.engines],
@@ -2389,10 +2396,12 @@ def create_app(
 
     @app.post("/v1/engines/ab/bench")
     async def engines_ab_bench(request: Request):
+        """Benchmark two engine profiles head to head on the same port base."""
         return await _ab_handle(request)
 
     @app.post("/v1/engines/bench")
     async def engines_bench_alias(request: Request):
+        """Alias of the A/B bench (kept for older clients)."""
         return await _ab_handle(request)
 
     @app.post("/v1/ab/bench")
@@ -2434,15 +2443,18 @@ def create_app(
 
     @app.get("/v1/commands")
     def list_commands():
+        """List console commands (name, description, input hint)."""
         return {"commands": commands.descriptors()}
 
     @app.post("/v1/commands/run")
     def run_command(req: CommandRunRequest):
+        """Run a console command line, e.g. '/status'."""
         result = commands.run(req.line, req.conversation_id)
         return result.to_dict()
 
     @app.post("/v1/agent/stream")
     async def agent_stream(req: AgentMessageRequest):
+        """Stream an agent (dsh) turn with tool use over SSE."""
         message = (req.message or "").strip()
         if not message:
             raise HTTPException(422, "message must not be empty")
@@ -2479,12 +2491,14 @@ def create_app(
 
     @app.get("/v1/agent/status")
     def agent_status():
+        """Agent service state: running, model, last error."""
         return {"runtime_running": agent_service.runtime_running,
                 "permission_policy": agent_service.permission_policy,
                 "busy": agent_service._inflight}
 
     @app.post("/v1/agent/cancel")
     def agent_cancel():
+        """Cancel the in-flight agent turn for a conversation."""
         return agent_service.cancel()
 
     # ------------------------------------------------------------------
@@ -2562,6 +2576,7 @@ def create_app(
 
     @app.get("/v1/server/status")
     def server_status():
+        """Hardware (VRAM/RAM) plus loaded model health and instances."""
         data = models_manager.status()
         try:
             data["hardware"] = _hardware_summary()
@@ -2829,6 +2844,7 @@ def create_app(
 
     @app.delete("/v1/models/local")
     def delete_local_model(file: str = Query(...)):
+        """Delete one GGUF from the local library."""
         try:
             out=models_manager.delete_local(file)
             models_manager.invalidate_cache()
@@ -3010,6 +3026,7 @@ def create_app(
 
     @app.post("/v1/research/queue")
     async def research_queue_add(req: Request):
+        """Queue a deep-research question for the background worker."""
         body = await req.json()
         q = str(body.get("question", "")).strip()
         if not q:
@@ -3037,6 +3054,7 @@ def create_app(
 
     @app.post("/v1/server/start")
     def server_start(req: ServerStartRequest):
+        """Launch a local model server (llama.cpp/strata) with the given options."""
         # embedding validation mirrors manager.load pooling check
         if req.pooling is not None and not req.embedding:
             raise HTTPException(422, "pooling requires embedding=True")
@@ -3108,6 +3126,7 @@ def create_app(
 
     @app.get("/v1/models/local")
     def local_models():
+        """List GGUF models in the local library directory."""
         import time as _time
         t0=_time.time()
         models=models_manager.list_local()
@@ -3325,6 +3344,7 @@ def create_app(
 
     @app.post("/v1/agent-presets/copy")
     async def agent_presets_copy(request: Request):
+        """Copy an agent preset to a new id."""
         try:
             body = await request.json()
         except Exception:
@@ -3351,6 +3371,7 @@ def create_app(
 
     @app.post("/v1/agent-presets/remove")
     async def agent_presets_remove(request: Request):
+        """Delete a user agent preset."""
         try:
             body = await request.json()
         except Exception:
@@ -3370,6 +3391,7 @@ def create_app(
 
     @app.post("/v1/agent-presets/read")
     async def agent_presets_read(request: Request):
+        """Read one agent preset's content."""
         try:
             body = await request.json()
         except Exception:
@@ -3389,6 +3411,7 @@ def create_app(
 
     @app.get("/v1/agent-presets/list")
     def agent_presets_list():
+        """List available agent presets (system and user)."""
         # English display names for built-in presets. The preset.yml files on
         # disk are Chinese (the source shipping language), but the Studio
         # console is English-first, and the DSH web side localizes via
@@ -3485,6 +3508,7 @@ def create_app(
 
     @app.get("/v1/models/hub")
     def hub_search(q: str = "", limit: int = 12):
+        """Search Hugging Face for GGUF repos."""
         try:
             return {"results": models_manager.hub_search(q, limit)}
         except Exception as exc:  # noqa: BLE001 - network errors surface as 502
@@ -3492,6 +3516,7 @@ def create_app(
 
     @app.get("/v1/models/hub/files/{repo:path}")
     def hub_files(repo: str):
+        """List the GGUF files inside a Hugging Face repo."""
         if not repo.strip():
             raise HTTPException(422, "repo must not be empty")
         try:
@@ -3501,14 +3526,17 @@ def create_app(
 
     @app.post("/v1/models/hub/download")
     def hub_download(req: HubDownloadRequest):
+        """Start downloading a model file from Hugging Face."""
         return models_manager.download(req.repo, req.file)
 
     @app.get("/v1/models/hub/downloads")
     def hub_downloads():
+        """Download job states (queued/downloading/done/error)."""
         return {"downloads": models_manager.downloads_status()}
 
     @app.get("/server", response_class=HTMLResponse)
     def server_page():
+        """The Studio console page (chat, models, engines, providers, hub, settings)."""
         return HTMLResponse(render_server_page(), headers=_NO_STORE)
 
     # ------------------------------------------------------------------
@@ -3516,6 +3544,7 @@ def create_app(
     # the §B3 /v1/stacks/* routes registered above.
     @app.get("/stacks", response_class=HTMLResponse)
     def stacks_page():
+        """The stack management page."""
         try:
             stacks = list_stacks()
         except Exception:  # noqa: BLE001 - an empty library is a valid page
@@ -3536,6 +3565,7 @@ def create_app(
     # ------------------------------------------------------------------
     @app.post("/v1/protocol/run")
     def protocol_run(req: ProtocolRunRequest):
+        """Run the mock or live HiveBench protocol into a run directory."""
         mode = req.mode if req.mode in ("live", "mock") else ""
         if not mode:
             raise HTTPException(422, "mode must be 'live' or 'mock'")
@@ -3566,6 +3596,7 @@ def create_app(
     # is catalogue-only for now; the ternary engine is the launchable one.
     @app.get("/v1/training/engines")
     def training_engines():
+        """List training engines and the ternary runner."""
         return {
             "engines": engine_catalog(),
             "python": ternary_python(),
@@ -3574,6 +3605,7 @@ def create_app(
 
     @app.post("/v1/training/launch")
     def training_launch(req: TrainingLaunchRequest):
+        """Launch a training run for an engine with the given fields."""
         try:
             return launch_training(
                 st.runs_root, req.engine, req.method,
@@ -3583,6 +3615,7 @@ def create_app(
 
     @app.get("/v1/training/status/{run_dir:path}")
     def training_status(run_dir: str):
+        """Training run progress for a run directory."""
         target = resolve_run_dir(st.runs_root, run_dir)
         if not target.is_dir():
             raise HTTPException(404, f"no run under {target}")
@@ -3590,6 +3623,7 @@ def create_app(
 
     @app.post("/v1/training/report/{run_dir:path}")
     def training_report(run_dir: str):
+        """Write and return the training report for a run directory."""
         target = resolve_run_dir(st.runs_root, run_dir)
         if not (target / "training.json").is_file():
             raise HTTPException(404, f"not a training run: {target}")
@@ -3598,6 +3632,7 @@ def create_app(
 
     @app.get("/v1/report/{run_dir:path}")
     def report(run_dir: str):
+        """Return the run_report.json bundle for a run directory."""
         target = resolve_run_dir(st.runs_root, run_dir)
         path = target / "run_report.json"
         if not path.is_file():
@@ -3606,12 +3641,14 @@ def create_app(
 
     @app.get("/v1/runs")
     def runs_index():
+        """List run bundles available for viewing."""
         return {"runs": _list_runs(st.runs_root)}
 
     # ------------------------------------------------------------------
     # Report views (Seam B): server-rendered HTML over run bundles.
     @app.get("/view/{run_dir:path}", response_class=HTMLResponse)
     def view_report(run_dir: str):
+        """Rendered HTML report page for a run bundle."""
         target = resolve_run_dir(st.runs_root, run_dir)
         path = target / "run_report.json"
         if not path.is_file():
@@ -3621,6 +3658,7 @@ def create_app(
 
     @app.get("/runs", response_class=HTMLResponse)
     def view_runs():
+        """HTML index of run bundles."""
         return HTMLResponse(render_runs_page(_list_runs(st.runs_root)), headers=_NO_STORE)
 
     # ------------------------------------------------------------------
@@ -3630,6 +3668,7 @@ def create_app(
     # gives the agent a safe execution surface.
     @app.post("/v1/sandbox/exec")
     def sandbox_exec(body: dict[str, Any] = Body(default={})):
+        """Run a command in the sandbox (Docker when the daemon is up, else a local subprocess)."""
         import shutil, subprocess as _sp
         command = str(body.get("command") or "")
         if not command.strip():
@@ -3685,6 +3724,7 @@ def create_app(
 
     @app.get("/v1/sandbox/status")
     def sandbox_status():
+        """Sandbox availability: docker installed, daemon up, fallback mode."""
         import shutil, subprocess as _sp
         docker_bin = shutil.which("docker")
         daemon_ok = False
@@ -3699,6 +3739,7 @@ def create_app(
 
     @app.get("/cascade", response_class=HTMLResponse)
     def view_cascade():
+        """Hive Cascade launch console (every runner knob, collapsible advanced)."""
         task_files = sorted(
             p.name for p in cascade_api.CASCADE_DIR.glob("*.json")
         ) if cascade_api.CASCADE_DIR.is_dir() else []
@@ -3706,6 +3747,7 @@ def create_app(
 
     @app.get("/favicon.svg")
     def favicon_svg():
+        """Studio favicon (hive hexagon)."""
         svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
                "<polygon points='32,4 58,18 58,46 32,60 6,46 6,18' fill='#FFB703' stroke='#000' stroke-width='3'/>"
                "<text x='32' y='42' font-size='28' text-anchor='middle' fill='#000' font-family='sans-serif' font-weight='900'>H</text>"
@@ -3725,6 +3767,7 @@ def create_app(
 
     @app.get("/bee.svg")
     def bee_svg():
+        """Bee icon used by the Studio chrome."""
         svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
                "<ellipse cx='32' cy='36' rx='18' ry='12' fill='#000'/>"
                "<ellipse cx='32' cy='36' rx='10' ry='6' fill='#FFB703'/>"
@@ -3737,6 +3780,7 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def index():
+        """Redirect to the run index."""
         return RedirectResponse("/runs")
 
     # ------------------------------------------------------------------

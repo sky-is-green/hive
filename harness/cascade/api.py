@@ -326,6 +326,7 @@ def create_router(
 
     @router.get("/runs")
     def runs_index() -> dict[str, Any]:
+        """List run bundles available for viewing."""
         if not runs.is_dir():
             return {"runs": []}
         rows = [
@@ -338,6 +339,7 @@ def create_router(
 
     @router.get("/report/{run}")
     def report(run: str) -> dict[str, Any]:
+        """Return the run_report.json bundle for a run directory."""
         target = _resolve_run(runs, run)
         path = target / "report.json"
         if not path.is_file():
