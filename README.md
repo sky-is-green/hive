@@ -241,6 +241,9 @@ a single hive theme (yellow/black) across every page.
 
 Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`.
 
+**Hand-maintained endpoint map:** [`docs/API.md`](docs/API.md) — every endpoint
+grouped by what it is for, with the conventions (auth, revisions, secrets).
+
 ## Running the suite
 
 Offline, no LLM required (CI runs exactly this):
