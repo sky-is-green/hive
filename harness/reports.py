@@ -795,6 +795,17 @@ def render_server_page() -> str:
 <p class="note">Advanced tools (agent presets, engines, library, inspector, training, hub) are under <b>More tools ▾</b> above. Click any tab to open it.</p>
 
 <section style="margin-top:1.5rem">
+<h2 style="margin-top:0">Setup <span class="note">let the Studio pick</span></h2>
+<p class="note">Tell the Studio what you have. It ranks your local models by what actually fits
+in VRAM and sets the context for you &mdash; no knob-fiddling required.</p>
+<div class="row" style="gap:.5rem;align-items:center;flex-wrap:wrap">
+  <button onclick="wizardDetect(this)">Detect hardware &amp; recommend</button>
+  <span id="wizard-hw" class="note"></span>
+</div>
+<div id="wizard-models" style="margin-top:.6rem"></div>
+</section>
+
+<section style="margin-top:1.5rem">
 <h2 style="margin-top:0">Backend</h2>
 <p class="note">Choose which AI backend the Studio and Cascade use. Only one is active at a time.</p>
 <div class="row" style="gap:.6rem;flex-wrap:wrap;align-items:center;margin:.6rem 0">
@@ -1202,6 +1213,78 @@ function toggleAdvanced() {{
   const show = el.style.display === 'none' || el.style.display === '';
   el.style.display = show ? 'flex' : 'none';
   if (btn) btn.textContent = show ? 'Fewer tools ▴' : 'More tools ▾';
+}}
+
+/* --------------------------- setup wizard --------------------------- */
+async function wizardDetect(btn) {{
+  const hwEl = document.getElementById('wizard-hw');
+  const listEl = document.getElementById('wizard-models');
+  if (btn) btn.disabled = true;
+  if (hwEl) hwEl.textContent = 'probing…';
+  try {{
+    const st = await api('/v1/server/status');
+    const hw = st.hardware || {{}};
+    const has = Number(hw.available_gb) || 0;
+    const ram = Number(hw.available_ram_gb) || 0;
+    if (hwEl) hwEl.textContent = `${{(hw.vram_gb||0).toFixed(1)}} GB VRAM (free ${{has.toFixed(1)}}), ${{(hw.available_ram_gb||ram).toFixed(1)}} GB RAM free, ${{hw.cpu_count||'?'}} CPU`;
+    const KV = 0.25;               // GB of KV per 1k context tokens
+    const models = (st.local_models || []).filter(m => (m.size_gb || 0) > 0.2);
+    const ranked = models.map(m => {{
+      const size = Number(m.size_gb) || 0;
+      // the largest context that still fits: 8k is the safe default
+      const ctx = 8192;
+      const need = size + (ctx / 1024) * KV;
+      return {{ file: m.file, name: (m.file || '').split('/').pop(), size: size, need: need, fits: need <= has }};
+    }}).sort((a, b) => (b.fits - a.fits) || (b.size - a.size));
+    const fitting = ranked.filter(m => m.fits).slice(0, 6);
+    const show = fitting.length ? fitting : ranked.slice(0, 4);
+    if (!listEl) return;
+    if (!show.length) {{
+      listEl.innerHTML = '<p class="note">No local models found. Set your library path in '
+        + '<b>More tools &rsaquo; Local Library</b>, or download one from the Hub tab.</p>';
+      return;
+    }}
+    listEl.innerHTML = '<p class="note">Click a model to create its engine profile and start it.</p>'
+      + show.map(m => `<div style="display:flex;gap:.6rem;align-items:center;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid rgba(255,221,0,.12);cursor:pointer" onclick="wizardApply('${{m.file}}')">
+          <span><b>${{m.name}}</b> <span class="note">${{m.size.toFixed(1)}} GB model · ${{m.need.toFixed(1)}} GB needed at 8k</span></span>
+          <span class="note">${{m.fits ? 'fits ✓' : 'too large for VRAM'}}</span></div>`).join('');
+  }} catch (e) {{
+    if (hwEl) hwEl.textContent = 'probe failed: ' + e;
+  }} finally {{
+    if (btn) btn.disabled = false;
+  }}
+}}
+
+async function wizardApply(file) {{
+  const hwEl = document.getElementById('wizard-hw');
+  const listEl = document.getElementById('wizard-models');
+  if (hwEl) hwEl.textContent = 'setting up ' + file.split('/').pop() + '…';
+  try {{
+    const preset = await api('/v1/engines/preset?file=' + encodeURIComponent(file));
+    const load = preset.load_options || preset.preset || {{}};
+    const name = file.split('/').pop().replace('.gguf', '');
+    // create (or update) the engine profile for this model
+    const cur = await api('/v1/engines');
+    const engines = (cur.engines || []).filter(e => e.name !== name);
+    engines.push({{
+      name: name, kind: 'llama_cpp', model: file,
+      base_url: 'http://127.0.0.1:1234/v1',
+      load_options: load, capabilities: ['streaming'], sampling: {{}},
+    }});
+    await api('/v1/engines', 'POST', {{
+      engines: engines, default: cur.default || name,
+      persist: true, expectedRevision: cur.revision,
+    }});
+    await api('/v1/server/start', 'POST', {{
+      model: file, ctx_size: load.context || 8192,
+      ngl: load.gpu_layers ?? 999, flash_attn: !!load.flash_attn,
+      register_provider: true, claim_default: true,
+    }});
+    if (hwEl) hwEl.textContent = 'started ' + name + ' — talk to it in the chat pane';
+    if (listEl) listEl.innerHTML = '';
+  }} catch (e) {{
+    if (hwEl) hwEl.textContent = 'setup failed: ' + e;
+  }}
 }}
 
 function setBackend(val) {{
