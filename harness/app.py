@@ -2284,8 +2284,56 @@ def create_app(
 
     app.include_router(cascade_api.create_router(validator=ValidatorService()))
 
+    def _retire_orphan_providers() -> list[str]:
+        """Retire the local providers whose server is gone.
+
+        Unloading only knows the instances it holds.  An instance that died
+        on its own (a crash, a restart of the Studio) leaves its provider
+        and engine profile behind, pointing at a dead port - every chat to
+        them fails.  A local provider whose port is not listening is an
+        orphan, so it goes with the unload.
+        """
+        from urllib.parse import urlparse
+
+        from harness.models import _port_in_use
+
+        retired: list[str] = []
+        for prov in list(st.registry.providers):
+            if not prov.name.lower().startswith("local-"):
+                continue
+            parsed = urlparse(prov.base_url)
+            try:
+                port = int(parsed.port or 0)
+            except ValueError:
+                port = 0
+            if not port:
+                continue
+            if _port_in_use(models_manager.host, port, timeout=0.4):
+                continue          # the server is still there
+            st.registry.providers = [
+                p for p in st.registry.providers
+                if p.name.lower() != prov.name.lower()
+            ]
+            st.engines.engines = [
+                e for e in st.engines.engines
+                if e.name.lower() != prov.name.lower()
+            ]
+            if (st.registry.default or "").lower() == prov.name.lower():
+                st.registry.default = next(
+                    (p.name for p in st.registry.providers), "")
+            if (st.engines.default or "").lower() == prov.name.lower():
+                st.engines.default = next(
+                    (e.name for e in st.engines.engines), "")
+            retired.append(prov.name)
+        return retired
+
     def register_local_remove(key: str) -> None:
-        """Retire a local instance's provider + engine profile."""
+        """Retire a local instance's provider + engine profile.
+
+        The default has to move too: a default that points at a provider
+        whose server is gone is an orphan - the Studio would keep talking to
+        a dead port.
+        """
         prov_name = f"local-{key}"
         st.registry.providers = [
             p for p in st.registry.providers
@@ -2294,6 +2342,12 @@ def create_app(
         st.engines.engines = [
             e for e in st.engines.engines if e.name.lower() != prov_name.lower()
         ]
+        if (st.registry.default or "").lower() == prov_name.lower():
+            st.registry.default = next(
+                (p.name for p in st.registry.providers), "")
+        if (st.engines.default or "").lower() == prov_name.lower():
+            st.engines.default = next(
+                (e.name for e in st.engines.engines), "")
 
     def register_local(info: dict, load_options: Optional[dict] = None,
                        api_key: Optional[str] = None,
@@ -2943,7 +2997,9 @@ def create_app(
             "model": inst.get("model"), "port": inst.get("port"),
             "base_url": inst.get("base_url"), "healthy": bool(inst.get("healthy")),
         } for inst in data.get("instances") or []]
-        if strata.get("alive"):
+        if strata.get("alive") and strata.get("loaded"):
+            # alive is not loaded: an engine whose model was unloaded serves
+            # nothing, so it must not be listed as a loaded model
             loaded.append({
                 "backend": "strata", "key": "strata",
                 "model": strata.get("model"), "port": 8081,
@@ -3473,13 +3529,21 @@ def create_app(
         and reloads on the next request).  The engine profiles and the
         providers stay, so Start works again right away.
         """
-        out: dict = {"instances": [], "strata": None}
+        out: dict = {"instances": [], "retired": [], "strata": None}
         for inst in list(models_manager.status()["instances"]):
             try:
                 models_manager.unload(inst["key"])
                 out["instances"].append(inst["key"])
+                # the provider and the engine profile of a dead server are
+                # orphans: retire them with it
+                register_local_remove(inst["key"])
+                out["retired"].append(f"local-{inst['key']}")
             except RuntimeError:
                 pass
+        # providers whose server is gone (an instance that died on its own)
+        for name in _retire_orphan_providers():
+            if name not in out["retired"]:
+                out["retired"].append(name)
         base = _strata_base()
         root = base[:-3] if base.endswith("/v1") else base
         try:
@@ -4278,11 +4342,30 @@ def create_app(
             pass
 
     def _probe_strata() -> dict:
-        """Is the Strata engine (the local 176B serve) up, and what does it serve?"""
+        """Is the Strata engine (the local 176B serve) up, and does it hold the model?
+
+        "alive" is the serve process; "loaded" is the model in VRAM.  They
+        are different: an engine that is up with its model unloaded serves
+        nothing, and the Studio must not claim a model is loaded then.
+        """
         import requests
 
         base = _strata_base()
-        out = {"base_url": base, "alive": False, "model": None, "models": []}
+        root = base[:-3] if base.endswith("/v1") else base
+        out = {"base_url": base, "alive": False, "loaded": False,
+               "model": None, "models": []}
+        try:
+            # /v1/status says both: the serve is up AND the model is loaded
+            resp = requests.get(f"{root}/v1/status", timeout=4)
+            if resp.ok:
+                data = resp.json()
+                out["alive"] = True
+                out["loaded"] = bool(data.get("loaded"))
+                out["model"] = data.get("model")
+                out["models"] = [out["model"]] if out["model"] else []
+                return out
+        except Exception:  # noqa: BLE001 - fall back to the model list
+            pass
         try:
             resp = requests.get(f"{base}/models", timeout=4)
             if resp.ok:

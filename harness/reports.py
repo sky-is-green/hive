@@ -749,6 +749,13 @@ def render_server_page() -> str:
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Studio server &amp; models</title>
 <style>{_get_server_css()}</style><style>input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{{-webkit-appearance:none;margin:0}}input[type=number]{{-moz-appearance:textfield;appearance:textfield}}</style></head><body>
 <h1>HiveBench Studio</h1>
+<!-- the load bar: the bottom half of the screen while a model loads or unloads -->
+<div id="loadbar" class="loadbar" style="display:none">
+  <button class="loadbar-close" onclick="hideLoadBar()" title="Hide this bar (the work keeps going)">&#10005;</button>
+  <div class="loadbar-title" id="loadbar-title">Loading&hellip;</div>
+  <div class="loadbar-strip"><i></i></div>
+  <div class="loadbar-detail" id="loadbar-detail"></div>
+</div>
 {render_nav("server")}
 
 <div class="grid">
@@ -2312,6 +2319,18 @@ async function sendChat() {{
   const ctrl = new AbortController();
   streamAbort = ctrl;
   const body = {{query: query, conversation_id: convId}};
+  // an engine that has to load the model first says so on the bar: the
+  // 176B takes minutes to come up, and silence looks like a hang
+  try {{
+    const st = await api('/v1/server/status');
+    const strata = st.strata || {{}};
+    if (st.running) {{
+      showLoadBar('Loading the model\u2026', 'The engine is loading the weights.');
+    }} else if (strata.alive && !strata.loaded) {{
+      showLoadBar('Loading the model into VRAM\u2026',
+                  'The engine loads the weights on the first request; the reply takes a while.');
+    }}
+  }} catch (e) {{ /* the bar is a nicety, never a blocker */ }}
   if (pendingAttachment) {{
     /* the file's text goes in with the message, so the model really sees it
        (the store keeps it too, but retrieval is not guaranteed) */
@@ -2395,6 +2414,7 @@ async function sendChat() {{
   }} finally {{
     streamAbort = null;
     setBusy(false);
+    hideLoadBar(true);          /* the load bar goes with the turn */
     maybeAutoCompact();
   }}
 }}
@@ -2606,12 +2626,24 @@ function launchBody() {{
 
 async function startServer(btn) {{
   if (btn) btn.disabled = true;          /* slow POST — no double submits */
+  const wanted = document.getElementById('launch-model-select')?.value || 'the model';
+  showLoadBar('Loading ' + wanted + '…',
+              'The weights are loading; the engine answers when it is up.');
   try {{
     const r = await fetch('/v1/server/start', {{method: 'POST',
       headers: {{'content-type': 'application/json'}},
       body: JSON.stringify(launchBody())}});
-    show('status', await r.text());
+    const text = await r.text();
+    show('status', text);
+    if (!r.ok) {{
+      // a failed load stays on the bar, with the reason on it
+      showLoadBar('The load failed', text, 'error');
+    }} else {{
+      hideLoadBar(true);
+    }}
     refresh();
+  }} catch (e) {{
+    showLoadBar('The load failed', String(e.message || e), 'error');
   }} finally {{ if (btn) btn.disabled = false; }}
 }}
 
@@ -2619,15 +2651,21 @@ async function unloadLoaded(btn) {{
   // Unload is not "stop": it releases the model itself (the local
   // llama.cpp instances and the Strata engine) and keeps the profiles.
   if (btn) btn.disabled = true;
+  showLoadBar('Unloading\u2026', 'Stopping the servers and giving the VRAM back.');
   try {{
     const r = await api('/v1/server/unload-loaded', 'POST');
     const bits = [];
     if (r.instances && r.instances.length) bits.push('unloaded ' + r.instances.join(', '));
+    if (r.retired && r.retired.length) bits.push('retired ' + r.retired.join(', '));
     if (r.strata && r.strata < 400) bits.push('the strata engine gave its VRAM back');
     if (!bits.length) bits.push('nothing was loaded');
     show('status', 'unloaded: ' + bits.join('; '));
+    hideLoadBar();
+    // the confirmation, for a couple of seconds
+    showToast('Unload Successful');
     refresh();
   }} catch (e) {{
+    showLoadBar('The unload failed', String(e.message || e), 'error');
     show('status', 'unload failed: ' + e.message);
   }} finally {{ if (btn) btn.disabled = false; }}
 }}
@@ -2790,6 +2828,30 @@ function filterLibrary() {{
     }}
   }}
 }}
+/* The load bar: the bottom half of the screen while a model loads or
+   unloads.  It also carries the error when a load fails - the log is in
+   the server log, but a failed load is a dead end the user has to see. */
+let _loadBar = null;
+
+function showLoadBar(title, detail, kind) {{
+  const bar = document.getElementById('loadbar');
+  if (!bar) return;
+  _loadBar = {{ kind: kind || 'load' }};
+  const t = document.getElementById('loadbar-title');
+  const d = document.getElementById('loadbar-detail');
+  if (t) t.textContent = title;
+  if (d) d.textContent = detail || '';
+  bar.style.display = 'flex';
+}}
+
+function hideLoadBar(onlyIfLoading) {{
+  const bar = document.getElementById('loadbar');
+  if (!bar) return;
+  if (onlyIfLoading && _loadBar && _loadBar.kind !== 'load') return;
+  bar.style.display = 'none';
+  _loadBar = null;
+}}
+
 function showToast(msg) {{
   let t=document.getElementById('toast');
   if(!t){{ t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }}

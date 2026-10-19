@@ -658,3 +658,64 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   border: 1px solid transparent;
 }
 .chat-menu-items button:hover { background: #FFB703; color: #000; }
+
+/* ---- the load bar: the bottom half of the screen while a model moves --- */
+.loadbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50vh;
+  z-index: 900;
+  background: rgba(0, 0, 0, .94);
+  border-top: 2px solid #FFB703;
+  padding: 1.1rem 1.3rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.loadbar-title {
+  color: #FFDD00;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: .6rem;
+}
+.loadbar-strip {
+  height: 7px;
+  background: rgba(255, 221, 0, .14);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.loadbar-strip i {
+  display: block;
+  height: 100%;
+  width: 32%;
+  background: #FFB703;
+  animation: loadslide 1.3s ease-in-out infinite;
+}
+@keyframes loadslide {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(330%); }
+}
+.loadbar-detail {
+  margin-top: .6rem;
+  color: #FF9B9B;
+  font-size: .88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 34vh;
+}
+.loadbar-detail:empty { display: none; }
+.loadbar-close {
+  position: absolute;
+  top: .7rem;
+  right: .9rem;
+  margin: 0;
+  padding: .1rem .5rem;
+  font-size: .9rem;
+  background: transparent;
+  color: #FFDD00;
+  border: 1px solid rgba(255, 221, 0, .4);
+}
+.loadbar-close:hover { background: #FFB703; color: #000; }
