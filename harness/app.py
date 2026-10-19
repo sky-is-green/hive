@@ -2717,6 +2717,23 @@ def create_app(
                 "vram_gb": None, "available_ram_gb": 8.0,
                 "devices": [], "vram_source": "ram",
             }
+        # the Strata engine is a separate serve: the Studio does not launch
+        # it, but it is a loaded model the user is talking to.
+        strata = _probe_strata()
+        data["strata"] = strata
+        loaded = [{
+            "backend": "llama.cpp", "key": inst.get("key"),
+            "model": inst.get("model"), "port": inst.get("port"),
+            "base_url": inst.get("base_url"), "healthy": bool(inst.get("healthy")),
+        } for inst in data.get("instances") or []]
+        if strata.get("alive"):
+            loaded.append({
+                "backend": "strata", "key": "strata",
+                "model": strata.get("model"), "port": 8081,
+                "base_url": strata.get("base_url"), "healthy": True,
+            })
+        data["loaded"] = loaded
+        data["loaded_model"] = (loaded[0]["model"] if loaded else None)
         return data
 
     @app.get("/v1/server/log")
@@ -3981,14 +3998,16 @@ def create_app(
         """The Studio's toggles: sandbox, tool use, auto-compaction."""
         return _load_studio_settings()
 
-    @app.get("/v1/studio/strata")
-    def studio_strata():
-        """Probe the Strata engine (the local 176B serve) and list its models."""
-        import requests
-
-        base = (_load_studio_settings().get("strata_base")
+    def _strata_base() -> str:
+        return (_load_studio_settings().get("strata_base")
                 or os.environ.get("CASCADE_SCION_BASE")
                 or "http://127.0.0.1:8081/v1").rstrip("/")
+
+    def _probe_strata() -> dict:
+        """Is the Strata engine (the local 176B serve) up, and what does it serve?"""
+        import requests
+
+        base = _strata_base()
         out = {"base_url": base, "alive": False, "model": None, "models": []}
         try:
             resp = requests.get(f"{base}/models", timeout=4)
@@ -4001,6 +4020,11 @@ def create_app(
         except Exception:  # noqa: BLE001 - "not running" is a valid answer
             pass
         return out
+
+    @app.get("/v1/studio/strata")
+    def studio_strata():
+        """Probe the Strata engine (the local 176B serve) and list its models."""
+        return _probe_strata()
 
     @app.put("/v1/studio/settings")
     def studio_settings_put(body: dict[str, Any] = Body(default={})):

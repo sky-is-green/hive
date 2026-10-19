@@ -180,17 +180,26 @@ button { background: #FFB703; color: #000000; border: 1.5px solid #000000; borde
 button:hover:not(:disabled) { background: #FFD54F; }
 #stopbtn { background: #b3372c; color: #fff; border: 1.5px solid #000000; }
 pre { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
-.chatlog { background: #FFB703; border: 1.5px solid #000000; }
-.msg.user { background: #000000; color: #FFDD00; border: 1.5px solid #000000; }
-.msg.ai { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
-.msg.sys { background: #000000; color: #FFDD00; border: 1px solid #000000; font-size: .8rem; padding: .25rem .7rem; border-radius: 999px; }
+/* the chat is a black console surface; the bubbles carry the colour */
+.chatlog { background: #000000; border: 1.5px solid #FFB703; border-radius: 12px; padding: 1rem; gap: .7rem; }
+.msg { line-height: 1.5; font-size: .93rem; }
+.msg.ai { background: #000000; color: #FFDD00; border: 1px solid rgba(255,221,0,.28); border-radius: 4px 12px 12px 12px; }
+.msg.user { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-radius: 12px 4px 12px 12px; }
+.msg .meta { display: block; font-size: .7rem; margin-top: .35rem; letter-spacing: .02em; }
+.msg.ai .meta { color: rgba(255,221,0,.65); }
+.msg.user .meta { color: rgba(0,0,0,.6); }
+.msg .role { font-weight: 700; margin-right: .4rem; }
+.msg.sys { align-self: center; background: rgba(255,221,0,.12); color: #FFDD00; border: 1px solid rgba(255,221,0,.35); font-size: .78rem; padding: .22rem .85rem; border-radius: 999px; }
+.msg.sys .meta { display: inline; margin-left: .4rem; }
 .tab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; }
 .tab.active { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-bottom-color: #FFB703; }
 .sesstab { border: 1.5px solid #000000; background: #000000; color: #FFDD00; transition: transform .15s ease; }
 .sesstab:hover { transform: translateY(-1px); }
 .sesstab.active { background: #FFB703; border: 1.5px solid #000000; color: #000000; transform: translateY(-2px); }
 .hint { background: #FFB703; color: #000000; border: 1.5px solid #000000; }
-.toolstep { background: #FFB703; border: 1.5px dashed #000000; }
+.toolstep { background: #FFB703; border: 1.5px solid #000000; border-radius: 10px; color: #000000; }
+.toolstep summary { color: #000000; font-weight: 600; }
+.toolstep pre { background: #000000; color: #FFDD00; border: 1px solid rgba(255,221,0,.3); }
 /* ---- Fit estimator S2: VRAM needs vs has, colored bar, context slider ---- */
 .fit-panel { margin:.6rem 0; padding:.7rem .8rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,221,0,.22); border-radius:8px; }
 .fit-grid { display:grid; grid-template-columns: 1fr 1fr auto; gap:.5rem; align-items:center; font-size:.88rem; }
@@ -304,3 +313,34 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 .chat-footer label.inline { color: #FFDD00; opacity: .9; cursor: pointer; }
 .chat-footer input[type="checkbox"] { accent-color: #FFB703; }
 .chat-footer .note { color: #FFDD00; opacity: .7; }
+
+/* ---- composer: one bordered input, the send button inside it ---- */
+.composer-box {
+  display: flex;
+  align-items: flex-end;
+  gap: .4rem;
+  background: #000000;
+  border: 1.5px solid #FFB703;
+  border-radius: 12px;
+  padding: .45rem .5rem .45rem .7rem;
+  margin-top: .5rem;
+  flex: none;
+}
+.composer-box:focus-within { box-shadow: 0 0 0 2px rgba(255,183,3,.35); }
+.composer-box textarea, .composer-box input {
+  background: transparent;
+  border: none;
+  color: #FFDD00;
+  outline: none;
+  resize: none;
+  font: inherit;
+  line-height: 1.45;
+  max-height: 30vh;
+  padding: .2rem 0;
+  width: 100%;
+}
+.composer-box input::placeholder { color: rgba(255,221,0,.45); }
+.composer-box button { flex: none; }
+#sendbtn { background: #FFB703; color: #000000; font-weight: 700; border: 1.5px solid #000000; }
+.chat-hint { color: rgba(255,221,0,.55); font-size: .76rem; margin-top: .3rem; }
+.chat-hint kbd { background: rgba(255,221,0,.15); border: 1px solid rgba(255,221,0,.35); border-radius: 4px; padding: 0 .3rem; color: #FFDD00; }
