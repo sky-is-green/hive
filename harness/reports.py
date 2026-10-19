@@ -1890,8 +1890,52 @@ function toggleCmdPicker() {{
   const show = panel.style.display === 'none' || panel.style.display === '';
   panel.style.display = show ? 'block' : 'none';
   if (btn) btn.classList.toggle('open', show);
-  if (show) renderCommandsList();
+  if (show) {{ renderCommandsList(); placeCmdPicker(); }}
 }}
+
+/* The panel is viewport-anchored: the chat column clips its overflow, so a
+   panel placed inside it would be cut off at the column's edge.  It opens
+   upward (the chat bar is at the bottom) and to the right, into the open
+   space beside the chat column — falling back to the left when the screen
+   is too narrow for that. */
+function placeCmdPicker() {{
+  const panel = document.getElementById('cmd-picker');
+  const btn = document.getElementById('cmd-picker-toggle');
+  if (!panel || !btn) return;
+  if (panel.style.display === 'none') return;
+  const r = btn.getBoundingClientRect();
+  const width = panel.offsetWidth || 320;
+  const gap = 6;
+  if (r.left + width + gap <= window.innerWidth) {{
+    panel.style.left = Math.round(r.left) + 'px';
+    panel.style.right = 'auto';
+  }} else {{
+    panel.style.left = 'auto';
+    panel.style.right = Math.round(window.innerWidth - r.right) + 'px';
+  }}
+  panel.style.bottom = Math.round(window.innerHeight - r.top + gap) + 'px';
+  /* never taller than the space above the button */
+  const room = Math.max(160, r.top - 16);
+  panel.style.maxHeight = Math.round(room) + 'px';
+}}
+
+/* the picker follows the button and closes on Escape / an outside click */
+window.addEventListener('resize', placeCmdPicker);
+window.addEventListener('scroll', placeCmdPicker, true);
+document.addEventListener('click', (ev) => {{
+  const panel = document.getElementById('cmd-picker');
+  if (!panel || panel.style.display === 'none') return;
+  if (panel.contains(ev.target) || ev.target.closest('#cmd-picker-toggle')) return;
+  panel.style.display = 'none';
+  document.getElementById('cmd-picker-toggle')?.classList.remove('open');
+}});
+document.addEventListener('keydown', (ev) => {{
+  if (ev.key !== 'Escape') return;
+  const panel = document.getElementById('cmd-picker');
+  if (!panel || panel.style.display === 'none') return;
+  panel.style.display = 'none';
+  document.getElementById('cmd-picker-toggle')?.classList.remove('open');
+}});
 
 function renderPinnedCommands() {{
   const row = document.getElementById('pinned-commands');
