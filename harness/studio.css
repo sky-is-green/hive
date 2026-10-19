@@ -38,6 +38,7 @@ section {
 }
 .col {
   min-width: 0;
+  max-width: 100%;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -84,7 +85,7 @@ section {
     overflow: visible;
     gap: .7rem;
   }
-  .col { overflow: visible; flex: none; min-height: auto; }
+  .col { overflow: visible; flex: none; min-height: auto; width: 100%; max-width: 100%; }
   /* stacked order: the chat first, the launch panel next (it is the action
      you want), the reference tabs last - so nothing hides below a long column */
   .mid { order: -3; height: 72vh; min-height: 0; overflow: hidden; flex: none; }
@@ -105,6 +106,9 @@ section {
   .card { padding: .7rem .8rem; }
   .composer-toggles { order: 3; width: 100%; padding: .25rem 0 0; }
   .composer-box { flex-wrap: wrap; }
+  /* the picker stays inside the screen on a phone */
+  .cmd-picker { width: min(320px, calc(100vw - 1.6rem)); right: 0; left: auto; }
+  .cmd-picker-toggle { font-size: .72rem; }
   .chat-hint { font-size: .7rem; }
 }
 /* --- rest: keep original component styles (unchanged) --- */
@@ -178,7 +182,7 @@ th { background: #000000; color: #FFDD00; }
 .chat-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex: none; margin: .2rem 0 .6rem; }
 .chat-head h2 { margin: 0; font-size: 1.05rem; white-space: nowrap; }
 .chat-controls { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; justify-content: flex-end; }
-.composer { display: flex; gap: .4rem; align-items: stretch; margin-top: auto; flex: none; width: 100%; min-width: 0; }
+.composer { display: flex; flex-direction: column; gap: .3rem; align-items: stretch; margin-top: auto; flex: none; width: 100%; min-width: 0; }
 .composer-input { flex: 1 1 auto; display: flex; min-width: 0; }
 .composer-input input { width: 100%; min-width: 0; flex: 1; }
 #stopbtn { display: none; }
@@ -359,6 +363,8 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .composer-toggles input[type="checkbox"] { accent-color: #FFB703; margin: 0; }
 
@@ -366,6 +372,10 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 .composer-box {
   display: flex;
   flex-direction: column;   /* toggles on their own row, the input takes the width */
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   align-items: stretch;
   flex: 1 1 auto;
   width: 100%;
@@ -407,13 +417,49 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 .chat-mode-note b { color: #FFDD00; }
 
 /* ---- pinned commands above the chat bar, pin marks on tabs ---- */
+.chat-pick {
+  position: relative;      /* the picker anchors here */
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;              /* a row of its own above the composer box */
+  width: 100%;
+  margin-bottom: 0;
+}
+.cmd-picker-toggle {
+  margin: 0;
+  padding: .15rem .5rem;
+  font-size: .76rem;
+  background: transparent;
+  color: #FFDD00;
+  border: 1px solid rgba(255, 221, 0, .45);
+}
+.cmd-picker-toggle:hover, .cmd-picker-toggle.open { background: #FFB703; color: #000; }
+/* the picker opens upward and to the left, into the open space over the chat */
+.cmd-picker {
+  position: absolute;
+  bottom: calc(100% + .4rem);
+  right: 0;
+  width: min(360px, 86vw);
+  max-height: 52vh;
+  overflow-y: auto;
+  background: #000000;
+  border: 1.5px solid #FFB703;
+  border-radius: 10px;
+  padding: .4rem .5rem;
+  z-index: 60;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .55);
+}
+.cmd-picker label { color: #FFDD00; }
+.cmd-picker .note { color: rgba(255, 221, 0, .7); }
 .pinned-commands {
   display: flex;
   gap: .35rem;
   flex-wrap: wrap;
   align-items: center;
   flex: none;
-  margin-bottom: .3rem;
 }
 .pinned-commands button {
   margin: 0;
@@ -439,3 +485,10 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   margin: 0 .2rem;
 }
 .composer-toggles label.inline { color: #FFDD00; opacity: .95; }
+
+/* ---- small-viewport overrides (last, so they win) --------------------- */
+@media (max-width: 760px) {
+  .cmd-picker { width: min(300px, calc(100vw - 2rem)); right: 0; left: auto; }
+  .cmd-picker-toggle { font-size: .72rem; padding: .15rem .4rem; }
+  .pinned-commands button { font-size: .72rem; padding: .12rem .4rem; }
+}
