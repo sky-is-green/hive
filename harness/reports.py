@@ -1136,7 +1136,7 @@ providers.local.json (gitignored).</div>
        onkeydown="if (event.key === 'Enter' && !event.shiftKey) {{ event.preventDefault(); chatSubmit(); }}" oninput="autoGrow(this)" autocomplete="off"></textarea>
 <div class="sugbox" id="sug-chat"></div></span>
 <button id="sendbtn" onclick="chatSubmit()">Send</button>
-<button id="stopbtn" onclick="cancelStream()" style="display:none" title="Stop the running reply. The turn ends where it is; the conversation stays.">Stop</button>
+<button id="stopbtn" onclick="cancelStream()" style="display:none" title="Stop the model now. The provider connection is closed, so the engine stops generating (llama.cpp and strata both do) and the GPU is free at once. The turn ends where it is; the conversation stays.">Stop</button>
 </div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
@@ -1150,7 +1150,7 @@ providers.local.json (gitignored).</div>
 <section>
 <h2 style="margin-top:0">Launch</h2>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
-<button onclick="api('/v1/server/stop', 'POST').then(() => refresh())">Stop</button></div>
+<button onclick="unloadLoaded(this)" title="How: POST /v1/server/unload-loaded -&gt; the local llama.cpp instances are unloaded and the Strata engine frees its VRAM. Does: releases the memory; the engine profiles and providers stay. Changing: Start works again right away. (Stopping a reply is the Stop button in the chat.)">Unload</button></div>
 <div class="row">
 <label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px" title="Pick a local GGUF model to launch. Populated from your library (set path in Local Library tab)."><option value="">— choose local model —</option></select></label>
 <label class="inline">ctx <input id="ctx" type="number" value="8192" size="6" title="Context size in tokens (default 8192). Larger = more memory."></label>
@@ -2423,6 +2423,10 @@ function friendlyError(msg) {{
 
 function cancelStream() {{
   if (chatMode() === 'agent') return cancelAgent();
+  // close the provider connection: the engine stops generating (llama.cpp
+  // and strata both stop when the client goes away), so the GPU is free
+  // now - not after the model finishes a reply nobody is waiting for.
+  api('/v1/chat/stop', 'POST', {{conversation_id: convId}}).catch(() => {{}});
   if (streamAbort) streamAbort.abort();
 }}
 
@@ -2605,6 +2609,23 @@ async function startServer(btn) {{
       body: JSON.stringify(launchBody())}});
     show('status', await r.text());
     refresh();
+  }} finally {{ if (btn) btn.disabled = false; }}
+}}
+
+async function unloadLoaded(btn) {{
+  // Unload is not "stop": it releases the model itself (the local
+  // llama.cpp instances and the Strata engine) and keeps the profiles.
+  if (btn) btn.disabled = true;
+  try {{
+    const r = await api('/v1/server/unload-loaded', 'POST');
+    const bits = [];
+    if (r.instances && r.instances.length) bits.push('unloaded ' + r.instances.join(', '));
+    if (r.strata && r.strata < 400) bits.push('the strata engine gave its VRAM back');
+    if (!bits.length) bits.push('nothing was loaded');
+    show('status', 'unloaded: ' + bits.join('; '));
+    refresh();
+  }} catch (e) {{
+    show('status', 'unload failed: ' + e.message);
   }} finally {{ if (btn) btn.disabled = false; }}
 }}
 
