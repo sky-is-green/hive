@@ -197,6 +197,7 @@ class ConsoleCommands:
             "cascade": self._cascade,
             "sandbox": self._sandbox,
             "compact": self._compact,
+            "dev": self._dev,
         }
         self._descriptors = [
             CommandDescriptor("help", "list available commands"),
@@ -222,6 +223,8 @@ class ConsoleCommands:
                               input_hint="<shell command>"),
             CommandDescriptor("compact", "compact the conversation into a checkpoint",
                               input_hint=""),
+            CommandDescriptor("dev", "developer mode: reveal the dev surface",
+                              input_hint="[on|off]"),
         ]
 
     # ------------------------------------------------------------------
@@ -499,6 +502,31 @@ class ConsoleCommands:
             "success",
             f"compacted {len(messages)} messages → {out}\n"
             f"the checkpoint is a safe switch point: /engine <name> to swap the local engine")
+
+    def _dev(self, args: str, _cid: str) -> CommandResult:
+        """Turn the developer surface on or off.
+
+        Dev mode reveals the deep-research queue, the Docker/VHDX setup tab
+        and the raw server status.  It is off by default; the Studio hides
+        those parts until it is on.
+        """
+        from harness.studio_settings import load_settings, save_settings
+
+        state_dir = getattr(self.st, "state_dir", None)
+        current = load_settings(state_dir)
+        want = args.strip().lower()
+        if want in ("on", "1", "true", "yes"):
+            on = True
+        elif want in ("off", "0", "false", "no"):
+            on = False
+        else:
+            on = not current["dev_mode"]
+        saved = save_settings({"dev_mode": on}, state_dir)
+        return CommandResult(
+            "success",
+            f"developer mode {'ON' if saved['dev_mode'] else 'OFF'}"
+            + ("\nreveals: the deep-research queue, the Docker/VHDX setup tab, the raw status."
+               if saved["dev_mode"] else "\nhidden again."))
 
     def _sandbox(self, args: str, _cid: str) -> CommandResult:
         """Run a command in the sandbox (Docker when the daemon is up)."""

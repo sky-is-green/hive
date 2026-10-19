@@ -47,6 +47,8 @@ import queue
 
 from harness.agent import DshAgentService
 from harness.commands import ConsoleCommands
+from harness.studio_settings import load_settings as load_studio_settings
+from harness.studio_settings import save_settings as save_studio_settings
 from harness.trainer import (
     draft_candidate,
     evaluate_candidate,
@@ -3824,36 +3826,12 @@ def create_app(
     # ------------------------------------------------------------------
     # Studio settings (the toggles the chat footer owns)
     # ------------------------------------------------------------------
-    def _studio_settings_path() -> Path:
-        base = st.state_dir or (REPO_ROOT / "harness_state")
-        return Path(base) / "studio_settings.json"
-
     def _load_studio_settings() -> dict:
-        """The Studio's own toggles (sandbox, tool use, auto-compaction)."""
-        try:
-            data = json.loads(_studio_settings_path().read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            data = {}
-        return {
-            "sandbox_enabled": bool(data.get("sandbox_enabled", True)),
-            "tools_enabled": bool(data.get("tools_enabled", True)),
-            "auto_compact": bool(data.get("auto_compact", True)),
-            "strata_base": str(data.get("strata_base")
-                               or os.environ.get("CASCADE_SCION_BASE")
-                               or "http://127.0.0.1:8081/v1"),
-        }
+        """The Studio's own toggles (sandbox, tool use, auto-compaction, dev mode)."""
+        return load_studio_settings(st.state_dir)
 
     def _save_studio_settings(data: dict) -> dict:
-        current = _load_studio_settings()
-        for key in ("sandbox_enabled", "tools_enabled", "auto_compact"):
-            if key in data:
-                current[key] = bool(data[key])
-        if "strata_base" in data and str(data["strata_base"]).strip():
-            current["strata_base"] = str(data["strata_base"]).strip()
-        path = _studio_settings_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(current, indent=1), encoding="utf-8")
-        return current
+        return save_studio_settings(data, st.state_dir)
 
     # ------------------------------------------------------------------
     # Compaction + engine surgery (the /compact command and its offer)
