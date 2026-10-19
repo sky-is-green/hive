@@ -201,6 +201,7 @@ def main() -> int:
                 if stats["errors"] >= 10:
                     flush({"aborted": "too many request errors"})
                     say("[harvest] aborting: too many errors")
+                    log.close()
                     return 2
                 time.sleep(5)
                 continue

@@ -85,9 +85,7 @@ def escalation_for(trigger: EscalationTrigger, path: Path) -> Optional[str]:
     """
     if trigger not in EscalationTrigger:
         raise ValueError(f"unknown escalation trigger {trigger!r}")
-    for target in path.escalates_to:
-        return target
-    return None
+    return path.escalates_to[0] if path.escalates_to else None
 
 
 def should_escalate(

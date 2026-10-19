@@ -127,3 +127,9 @@ class EscalationLane:
         if self._fh is not None:
             self._fh.close()
             self._fh = None
+
+    def __enter__(self) -> "EscalationLane":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
