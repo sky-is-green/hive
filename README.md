@@ -222,9 +222,9 @@ a single hive theme (yellow/black) across every page.
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
 - **Settings tab** — a searchable settings index: 32 settings across 9 nested
   categories, each linking to where it lives.
-- **Command palette** (Ctrl+K) — every console command, searchable. Ten commands
-  ship today: `help`, `new`, `save`, `model`, `mode`, `provider`, `engine`,
-  `bench`, `train`, `status`.
+- **Command palette** (Ctrl+K) — every console command, searchable. Twelve
+  commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
+  `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`.
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
