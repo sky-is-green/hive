@@ -748,7 +748,6 @@ def render_server_page() -> str:
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Studio server &amp; models</title>
 <style>{_get_server_css()}</style><style>input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{{-webkit-appearance:none;margin:0}}input[type=number]{{-moz-appearance:textfield;appearance:textfield}}</style></head><body>
-<div id="top-right-status" title="How: GET /v1/server/status hardware poll + process check. Does: Shows loaded model health. Changing: Green=ready, else Start needed." style="position:absolute; top:1rem; right:1.2rem; background:#000; color:#FFDD00; border:2px solid #000; padding:.45rem .9rem; border-radius:8px; font-weight:700; font-size:.88rem; z-index:10; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Launch: No model loaded</div>
 <h1>HiveBench Studio</h1>
 {render_nav("server")}
 
@@ -1232,7 +1231,7 @@ async function api(path, method, body, signal) {{
   const first = t.trimStart()[0];
   return (first === '{{' || first === '[') ? JSON.parse(t) : t;
 }}
-window.onerror=(msg, src, line, col, err)=>{{ console.error('ONERROR', msg, src+':'+line+':'+col, err); const t=document.getElementById('top-right-status'); if(t) t.textContent='JS ERROR: '+msg.slice(0,120); alert('JS ERROR: '+msg+'\\n'+src+':'+line); }};
+window.onerror=(msg, src, line, col, err)=>{{ console.error('ONERROR', msg, src+':'+line+':'+col, err); alert('JS ERROR: '+msg+'\\n'+src+':'+line); }};
 window.onunhandledrejection=(e)=>{{ console.error('UNHANDLED REJECTION', e.reason); alert('UNHANDLED: '+String(e.reason).slice(0,300)); }};
 function show(id, obj) {{ 
   try{{
@@ -3977,16 +3976,6 @@ async function refresh() {{
     }} else {{
       title.textContent = s.running ? 'Loading…' : 'No model loaded';
       title.className = 'bad';
-    }}
-    const topStatus = document.getElementById('top-right-status');
-    if (topStatus) {{
-      if (loaded.length) {{
-        topStatus.textContent = loaded.length > 1
-          ? `Launch: ${{loaded.length}} models loaded`
-          : 'Launch: Loaded ' + (loaded[0].model || loaded[0].backend);
-      }} else {{
-        topStatus.textContent = s.running ? 'Launch: Loading…' : 'Launch: No model loaded';
-      }}
     }}
     // the chat header shows what is actually loaded
     const modelName = document.getElementById('chat-model-name');
