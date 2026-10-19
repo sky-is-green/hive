@@ -1086,6 +1086,7 @@ providers.local.json (gitignored).</div>
 <label class="inline">model <span class="note" id="chat-model-name">no model loaded</span></label>
 <label class="inline"><input type="radio" name="chatmode" value="splinter" checked title="How: POST /v1/splinter/stream → splinter.process_turn curates assembled_content → single generate. Does: No tools, fast curated. Changing: Good for chat/memory; Agent needed for bash/code."> Splinter </label>
 <label class="inline"><input type="radio" name="chatmode" value="agent" title="How: POST /v1/agent/stream → DshAgentService loop with tools/session log. Does: Full agent (bash/fs/web/subagent). Changing: Use for code/tasks; slower but multi-step."> Agent (dsh) </label>
+<label class="inline" title="How: the agent gets the Studio's own API map and reads it with bash. Does: It can report your hardware, models, engines and runs, and act on them. Changing: Off = a plain agent."><input type="checkbox" id="chat-assistant"> App assistant</label>
 </span>
 <button onclick="newConversation()" title="How: newConversation() creates console-<uuid>, localStorage SESS_KEY, clears chatlog. Does: New splinter conversation. Changing: Old tab kept; config changes apply only after New.">New conversation</button>
 </div>
@@ -1873,7 +1874,8 @@ async function sendAgent(query) {{
   try {{
     const r = await fetch('/v1/agent/stream', {{method: 'POST',
       headers: {{'content-type': 'application/json'}},
-      body: JSON.stringify({{message: query, conversation_id: convId}})}});
+      body: JSON.stringify({{message: query, conversation_id: convId,
+        assistant: !!document.getElementById('chat-assistant')?.checked}})}});
     if (!r.ok || !r.body) {{
       const t = await r.text();
       throw new Error('HTTP ' + r.status + ' ' + t.slice(0, 200));

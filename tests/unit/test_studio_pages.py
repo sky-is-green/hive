@@ -64,3 +64,14 @@ def test_page_scripts_are_valid_javascript(page):
         assert proc.returncode == 0, (
             f"{page} script block {i} is not valid JavaScript:\n{proc.stderr[:2000]}"
         )
+
+
+def test_assistant_context_points_at_the_studio_api():
+    """The app-assistant context must name the real endpoints."""
+    from harness.app import _ASSISTANT_CONTEXT
+
+    assert "/v1/server/status" in _ASSISTANT_CONTEXT
+    assert "/v1/models/local" in _ASSISTANT_CONTEXT
+    assert "/v1/engines" in _ASSISTANT_CONTEXT
+    assert "8765" in _ASSISTANT_CONTEXT
+    assert "never guess" in _ASSISTANT_CONTEXT

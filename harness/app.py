@@ -1386,6 +1386,10 @@ class ServerUnloadRequest(BaseModel):
 class AgentMessageRequest(BaseModel):
     message: str
     conversation_id: str = "default"
+    assistant: bool = Field(
+        False,
+        description="App-assistant mode: give the agent the Studio's own API map.",
+    )
 
 
 class CommandRunRequest(BaseModel):
@@ -1420,6 +1424,29 @@ def _config_revision(payload: object) -> str:
     """
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
+
+
+_ASSISTANT_CONTEXT = """\
+You are the HiveBench Studio assistant. The Studio is the local-first AI
+harness the user is looking at; it runs on this machine, and you have bash,
+so you can read and drive it through its own HTTP API:
+
+  base: http://127.0.0.1:8765
+  GET  /v1/server/status       hardware (VRAM/RAM/CPU) + loaded models + health
+  GET  /v1/models/local       the local GGUF library
+  GET  /v1/engines            engine profiles (model, context, gpu, sampling)
+  GET  /v1/provider/config    providers (endpoints, keys masked)
+  GET  /v1/runs               run bundles
+  GET  /v1/cascade/registry   role coverage for the cascade
+  GET  /v1/sandbox/status     docker availability
+
+Read one with e.g. `curl -s http://127.0.0.1:8765/v1/server/status | head -c 2000`.
+To change something, POST to the matching endpoint (see docs/API.md).
+
+Rules: answer from what the API actually returned - never guess the user's
+hardware, models, or settings. If an endpoint is not in the list above, say
+so and point at docs/API.md. Keep answers short and concrete.
+"""
 
 
 def _cors_origins() -> list[str]:
@@ -2560,11 +2587,15 @@ def create_app(
         base_url = provider.base_url.rstrip("/") + "/v1"
         q: "queue.Queue[dict]" = queue.Queue()
 
+        prompt = message
+        if req.assistant:
+            prompt = _ASSISTANT_CONTEXT + "\n---\n" + message
+
         def worker():
             st.begin(req.conversation_id)
             try:
                 out = agent_service.run_turn(
-                    req.conversation_id, message,
+                    req.conversation_id, prompt,
                     base_url=base_url,
                     api_key=provider.api_key or "lm-studio",
                     model=provider.model or "local",
