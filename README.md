@@ -34,8 +34,8 @@ Two halves, one repo:
 
 - **HiveBench Studio** (`python -m harness`) — the console. Chat with your
   local models, manage engines/providers/models, run the cascade, inspect
-  retrieval, train, and browse results. **100 REST operations** across 92 paths
-  (91 operations under `/v1/`), documented live at `/docs` and mapped in
+  retrieval, train, and browse results. **102 REST operations** across 94 paths
+  (93 operations under `/v1/`), documented live at `/docs` and mapped in
   [`docs/API.md`](docs/API.md) — a test keeps that map honest.
 - **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
   escalate**. Deterministic verification, one greedy self-repair round, human
@@ -76,7 +76,7 @@ offline, and replayably.
 | **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
 | **Compact** | A conversation that outgrows its window becomes a checkpoint — and a checkpoint is a safe place to switch engines locally |
 | **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
-| **Extend** | 100 documented REST operations; the cascade is a CLI you can script |
+| **Extend** | 102 documented REST operations; the cascade is a CLI you can script |
 
 ### The hive architecture
 
@@ -255,6 +255,13 @@ a single hive theme (yellow/black) across every page.
 - **Chat voices** — every message says who produced it: the model, the studio
   encoder, the **Command Console** (cyan), and you (black on yellow, no label
   — you know you typed it).
+- **The launch console** — the dials a run actually needs, with one tab per
+  engine: the shared ones (the context window, the port) above, then
+  **llama.cpp** (the model, the GPU layers, the auto-fit, the threads, the
+  slots, the KV cache, the batch sizes, the alias, the HF passthrough) or
+  **Strata** (the config profile, the checkout, the VRAM reserve, the
+  prefill, the spec depth, the extra engine flags). Start launches the
+  engine the tab names.
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
@@ -269,7 +276,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (91 operations across 83 paths under `/v1/`)
+### API surface (93 operations across 85 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -284,6 +291,7 @@ a single hive theme (yellow/black) across every page.
 | Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
 | Chat | `/v1/splinter/stream`, `/v1/chat/stop` |
+| Strata | `/v1/strata/configs`, `/v1/strata/launch` |
 | Stacks | `/v1/stacks`, `/v1/stacks/{name}`, `/apply`, `/unload`, `/validate`, `/v1/stacks/status` |
 | Runs | `/v1/runs`, `/v1/report/{run}`, `/v1/protocol/run` |
 | Training | `/v1/training/engines`, `/launch`, `/status/{run}`, `/report/{run}`, `/v1/trainer/*` |

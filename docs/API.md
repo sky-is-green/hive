@@ -78,6 +78,13 @@ curl http://127.0.0.1:8765/health
 | `POST` | `/v1/server/unload` | Unload one instance and retire its provider + engine profile. — body: `#/components/schemas/ServerUnloadRequest` |
 | `POST` | `/v1/server/unload-loaded` | Free the VRAM: unload the local llama.cpp instances and the Strata engine. The profiles and providers stay. |
 
+### Strata — the local 176B engine
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/strata/configs` | The Strata config profiles in the checkout: the file, the model, the GPUs. |
+| `POST` | `/v1/strata/launch` | Start the Strata engine from the Launch panel (the config profile, the engine flags, the VRAM reserve, the prefill, the spec depth). The Studio owns the process it starts. — body: `#/components/schemas/StrataLaunchRequest` |
+
 ### Engines — reusable model profiles
 
 | Method | Path | Purpose |

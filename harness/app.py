@@ -1388,6 +1388,23 @@ class ServerUnloadRequest(BaseModel):
     key: str
 
 
+class StrataLaunchRequest(BaseModel):
+    """Start the Strata engine from the Launch panel.
+
+    The panel's Strata tab is the engine's own configuration: the config
+    profile, the engine flags, the VRAM reserve, the prefill chunk, the
+    speculative depth.  The Studio owns the process it starts.
+    """
+    repo: str = ""                     # the strata checkout
+    config: str = ""                   # the base config (strata-<model>.json)
+    python: str = ""                   # the interpreter (default .venv/bin/python)
+    port: int = 8081
+    ctx: int = 262144                  # --max-context
+    engine_args: list[str] = []        # the engine flags
+    options: dict = {}                 # merged into the generated config
+    timeout_s: float = 600
+
+
 class ChatTurnRequest(BaseModel):
     query: str
     conversation_id: str = "default"
@@ -3519,6 +3536,103 @@ def create_app(
         return {**info, "provider": prov_name,
                 "provider_registered": bool(req.register_provider)}
 
+    def _strata_repo() -> str:
+        """The Strata checkout: the setting, else the sibling checkout.
+
+        The engine is launched from its own repository (the serve, the
+        configs, the packs), so the Studio needs to know where that is.
+        """
+        configured = (_load_studio_settings().get("strata_repo") or "").strip()
+        if configured:
+            return configured
+        for candidate in (REPO_ROOT / "strata", REPO_ROOT.parent / "strata"):
+            if candidate.is_dir():
+                return str(candidate)
+        return ""
+
+    @app.get("/v1/strata/configs")
+    def strata_configs():
+        """The Strata config profiles in the checkout (the panel's picker)."""
+        repo = Path(_strata_repo())
+        out: dict = {"repo": str(repo), "configs": []}
+        if not repo.is_dir():
+            return out
+        for path in sorted(repo.glob("strata-*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8-sig"))
+            except (OSError, ValueError):
+                continue
+            out["configs"].append({
+                "file": path.name,
+                "model_name": data.get("model_name") or "",
+                "backend": data.get("backend") or "",
+                "port": data.get("port"),
+                "gpus": data.get("gpu") or [],
+                "args": len(data.get("args") or []),
+            })
+        return out
+
+    @app.post("/v1/strata/launch")
+    def strata_launch(req: StrataLaunchRequest):
+        """Start the Strata engine from the Launch panel.
+
+        The Studio owns the process it starts: the unload stops it again
+        (an engine the user started by hand is never killed - it is only
+        asked to give its VRAM back).
+        """
+        from harness.stack.schema import Tier
+        from harness.stack.strata import StrataLauncher
+
+        repo = (req.repo or _strata_repo()).strip()
+        if not repo:
+            raise HTTPException(400, "no strata checkout: set strata_repo in the "
+                                       "Studio settings or give a repo path")
+        config = (req.config or "").strip()
+        if not config:
+            raise HTTPException(400, "a strata config profile is required")
+        port = int(req.port or 8081)
+        endpoint = f"http://127.0.0.1:{port}"
+        launch = {
+            "kind": "strata",
+            "repo": repo,
+            "config": config,
+            "python": req.python or ".venv/bin/python",
+            "engine_args": [str(a) for a in (req.engine_args or [])],
+            "options": dict(req.options or {}),
+            "timeout_s": float(req.timeout_s or 600),
+        }
+        tier = Tier(role="strata", repo=repo, file="", ctx=int(req.ctx or 8192),
+                    launch=launch)
+        # adopt a serve that is already up: never start a second one on a
+        # port that already answers (the same contract the stacks use)
+        try:
+            from harness.stack.endpoint import probe_endpoint
+
+            health = probe_endpoint(endpoint)
+            _register_strata_provider({"alive": True, "base_url": endpoint,
+                                       "model": ""})
+            return {"started": False, "adopted": True, "port": port,
+                    "base_url": endpoint + "/v1", "health": health}
+        except Exception:  # noqa: BLE001 - not running: we start it
+            pass
+        launcher = getattr(stack_manager, "strata_launcher", None)
+        if launcher is None:
+            launcher = StrataLauncher(
+                state_dir=(st.state_dir / "strata") if st.state_dir else None,
+                log_dir=REPO_ROOT / "logs",
+            )
+        try:
+            info = launcher.start(stack_name="studio", role="strata",
+                                  tier=tier, endpoint=endpoint)
+        except RuntimeError as exc:
+            raise HTTPException(400, str(exc))
+        # the chat has to be able to reach it
+        _register_strata_provider({"alive": True, "base_url": endpoint,
+                                   "model": (req.options or {}).get("model_name")
+                                   or ""})
+        return {"started": True, "port": port, "base_url": endpoint + "/v1",
+                **info}
+
     @app.post("/v1/server/unload-loaded")
     def server_unload_loaded():
         """Free the VRAM: unload whatever model is loaded.
@@ -3554,6 +3668,15 @@ def create_app(
                 out["strata"] = f"{resp.status_code}: {resp.text[:120]}"
         except Exception as exc:  # noqa: BLE001 - "not running" is valid
             out["strata"] = f"not reachable: {exc}"
+        # a serve the STUDIO started is the Studio's to stop; one the user
+        # started by hand is only asked to give its VRAM back
+        launcher = getattr(stack_manager, "strata_launcher", None)
+        if launcher is not None and launcher.managed("strata"):
+            try:
+                launcher.stop("strata")
+                out["strata_stopped"] = True
+            except Exception as exc:  # noqa: BLE001
+                out["strata_stopped"] = f"could not stop: {exc}"
         return out
 
     @app.post("/v1/server/unload")

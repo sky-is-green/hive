@@ -1159,19 +1159,33 @@ providers.local.json (gitignored).</div>
 <h2 style="margin-top:0">Launch</h2>
 <div class="row"><button onclick="api('/v1/server/status').then(s => show('status', s))">Refresh</button>
 <button onclick="unloadLoaded(this)" title="How: POST /v1/server/unload-loaded -&gt; the local llama.cpp instances are unloaded and the Strata engine frees its VRAM. Does: releases the memory; the engine profiles and providers stay. Changing: Start works again right away. (Stopping a reply is the Stop button in the chat.)">Unload</button></div>
+<!-- the engine tabs: what differs per engine is behind its own tab -->
+<div class="tabs launch-tabs" id="launch-engine-tabs" style="margin:.5rem 0 .2rem">
+<button class="tab active" data-engine="llamacpp" onclick="selectLaunchEngine('llamacpp')" title="Launch a local GGUF with llama.cpp (llama-server).">llama.cpp</button>
+<button class="tab" data-engine="strata" onclick="selectLaunchEngine('strata')" title="Launch the Strata engine (the local 176B serve) from a config profile.">Strata</button>
+</div>
+<!-- shared: the context window and the port, whichever engine serves it -->
 <div class="row">
-<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:220px" title="Pick a local GGUF model to launch. Populated from your library (set path in Local Library tab)."><option value="">— choose local model —</option></select></label>
-<label class="inline">ctx <input id="ctx" type="number" value="8192" size="6" title="Context size in tokens (default 8192). Larger = more memory."></label>
-<label class="inline">gpu <input id="ngl" type="number" value="999" size="4" title="GPU layers to offload (999 = all). Lower if VRAM is tight."></label>
-<button onclick="startServer(this)">Start</button>
+<label class="inline" title="How: the context window in tokens. Does: how much the model keeps. Changing: bigger = more memory (the KV cache grows with it).">ctx <input id="ctx" type="number" value="8192" size="6"></label>
+<label class="inline" title="How: the port the server listens on. Does: where the clients reach it. Changing: the next free port if left empty.">port <input id="l-port" type="number" size="5" placeholder="auto"></label>
+</div>
+
+<!-- ============ llama.cpp ============ -->
+<div class="launch-pane" id="launch-pane-llamacpp">
+<div class="row">
+<label class="inline" style="flex:1">Model <select id="launch-model-select" style="flex:1;min-width:180px" title="Pick a local GGUF model to launch. Populated from your library (set the path in the Local Library tab)."><option value="">— choose local model —</option></select></label>
 </div>
 <div class="row">
-<span class="sugwrap"><input id="hfrepo" placeholder="--hf-repo (optional)" size="24">
+<label class="inline" title="How: -ngl <n> GPU layers (999 = all). Does: how much of the model sits on the GPU. Changing: lower it when VRAM is tight.">gpu layers <input id="ngl" type="number" value="999" size="4"></label>
+<label class="inline" title="How: --auto-fit. Does: computes the GPU layers from the free VRAM plus the KV cache. Changing: on = the Studio sizes it for you."><input id="l-autofit" type="checkbox"> auto-fit</label>
+<label class="inline" title="How: HIP_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES. Does: which GPUs this server may use. Changing: 0,1 uses both cards.">devices <input id="l-devices" size="6" placeholder="0,1"></label>
+</div>
+<div class="row">
+<span class="sugwrap" style="flex:1"><input id="hfrepo" placeholder="HF repo (optional, downloads on start)" style="width:100%">
 <div class="sugbox" id="sug-hfrepo"></div></span>
-<input id="hffile" placeholder="--hf-file (optional)" size="14">
+<input id="hffile" placeholder="HF file" size="12">
 </div>
-<p class="note">Pick a model, set context/GPU, click Start. Use the Engines tab for saved profiles with full settings.</p>
-<details><summary>Advanced launch flags (override profile)</summary>
+<details><summary>llama.cpp flags</summary>
 <div class="row">
 <label class="inline" title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4->16 up tok/s, over->down.">threads  <input id="l-threads" type="number" size="3" placeholder="auto (from profile)"></label>
 <label class="inline"><input id="l-fa" type="checkbox" title="How: -fa on if set, auto on when ctx>=8192. Does: Faster long ctx. Changing: off->on +10-30% at 32k, needs GPU."> flash-attn </label>
@@ -1185,8 +1199,37 @@ providers.local.json (gitignored).</div>
 <label class="inline" title="How: -b <n> 512 default. Does: Tokens/step RAM. Changing: 512->2048 prompt faster, more VRAM/spill.">batch  <input id="l-batch" type="number" size="4" placeholder="profile"></label>
 <label class="inline" title="How: -ub <n> 512. Does: Micro-batch physically. Changing: 512->128 lower peak but more steps; tune with batch.">ubatch  <input id="l-ubatch" type="number" size="4" placeholder="profile"></label>
 <label class="inline" title="How: --alias <id>. Does: Model id vs path. Changing: Clients see alias.">alias  <input id="l-alias" size="14" placeholder="profile"></label>
+<label class="inline" title="How: --api-key. Does: requires a bearer token on every request. Changing: on = only a client with the key gets in.">api key <input id="l-apikey" size="10" placeholder="none"></label>
 </div>
 </details>
+</div>
+
+<!-- ============ Strata ============ -->
+<div class="launch-pane" id="launch-pane-strata" style="display:none">
+<div class="row">
+<label class="inline" style="flex:1">Config <select id="l-strata-config" style="flex:1;min-width:170px" title="The Strata config profile: the model pack, the engine and its defaults. Pick one from the checkout."><option value="">— choose a config —</option></select></label>
+</div>
+<div class="row">
+<label class="inline" style="flex:1" title="How: the Strata checkout. Does: where the serve lives and which config it reads. Changing: point it at another checkout.">Repo <input id="l-strata-repo" style="width:100%" placeholder="the strata checkout"></label>
+</div>
+<div class="row">
+<label class="inline" title="How: --vram-reserve-mib. Does: the VRAM left free for the desktop. Changing: raise it if the display card is used.">vram reserve <input id="l-strata-vram" type="number" value="3072" size="6"></label>
+<label class="inline" title="How: --prefill. Does: the prompt chunk size. Changing: bigger = faster long prompts, more memory.">prefill <input id="l-strata-prefill" type="number" value="8192" size="6"></label>
+<label class="inline" title="How: --spec. Does: the MTP draft depth. Changing: 0 disables the speculation.">spec <input id="l-strata-spec" type="number" value="4" size="3"></label>
+</div>
+<div class="row">
+<label class="inline" style="flex:1" title="How: extra engine flags, passed straight through. Does: anything the profile does not cover. Changing: e.g. --ncmoe 12 --msc 256.">extra engine args <input id="l-strata-args" style="width:100%" placeholder="--ncmoe 12 --msc 256"></label>
+</div>
+<div class="row">
+<label class="inline" title="How: how long the Studio waits for the engine to answer. Does: the first load takes minutes. Changing: raise it for a cold pack.">timeout s <input id="l-strata-timeout" type="number" value="600" size="5"></label>
+</div>
+</div>
+
+<div class="row">
+<button onclick="startServer(this)" title="How: starts the engine the selected tab names. Does: llama.cpp launches llama-server; Strata starts the serve and waits for it to answer. Changing: the engine tab decides which.">Start</button>
+<span class="note" id="launch-note"></span>
+</div>
+<p class="note">The dials here are the ones this run needs. The Engines tab keeps the reusable profiles (with their provider and sampling).</p>
 <div id="instances"></div>
 <details style="margin-top:.6rem">
 <summary style="cursor:pointer;font-weight:600;padding:.3rem 0;color:#FFDD00">Console logs &amp; processes ▾</summary>
@@ -2597,6 +2640,69 @@ async function loadCascadeRoles() {{
 setTimeout(loadCascadeRoles, 300);
 
 /* --------------------------- server panel ---------------------------- */
+/* The launch console has one tab per engine: what the two share (the
+   context window, the port) sits above the tabs, and what differs sits
+   behind its own. */
+let _launchEngine = 'llamacpp';
+
+function selectLaunchEngine(engine) {{
+  _launchEngine = engine;
+  for (const btn of document.querySelectorAll('#launch-engine-tabs .tab')) {{
+    btn.classList.toggle('active', btn.dataset.engine === engine);
+  }}
+  for (const pane of document.querySelectorAll('.launch-pane')) {{
+    pane.style.display = pane.id === 'launch-pane-' + engine ? '' : 'none';
+  }}
+  const ctx = document.getElementById('ctx');
+  if (ctx) {{
+    const cur = String(ctx.value).trim();
+    // only reset the context when the user has not touched it
+    if (cur === '' || cur === '8192' || cur === '262144') {{
+      ctx.value = engine === 'strata' ? 262144 : 8192;
+    }}
+  }}
+  if (engine === 'strata') loadStrataConfigs();
+}}
+
+async function loadStrataConfigs() {{
+  const sel = document.getElementById('l-strata-config');
+  if (!sel) return;
+  try {{
+    const r = await api('/v1/strata/configs');
+    const repo = document.getElementById('l-strata-repo');
+    if (repo && !repo.value && r.repo) repo.value = r.repo;
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">— choose a config —</option>';
+    for (const c of (r.configs || [])) {{
+      const o = document.createElement('option');
+      o.value = c.file;
+      o.textContent = c.file + (c.model_name ? ' — ' + c.model_name : '');
+      sel.appendChild(o);
+    }}
+    if (keep) sel.value = keep;
+  }} catch (e) {{ /* no checkout, no configs */ }}
+}}
+
+function strataLaunchBody() {{
+  const args = [];
+  const vram = val('l-strata-vram');
+  if (vram) args.push('--vram-reserve-mib', String(vram));
+  const prefill = val('l-strata-prefill');
+  if (prefill) args.push('--prefill', String(prefill));
+  const spec = val('l-strata-spec');
+  if (spec !== '') args.push('--spec', String(spec));
+  const extra = (val('l-strata-args') || '').trim().split(/\\s+/).filter(Boolean);
+  args.push(...extra);
+  return {{
+    repo: val('l-strata-repo') || null,
+    config: val('l-strata-config') || null,
+    port: +(val('l-port') || 8081),
+    ctx: +(val('ctx') || 262144),
+    engine_args: args,
+    timeout_s: +(val('l-strata-timeout') || 600),
+  }};
+}}
+
 function launchBody() {{
   const lo = {{}};
   const override = (id) => {{
@@ -2623,11 +2729,16 @@ function launchBody() {{
     alias: override('l-alias'),
     mlock: document.getElementById('l-mlock')?.checked || false,
     no_mmap: document.getElementById('l-nommap')?.checked || false,
+    port: override('l-port'),
+    auto_fit: document.getElementById('l-autofit')?.checked || false,
+    visible_devices: override('l-devices'),
+    api_key: override('l-apikey'),
   }};
 }}
 
 async function startServer(btn) {{
   if (btn) btn.disabled = true;          /* slow POST — no double submits */
+  if (_launchEngine === 'strata') return startStrataEngine(btn);
   const wanted = document.getElementById('launch-model-select')?.value || 'the model';
   showLoadBar('Loading ' + wanted + '…',
               'The weights are loading; the engine answers when it is up.');
@@ -2646,6 +2757,37 @@ async function startServer(btn) {{
     refresh();
   }} catch (e) {{
     showLoadBar('The load failed', String(e.message || e), 'error');
+  }} finally {{ if (btn) btn.disabled = false; }}
+}}
+
+async function startStrataEngine(btn) {{
+  // Strata is its own serve: the Studio starts it, waits for it to answer,
+  // and owns the process from then on.
+  const body = strataLaunchBody();
+  if (!body.config) {{
+    showLoadBar('No config profile', 'Pick the Strata config to launch.', 'error');
+    if (btn) btn.disabled = false;
+    return;
+  }}
+  showLoadBar('Starting Strata…',
+              'The engine loads the pack; the first load takes minutes.');
+  try {{
+    const r = await fetch('/v1/strata/launch', {{method: 'POST',
+      headers: {{'content-type': 'application/json'}},
+      body: JSON.stringify(body)}});
+    const text = await r.text();
+    show('status', text);
+    let ok = false;
+    try {{ ok = JSON.parse(text).started === true; }} catch (e) {{}}
+    if (!r.ok || !ok) {{
+      showLoadBar('The start failed', text, 'error');
+    }} else {{
+      hideLoadBar(true);
+      showToast('Strata is up');
+    }}
+    refresh();
+  }} catch (e) {{
+    showLoadBar('The start failed', String(e.message || e), 'error');
   }} finally {{ if (btn) btn.disabled = false; }}
 }}
 

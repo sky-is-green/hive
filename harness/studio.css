@@ -723,3 +723,12 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
   border: 1px solid rgba(255, 221, 0, .4);
 }
 .loadbar-close:hover { background: #FFB703; color: #000; }
+
+/* ---- the launch console: engine tabs, per-engine panes ---------------- */
+.launch-tabs { margin: .5rem 0 .3rem; }
+.launch-tabs .tab { border-radius: 4px 4px 0 0; }
+.launch-pane { display: block; }
+.launch-pane label.inline { white-space: normal; }
+.launch-pane input[type="number"] { width: 4.5rem; }
+.launch-pane input[type="text"], .launch-pane select { max-width: 100%; }
+#launch-note { color: #FFDD00; }
