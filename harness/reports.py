@@ -802,8 +802,9 @@ def render_server_page() -> str:
     <div class="grid-2col">
       <label title="How: Required EngineProfile.name, validated non-empty, key for registry.resolve. Does: Lookup for provider/engine param. Changing: Rename breaks saved refs.">name  <input id="eng-name" size="16" placeholder="local-bonsai" oninput="engDirty=true"></label>
       <label title="How: UI alias not in profile. Does: Cosmetic picker label. Changing: No backend effect.">displayName  <input id="eng-displayName" placeholder="local-bonsai" oninput="engDirty=true"></label>
-      <label title="How: Provider base_url → resolve_endpoint → POST /v1/chat/completions. Does: Routes generation. Changing: Wrong URL→502; 1234 vs 1236 hits different ServerInstance.">baseURL  <input id="eng-url" placeholder="http://localhost:1234/v1" oninput="engDirty=true"></label>
-      <label title="How: api_key → Bearer, redacted as ***; blank→lm-studio. Does: Auth only. Changing: Needed for hosted, blank fine for local.">apiKey  <input id="eng-apikey" type="password" placeholder="(none)" oninput="engDirty=true"></label>
+      <label title="How: Select a provider (from Providers tab) to use its endpoint and key. Changing: Switches the backend this profile talks to.">Provider  <select id="eng-provider" onchange="engProviderChanged()" style="min-width:160px"><option value="">— none (use base URL below) —</option></select></label>
+      <label title="Resolved from the selected provider. Read-only.">baseURL  <input id="eng-url" placeholder="http://localhost:1234/v1" readonly style="opacity:.7"></label>
+      <label title="Resolved from the selected provider. Read-only.">apiKey  <input id="eng-apikey" type="password" placeholder="(none)" readonly style="opacity:.7"></label>
     </div>
   </div>
 
@@ -2645,6 +2646,23 @@ function engineSelected() {{
   document.getElementById('eng-name').value = e.name;
   document.getElementById('eng-kind').value = e.kind;
   document.getElementById('eng-url').value = e.base_url || '';
+  document.getElementById('eng-apikey').value = '';
+  // populate provider dropdown
+  const provSel = document.getElementById('eng-provider');
+  if (provSel) {{
+    // fetch providers if not cached
+    if (!window._providers) {{
+      try {{ const pc = await api('/v1/provider/config'); window._providers = pc.providers || []; window._provDefault = pc.default || ''; }} catch(err) {{ window._providers = []; }}
+    }}
+    provSel.innerHTML = '<option value="">— none (use base URL below) —</option>';
+    for (const p of (window._providers || [])) {{
+      const o = document.createElement('option');
+      o.value = p.name;
+      o.textContent = p.name + (p.model ? ' — ' + p.model.split('/').pop() : '');
+      provSel.appendChild(o);
+    }}
+    provSel.value = e.provider || '';
+  }}
   document.getElementById('eng-default').checked =
     e.name.toLowerCase() === engDefault.toLowerCase();
   samplingToForm(e.sampling || {{}});
@@ -2682,6 +2700,23 @@ function engineSelected() {{
   const apik = document.getElementById('eng-apikey');
   if (apik) apik.value = '';
 document.getElementById('eng-msg').textContent = '';
+}}
+
+function engProviderChanged() {{
+  const provSel = document.getElementById('eng-provider');
+  const urlEl = document.getElementById('eng-url');
+  const keyEl = document.getElementById('eng-apikey');
+  if (!provSel) return;
+  const name = provSel.value;
+  const prov = (window._providers || []).find(p => p.name === name);
+  if (prov) {{
+    if (urlEl) urlEl.value = prov.base_url || '';
+    if (keyEl) keyEl.value = prov.api_key || '';
+  }} else {{
+    if (urlEl) urlEl.value = '';
+    if (keyEl) keyEl.value = '';
+  }}
+  engDirty = true;
 }}
 
 function engineAdd() {{
@@ -2833,6 +2868,7 @@ async function saveEngineProfile() {{
   eng.name = val('eng-name') || eng.name;
   eng.kind = document.getElementById('eng-kind').value;
   eng.base_url = val('eng-url');
+  eng.provider = document.getElementById('eng-provider')?.value || '';
   eng.displayName = val('eng-displayName') || eng.name;
   // Model dropdown from local library
   const selModel = val('eng-model') || document.getElementById('launch-model-select')?.value || '';
