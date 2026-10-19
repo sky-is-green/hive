@@ -14,7 +14,7 @@
 Evaluation suite + Studio sidecar harness for the [Splinter Memory](https://github.com/sky-is-green/splinter-memory) system.
 
 **Status: work in progress.** Carved out of splinter-memory on 2026-09-12 as its
-own repository. The offline suite is green (1010 unit + integration, verified
+own repository. The offline suite is green (**1019 unit + integration**, verified
 Oct 19); the live batteries and Studio are under active development — expect
 moving parts here.
 
@@ -28,12 +28,12 @@ Two halves, one repo:
 
 - **HiveBench Studio** (`python -m harness`) — the console. Chat with your
   local models, manage engines/providers/models, run the cascade, inspect
-  retrieval, train, and browse results. ~40 REST endpoints under `/v1/`,
-  documented live at `/docs`.
+  retrieval, train, and browse results. **91 REST operations** across 84 paths,
+  documented live at `/docs` and mapped in [`docs/API.md`](docs/API.md).
 - **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
   escalate**. Deterministic verification, one greedy self-repair round, human
   gate, optional API escalation. Gold-free at runtime, fully user-controlled.
-- **The evaluation suite** — 1010 offline tests that falsify claims instead of
+- **The evaluation suite** — 1019 offline tests that falsify claims instead of
   asserting them. No LLM calls, no API keys, ~60 seconds.
 
 ## What makes it different
@@ -52,6 +52,22 @@ offline, and replayably.
 | **Hardware** | Cloud GPU assumed | Runs on CPU or whatever GPU you have; the drones stay on CPU; offline CI in ~60 s |
 | **Backends** | One vendor | Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API — one selector, three backends |
 | **Your data** | Sent to a provider | Stays on your machine unless you explicitly enable API escalation |
+
+### What you can do with it
+
+| | |
+|---|---|
+| **Chat** | Talk to a local model through the Studio, in Splinter (curated) or Agent (dsh, with tools) mode |
+| **Switch backends** | One selector: Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API |
+| **Find models** | Search Hugging Face for GGUF repos, list their files, download with progress |
+| **Manage engines** | Reusable profiles (model, context, GPU layers, sampling) that reference a provider by name |
+| **Run the cascade** | Every runner knob in one form; role coverage and the route table alongside |
+| **Verify answers** | Deterministic checks (arithmetic consistency, the task's own tests) with a gold-free runtime |
+| **Isolate code** | `/v1/sandbox/exec` — Docker-backed execution with network off, or a local fallback |
+| **Inspect retrieval** | See exactly which chunks were selected, dropped, and why |
+| **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
+| **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
+| **Extend** | 91 documented REST operations; the cascade is a CLI you can script |
 
 ### The hive architecture
 
