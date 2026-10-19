@@ -14,6 +14,10 @@ Formerly tracked as "AMD FreeToken" / project Ember.
 > program (formerly project Ember). The standalone `ember` branch is retired
 > (tip `4d07d81`, fully contained in `hive_cascade`). The prism engine branch
 > is renamed `engine/ember` → `engine/prism`; stacks are `prism-*`.
+>
+> **Landed 2026-10-19:** the whole program (cascade, engine lane, Studio UI)
+> is merged into `main`; `hive_cascade`, `hivebench-test` and `main` point at
+> the same commit.
 
 ## Status (2026-09-28; unshelved 2026-10-02 — baseline below)
 
@@ -220,7 +224,8 @@ Why the endpoint layer stays:
 - The port track is unaffected: when our models are ported to Strata, the same
   endpoint + launch pair serves them.
 
-Implemented (hivebench, branch `hive_cascade`):
+Implemented (hivebench; the lane has since landed on `main` — the work
+below was developed on `hive_cascade`):
 
 - `harness/stack/schema.py`: optional `endpoint` (http(s) URL), `caps`
   (free-form measured serving facts), and `launch` (`kind: strata`, `repo`,

@@ -1,6 +1,6 @@
 # Training tab — implementation plan (slice 1)
 
-Status: slice 1 in progress. Scope agreed with the project lead: **engine switch +
+Status: slice 1 shipped. Scope agreed with the project lead: **engine switch +
 Hive-Ternary launch/monitor**, Unsloth Core declared but not yet launchable.
 
 ## Names
@@ -61,9 +61,14 @@ Mirrors `POST /v1/protocol/run`: a directory under `runs_root` with
 
 ## UI
 
-- A `Training` button joins the existing `.tabs` bar; its pane is rendered by
-  `harness.reports.render_training_pane()` (self-contained, wires its own click
-  listener so the big tab script is untouched).
+- The `Training` tab lives in the console's **"More tools" group** (the
+  console's tab strip is Home / Settings / Cascade, then a collapsed group
+  with the rest).  Tabs can be **pinned**: a pinned tab moves up into the
+  always-visible row, so Training can sit next to Home if that is where you
+  work.
+- Its pane is rendered by `harness.reports.render_training_pane()`
+  (self-contained, wires its own click listener so the big tab script is
+  untouched).
 - Results appear in `/runs` and `/view/{run}` via `render_report_page`, which
   dispatches on `report["kind"] == "training"`.
 
