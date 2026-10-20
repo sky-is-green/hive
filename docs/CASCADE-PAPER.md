@@ -246,8 +246,8 @@ budget of 2 (so it stays off - see §5).
 And the trade is worth making: the verifier catches **8 wrong answers for
 every 1 correct answer it drops**.
 
-**And the comparable pair** - the same 10 tasks, the same cascade, the
-two models:
+**And the comparable pair** - the same 10 organic tasks, the same cascade,
+the same verifiers, the two models:
 
 | | the 35B-A3B | the 176B-A6B |
 |---|---|---|
@@ -259,13 +259,18 @@ two models:
 | **the mean per-item latency** | **5.36 s** | **229.67 s** |
 | the mean tokens | 329 | 745 |
 
-**Identical outcomes, 42.9x the wall clock.** The same accuracy, the
-same false rejects, the same false accepts, the same repairs - and the
-176B spends 2.3x the tokens thinking and 43x the seconds getting there.
-On this class the small tier is not a compromise: it is the same answer,
-faster and twelve times lighter. What the large tier buys is the 8 items
-of the head-to-head where it was right and the small one was not - which
-is what an arbiter would be for, and not what a bigger model is for.
+**Identical outcomes, 42.5x the wall clock.** The same served-correct
+(0.800 both), the same false rejects (0 both), the same wrong-accepted (2
+both), the same repairs (none needed in either) - and the 176B spends
+2.3x the tokens thinking and 42.5x the seconds getting there (5.4 s an
+item against 229.7 s).
+
+On this class the small tier is not a compromise: **it is the same
+answer, faster and twelve times lighter.** What the large tier buys is
+the 8 items of the head-to-head where it was right and the small one was
+not - which is what an arbiter would be for, and not what a bigger model
+is for. The tiering design says exactly this: the small tier takes the
+work, and the large one is the exception, not the default.
 
 **What this does and does not say.** One draw per task, 28 tasks, one
 class (arithmetic, code, multiple choice), and the latencies are measured
