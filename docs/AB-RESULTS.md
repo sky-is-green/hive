@@ -216,30 +216,47 @@ well enough on this distribution to pay for itself.
 
 The paired A/B: the same model, the same turns, two arms - the context the
 curation assembles, and the last-4k-token window of the same history. The
-35B as the generator, 10 conversations x 12 turns (33 measurable turns).
+35B as the generator, 25 conversations x 20 turns (**180 measurable turns**).
 
 | | the curated arm | the FIFO arm |
 |---|---|---|
-| the answer's fact recall | 97.0% | **100.0%** |
-| the average fact hit ratio | 0.944 | **0.985** |
-| the context fidelity (the answer's terms sourced from its own context) | 0.232 | **0.352** |
-| the turns where the arm's fidelity is higher | **42.4%** (the pre-registered bar: 45.5%) | 57.6% |
-| the turns where the answer is at least as good | 93.8% | - |
-| the strictly-better turns | **0** | 2 |
-| the context sufficiency (P3-style) | 100.0% >= FIFO | - |
+| the answer's fact recall | 81.1% | 81.7% |
+| the average fact hit ratio | 0.793 | 0.810 |
+| the context fidelity (the answer's terms sourced from its own context) | **0.241** | 0.208 |
+| the turns where the arm's fidelity is higher | **61.7%** (the pre-registered bar: 63.9%) | 38.3% |
+| the turns where the answer is at least as good | **88.4%** (the bar: 80%) | - |
+| the strictly-better turns | 13 | 17 |
+| the both / neither buckets | 116 / 34 | |
+| the context sufficiency (P3-style) | **97.5%** >= FIFO | - |
 
-**On the 35B the curation does not beat the raw window.** The pre-registered
-bar (45.5% of the turns) is **not met** - 42.4% - and the curated arm
-never wins a turn outright (0 against 2). The context-level measure still
-passes (the curated context is sufficient on 100% of the turns), but the
-answer-level one does not.
+**Two metrics, two verdicts.** The answer-level "the curated answer is at
+least as good" passes (88.4% against the 80% bar) and the context-level
+sufficiency passes (97.5%); the *fidelity* metric misses its bar (61.7%
+against 63.9%). On the answers the two arms are a **tie** (81.1% against
+81.7%), and the curated arm never wins a turn strictly more often than the
+raw window (13 against 17).
 
-**This is the published P3 result not reproducing**, and the difference is
-the generator: the published 85.1% was measured on a 27B. A model this
-strong at long context uses the *most recent* 4k tokens very well - the
-FIFO window is the most recent turns, verbatim - so the curation's
-selection has less to add. A larger sample is running before this is
-written up as a result rather than a surprise.
+**And this is the published P3 result, on a different model, telling a
+different story.** The published measurement (the 27B) had the curated arm
+winning **115 turns outright to 26** - a 4.4:1 margin - on 175
+fact-retrievable turns. Here, on the 35B-A3B, it is **13 to 17**. The
+"neither" bucket also collapses (145 of 175 published, 34 of 180 here):
+the 35B answers from *whatever* context it is given, so the arms tie.
+
+**The scoping result, stated plainly: the better the generator is at long
+context, the less the curation has to add.** The FIFO window is the most
+recent turns verbatim, and a model that uses them well does not need a
+curation to find them. The architecture's value is a function of the
+generator - which is the first thing the paper's own Postulate 3 (the
+separation) implies, and the first thing the measurements had not tested.
+
+**What this does not say.** It does not say the curation is useless: the
+curated context is still sufficient on 97.5% of the turns, the context
+fidelity is ahead (0.241 against 0.208), and the *curation* is what keeps
+the context bounded - the FIFO arm's window is 4k tokens of recency, and
+the arms are equal *at that budget*. It says the curation's *accuracy*
+advantage is generator-dependent, and that the honest claim is the bounded
+context, not the better answers.
 
 ---
 
