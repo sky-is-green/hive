@@ -132,28 +132,29 @@ def _redact_cmd(cmd: list[str]) -> list[str]:
 
 class CascadeRunRequest(BaseModel):
     """Every knob the cascade runner accepts. All optional: the runner's
-    defaults apply for anything omitted."""
+    defaults apply for anything omitted, and the harness-wide baseline
+    (the Global tab's Quality block) fills what the caller leaves out."""
 
     tasks: str = Field("tasks-hard.json", description="Task bundle file name in the cascade dir.")
     run_name: str = Field("", description="Output directory name (default: timestamped).")
     limit: int = Field(0, ge=0, description="Run only the first N tasks (0 = all).")
-    judge: str = Field("", description="Verifier: deterministic | learned.")
-    judge_threshold: float = Field(0.5, ge=0, le=1, description="Accept when P(correct) >= this.")
-    repair: str = Field("", description="Repair leg: auto | on | off.")
-    gate: str = Field("", description="Learned gate: off | intern-0.8b | scion.")
-    gate_head: str = Field("", description="Gate head: L0.5 | L0.75 | L1 | ridge-concat | mlp-concat.")
-    gate_threshold: float = Field(0.5, ge=0, le=1, description="Fire the gate when P(correct) < this.")
-    human_gate: str = Field("", description="Human gate before API escalation: auto | on | off.")
-    router: str = Field("", description="Router model: local | jev.")
-    router_mode: str = Field("", description="gate | measure.")
-    local_temperature: float = Field(0.7, description="Sampling temperature for local drafts.")
-    local_max_tokens: int = Field(1024, ge=1, description="Token budget per draft.")
-    local_reasoning_effort: str = Field("", description="none | low | medium | high.")
-    local_reasoning_budget_tokens: int = Field(0, ge=0, description="Reasoning token budget (0 = auto).")
-    scion_base: str = Field("", description="Local model server base URL (the local tier).")
-    api_fallback: str = Field("", description="OpenAI-compatible endpoint for escalated items.")
-    api_fallback_model: str = Field("", description="Model name for the API fallback.")
-    api_fallback_key: str = Field("", description="Bearer key for the API fallback.")
+    judge: Optional[str] = Field(None, description="Verifier: deterministic | learned.")
+    judge_threshold: Optional[float] = Field(None, ge=0, le=1, description="Accept when P(correct) >= this.")
+    repair: Optional[str] = Field(None, description="Repair leg: auto | on | off.")
+    gate: Optional[str] = Field(None, description="Learned gate: off | intern-0.8b | scion.")
+    gate_head: Optional[str] = Field(None, description="Gate head: L0.5 | L0.75 | L1 | ridge-concat | mlp-concat.")
+    gate_threshold: Optional[float] = Field(None, ge=0, le=1, description="Fire the gate when P(correct) < this.")
+    human_gate: Optional[str] = Field(None, description="Human gate before API escalation: auto | on | off.")
+    router: Optional[str] = Field(None, description="Router model: local | jev.")
+    router_mode: Optional[str] = Field(None, description="gate | measure.")
+    local_temperature: Optional[float] = Field(None, description="Sampling temperature for local drafts.")
+    local_max_tokens: Optional[int] = Field(None, ge=1, description="Token budget per draft.")
+    local_reasoning_effort: Optional[str] = Field(None, description="none | low | medium | high.")
+    local_reasoning_budget_tokens: Optional[int] = Field(None, ge=0, description="Reasoning token budget (0 = auto).")
+    scion_base: Optional[str] = Field(None, description="Local model server base URL (the local tier).")
+    api_fallback: Optional[str] = Field(None, description="OpenAI-compatible endpoint for escalated items.")
+    api_fallback_model: Optional[str] = Field(None, description="Model name for the API fallback.")
+    api_fallback_key: Optional[str] = Field(None, description="Bearer key for the API fallback.")
     no_escalation_lane: bool = Field(False, description="Skip writing escalation.jsonl (lean runs).")
 
 
@@ -165,6 +166,7 @@ def create_router(
     spawn: Optional[Spawner] = None,
     registry: Optional[CandidateRegistry] = None,
     validator: Any = None,
+    defaults: Optional[Callable[[], dict]] = None,
 ) -> APIRouter:
     """Return the ``/v1/cascade`` router.
 
@@ -172,7 +174,9 @@ def create_router(
     app) can point the router at a tmp tree; ``spawn`` replaces the subprocess
     launcher in tests; ``validator`` is a
     :class:`harness.cascade.validator.ValidatorService`-like object (lazy in
-    production, a fake in tests).
+    production, a fake in tests); ``defaults`` returns the harness-wide
+    baseline (the Global tab's Quality block) that a run starts from
+    unless it says otherwise.
     """
     router = APIRouter(prefix=PREFIX, tags=["cascade"])
     runs = Path(runs_root) if runs_root is not None else DEFAULT_RUNS_ROOT
@@ -180,6 +184,14 @@ def create_router(
     runner_path = Path(runner) if runner is not None else DEFAULT_RUNNER
     launcher: Spawner = spawn or _default_spawn
     catalog = registry or default_registry()
+
+    def baseline() -> dict:
+        """The Global tab's quality baseline (empty when there is none)."""
+        try:
+            value = defaults() if defaults else {}
+        except Exception:  # noqa: BLE001 - a broken baseline must not stop a run
+            value = {}
+        return dict(value or {})
 
     @router.get("/roles")
     def roles() -> dict[str, Any]:
@@ -300,6 +312,12 @@ def create_router(
     def launch(req: CascadeRunRequest) -> dict[str, Any]:
         body = req.model_dump()
         """Launch a cascade run: tasks, run name, limit, and every runner knob."""
+        # the harness-wide baseline (the Global tab's Quality block) fills
+        # the knobs the caller left alone; a run that names its own wins
+        defaults_map = baseline()
+        for key, value in defaults_map.items():
+            if body.get(key) is None and value is not None:
+                body[key] = value
         tasks_name = str(body.get("tasks") or "tasks-hard.json")
         if Path(tasks_name).name != tasks_name or not tasks_name.endswith(".json"):
             raise HTTPException(422, "tasks must be a .json file name in the cascade dir")
