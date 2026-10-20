@@ -74,7 +74,7 @@ milliseconds.
 | Retrieval precision (sentence proxy) | near-chance past the window | ≥70% / ≥85% | **10.7%** - *the encoder ceiling* (§7) |
 | Context sufficiency vs. an equal-size FIFO window | — | ≥80% of turns | **85.1%** of the fact-retrievable turns (4.4:1) |
 | Routing accuracy | — | ≥80% / ≥92% | **100%** |
-| Added per-turn latency | 0 ms | <50 / <30 ms | **≈18 ms** (3.4 ms assembly + ~15 ms scoring) |
+| Added per-turn latency | 0 ms | <50 / <30 ms | **≈18 ms** on a small store (3.4 ms assembly + ~15 ms scoring) - **and it grows with the store**: 22.8 ms at 212 chunks, 156.8 ms at 1,612 (§7.4) |
 | Peak RSS over 500 turns | — | small | **34.7 MB** |
 | Pipeline Efficiency Score | ~30 | ≥65 / ≥80 | **80.0 (GREEN)** live, 73.1 on the 20-conversation evidence run |
 
@@ -328,6 +328,31 @@ slightly, not down:
 The encoder can be improved because it improves the *ranking* of what is a
 duplicate. The threshold cannot be lowered because lowering it moves the
 *boundary*, and the boundary is where the distinct facts get caught.
+
+### 7.4 The curation's cost grows with the conversation it curates
+
+The stability run - 2,000 turns of a growing conversation, the real drone,
+no model (`experiments.stability_500.py`):
+
+| turns | the store | the assembled context | the curation's cost (p50) | the peak RSS |
+|---|---|---|---|---|
+| 250 | 212 chunks | 322 tok | 22.8 ms | 519 MB |
+| 500 | 412 chunks | 320 tok | 37.3 ms | 564 MB |
+| 1,000 | 812 chunks | 335 tok | 89.7 ms | 594 MB |
+| 2,000 | 1,612 chunks | 332 tok | 156.8 ms | 667 MB |
+
+**The context is flat and the cost is not.** The assembled context moves
+by 10 tokens across a 7.6x range of store - the curation's promise holds
+✓✓ - and nothing is OOM-killed over 2,000 turns ✓. But the curation's
+per-turn cost is **linear in the store**: about 7x for 7.6x the chunks,
+because every chunk is scored every turn.
+
+So the memory's trade is explicit, and the published "≈18 ms added per
+turn" is the *small-store* number: the prompt stays bounded (the
+expensive part for the model) while the curation gets more expensive as
+the conversation grows. The two costs trade against each other, and the
+crossover - the point where curating costs more than the tokens it saves
+- is a measurement the system does not yet make.
 
 ### 7.3 The curation's advantage is generator-dependent
 
