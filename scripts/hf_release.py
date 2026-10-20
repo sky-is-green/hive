@@ -50,6 +50,31 @@ RELEASES = {
              "results/runner-cascade-sampled-20261018-report.json"),
         ],
     },
+    "splinter-encoder": {
+        # the tuned drone encoder: the weights plus the operating points
+        # they ship with (the thresholds are part of the release - they
+        # are per-encoder, and the shipped ones were calibrated for a
+        # different model)
+        "card": REPO / "docs" / "ENCODER-CARD.md",
+        "figures": REPO / "docs" / "figures",
+        "figure_files": [],
+        "citation": REPO / "CITATION.cff",
+        "readme": "README.md",
+        "files": [
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned" / "config_sentence_transformers.json",
+             "config_sentence_transformers.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned" / "modules.json", "modules.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned" / "sentence_bert_config.json",
+             "sentence_bert_config.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned" / "config.json", "config.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned" / "finetune_meta.json", "finetune_meta.json"),
+        ],
+    },
 }
 
 
