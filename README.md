@@ -6,133 +6,168 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://github.com/sky-is-green/hivebench)
 [![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=flat&logo=pytest&logoColor=white)](https://github.com/sky-is-green/hivebench)
 [![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat&logo=huggingface&logoColor=black)](https://github.com/sky-is-green/hivebench)
-[![Top language](https://img.shields.io/github/languages/top/sky-is-green/hivebench?style=flat&logo=python&logoColor=white)](https://github.com/sky-is-green/hivebench)
 [![Last commit](https://img.shields.io/github/last-commit/sky-is-green/hivebench/main?style=flat&label=Last%20commit&logo=git)](https://github.com/sky-is-green/hivebench/commits/main)
 [![Repo size](https://img.shields.io/github/repo-size/sky-is-green/hivebench?style=flat&label=Repo%20size)](https://github.com/sky-is-green/hivebench)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Evaluation suite + Studio sidecar harness for the [Splinter Memory](https://github.com/sky-is-green/splinter-memory) system.
+**A local-first AI harness: a console that runs, measures and self-corrects models
+on your own hardware — plus the deterministic suite that proves the measurements.**
 
-**Status: work in progress.** Carved out of splinter-memory on 2026-09-12 as its
-own repository. The offline suite is green (**1054 unit** + **126 integration**
-passing, verified Oct 19); the live batteries and Studio are under active
-development — expect moving parts here.
+The evaluation suite + the Studio sidecar for the
+[Splinter Memory](https://github.com/sky-is-green/splinter-memory) system. The
+Studio serves **103 REST operations** across 95 paths (94 operations under `/v1/`).
+The suite is green (**1093 unit + 126 integration** tests, verified Oct 20); the
+live batteries and the Studio are under active development.
 
-Five integration tests measure the **real** encoder
-(`paraphrase-MiniLM-L3-v2`, CPU, ~90 MB) rather than a fake, so they need the
-optional `sentence-transformers` package — it is in `requirements-dev.txt`, and
-CI installs it with the sibling checkout. Without it those five **skip with a
-reason**, never a silent pass.
+---
 
-## What it is
+## What this suite is for
 
-HiveBench is a **local-first AI harness**: a Studio console that runs, measures,
-and self-corrects models entirely on your own hardware — plus the deterministic
-evaluation suite that proves the measurements.
+Most harnesses tell you *how a model performed*. Two questions are more
+useful, and almost nothing answers them:
 
-Two halves, one repo:
+1. **Was the answer right?** Not "it sounded right" — right, checked
+   deterministically, without a judge model in the loop.
+2. **Was the context you fed it the reason it worked?** Not "the prompt
+   looked reasonable" — the same turns, the same model, one arm curated
+   and one naive, scored the same way.
 
-- **HiveBench Studio** (`python -m harness`) — the console. Chat with your
-  local models, manage engines/providers/models, run the cascade, inspect
-  retrieval, train, and browse results. **103 REST operations** across 95 paths
-  (94 operations under `/v1/`), documented live at `/docs` and mapped in
-  [`docs/API.md`](docs/API.md) — a test keeps that map honest.
-- **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
-  escalate**. Deterministic verification, one greedy self-repair round, human
-  gate, optional API escalation. Gold-free at runtime, fully user-controlled.
-- **The evaluation suite** — 1180 offline tests that falsify claims instead of
-  asserting them. No LLM calls, no API keys, ~60 seconds.
+HiveBench is built to answer both, on your own machine, with evidence you
+can re-run:
 
-## What makes it different
+- **The answers are verified, not judged.** A verifier reads a gold-stripped
+  spec: the task's own tests, arithmetic consistency, canonical-form checks.
+  No LLM-as-judge in the evidence path.
+- **The memory is measured, not asserted.** The white paper's P1–P11
+  predictions ship as executable tests with measured PASS/FAIL verdicts.
+- **The failures become data.** Every ladder-resolved item is harvested to
+  `escalation.jsonl` — task, draft, findings, repair, resolution — a corpus
+  built from your own failures, for training and distillation.
+- **Nothing leaves the box.** Local models, local verification, local memory.
+  The API is opt-in, and it is asked first.
 
-Most harnesses tell you *how a model performed*. HiveBench tells you **whether
-the context you feed the model is the reason it works**, and it tells you
-**whether the answer it produced is actually right** — deterministically,
-offline, and replayably.
+The goal, in one line: **make a local model as trustworthy as a hosted one,
+and prove it without a phone-home.**
 
-| | Typical harness | HiveBench |
-|---|---|---|
-| **Correctness** | Judge by another LLM (circular, biased) | Deterministic verifiers: arithmetic consistency, the task's own tests, canonical-form checks — no judge model in the evidence path |
-| **Self-correction** | Manual re-prompting | Built-in **cascade**: detect → repair → escalate, with a human gate before any paid API call |
-| **Where the answer key lives** | Sometimes in the prompt path | **Nowhere.** The runtime reads a gold-stripped `runtime_spec`; the checker never sees the answer key |
-| **Evidence** | Vague scores | Every number is reproduced by a command; falsifiable predictions ship as executable tests with measured PASS/FAIL |
-| **Hardware** | Cloud GPU assumed | Runs on CPU or whatever GPU you have; the drones stay on CPU; offline CI in ~60 s |
-| **Backends** | One vendor | Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API — one selector, three backends |
-| **Your data** | Sent to a provider | Stays on your machine unless you explicitly enable API escalation |
+---
 
-### What you can do with it
+## The capabilities
 
-| | |
-|---|---|
-| **Chat** | Talk to a local model through the Studio, in Splinter (curated) or Agent (dsh, with tools) mode |
-| **Show the LLM a file** | `/import <path>` — the text rides along with your next message and stays in the conversation's memory |
-| **Switch backends** | One selector: Strata (local 176B), llama.cpp (any GGUF), or any OpenAI-compatible API |
-| **Find models** | Search Hugging Face for GGUF repos, list their files, download with progress |
-| **Manage engines** | Reusable profiles (model, context, GPU layers, sampling) that reference a provider by name |
-| **Run the cascade** | Every runner knob in one form; role coverage and the route table alongside |
-| **Verify answers** | Deterministic checks (arithmetic consistency, the task's own tests) with a gold-free runtime |
-| **Isolate code** | `/v1/sandbox/exec` — Docker-backed execution with network off, or a local fallback |
-| **Inspect retrieval** | See exactly which chunks were selected, dropped, and why |
-| **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
-| **Compact** | A conversation that outgrows its window becomes a checkpoint — and a checkpoint is a safe place to switch engines locally |
-| **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
-| **Extend** | 103 documented REST operations; the cascade is a CLI you can script |
+### The quality loop — the Hive Cascade
 
-### The hive architecture
+**generate → detect → repair → escalate**, entirely local. The runtime never
+sees an answer key; the verifier reads a gold-stripped `runtime_spec`.
 
-HiveBench is designed as a **hive** — models with different roles cooperating:
+- **Detect** — deterministic verifiers (`code_exec`, `constraint_check`,
+  `schema_ast`, `consistency`) report findings.
+- **Repair** — one greedy re-attempt with the finding quoted; truncated or
+  byte-identical attempts are rejected; a cleared repair is re-framed
+  canonically.
+- **Escalate** — a **human gate** (the first trigger verbose, later compact)
+  and an optional API fallback. The gate is a *label*: "solve" means local
+  was recoverable, "escalate" means the API was genuinely needed.
+- **A learned gate** (opt-in) — a small head as a third trigger, blind-spot
+  only. **Off by default**, by a rule written down before the measurement:
+  three runs agreed no 0.8B head separates on the silent distribution.
+- Measured: **58/66 → 62/66**, and 65/66 in the greedy regime with **zero
+  false rejects**.
 
-```
-User → Encoder (small model, app-aware) → Studio backend → Worker (176B / GGUF) → Cascade (detect/repair/escalate)
-```
+### The memory — curated context, and the tools around it
 
-- **Encoder** — a small model (0.8B–2B) acting as app assistant. Today it is
-  the dsh agent with the Studio's own API map in its context: it can report
-  your hardware, models, engines and runs, and act on them. A dedicated
-  trained encoder is the next step (the agent loop is already there).
-- **Worker** — does the actual generation (176B strata, or any local GGUF).
-- **Cascade** — the quality layer between them.
+- The **curated context**: a store with decay, dedup, a topic-drift
+  detector, a comb (the SSD archive that can resurrect what fell out of the
+  budget), and a medium drone for the hard candidates.
+- **`/import <path>`** — shows the LLM a file: the text rides along with
+  your next message *and* lands in the conversation's store, so it is there
+  for later turns. Secrets are redacted on the way in; binary files are
+  refused.
+- **MCP** — the memory over `POST /v1/mcp`, with the tools an external
+  client may call, and a read-only mode.
+- **Global harness controls** — one baseline for the whole harness: the
+  curation and retrieval defaults, the cascade's defaults, the MCP surface,
+  and the runtime a new engine is launched with. The Splinter tab layers one
+  conversation's overrides on top.
 
-## What it aims to achieve
+### The console — HiveBench Studio
 
-Most evaluation harnesses tell you how a model performs in a sandbox. HiveBench
-tells you *whether the context you feed the model is the reason it works*, and
-it does it deterministically, offline, and replayably:
+- **A launch console with one tab per engine** — the shared dials (the
+  context window, the port) above, then **llama.cpp** (the model, the GPU
+  layers, the auto-fit, the devices, the threads, the slots, the KV cache,
+  the batch sizes, the alias) or **Strata** (the config profile, the
+  checkout, the VRAM reserve, the prefill, the spec depth, the extra engine
+  flags). Start launches the engine the tab names.
+- **The chat** — Splinter mode (one curated reply) or Agent mode (the dsh
+  loop, with tools). Every message says who produced it: the model, the
+  studio encoder, the **Command Console** (cyan), or you (black on yellow).
+- **Stop is a real stop** — the Studio owns the provider connection, so
+  stopping closes it and the *engine* stops generating (llama.cpp and Strata
+  both stop on the disconnect). A closed tab stops the turn too.
+- **Unload really unloads** — the local instances and the Strata engine give
+  their VRAM back; the provider, the engine profile and the default move
+  with them, so nothing is left pointing at a dead port.
+- **The cascade console** — every runner knob in one form, from the UI or
+  the CLI.
+- **Compaction as a free switch point** — a conversation that outgrows its
+  window becomes a checkpoint, and a checkpoint is where you may safely
+  change which engine serves the session, behind a canary gate.
+- **The app assistant** — the dsh agent with the Studio's own API map in its
+  context: it reports your hardware, models, engines and runs, and acts on
+  them.
+- **The library and the hub** — search Hugging Face for GGUF repos, list
+  their files, download with live progress, manage the local folder.
+- **The command system** — 15 console commands, a palette (Ctrl+K), and a row
+  above the chat bar holding the ones you picked (each with a small red `x`).
+- **Developer mode** (`/dev on`) — the deep-research queue, the Docker setup
+  tab, the raw server status.
 
-- **Falsifiable, not vibes.** The white paper's P1-P11 predictions ship as
-  executable tests with measured PASS/FAIL verdicts (splinter repo,
-  `SPLINTER-WHITE-PAPER.md` section 8). Every number in the splinter README is
-  reproduced by a command in this repo.
-- **No LLM-as-judge circularity in the evidence path.** The deterministic
-  diagnostics score fact presence against fixture ground truth, stated-facts
-  recall, first-mention exclusion, hedge filtering. **The Splinter auditor**, an
-  asynchronous ground-truth layer that labels, after each turn, whether the
-  assembled context was actually sufficient for the query, corroborates that
-  evidence; because it shares the served model's biases, it never constitutes
-  it (white paper section 9, Threat 1).
-- **The full test suite runs offline in ~2 minutes** (unit: ~60 s): no LLM calls
-  and no API keys; CI-friendly via `--mock`. (Running the system *live* does
-  require a local model backend, LM Studio / llama.cpp, which on most rigs
-  means a GPU; the drones themselves stay on CPU.)
-- **Paired head-to-head A/B** (`hivebench-ab`): the same turns, the same model,
-  splinter-curated context vs the naive FIFO window, both answers scored
-  deterministically (fixture-fact presence + context fidelity), with both
-  arms' stores replaying identical history so the comparison isolates
-  selection. The scoring path is unit-tested; interim live results are
-  recorded per run under `runs/`.
-- **Built for long evidence runs.** Checkpointed, resumable live runs survive
-  crashes and reboots:
+### The evidence — the offline suite
 
-  ```powershell
-  .\.venv\Scripts\python -m experiments.paired_ab --live --model prism-ml/bonsai-27b --max-turns 45 --fifo-budget 1500 --checkpoint-every 2 --output runs/paired_ab.json
-  # killed mid-run? relaunch with --resume runs/paired_ab_trunc-style checkpoint,
-  # or let tools/resume_evidence.ps1 loop until the final report exists.
-  ```
+- **1093 unit + 126 integration tests**, ~2 minutes, **no LLM calls and no
+  API keys**. CI runs exactly this.
+- **Paired A/B** — the same turns, the same model, curated context vs the
+  naive FIFO window, both scored deterministically, with both arms' stores
+  replaying identical history so the comparison isolates *selection*.
+- **Checkpointed, resumable** live runs that survive a crash or a reboot.
+- **Probes** — the fit estimator (the tiers, the disk guard, the context
+  that fits), the leak gate (does an unload really give the memory back?),
+  the launch verification (are the weights there, does it fit, is the binary
+  there, is the port free — each with the fix), and the model discovery.
 
-- **Honest by design.** The suite surfaced its own failures first; the
-  measurement fixes that made PES trustworthy (latency floor, stated-facts
-  reframe, hedge poisoning) are documented in the paper's threats section
-  (section 9), not hidden.
+---
+
+## How we made the core
+
+**The Studio is the host; the Splinter is the memory.** The Studio owns the
+process, the transport and the console; the sibling system owns the
+curation, the store and the drones. The two share one conversation
+registry, so there is no second copy of the truth. The Studio's routes are
+matched before the mount, so the host is the transport where it needs to
+be — that is how one button can close the provider connection and stop the
+engine.
+
+**The evidence path has no model in it.** Everything that decides whether
+an answer is right is a deterministic check: the task's own tests, the
+arithmetic, the canonical form. A judge model appears only where a judge
+model is the subject (the learned gate), never where a verdict is claimed.
+The auditor layer corroborates asynchronously and is explicitly not
+constitutive: it shares the served model's biases.
+
+**The runtime is gold-free by construction.** The runtime receives a
+`runtime_spec` with the answer stripped. The checker sees the answer. A
+correct answer and a lucky guess are indistinguishable to the runtime, on
+purpose.
+
+**A decision to not build is a result.** The learned gate is off because
+three measurements agreed it does not separate, and the rule was written
+down first. The AFK mode and the M5 embedding path were shelved the same
+way, and the shelves are written down too.
+
+**The UI is the product.** One theme, one place per setting, the truth
+where the action is: the model list in the library, the fit bar in the
+engine profile, the error on the bar that was blocking the screen. The
+console is where the harness is honest with the person using it.
+
+---
 
 ## Install
 
@@ -140,7 +175,7 @@ The checkouts live side by side:
 
 ```
 ~/Desktop/work/splinter-memory   # the system
-~/Desktop/work/hivebench       # this repo
+~/Desktop/work/hivebench          # this repo
 ```
 
 Windows (PowerShell):
@@ -219,11 +254,11 @@ a single hive theme (yellow/black) across every page.
 | Page | What it does |
 |---|---|
 | `/` → `/runs` | Run bundle index |
-| `/server` | The console: **Home**, **Settings**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
+| `/server` | The console: **Home**, **Settings**, **Global**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |
-| `/docs` | Live OpenAPI docs for all 97 operations |
+| `/docs` | Live OpenAPI docs for all 103 operations |
 
 ### Console features
 
@@ -231,6 +266,9 @@ a single hive theme (yellow/black) across every page.
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
 - **Settings tab** — a searchable settings index: 33 settings across 8
   categories, each linking to where it lives.
+- **Global tab** — the harness-wide baseline: the memory and RAG defaults, the
+  cascade's defaults, the MCP surface, the runtime a new engine is launched
+  with. The Splinter tab layers one conversation's overrides on top.
 - **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
   `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`, `compact`, `dev`,
@@ -243,6 +281,16 @@ a single hive theme (yellow/black) across every page.
   turns too. Text files only; secrets in the file are redacted on the way in.
 - **Dev mode** — `/dev on` reveals the developer surface (the deep-research
   queue, the Docker/VHDX setup tab, the raw server status). Off by default.
+- **Chat voices** — every message says who produced it: the model, the studio
+  encoder, the **Command Console** (cyan), and you (black on yellow, no label
+  — you know you typed it).
+- **The launch console** — the dials a run actually needs, with one tab per
+  engine: the shared ones (the context window, the port) above, then
+  **llama.cpp** (the model, the GPU layers, the auto-fit, the devices, the
+  threads, the slots, the KV cache, the batch sizes, the alias) or
+  **Strata** (the config profile, the checkout, the VRAM reserve, the
+  prefill, the spec depth, the extra engine flags). Start launches the
+  engine the tab names.
 - **Stop and Unload, two different things** — **Stop** (in the chat) closes the
   provider connection, so the engine stops generating at once instead of
   finishing a reply nobody is waiting for; both llama.cpp and strata stop on
@@ -250,18 +298,8 @@ a single hive theme (yellow/black) across every page.
   Launch panel) releases the model itself: the local llama.cpp instances and
   the Strata engine give their VRAM back, and the profiles stay.
 - **The load bar** — while a model loads or unloads, a bar across the bottom
-  half of the screen says what is happening (and, when a load fails, why it
+  of the screen says what is happening (and, when a load fails, why it
   failed). A successful unload says so in a toast.
-- **Chat voices** — every message says who produced it: the model, the studio
-  encoder, the **Command Console** (cyan), and you (black on yellow, no label
-  — you know you typed it).
-- **The launch console** — the dials a run actually needs, with one tab per
-  engine: the shared ones (the context window, the port) above, then
-  **llama.cpp** (the model, the GPU layers, the auto-fit, the threads, the
-  slots, the KV cache, the batch sizes, the alias, the HF passthrough) or
-  **Strata** (the config profile, the checkout, the VRAM reserve, the
-  prefill, the spec depth, the extra engine flags). Start launches the
-  engine the tab names.
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
@@ -282,7 +320,7 @@ a single hive theme (yellow/black) across every page.
 |---|---|
 | Cascade | `/v1/cascade/run`, `/runs`, `/report/{run}`, `/registry`, `/roles`, `/paths`, `/plan`, `/frontier`, `/validate`, `/validator` |
 | Models | `/v1/models/local`, `/v1/models/local/path`, `/v1/models/linux`, `/v1/models/hub`, `/v1/models/hub/files/{repo}`, `/v1/models/hub/download`, `/v1/models/hub/downloads` |
-| Servers | `/v1/server/start`, `/stop`, `/unload`, `/status`, `/log`, `/memory`, `/metrics` |
+| Servers | `/v1/server/start`, `/stop`, `/unload`, `/unload-loaded`, `/status`, `/log`, `/memory`, `/metrics`, `/fit` |
 | Engines | `/v1/engines`, `/v1/engines/preset`, `/v1/engines/bench`, `/v1/engines/ab/bench` |
 | Providers | `/v1/provider/config` |
 | Agent | `/v1/agent/stream`, `/status`, `/cancel`, `/v1/agent-presets/*` |
@@ -301,6 +339,7 @@ Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`.
 
 **Hand-maintained endpoint map:** [`docs/API.md`](docs/API.md) — every endpoint
 grouped by what it is for, with the conventions (auth, revisions, secrets).
+A test compares it with the running app, so the map cannot drift.
 
 ## Running the suite
 
@@ -355,7 +394,7 @@ The live benchmark talks to an OpenAI-compatible backend (e.g. LM Studio on
 | `testing/` | ablation / AB test tooling |
 | `tests/` | unit + integration suite for the splinter system — run from here |
 | `harness/` | HiveBench Studio sidecar (`python -m harness`) |
-| `vendor/deepseek_harness/` | vendored dsh Python SDK (agent bridge; not an installed package) |
+| `vendor/deepseek_harness/` | vendored dsh Python SDK (the agent bridge; re-based with `scripts/revendor_dsh.py`) |
 
 ## Where we're going
 
