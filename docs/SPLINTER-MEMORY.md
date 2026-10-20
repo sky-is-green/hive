@@ -140,6 +140,59 @@ generates → the reply is observed back into the store.
    the time, which is enough to drive parameter tuning without a human
    labelling pass.
 
+## The harness that runs it, and the pipeline that manages it
+
+The memory system is a library; the **HiveBench Studio** is the harness
+that runs it, and it is where the management pipeline lives.
+
+### The management pipeline
+
+A long-horizon memory has to be *managed*: every knob that decides what
+the model sees used to live in three different menus, and a wrong setting
+was invisible. The Studio has one place for all of it - the **Global
+harness controls** - and every block of it is a *baseline* that the more
+specific thing beats:
+
+| block | what it decides |
+|---|---|
+| **the encoder** | which small model does the retrieval and the memory management - you choose it, and the next conversation runs on it (no restart) |
+| **Memory & RAG** | the curation baseline: the context window, the stale wall, the dedup and drift thresholds, the comb, the medium drone |
+| **Quality** | the cascade's judge, repair, gate and escalation - the defaults every run starts from |
+| **MCP** | what an external client may read and write of the memory |
+| **Runtime** | the sampling a reply is drawn with, and the context, GPU layers and threads an engine is launched with |
+
+The point is not tidiness. It is that **a setting which is not consulted
+is indistinguishable from a setting which does not work**, and the only
+way to know which one you have is to wire them and then measure.
+
+### The harness itself
+
+| | |
+|---|---|
+| the console | Home, Settings, Global, Cascade, and a "More tools" group (Agent, Engines, Local library, Providers, Hub, Inspector, Training) |
+| the chat | Splinter mode (one curated reply) or Agent mode (the tool loop); the reply says who produced it |
+| the launch panel | llama.cpp or Strata, per engine, from the profiles; stop closes the connection so the *engine* stops; unload gives the VRAM back and retires the orphans |
+| the cascade console | every runner knob in one form, with the Global tab's Quality block as its starting values |
+| the harvest | every turn (the query, the reply, the curation that was used) written to a jsonl, off by default - this is the data the encoder is trained on |
+
+### Answer quality reporting and API escalation
+
+The curation's effect is not only felt, it is reported. Every cascade run
+writes a per-item report (the verdict, the detector findings, the repair
+attempt, the ladder's resolution), a provenance manifest (the model
+sha256, the stack, the git commit, the task-set sha, the decode
+settings) and a generated model card; and the escalation lane harvests
+every ladder-resolved item to `escalation.jsonl` next to the report -
+training-side only, and read by nothing in the runtime.
+
+The escalation ladder itself is the last stage: an answer the local
+verifiers still flag can go to a human gate (verbose on the first
+trigger, compact afterwards) and then to an API tier, with the served
+answer, the cost and the reason recorded. The companion paper
+(*The Hive Cascade*) documents the loop, the gold-free runtime contract
+and the measured verdicts; the benchmark and the run reports are
+published next to this card.
+
 ## The evidence, hypothesis by hypothesis
 
 | | Hypothesis | Verdict |
@@ -195,11 +248,59 @@ not re-derived.
 | drift at the shipped threshold (0.6) | precision 0.08, **recall 0.96** - the topic-change test fires on almost every turn |
 | drift as a *ranking* signal | **AUC 0.945** - the signal is strong; the threshold is wrong |
 
-The encoder is not the bottleneck. The **operating points** are - and they
-are per-encoder, so they have to travel with the model. The full sweep
-(model families, sizes, dimensions, CPU cost per chunk) is in
-`docs/ENCODER-NOTES.md` in the harness repository, and the evaluation sets
-are published as a dataset next to this card.
+### 7.1 The F1 is the wrong target, and the threshold is not the lever
+
+The obvious conclusion - "move the thresholds to the encoder's optimum" -
+is **falsified** by a deterministic replay of the corpus through the real
+pipeline (50 conversations, 493 measurable turns, the P2 diagnostic's own
+notion of a fact; `experiments/threshold_ab.py`):
+
+| arm | dedup / drift | fact recall | context | verdict |
+|---|---|---|---|---|
+| shipped | 0.92 / 0.6 | **50.6%** | 159 tok | - |
+| the dedup alone | 0.57 / 0.6 | **39.7%** | 90 tok | **falsified** |
+| the drift alone | 0.92 / 0.77 | **50.6%** | 159 tok | **survives** |
+
+**The duplicate test's two errors are not interchangeable.** A duplicate
+test that fires wrongly *deletes* a chunk, and the fact inside it is gone
+irreversibly; a duplicate test that fails to fire only leaves a redundant
+chunk in the context, which costs budget and nothing else. F1 weights
+them equally, so F1 points at the wrong threshold: at 0.57 the encoder
+merges chunks that are *about* the same thing but carry *different* facts,
+and the fact recall falls by a fifth. The shipped 0.92 is conservative
+**for a reason** - its precision is 1.00, so it never deletes a fact - at
+the price of catching only 5% of the redundancy.
+
+The topic-drift test is the opposite case: it only *penalises* the
+off-topic chunks, it never deletes them, so its recalibration is free.
+
+**The model is the lever, not the threshold.** A small encoder tuned on
+the harness's own traffic (17M parameters, one epoch, the dedup task
+only, labelled with the same lexical rule) merges **six times more true
+duplicates** at the *same* precision - and the fact recall goes *up*
+slightly, not down:
+
+| encoder | fact recall | the dedup's recall at 0.92 | the dedup's precision |
+|---|---|---|---|
+| the stock L3-v2 | 50.55% | 0.046 | 1.00 |
+| the tuned encoder | **50.93%** | **0.292** | 1.00 |
+
+The encoder can be improved because it improves the *ranking* of what is a
+duplicate. The threshold cannot be lowered because lowering it moves the
+*boundary*, and the boundary is where the distinct facts get caught.
+
+### 7.2 What we changed, and what we did not
+
+- The shipped configuration stays: the stock encoder at the shipped
+  thresholds, because that is the configuration the published evidence was
+  produced with.
+- The next fine-tune weights a false merge above a missed merge
+  (precision-weighted at the operating point) instead of optimising F1 -
+  the asymmetry makes F1 the wrong target - and is measured on a held-out
+  split, because the current one was trained and measured on the same
+  traffic (a fit, not a generalisation).
+- The full sweep, the fine-tune runs and the replay are in
+  `docs/ENCODER-NOTES.md` in the harness repository.
 
 ## Limits, honestly
 
