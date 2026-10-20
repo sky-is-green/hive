@@ -64,6 +64,51 @@ faster).
 
 ---
 
+## 1b. What the measurements changed
+
+Three facts, measured on this box, reshape the plan.
+
+**1. The 176B's decode rate is a state, not a capability.** The engine
+logged 31-42 tok/s in its first sixty generations and 3.1 tok/s in its
+last sixty. Alone, with card0 free and the full expert cache, it runs at
+**8.2 tok/s** with an **89.8% cache hit rate** - so the storage is not the
+bottleneck. The registry's 57 tok/s figure belongs to *Qwen3.8-Flash-Next
+(Q2_0)*, a different model; the Scion 176B Q6_K has no such baseline.
+
+**2. Co-siting costs 2.6x, in VRAM *and* in RAM.** The expert cache is
+sized "auto" from the free VRAM, so the 35B on card0 halves it (8.55 ->
+4.11 GiB) and the miss rate doubles. Worse, the 176B streams 33-87 GB of
+experts per request, and **that evicts the 35B's weights from the same
+page cache** - so the two engines destroy each other's warm state, and no
+VRAM number shows it. Measured with `mincore`: the 176B's file is 12.5%
+cached, the 35B's 0%.
+
+**3. The RAID0 is a capacity project, not a speed one.** The physical
+read is 75-300 MB/s against a Gen4 drive's 5-7 GB/s - the engine asks
+for 5-10% of what the disk can do, and the reads are 8.8 KB scattered
+faults, so the win would be queue depth, not bandwidth. SATA is a clear
+no: 550 MB/s and ~90K IOPS, so a two-drive SATA RAID0 is slower than the
+single NVMe it would replace.
+
+So the plan, reordered by measured effect:
+
+| | what | status |
+|---|---|---|
+| a | **run the engines one at a time** - the campaign's arms are sequential, and the Studio refuses a second launch on a leased card | to do |
+| b | **the drain** - an unload waits for `/slots` to go idle before stopping the engine (a 176B reply is minutes of work) | **done** |
+| c | **the prefetch** - a launch asks the kernel to read the weights into the page cache first, so a model that fits starts warm | **done** |
+| d | **the warm/cold readout** - `mincore` per loaded engine in `/v1/server/status`: the number VRAM cannot show | **done** |
+| e | the Q4/X160 re-quantisation - the real constraint is a 132 GB working set against a 13 GB page cache | to do (a large download) |
+| f | the riser + RAID0 - more escalation candidates resident, on a dedicated ext4 array (not btrfs-on-mdraid) | to do (hardware) |
+| g | the frontier key - the cascade's paid tier needs a refreshed key in the auth store | to do |
+
+Dropped from the earlier list: raising `--pool-workers` (the storage is
+not the bottleneck, so it would buy nothing) and zswap (the swapfile plus
+`swappiness=10` already fixed the actual failure mode, and both
+alternatives make the *disk* faster, which is the path the fix moved off).
+
+---
+
 ## 2. The order
 
 The order is by *information per hour*, not by ambition.
