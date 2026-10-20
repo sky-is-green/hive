@@ -178,29 +178,64 @@ configuration the published evidence was produced with.
 
 ## 7. What we do about it
 
-**The decision: the Studio keeps what it was tested with.** The shipped
-configuration (the stock `paraphrase-MiniLM-L3-v2`, the dedup at 0.92, the
-drift at 0.6) is the configuration the published evidence was produced
-with, and it stays until a *test* says otherwise. Changing the thresholds
-on the strength of a measurement is how a falsifiable system stops being
-falsifiable.
+**Hypothesis H was tested, and it is false.** H said: recalibrating the
+membrane's thresholds (the dedup 0.92 → 0.57, the drift 0.6 → 0.77)
+would make the two decisions work without costing a fact. The test
+(`experiments/threshold_ab.py` — the fixture corpus replayed through the
+real pipeline, 50 conversations, 493 measurable turns, the P2
+diagnostic's own notion of a fact) says otherwise, and says it
+precisely because the two thresholds are **factored**:
 
-So the measurement above is not a change - it is a **hypothesis to be
-validated**:
+| arm | dedup | drift | fact recall | precision | mean context | churn | verdict |
+|---|---|---|---|---|---|---|---|
+| shipped | 0.92 | 0.6 | **50.55%** | 17.32% | 159 tok | — | — |
+| the dedup alone | 0.57 | 0.6 | **39.70%** | 17.02% | 90 tok | 42% | **H fails** |
+| the drift alone | 0.92 | 0.77 | **50.55%** | 17.32% | 159 tok | 9% | **H survives** |
 
-> **H (operating points).** With the stock L3-v2, running the membrane's
-> duplicate test at 0.57 and its topic-change test at 0.77 turns two
-> near-dead decisions into working ones (the dedup's F1 0.089 → 0.761,
-> the drift's 0.151 → 0.554) **without changing the answer to any
-> benchmark item** - the curation's recall and the throughput are
-> unchanged because the tests only decide which *redundant* chunks are
-> dropped and when the old topic is penalised.
->
-> Falsification: a paired run over the held-out conversation set with
-> the shipped thresholds and with the recalibrated ones, measuring the
-> fact-presence recall (the P2 diagnostic) and the PES. If the
-> recalibrated thresholds lose a fact or cost throughput, the hypothesis
-> is false and the shipped points stand.
+**The duplicate test is the one that costs facts, and the reason is an
+asymmetry the F1 hides.** A duplicate test that fires wrongly
+**deletes a chunk** - the fact in it is gone, irreversibly. A duplicate
+test that fails to fire only leaves a redundant chunk in the context,
+which costs budget and nothing else. So the two errors are not
+interchangeable, and the F1 - which weights them equally - points at the
+wrong threshold. At 0.57 the encoder merges chunks that are *about* the
+same thing but carry *different* facts ("the GPU is an RX 7900 XTX" and
+"the PSU is 850W" are semantically close and factually distinct), and
+the facts go with them: the fact recall falls from 50.6% to 39.7%, a 21%
+relative loss, while the context shrinks 43%. The shipped 0.92 is
+*conservative for a reason*: it has a precision of 1.00, so it never
+deletes a fact - at the cost of catching only 4.6% of the redundancy.
+
+**The topic-drift test is the opposite case and the recalibration is
+free.** It only *penalises* the old-topic chunks; it never deletes them.
+Moving it from 0.6 to 0.77 leaves the fact recall, the precision and the
+context size identical (9% of the turns change their selection), and it
+turns a decision that fires on almost every turn into one that fires
+where it should.
+
+**So the Studio keeps the shipped thresholds** - the configuration the
+published evidence was produced with - and the one free change (the
+drift's threshold) is a separate, small, testable step.
+
+**And the model is the lever, not the threshold.** The fine-tuned
+encoder, run through the same replay at the *shipped* thresholds:
+
+| encoder | fact recall | precision | mean context | the dedup's recall at 0.92 |
+|---|---|---|---|---|
+| the stock L3-v2 | 50.55% | 17.32% | 159 tok | 0.046 |
+| **the tuned v6** | **50.93%** | 17.10% | 164 tok | **0.292** |
+
+The tuned model merges **six times more true duplicates** (0.046 → 0.292)
+at the same precision (1.00 → 1.00) - so no fact is lost - and the fact
+recall is *slightly better*, not worse. The encoder can be improved
+because it improves the *ranking* of what is a duplicate; the threshold
+cannot be lowered because lowering it moves the boundary, and the
+boundary is where the distinct facts get caught.
+
+**The next fine-tune takes the lesson.** The current one optimises the
+decision's F1, which is the wrong target for an asymmetric cost. The
+next one weights a false merge above a missed merge (precision-weighted
+at the operating point), on a held-out split.
 
 **The next fine-tune is from the best base we tested - and the best base
 is the one we already ship.** `paraphrase-MiniLM-L3-v2` wins the drift
