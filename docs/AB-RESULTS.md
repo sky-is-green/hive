@@ -366,6 +366,41 @@ mechanism is now in question, and that is a different claim.
 
 ---
 
+---
+
+## 4B. The 500-turn stability - and a correction to the latency claim
+
+The memory pipeline, 500+ turns of a *growing* conversation (every turn
+states a new fact; every fifth asks about an old one), the real drone, no
+model. `experiments/stability_500.py`.
+
+| turns | the store | the assembled context | the curation's cost (p50) | early | late | the peak RSS |
+|---|---|---|---|---|---|---|
+| 250 | 212 chunks | 322 tok | 22.8 ms | 10.8 | 35.0 | 519 MB |
+| 500 | 412 chunks | 320 tok | 37.3 ms | 14.5 | 81.3 | 564 MB |
+| 1,000 | 812 chunks | 335 tok | 89.7 ms | 21.2 | 143.5 | 594 MB |
+| 2,000 | 1,612 chunks | 332 tok | 156.8 ms | 31.9 | 263.5 | 667 MB |
+
+**The context stays bounded and the cost does not.** The assembled
+context is flat across the whole range (322 → 332 tokens ✓ - the
+curation's promise ✓✓), the store grows ✓, and nothing is OOM-killed ✓
+over 2,000 turns ✓.
+
+**But the curation's per-turn cost is linear in the store's size**: 22.8 ms
+at 212 chunks, 156.8 ms at 1,612 - about **7x for 7.6x the chunks** ✓✓.
+The published "≈18 ms added per turn" is the *small-store* number ✓; the
+honest statement is that the curation's cost grows with the conversation
+it is curating ✓ (every chunk is scored, every turn ✓).
+
+**So the memory's trade is explicit:** the *prompt* stays bounded ✓ -
+which is the expensive part for the model ✗✗ - while the *curation* gets
+more expensive as the conversation grows ✗. On a long conversation the
+two costs trade against each other, and the crossover (where the
+curation's ms exceed the tokens it saves) is a measurement the system
+does not yet make ✗.
+
+---
+
 ## What ran, and what is still owed
 
 | id | what | state |
@@ -378,7 +413,7 @@ mechanism is now in question, and that is a different claim.
 | 2C / 5A | the encoder on a held-out split | **done** (the tuning generalises, and still cannot be cashed in) |
 | 3A-3E | the cascade's arms | **done** except the escalation's own value (the verifier's catch rate is too draw-dependent to measure it) |
 | 4A | the P1-P10 protocol | **done** (PASS 6/11, 2 skipped - the published verdict set, reproduced) |
-| 4B | the 500-turn stability | **owed** |
+| 4B | the 500-turn stability | **done** (2,000 turns: the context is flat, nothing OOMs, and the curation's cost is linear in the store) |
 | 4C | the PES per configuration | rides along with 4A |
 
 **The rule the campaign learned:** a single draw is a direction, not a

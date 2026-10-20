@@ -1,0 +1,19 @@
+{
+ "turns": 500,
+ "seconds": 21.9,
+ "peak_rss_mb": 563.7,
+ "store_chunks": 412,
+ "context_tokens": {
+  "early_p50": 298.0,
+  "late_p50": 320.0,
+  "max": 425
+ },
+ "curation_ms": {
+  "p50": 37.99,
+  "p95": 87.59,
+  "early_p50": 14.2,
+  "late_p50": 81.94
+ },
+ "throughput_drift": 5.768,
+ "oom": false
+}
