@@ -102,6 +102,10 @@ dep_scan.py
 artifacts/ternary/
 
 # cascade capture traces (regenerable; manifests + MODEL-CARDs are tracked)
+# the trained encoder checkpoints are build artifacts (the weights are
+# released to the Hub, not kept in git)
+experiments/encoder-suite/results/*/l3-tuned*/
+experiments/encoder-suite/results/*/*-tuned*/
 experiments/cascade/results/*/streams.json
 experiments/cascade/results/*/capture.json
 experiments/cascade/results/.model-sha-cache.json

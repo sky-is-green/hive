@@ -3019,13 +3019,21 @@ const GLOBAL_BLOCKS = {{
 }};
 
 function fillGlobalControls(st) {{
+  /* A control that was never stored is not "false" - it is unset.  The
+     distinction matters on save: an unset checkbox must not be written
+     as false, or opening the tab and pressing Save would switch off
+     every default the user never touched. */
   for (const [prefix, block] of Object.entries(GLOBAL_BLOCKS)) {{
     const values = (st && st[block]) || {{}};
     for (const el of document.querySelectorAll(`[id^="${{prefix}}-"]`)) {{
       const key = el.dataset.key;
       if (!key) continue;
-      if (el.type === 'checkbox') el.checked = !!values[key];
-      else el.value = (values[key] === undefined || values[key] === null) ? '' : values[key];
+      if (el.type === 'checkbox') {{
+        if (values[key] === undefined) {{ el.dataset.unset = '1'; el.checked = false; }}
+        else {{ el.dataset.unset = ''; el.checked = !!values[key]; }}
+      }} else {{
+        el.value = (values[key] === undefined || values[key] === null) ? '' : values[key];
+      }}
     }}
   }}
   const dev = document.getElementById('g-dev_mode');
@@ -3039,8 +3047,12 @@ function collectGlobalControls() {{
     for (const el of document.querySelectorAll(`[id^="${{prefix}}-"]`)) {{
       const key = el.dataset.key;
       if (!key) continue;
-      if (el.type === 'checkbox') values[key] = el.checked;
-      else if (el.value !== '') values[key] = (el.type === 'number') ? +el.value : el.value;
+      if (el.type === 'checkbox') {{
+        if (el.checked) values[key] = true;
+        else if (el.dataset.unset !== '1') values[key] = false;
+      }} else if (el.value !== '') {{
+        values[key] = (el.type === 'number') ? +el.value : el.value;
+      }}
     }}
     out[block] = values;
   }}
