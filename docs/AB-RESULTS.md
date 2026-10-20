@@ -234,7 +234,26 @@ That is the ladder working as designed - the cheap leg comes before the
 expensive one - but it means the arm measures the ladder, not the
 escalation. The arm that measures the escalation is the one with the
 repair leg **off**, so the verifier's catches fall through to the large
-tier; it is running now.
+tier.
+
+**That arm came out inconclusive, and why it matters.** With the repair
+leg off, the escalation still did not fire - because in *that draw* the
+deterministic verifier caught **nothing** (0 rejections, 21/28 served
+against the other repair-off draw's 18/28).
+
+**The verifier's catch rate is wildly draw-dependent: 0 to 4 catches out
+of 28, on the same tasks and the same model.** Every single-draw arm is
+therefore noisy, and the published 66-item number - which is the *3-sample*
+regime - is the stable one. The arms in this section are useful as
+*directions* (the repair leg is worth +6, the gate is worth +1 on this
+set) and should not be read as precise effect sizes until they are re-run
+in the multi-sample regime.
+
+**The escalation tier's own value is therefore still unmeasured here**:
+with the repair leg on it never fires (the cheap leg gets there first),
+and with it off the verifier's catch rate is too noisy to put a number
+on. What is established: the ladder is ordered correctly, and the
+escalation is a **backstop**, not a routine path.
 
 ---
 
