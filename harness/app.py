@@ -80,6 +80,7 @@ from cortex.splinter import Splinter
 from experiments.model_probe import _list_models, probe_model
 from harness.hardware import (disk_summary, non_display_index,
                                parse_visible_indices)
+from harness.models import drain_slots, page_cache_share, prefetch_weights
 from harness.models import LlamaServerManager
 from harness.cascade import api as cascade_api
 from harness.reports import (
@@ -3249,6 +3250,16 @@ def create_app(
             })
         data["loaded"] = loaded
         data["loaded_model"] = (loaded[0]["model"] if loaded else None)
+        # how warm the loaded model's file is in the page cache.  This is
+        # the number VRAM cannot show: a 132 GB model streaming its
+        # experts evicts the other engine's weights from the same cache,
+        # so the second engine starts cold and runs slow without either
+        # number looking wrong.
+        for item in loaded:
+            try:
+                item["cache_share"] = page_cache_share(item.get("model"))
+            except Exception:  # noqa: BLE001 - the readout is best effort
+                item["cache_share"] = None
         return data
 
     @app.get("/v1/server/fit")
@@ -3768,6 +3779,16 @@ def create_app(
                            if (req.backend or "").strip().lower() == "cuda"
                            else "HIP_VISIBLE_DEVICES")
                 env = {vis_env: visible}
+            # Ask the kernel to read the weights into the page cache
+            # first: a model that fits in the cache (the 35B is 11 GB,
+            # the cache is 13) then starts warm instead of streaming
+            # itself off the disk.  The kernel reads at its own pace and
+            # takes the pages back when the machine needs the RAM.
+            if req.model:
+                try:
+                    prefetch_weights(str(req.model))
+                except Exception:  # noqa: BLE001 - a warm-up is a nicety
+                    pass
             info = models_manager.load(
                 model=req.model, hf_repo=req.hf_repo, hf_file=req.hf_file,
                 key=req.key, port=req.port, ctx_size=ctx_size,
@@ -3851,6 +3872,13 @@ def create_app(
         if not repo:
             raise HTTPException(400, "no strata checkout: set strata_repo in the "
                                        "Studio settings or give a repo path")
+        if not Path(repo).is_dir():
+            # The checkout is checked before anything else: the launch
+            # adopts a live engine on the port (so a second engine never
+            # starts), and without this a bogus path would quietly get
+            # the running engine instead of an error.
+            raise HTTPException(400, f"no strata checkout at {repo!r}: the "
+                                       "path must be the strata repository")
         config = (req.config or "").strip()
         if not config:
             raise HTTPException(400, "a strata config profile is required")
@@ -3900,7 +3928,7 @@ def create_app(
                 **info}
 
     @app.post("/v1/server/unload-loaded")
-    def server_unload_loaded():
+    def server_unload_loaded(drain_timeout: float = 60.0):
         """Free the VRAM: unload whatever model is loaded.
 
         This is not the same as stopping a turn (that is the Stop button in
@@ -3926,6 +3954,10 @@ def create_app(
                 out["retired"].append(name)
         base = _strata_base()
         root = base[:-3] if base.endswith("/v1") else base
+        # Drain first: a 176B reply is minutes of work, and killing the
+        # engine mid-generation throws the whole answer away.  The wait is
+        # bounded - an engine that never goes idle is stopped anyway.
+        out["drained"] = drain_slots(root, timeout=drain_timeout)
         try:
             resp = requests.post(f"{root}/v1/unload", json={}, timeout=15)
             out["strata"] = resp.status_code

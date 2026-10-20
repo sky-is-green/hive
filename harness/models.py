@@ -795,6 +795,142 @@ def _port_in_use(host: str, port: int, timeout: float = 1.0) -> bool:
         return False
 
 
+def drain_slots(base_url: Optional[str], timeout: float = 120.0,
+                poll: float = 1.0) -> bool:
+    """Wait until an engine is idle, then let it be stopped.
+
+    A server killed mid-generation throws the whole answer away, and with
+    a 176B a reply is minutes of work.  The engine's own ``/slots`` says
+    whether it is processing (``is_processing``); this waits for that to go
+    false, bounded by ``timeout`` - an engine that never goes idle is
+    stopped anyway rather than holding the caller forever.
+
+    (The idea is berth's ``drain_slots``: "a drain waits until no slot
+    reports is_processing, then stops it".  It is worth having on any
+    engine, not just the ones berth knows: a large local model under a
+    multi-minute decode is exactly the case where a blind kill is
+    expensive.)
+
+    Returns True when the engine was seen idle, False when it timed out.
+    """
+    if not base_url:
+        return False
+    deadline = time.time() + max(0.0, timeout)
+    url = base_url.rstrip("/") + "/slots"
+    while True:
+        try:
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                slots = resp.json()
+                if isinstance(slots, list) and slots:
+                    busy = any(bool(s.get("is_processing")) for s in slots
+                               if isinstance(s, dict))
+                    if not busy:
+                        return True
+        except Exception:  # noqa: BLE001 - the engine may be gone
+            return False
+        if time.time() >= deadline:
+            return False
+        time.sleep(poll)
+
+
+def prefetch_weights(path: Optional[str]) -> int:
+    """Ask the kernel to read a model's file into the page cache.
+
+    ``posix_fadvise(WILLNEED)`` is a request, not a command: the kernel
+    reads at its own pace and takes the pages back whenever the machine
+    needs the RAM.  For a model that fits in the page cache (the 35B is
+    11 GB, the cache is 13) this is the difference between a cold start
+    that streams the whole file and one that reads it from memory.
+
+    Returns the number of bytes asked for.
+    """
+    if not path:
+        return 0
+    try:
+        file = Path(path)
+        if not file.is_file():
+            return 0
+        size = file.stat().st_size
+        fd = os.open(str(file), os.O_RDONLY)
+        try:
+            os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_WILLNEED)
+        finally:
+            os.close(fd)
+        return size
+    except (OSError, AttributeError):
+        return 0
+
+
+def page_cache_share(path: Optional[str], sample: int = 48) -> Optional[float]:
+    """How much of a model's file sits in the page cache (0..1).
+
+    Read with ``mincore`` - the kernel's own answer, and it does not pull
+    a page in to answer.  A sample of page ranges is enough to tell
+    "warm" from "cold", which is the question: a model that is 90% cached
+    starts fast, one that is 0% cached streams its whole file.
+
+    This is the number that makes the co-siting visible.  Two engines on
+    one box do not only fight over VRAM - a 132 GB model streaming its
+    experts evicts the smaller model's weights from the same cache, so
+    the second engine starts cold *and* runs slow.  Neither number shows
+    up in VRAM.
+    """
+    if not path:
+        return None
+    try:
+        import ctypes
+
+        file = Path(path)
+        if not file.is_file():
+            return None
+        size = file.stat().st_size
+        if size <= 0:
+            return None
+        page = os.sysconf("SC_PAGE_SIZE")
+        libc = ctypes.CDLL("libc.so.6", use_errno=True)
+        libc.mincore.argtypes = [ctypes.c_void_p, ctypes.c_size_t,
+                                 ctypes.POINTER(ctypes.c_ubyte),
+                                 ctypes.c_int]
+        libc.mmap.restype = ctypes.c_void_p
+        libc.mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int,
+                              ctypes.c_int, ctypes.c_int, ctypes.c_long]
+        libc.munmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+        PROT_READ, MAP_SHARED = 0x1, 0x1
+        fd = os.open(str(file), os.O_RDONLY)
+        try:
+            step = max(page, size // max(1, sample))
+            resident = 0
+            probed = 0
+            for off in range(0, size, step):
+                if probed >= sample:
+                    break
+                offset = (off // page) * page
+                if offset + page > size:
+                    break
+                addr = libc.mmap(None, page, PROT_READ, MAP_SHARED, fd, offset)
+                if not addr or addr == ctypes.c_void_p(-1).value:
+                    break
+                vec = (ctypes.c_ubyte * 1)()
+                try:
+                    rc = libc.mincore(ctypes.c_void_p(addr), ctypes.c_size_t(page),
+                                      vec, 1)
+                finally:
+                    libc.munmap(ctypes.c_void_p(addr), page)
+                if rc != 0:
+                    continue
+                probed += 1
+                if vec[0] & 1:
+                    resident += 1
+            if not probed:
+                return None
+            return round(resident / probed, 4)
+        finally:
+            os.close(fd)
+    except (OSError, AttributeError, ValueError, Exception):  # noqa: BLE001
+        return None
+
+
 def _pid_listening_on(port: int) -> Optional[int]:
     """Pid of whatever process LISTENs on this port (best effort)."""
     try:
@@ -1513,17 +1649,29 @@ class LlamaServerManager:
             out["memory"] = memory_info
         return out
 
-    def unload(self, key: str) -> dict:
+    def unload(self, key: str, drain: bool = True,
+              drain_timeout: float = 120.0) -> dict:
         """Unload one instance: stop its server and let the port go.
 
         The process is waited for (and the port checked) so an unload really
         ends the server: a half-dead llama-server still holding the port is
         an orphan that the next Start would collide with.
+
+        ``drain`` waits for the engine to be *idle* first (berth's
+        ``drain_slots`` idea): a server killed mid-generation throws away
+        the whole answer, and with a 176B a reply is minutes of work.  The
+        wait is bounded - an engine that never goes idle is stopped anyway
+        rather than holding the request forever.
         """
         with self._lock:
             inst = self._instances.pop(key, None)
         if inst is None:
             raise RuntimeError(f"no such loaded instance: {key}")
+        drained = False
+        if drain:
+            base = getattr(inst, "base_url", None) or (
+                f"http://{self.host}:{inst.port}" if getattr(inst, "port", None) else None)
+            drained = drain_slots(base, timeout=drain_timeout)
         if inst.proc is not None:
             try:
                 inst.proc.terminate()
@@ -1545,7 +1693,7 @@ class LlamaServerManager:
                 if not _port_in_use(self.host, port):
                     break
                 time.sleep(0.25)
-        return {"ok": True, "unloaded": key,
+        return {"ok": True, "unloaded": key, "drained": drained,
                 "port_free": not _port_in_use(self.host, port) if port else True}
 
     def stop_all(self) -> dict:

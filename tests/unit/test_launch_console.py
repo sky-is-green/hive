@@ -24,7 +24,14 @@ def client(tmp_path):
         log_dir=str(tmp_path / "logs"),
         state_dir=str(tmp_path / "state"),
     )
-    return TestClient(app)
+    test_client = TestClient(app)
+    # The Strata engine is a separate serve on a fixed port, so a test
+    # that launches one would otherwise adopt (or collide with) whatever
+    # happens to be running on this machine.  Point the Studio at a dead
+    # port: the tests then exercise the Studio, not the box.
+    test_client.put("/v1/studio/settings",
+                    json={"strata_base": "http://127.0.0.1:1/v1"})
+    return test_client
 
 
 def test_the_launch_panel_has_an_engine_tab(client):
