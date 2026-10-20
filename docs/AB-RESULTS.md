@@ -258,6 +258,30 @@ the arms are equal *at that budget*. It says the curation's *accuracy*
 advantage is generator-dependent, and that the honest claim is the bounded
 context, not the better answers.
 
+### 2A.2 The hypothesis this suggests: the encoder and the generator are
+### different architectures
+
+**H (architecture match).** The curation's selection happens in the
+*drone's* embedding space - a MiniLM, a BERT-family bi-encoder - while
+the generator reads the curated chunks as *text* in a Qwen-family causal
+model's space. The two spaces are unrelated, so the drone's notion of
+"relevant" is not the generator's. If the drone were a bi-encoder from
+the *generator's own family* (a Qwen3 decoder trained as a bi-encoder),
+the selection would happen in the generator's own semantic space, and the
+curation's advantage would return.
+
+**Why this is worth testing.** The sweep in §4 never included a
+Qwen-family encoder: every candidate was a BERT-family bi-encoder
+(MiniLM, bge, e5, gte) or a Mistral-family one (nomic). The generators
+are Qwen-family (the 35B-A3B is a Qwen3.5 MoE, the 176B a Qwen4 exp).
+So the one family that could share the generator's space was never
+measured - the gap the hypothesis names.
+
+**The test.** The same paired A/B (the same tasks, the same generator,
+the same arms) with the curation's encoder swapped for
+`Qwen/Qwen3-Embedding-0.6B` - a Qwen3 decoder trained as a bi-encoder,
+1024 dims - against the stock MiniLM on the identical sample. Running.
+
 ---
 
 ### 3D. The router (the local Tiny-Jev)
