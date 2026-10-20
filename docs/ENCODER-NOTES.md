@@ -89,6 +89,7 @@ actually wants.
 | e5-small-v2 | 33.4M | 384 | 0.536 | 0.692 @ 0.91 | 0.000 | 0.501 | 0.882 | 1.7 |
 | gte-small | 33.4M | 384 | 0.574 | 0.821 @ 0.90 | 0.000 | 0.500 | 0.877 | 2.0 |
 | nomic-embed-v1.5 | 136.7M | 768 | 0.036 | 0.753 @ 0.77 | 0.000 | 0.600 @ 0.38 | **0.9815** | 18.4 |
+| nomic-embed-v1.5 | 136.7M | 768 | 0.036 | 0.753 @ 0.77 | 0.000 | 0.600 @ 0.38 | **0.9815** | 18.4 |
 
 (nomic was measured on a subset - 1,500 duplicate pairs and 2,000 drift
 cases - because a 137M-parameter model on the CPU is eighteen times the
@@ -97,6 +98,17 @@ cost per chunk of the drone. It is not a drone candidate; it is a
 anything, AUC 0.9815 against the drone's 0.945.)
 
 ## 5. What the measurement found
+
+**The family the generator belongs to was never measured.** Every
+candidate above is a BERT-family bi-encoder (MiniLM, BGE, E5, GTE) or a
+Mistral-family one (nomic) - while the generators are Qwen-family. The
+selection therefore happens in a space the generator does not share, and
+the campaign's own result says that matters: the curation's advantage
+over a raw window went from 4.4:1 (a 27B) to a tie (the 35B). nomic's
+topic-change signal - **AUC 0.9815**, the best measured of anything, well
+ahead of the drone's 0.945 - says the family matters too, and it is the
+**teacher** candidate for the next distillation round rather than the
+drone.
 
 **1. The shipped thresholds are the bug.** The production drone was
 swapped from `all-MiniLM-L6-v2` to `paraphrase-MiniLM-L3-v2` on
