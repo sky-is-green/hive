@@ -281,26 +281,33 @@ every answer to catch one mistake; at this precision it is not worth it. The
 implementation is tested and available as `--gate intern-0.8b`, and the
 default is off. **A negative result, pre-registered, is a result.**
 
-**And the later measurement narrows it** (the A/B campaign, 2026-10-20;
-the 35B-A3B, the same 28 organic tasks, the same deterministic judge and
-repair leg):
+**And the later measurement confirms it** (the A/B campaign, 2026-10-20;
+the 35B-A3B, the same 28 organic tasks, three draws each, 84 items per
+arm):
 
-| arm | served-correct | false rejects | the gate | the mean |
-|---|---|---|---|---|
-| the gate off | 0.857 (24/28) | 0 | - | 6.7 s |
-| **the gate on (intern-0.8B)** | **0.893 (25/28)** | **0** | scored 26, fired 2, cleared 0 | 7.6 s |
+| arm | served-correct | the gate | the mean |
+|---|---|---|---|
+| the gate off | 67/84 (79.8%) | - | 6.6 s |
+| **the gate on (intern-0.8B)** | **70/84 (83.3%)** | fired 7: 4 true catches, **3 false flags** | 8.1 s |
 
-On this model and this set the gate caught 2 silently-wrong answers, one of
-which the repair turned into a right one: **+1 served item, 0 false
-rejects, +12% wall clock.** Its flags were all true positives.
+The gate is worth **+3.5 points** - and it false-flags 3 times against
+the pre-registered budget of 2, so **by its own rule it stays off**. The
+single-draw arm of the same configuration had looked like a clean win (0
+false flags in 56 items); at 84 items the false flags are back over the
+budget. A single draw would have shipped it.
 
-So the mechanism is not broken - **its value is model- and set-dependent**,
-and "off by default" is a statement about the configuration that was
-measured, not about the gate. What is constant across both measurements is
-the part that matters most: **the gate never false-rejected**. What varies
-is how many silent wrongs it finds. The honest summary of the gate is
-therefore two sentences: it is safe to have on, and whether it is worth
-having depends on the model in front of it.
+What is constant across both measurements: the gate **catches real
+silent wrongs** (4 here, 1 there) and its false flags are exactly what
+the budget exists to bound. The mechanism works; the head does not
+separate well enough on this distribution to pay for itself.
+
+The same campaign corrected a claim in this paper's §8: the "0 false
+rejects" there is the *escalation's* bookkeeping, not the verifier's - the
+runner's `false_reject` field only exists once something escalates. The
+verifier's own false rejects (a rejected answer that was right) are **1,
+1 and 3** across the arms, and it catches **8 wrong answers for every 1
+correct answer it drops**. The trade is still worth making; the zero was
+never the verifier's number.
 
 ## 6. The escalation lane: the harvest
 
