@@ -62,17 +62,25 @@ RELEASES = {
         "readme": "README.md",
         "files": [
             (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
-             / "l3-tuned" / "config_sentence_transformers.json",
+             / "l3-tuned-v6" / "config_sentence_transformers.json",
              "config_sentence_transformers.json"),
             (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
-             / "l3-tuned" / "modules.json", "modules.json"),
+             / "l3-tuned-v6" / "modules.json", "modules.json"),
             (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
-             / "l3-tuned" / "sentence_bert_config.json",
+             / "l3-tuned-v6" / "sentence_bert_config.json",
              "sentence_bert_config.json"),
             (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
-             / "l3-tuned" / "config.json", "config.json"),
+             / "l3-tuned-v6" / "config.json", "config.json"),
             (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
-             / "l3-tuned" / "finetune_meta.json", "finetune_meta.json"),
+             / "l3-tuned-v6" / "tokenizer.json", "tokenizer.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned-v6" / "tokenizer_config.json", "tokenizer_config.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned-v6" / "model.safetensors", "model.safetensors"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "l3-tuned-v6" / "finetune_meta.json", "finetune_meta.json"),
+            (REPO / "experiments" / "encoder-suite" / "results" / "20261020"
+             / "gate-l3-tuned-v6.json", "gate.json"),
         ],
     },
 }
