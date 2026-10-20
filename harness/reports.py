@@ -20,6 +20,8 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
+from harness.global_controls import render_global_pane
+
 # Paper weights for the PES composite (README §3.1).
 _PES_COMPONENTS = [
     ("retrieval_precision", 0.30),
@@ -709,6 +711,27 @@ SETTINGS_INDEX = [
     "id": "tab-splinter"
   },
   {
+    "label": "Memory & RAG baseline",
+    "desc": "The curation every conversation starts from",
+    "cat": "Splinter",
+    "tab": "tab-global",
+    "id": "tab-global"
+  },
+  {
+    "label": "Cascade defaults",
+    "desc": "Judge, repair, gate, human gate, escalation",
+    "cat": "Cascade",
+    "tab": "tab-global",
+    "id": "tab-global"
+  },
+  {
+    "label": "MCP controls",
+    "desc": "The memory over MCP: the endpoint and its tools",
+    "cat": "Cascade",
+    "tab": "tab-global",
+    "id": "tab-global"
+  },
+  {
     "label": "Chat mode",
     "desc": "Splinter vs Agent (dsh)",
     "cat": "Chat",
@@ -775,6 +798,7 @@ def render_server_page() -> str:
 <div class="tabs" id="main-tabs">
 <button class="tab active" data-tab="tab-home">Home</button>
 <button class="tab" data-tab="tab-settings">Settings</button>
+<button class="tab" data-tab="tab-global">Global</button>
 <button class="tab" data-tab="tab-cascade" onclick="location.href='/cascade'">Cascade</button>
 <button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto">More tools ▾</button>
 </div>
@@ -1080,6 +1104,8 @@ providers.local.json (gitignored).</div>
 <pre id="inspect-timings"></pre>
 </section>
 </div>
+
+{render_global_pane()}
 
 <div id="tab-settings" class="tabpane" style="display:none">
 <section>
@@ -2023,7 +2049,8 @@ async function runStudioCommand(name) {{
 /* ------------------------- pinned tabs ------------------------------- */
 const PINNED_TABS_KEY = 'hive-pinned-tabs';
 const TAB_REGISTRY = [
-  ['tab-home', 'Home'], ['tab-settings', 'Settings'], ['tab-cascade', 'Cascade'],
+  ['tab-home', 'Home'], ['tab-settings', 'Settings'], ['tab-global', 'Global'],
+  ['tab-cascade', 'Cascade'],
   ['tab-setup', 'Docker setup'], ['tab-agent', 'Agent'], ['tab-engines', 'Engines'],
   ['tab-library', 'Local Library'], ['tab-splinter', 'Splinter'],
   ['tab-providers', 'Providers'], ['tab-hub', 'Hub'], ['tab-inspect', 'Inspector'],
@@ -2043,7 +2070,7 @@ function togglePinnedTab(id) {{
   applyPinnedTabs();
 }}
 
-const DEFAULT_MAIN_TABS = ['tab-home', 'tab-settings', 'tab-cascade'];
+const DEFAULT_MAIN_TABS = ['tab-home', 'tab-settings', 'tab-global', 'tab-cascade'];
 
 function applyPinnedTabs() {{
   const main = document.getElementById('main-tabs');
@@ -2096,6 +2123,7 @@ async function loadStudioSettings() {{
     set('cfg-compact', st.auto_compact);
     applyToolUseSetting(!!st.tools_enabled);
     applyDevMode(!!st.dev_mode);
+    fillGlobalControls(st);
   }} catch (e) {{ /* settings are optional */ }}
 }}
 
@@ -2995,6 +3023,57 @@ function hideLoadBar(onlyIfLoading) {{
   if (onlyIfLoading && _loadBar && _loadBar.kind !== 'load') return;
   bar.style.display = 'none';
   _loadBar = null;
+}}
+
+/* ------------------- the global harness controls --------------------- */
+/* The baseline the harness starts from: the memory a conversation gets,
+   the quality a cascade run asks for, what an MCP client may touch, the
+   runtime a new engine is launched with. */
+const GLOBAL_BLOCKS = {{
+  gm: 'memory_defaults', gq: 'quality_defaults',
+  gp: 'mcp', gr: 'runtime_defaults',
+}};
+
+function fillGlobalControls(st) {{
+  for (const [prefix, block] of Object.entries(GLOBAL_BLOCKS)) {{
+    const values = (st && st[block]) || {{}};
+    for (const el of document.querySelectorAll(`[id^="${{prefix}}-"]`)) {{
+      const key = el.dataset.key;
+      if (!key) continue;
+      if (el.type === 'checkbox') el.checked = !!values[key];
+      else el.value = (values[key] === undefined || values[key] === null) ? '' : values[key];
+    }}
+  }}
+  const dev = document.getElementById('g-dev_mode');
+  if (dev) dev.checked = !!(st && st.dev_mode);
+}}
+
+function collectGlobalControls() {{
+  const out = {{}};
+  for (const [prefix, block] of Object.entries(GLOBAL_BLOCKS)) {{
+    const values = {{}};
+    for (const el of document.querySelectorAll(`[id^="${{prefix}}-"]`)) {{
+      const key = el.dataset.key;
+      if (!key) continue;
+      if (el.type === 'checkbox') values[key] = el.checked;
+      else if (el.value !== '') values[key] = (el.type === 'number') ? +el.value : el.value;
+    }}
+    out[block] = values;
+  }}
+  return out;
+}}
+
+async function saveGlobalControls(btn) {{
+  if (btn) btn.disabled = true;
+  const note = document.getElementById('global-note');
+  try {{
+    const body = collectGlobalControls();
+    const r = await api('/v1/studio/settings', 'PUT', body);
+    if (note) note.textContent = 'the baseline is saved - it takes effect for the next conversation or run';
+    fillGlobalControls(r);
+  }} catch (e) {{
+    if (note) note.textContent = 'save failed: ' + e.message;
+  }} finally {{ if (btn) btn.disabled = false; }}
 }}
 
 function showToast(msg) {{

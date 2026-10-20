@@ -2704,7 +2704,12 @@ def create_app(
         base_url = provider.base_url.rstrip("/")
         headers = {"Authorization": f"Bearer {provider.api_key or 'lm-studio'}",
                    **provider.extra_headers}
-        splinter = st.splinter_for(req.conversation_id, req.config, with_backend=False)
+        splinter = st.splinter_for(
+            req.conversation_id,
+            # the global baseline first, then this conversation's overrides
+            {**(_load_studio_settings().get("memory_defaults") or {}),
+             **(req.config or {})},
+            with_backend=False)
         st.begin(req.conversation_id)
         try:
             with st.lock_for(req.conversation_id):

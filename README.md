@@ -229,7 +229,7 @@ a single hive theme (yellow/black) across every page.
 
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
-- **Settings tab** — a searchable settings index: 30 settings across 8
+- **Settings tab** — a searchable settings index: 33 settings across 8
   categories, each linking to where it lives.
 - **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
