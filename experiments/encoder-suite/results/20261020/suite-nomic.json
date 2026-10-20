@@ -1,0 +1,88 @@
+{
+ "corpus": {
+  "dirs": [
+   "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/harness_state",
+   "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/splinter-memory/harness_state"
+  ],
+  "conversations": 82,
+  "chunks": 6977
+ },
+ "dedup_pairs": 1500,
+ "drift_cases": 2000,
+ "encoders": {
+  "nomic": {
+   "info": {
+    "model": "nomic-ai/nomic-embed-text-v1.5",
+    "params": 136731648,
+    "params_m": 136.7,
+    "dim": 768,
+    "load_s": 2.5,
+    "query_prefix": ""
+   },
+   "dedup": {
+    "n": 1500,
+    "positives": 165,
+    "at_0.92": {
+     "precision": 1.0,
+     "recall": 0.0182,
+     "f1": 0.0357
+    },
+    "pos_p50": 0.8055,
+    "neg_p50": 0.667,
+    "separation": 0.1385,
+    "best": {
+     "f1": 0.7526,
+     "precision": 0.6651,
+     "recall": 0.8667,
+     "threshold": 0.77
+    }
+   },
+   "drift": {
+    "n": 2000,
+    "positives": 23,
+    "auc": 0.9815,
+    "at_0.6": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "best": {
+     "f1": 0.6,
+     "precision": 0.7059,
+     "recall": 0.5217,
+     "threshold": 0.38
+    },
+    "signal_p50": 0.2263,
+    "signal_min": 0.1285,
+    "signal_max": 0.4895
+   },
+   "rank": {
+    "1": {
+     "precision": 0.9545,
+     "recall": 0.3017,
+     "queries": 22
+    },
+    "3": {
+     "precision": 0.8519,
+     "recall": 0.6803,
+     "queries": 18
+    },
+    "5": {
+     "precision": 0.6778,
+     "recall": 0.8464,
+     "queries": 18
+    },
+    "8": {
+     "precision": 0.4559,
+     "recall": 0.8824,
+     "queries": 17
+    }
+   },
+   "cost": {
+    "ms_per_chunk": 18.35,
+    "ms_per_100_chunks": 1.8
+   },
+   "seconds": 6117.6
+  }
+ }
+}
