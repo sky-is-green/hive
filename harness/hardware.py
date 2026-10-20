@@ -163,3 +163,74 @@ def disk_summary(paths: dict[str, str]) -> dict:
         except Exception:  # noqa: BLE001
             continue
     return out
+
+
+# ---------------------------------------------------------------------------
+# Where does it fit?
+# ---------------------------------------------------------------------------
+#: GB of KV cache per 1024 tokens, for a big MoE at q8_0 (the FP8 estimate
+#: the DSH side uses for its own tiering).  It scales with the KV type.
+KV_GB_PER_1K: dict[str, float] = {
+    "f16": 0.14, "q8_0": 0.07, "q4_0": 0.035, "": 0.07,
+}
+#: above this the disk starts to hurt the prompt read
+IO_WARN_CTX = 131072
+#: the disk is "full" past this share
+DISK_FULL_SHARE = 0.8
+
+
+def fit_plan(model_gb: float, ctx_tokens: int, *, vram_gb: float,
+             ram_gb: float, kv_type: str = "q8_0",
+             disk_free_gb: Optional[float] = None) -> dict:
+    """Where a model and its KV cache fit, and the context that fits.
+
+    Three tiers, in the order the memory is used: the VRAM (the weights
+    that fit), the RAM (the rest of the weights plus the KV cache that
+    fits), the disk (whatever is left over).  The flags are the two that
+    matter to the person launching: the disk will hurt the prompt read, and
+    the disk is nearly full.
+
+    The KV size is an estimate (a flat per-token figure for a big MoE,
+    scaled by the KV type) - it is a plan, not a measurement.
+    """
+    model_gb = max(0.0, float(model_gb or 0.0))
+    ctx = max(0, int(ctx_tokens or 0))
+    per_1k = KV_GB_PER_1K.get((kv_type or "").lower(), KV_GB_PER_1K["q8_0"])
+    kv_gb = (ctx / 1024.0) * per_1k
+
+    tier1 = min(model_gb, max(0.0, float(vram_gb or 0.0)))
+    remaining = model_gb - tier1
+    ram = max(0.0, float(ram_gb or 0.0))
+    ram_weights = min(remaining, ram)
+    weights_disk = remaining - ram_weights
+    ram_left = ram - ram_weights
+    ram_kv = min(kv_gb, max(0.0, ram_left))
+    kv_disk = kv_gb - ram_kv
+    tier2 = ram_weights + ram_kv
+    tier3 = weights_disk + kv_disk
+
+    disk_full = False
+    if disk_free_gb is not None:
+        disk_full = (tier3 > 0.0 and
+                     disk_free_gb - tier3 < disk_free_gb * (1.0 - DISK_FULL_SHARE))
+    io_warning = kv_disk > 0.0 or ctx > IO_WARN_CTX
+
+    # the largest context whose KV cache still fits in the RAM
+    cap = 0
+    if per_1k > 0:
+        cap = int(max(0.0, ram_left) * 1024.0 / per_1k)
+    return {
+        "metrics": {
+            "total_gb": round(model_gb + kv_gb, 2),
+            "model_gb": round(model_gb, 2),
+            "kv_gb": round(kv_gb, 2),
+            "tier1_vram_gb": round(tier1, 2),
+            "tier2_ram_gb": round(tier2, 2),
+            "tier3_disk_gb": round(tier3, 2),
+        },
+        "flags": {
+            "io_latency_warning": io_warning,
+            "disk_full": disk_full,
+            "recommend_cap": cap,
+        },
+    }

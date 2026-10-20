@@ -3026,6 +3026,25 @@ def create_app(
         data["loaded_model"] = (loaded[0]["model"] if loaded else None)
         return data
 
+    @app.get("/v1/server/fit")
+    def server_fit(model_gb: float = 0.0, ctx: int = 8192, kv: str = "q8_0"):
+        """Where a model and its KV cache fit, and the context that fits.
+
+        Three tiers in the order the memory is used (the VRAM, the RAM, the
+        disk) plus the two flags that matter when launching: the disk will
+        hurt the prompt read, and the disk is nearly full.
+        """
+        from harness.hardware import fit_plan
+
+        hw = _hardware_summary()
+        vram = float(hw.get("combined_vram_gb") or hw.get("vram_gb") or 0.0)
+        ram = float(hw.get("available_ram_gb") or hw.get("total_ram_gb") or 0.0)
+        disk = (hw.get("disk") or {})
+        repo_disk = disk.get("repo") or {}
+        disk_free = repo_disk.get("free_gb")
+        return fit_plan(model_gb, ctx, vram_gb=vram, ram_gb=ram, kv_type=kv,
+                        disk_free_gb=disk_free)
+
     @app.get("/v1/server/log")
     def server_log(tail: int = 120):
         """Last lines of the llama-server logs (startup errors live here)."""

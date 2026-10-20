@@ -69,6 +69,7 @@ curl http://127.0.0.1:8765/health
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/v1/server/fit` | Where a model and its KV cache fit: the tiers (VRAM, RAM, disk), the disk guard, and the context that fits. |
 | `GET` | `/v1/server/log` | Last lines of the llama-server logs (startup errors live here). |
 | `GET` | `/v1/server/memory` | Sidecar RSS + conversation accounting — the leak-detection probe. |
 | `GET` | `/v1/server/metrics` | Proxy llama-server's prometheus /metrics (kv usage, throughput). |

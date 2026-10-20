@@ -34,8 +34,8 @@ Two halves, one repo:
 
 - **HiveBench Studio** (`python -m harness`) — the console. Chat with your
   local models, manage engines/providers/models, run the cascade, inspect
-  retrieval, train, and browse results. **102 REST operations** across 94 paths
-  (93 operations under `/v1/`), documented live at `/docs` and mapped in
+  retrieval, train, and browse results. **103 REST operations** across 95 paths
+  (94 operations under `/v1/`), documented live at `/docs` and mapped in
   [`docs/API.md`](docs/API.md) — a test keeps that map honest.
 - **The Hive Cascade** — the answer-quality loop: **generate → detect → repair →
   escalate**. Deterministic verification, one greedy self-repair round, human
@@ -76,7 +76,7 @@ offline, and replayably.
 | **Train** | Weight training (Hive-Ternary) and a preset trainer that learns from your own session logs |
 | **Compact** | A conversation that outgrows its window becomes a checkpoint — and a checkpoint is a safe place to switch engines locally |
 | **Measure** | Deterministic A/B against a baseline, and a benchmark suite that runs offline |
-| **Extend** | 102 documented REST operations; the cascade is a CLI you can script |
+| **Extend** | 103 documented REST operations; the cascade is a CLI you can script |
 
 ### The hive architecture
 
@@ -276,7 +276,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (93 operations across 85 paths under `/v1/`)
+### API surface (94 operations across 86 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
