@@ -168,16 +168,52 @@ The honest reading: **the threshold was the bug** (8.6× on the dedup,
 dedup and 3% on the drift - and moves the operating points, which is why
 they have to travel with the model.
 
+**None of this ships yet.** v6 is a measurement, not a release: it was
+trained on the same traffic it was measured on, so it is a *fit*, not a
+generalisation. The next round is from the best base (L6-v2) and is
+measured on a held-out split, with the operating points travelling with
+the model. Until then the Studio ships the stock model at the stock
+thresholds - the configuration the published evidence was produced with.
+
+
 ## 7. What we do about it
 
-1. **The operating points travel with the encoder.** The Global tab
-   already exposes the dedup and drift thresholds; the values above are
-   the ones to set (and the tuned model's card carries its own).
-2. **The tuned encoder is the release** (`SkyIsNotGreen/splinter-encoder`,
-   pending the operator's go), with its thresholds on the card.
-3. **The teacher lane** - a 568M retrieval encoder as the teacher for a
-   larger distillation round - is measured but not shipped: the CPU budget
-   says the student stays at 17M.
+**The decision: the Studio keeps what it was tested with.** The shipped
+configuration (the stock `paraphrase-MiniLM-L3-v2`, the dedup at 0.92, the
+drift at 0.6) is the configuration the published evidence was produced
+with, and it stays until a *test* says otherwise. Changing the thresholds
+on the strength of a measurement is how a falsifiable system stops being
+falsifiable.
+
+So the measurement above is not a change - it is a **hypothesis to be
+validated**:
+
+> **H (operating points).** With the stock L3-v2, running the membrane's
+> duplicate test at 0.57 and its topic-change test at 0.77 turns two
+> near-dead decisions into working ones (the dedup's F1 0.089 → 0.761,
+> the drift's 0.151 → 0.554) **without changing the answer to any
+> benchmark item** - the curation's recall and the throughput are
+> unchanged because the tests only decide which *redundant* chunks are
+> dropped and when the old topic is penalised.
+>
+> Falsification: a paired run over the held-out conversation set with
+> the shipped thresholds and with the recalibrated ones, measuring the
+> fact-presence recall (the P2 diagnostic) and the PES. If the
+> recalibrated thresholds lose a fact or cost throughput, the hypothesis
+> is false and the shipped points stand.
+
+**The next fine-tune is from the best base we tested.** The base for the
+tuned encoder is `all-MiniLM-L6-v2` (22.7M params): it has the best
+dedup decision of any stock model measured (F1 0.822 at its own 0.60) and
+a drift decision within a point of the best (0.545 vs 0.554), so it is
+the strongest starting point - and it is the same size class and the same
+CPU cost class as the shipped one (1.6 ms/chunk vs 1.3).
+
+**The teacher lane** - a 568M retrieval encoder as the teacher for a
+larger distillation round - is measured but not shipped: the CPU budget
+says the student stays small, and the teacher's own numbers did not beat
+the small models' at the decisions that matter.
+
 
 ## 8. What is not claimed
 
