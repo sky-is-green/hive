@@ -281,6 +281,27 @@ every answer to catch one mistake; at this precision it is not worth it. The
 implementation is tested and available as `--gate intern-0.8b`, and the
 default is off. **A negative result, pre-registered, is a result.**
 
+**And the later measurement narrows it** (the A/B campaign, 2026-10-20;
+the 35B-A3B, the same 28 organic tasks, the same deterministic judge and
+repair leg):
+
+| arm | served-correct | false rejects | the gate | the mean |
+|---|---|---|---|---|
+| the gate off | 0.857 (24/28) | 0 | - | 6.7 s |
+| **the gate on (intern-0.8B)** | **0.893 (25/28)** | **0** | scored 26, fired 2, cleared 0 | 7.6 s |
+
+On this model and this set the gate caught 2 silently-wrong answers, one of
+which the repair turned into a right one: **+1 served item, 0 false
+rejects, +12% wall clock.** Its flags were all true positives.
+
+So the mechanism is not broken - **its value is model- and set-dependent**,
+and "off by default" is a statement about the configuration that was
+measured, not about the gate. What is constant across both measurements is
+the part that matters most: **the gate never false-rejected**. What varies
+is how many silent wrongs it finds. The honest summary of the gate is
+therefore two sentences: it is safe to have on, and whether it is worth
+having depends on the model in front of it.
+
 ## 6. The escalation lane: the harvest
 
 Every run writes `escalation.jsonl` next to its report: one line per item

@@ -88,6 +88,10 @@ API_URL = os.environ.get(
     "CASCADE_API_URL", "https://opencode.ai/zen/go/v1/chat/completions"
 )
 API_MODEL = os.environ.get("CASCADE_API_MODEL", "deepseek-v4.1-flash")
+#: the frontier's read timeout.  A local large tier (the 176B, streaming
+#: its experts from storage) answers in minutes, not seconds, and 180 s
+#: would report a healthy engine as a failed call.
+API_TIMEOUT = float(os.environ.get("CASCADE_API_TIMEOUT", "180"))
 AUTH_PATH = Path.home() / ".local" / "share" / "opencode" / "auth.json"
 PRICING = {"input": 0.15 / 1e6, "output": 0.60 / 1e6}  # USD per token
 
@@ -216,7 +220,8 @@ class Frontier:
         budget = max_tokens
         for attempt in range(3):
             try:
-                data, ms = _post(self.base_url, payload | {"max_tokens": budget}, headers, timeout=180)
+                data, ms = _post(self.base_url, payload | {"max_tokens": budget},
+                                 headers, timeout=API_TIMEOUT)
                 # count usage only for a response we can actually use: a
                 # retried call would otherwise double-count the tokens
                 choice = data["choices"][0]
@@ -1252,7 +1257,7 @@ def main() -> int:
                             "candidate": j.payload["candidate"],
                             "threshold": policy.accept_confidence,
                         },
-                        timeout=180,
+                        timeout=API_TIMEOUT,
                     )
                     if resp.status_code >= 400:
                         raise RuntimeError(
