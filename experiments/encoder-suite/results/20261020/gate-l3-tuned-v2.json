@@ -1,0 +1,111 @@
+{
+ "checkpoint": {
+  "info": {
+   "model": "experiments/encoder-suite/results/20261020/l3-tuned-v2",
+   "params": 17389824,
+   "params_m": 17.4,
+   "dim": 384,
+   "load_s": 0.1,
+   "query_prefix": ""
+  },
+  "dedup": {
+   "n": 2141,
+   "positives": 561,
+   "at_0.92": {
+    "precision": 1.0,
+    "recall": 0.328,
+    "f1": 0.494
+   },
+   "pos_p50": 0.9031,
+   "neg_p50": 0.3241,
+   "separation": 0.579,
+   "best": {
+    "f1": 0.8822,
+    "precision": 0.8357,
+    "recall": 0.934,
+    "threshold": 0.7
+   }
+  },
+  "drift": {
+   "n": 6533,
+   "positives": 230,
+   "auc": 0.7618,
+   "at_0.6": {
+    "precision": 0.0409,
+    "recall": 0.987,
+    "f1": 0.0786
+   },
+   "best": {
+    "f1": 0.1679,
+    "precision": 0.1107,
+    "recall": 0.3478,
+    "threshold": 0.86
+   },
+   "signal_p50": 0.7219,
+   "signal_min": 0.0624,
+   "signal_max": 1.0549
+  },
+  "cost": {
+   "ms_per_chunk": 1.64,
+   "ms_per_100_chunks": 0.2
+  }
+ },
+ "baseline": {
+  "info": {
+   "model": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+   "params": 17389824,
+   "params_m": 17.4,
+   "dim": 384,
+   "load_s": 2.6,
+   "query_prefix": ""
+  },
+  "dedup": {
+   "n": 2141,
+   "positives": 561,
+   "at_0.92": {
+    "precision": 1.0,
+    "recall": 0.0463,
+    "f1": 0.0886
+   },
+   "pos_p50": 0.6864,
+   "neg_p50": 0.3335,
+   "separation": 0.3529,
+   "best": {
+    "f1": 0.7609,
+    "precision": 0.6436,
+    "recall": 0.9305,
+    "threshold": 0.57
+   }
+  },
+  "drift": {
+   "n": 6533,
+   "positives": 230,
+   "auc": 0.9451,
+   "at_0.6": {
+    "precision": 0.082,
+    "recall": 0.9565,
+    "f1": 0.151
+   },
+   "best": {
+    "f1": 0.5545,
+    "precision": 0.6094,
+    "recall": 0.5087,
+    "threshold": 0.77
+   },
+   "signal_p50": 0.5813,
+   "signal_min": 0.0391,
+   "signal_max": 1.145
+  },
+  "cost": {
+   "ms_per_chunk": 2.93,
+   "ms_per_100_chunks": 0.3
+  }
+ },
+ "verdict": {
+  "dedup_f1": true,
+  "dedup_best_f1": true,
+  "drift_auc": false,
+  "cost_ok": true,
+  "pass": false
+ }
+}

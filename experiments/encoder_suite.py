@@ -359,6 +359,19 @@ def measure_drift(cases: list[dict], embed) -> dict:
     fp = sum(1 for s, l in zip(signals, labels) if not l and s > DRIFT_THRESHOLD)
     fn = sum(1 for s, l in zip(signals, labels) if l and s <= DRIFT_THRESHOLD)
     out["at_0.6"] = _prf(tp, fp, fn)
+    # the best threshold (the oracle the harness does not have) - the
+    # shipped 0.6 was calibrated for another encoder, and the signal
+    # itself is usually good
+    best = {"f1": 0.0}
+    for thresh in np.arange(0.30, 0.995, 0.005):
+        tp = sum(1 for s, l in zip(signals, labels) if l and s > thresh)
+        fp = sum(1 for s, l in zip(signals, labels) if not l and s > thresh)
+        fn = sum(1 for s, l in zip(signals, labels) if l and s <= thresh)
+        m = _prf(tp, fp, fn)
+        if m["f1"] > best["f1"]:
+            best = {"f1": m["f1"], "precision": m["precision"],
+                    "recall": m["recall"], "threshold": round(float(thresh), 3)}
+    out["best"] = best
     if signals:
         out["signal_p50"] = round(statistics.median(signals), 4)
         out["signal_min"] = round(min(signals), 4)
