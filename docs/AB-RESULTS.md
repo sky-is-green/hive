@@ -185,6 +185,33 @@ The same 28 organic tasks, the 35B, T=0.7. Only the arm changes.
 4 of the 5 wrong answers it caught live were repaired, and the served
 count went 58/66 → 62/66.)
 
+### 3C. The learned gate, on the 35B
+
+| arm | served-correct | false rejects | accepted-and-wrong | the gate | repairs | mean |
+|---|---|---|---|---|---|---|
+| the gate off | 0.857 (24/28) | 0 | 4 | - | 2/3 | 6.7 s |
+| **the gate on (intern-0.8B)** | **0.893 (25/28)** | **0** | 3 | scored 26, **fired 2**, cleared 0 | 2/4 | 7.6 s |
+
+**+1 served item, 0 false rejects, +12% wall clock.** The gate fired on
+26 scored drafts, caught 2 silently-wrong answers, and one of them was
+repaired into a right one.
+
+**This flips the earlier verdict - and that is the point of running it.**
+The pre-registered rule (the 176B, 2026-10-18: 3 false flags against a
+budget of 2) put the gate **off**. Here, on a different model and a
+different set, the gate's flags were all true positives and it netted a
+served item. The gate's value is **model- and set-dependent**, so "off by
+default" is a statement about one configuration, not about the mechanism.
+The honest summary: the gate is *free of false rejects* on both
+configurations measured; what varies is how many silent wrongs it finds.
+
+### 3D-3E. The router and the escalation
+
+The router's "api" route and the escalation tier both need the frontier
+API, and **the configured key has expired** (HTTP 401,
+`api_key_expired`). The arms were re-pointed at the local 176B - a
+legitimate "large tier" stand-in - and are running.
+
 ---
 
 ## The encoder sweep (all the candidates)
