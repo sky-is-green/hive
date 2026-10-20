@@ -79,3 +79,50 @@ def test_the_memory_defaults_reach_a_new_conversation(client):
     # and the chat route merges it under the conversation's own overrides
     merged = {**settings["memory_defaults"], **{"max_context": 32768}}
     assert merged["max_context"] == 32768
+
+
+def test_the_encoder_is_chosen_in_the_global_tab(client):
+    """The small model that does the retrieval and the memory lives here."""
+    page = client.get("/server").text
+    assert 'id="ge-embedding_model"' in page
+    assert 'id="ge-embedding_backend"' in page
+    assert 'id="ge-embedding_url"' in page
+    assert 'id="ge-medium_model"' in page
+    # the candidates are offered, but any model id can be typed
+    assert "sentence-transformers/paraphrase-MiniLM-L3-v2" in page
+    assert "Qwen/Qwen3-Embedding-0.6B" in page
+    assert 'list="encoder-candidates"' in page
+
+
+def test_the_encoder_choice_is_stored(client):
+    """The drone the Studio builds follows the choice, not just the env."""
+    client.put("/v1/studio/settings",
+               json={"encoder": {"embedding_model": "BAAI/bge-small-en-v1.5"}})
+    body = client.get("/v1/studio/settings").json()
+    assert body["encoder"]["embedding_model"] == "BAAI/bge-small-en-v1.5"
+    # the defaults of the block survive the partial save
+    assert body["encoder"]["embedding_backend"] == "local"
+
+
+def test_the_splinter_tab_is_gone(client):
+    """The harness controls have one home; the separate menu is gone."""
+    page = client.get("/server").text
+    assert 'id="tab-splinter"' not in page
+    assert 'data-tab="tab-splinter"' not in page
+    # and its controls live in the Global tab instead
+    for field in ("gm-max_context", "gm-stale_threshold", "gm-comb_enabled",
+                  "gm-confidence_mode", "gm-drift_prior"):
+        assert f'id="{field}"' in page, f"the Global tab is missing {field}"
+
+
+def test_the_settings_index_has_no_dead_links(client):
+    """Every tab the index points at exists in the page."""
+    from harness.reports import SETTINGS_INDEX
+
+    page = client.get("/server").text
+    for entry in SETTINGS_INDEX:
+        tab = entry.get("tab")
+        if not tab:
+            continue
+        assert f'data-tab="{tab}"' in page, (
+            f"the settings index points at {tab}, which the console does not have")

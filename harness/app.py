@@ -1552,16 +1552,21 @@ def create_app(
     """
     from sieve.ultra_small import UltraSmallDrone
 
-    embedding_backend = os.environ.get("HARNESS_EMBEDDING_BACKEND", "local")
-    embedding_url = os.environ.get("HARNESS_EMBEDDING_URL", "")
-    embedding_model = os.environ.get("HARNESS_EMBEDDING_MODEL", "default")
-
     def _default_ultra():
-        if embedding_backend == "served" and embedding_url:
+        # the encoder the user chose in the Global controls; the env still
+        # wins when it is set (a deployment may pin it)
+        encoder = _load_studio_settings().get("encoder") or {}
+        backend = (encoder.get("embedding_backend")
+                   or os.environ.get("HARNESS_EMBEDDING_BACKEND", "local"))
+        url = (encoder.get("embedding_url")
+               or os.environ.get("HARNESS_EMBEDDING_URL", ""))
+        model = (encoder.get("embedding_model")
+                 or os.environ.get("HARNESS_EMBEDDING_MODEL", "default"))
+        if backend == "served" and url:
             from sieve.served import ServedEmbeddingDrone
 
-            return ServedEmbeddingDrone(base_url=embedding_url,
-                                        model=embedding_model)
+            return ServedEmbeddingDrone(base_url=url,
+                                        model=model)
         # CPU by design: the encoder must never contend with llama-server
         # for VRAM. MiniLM-L3 is 12M params; CPU embedding costs ~5ms/turn.
         # Single-threaded on purpose: llama.cpp already holds a large
@@ -1571,7 +1576,8 @@ def create_app(
         import torch
 
         torch.set_num_threads(1)
-        return UltraSmallDrone(confidence_mode="off", device="cpu")
+        return UltraSmallDrone(model_name=model, confidence_mode="off",
+                               device="cpu")
 
     def _default_backend(model: Optional[str], provider: Optional[str] = None):
         kw = backend_kwargs(st.registry.resolve(provider))

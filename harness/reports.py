@@ -704,11 +704,11 @@ SETTINGS_INDEX = [
     "id": "tab-providers"
   },
   {
-    "label": "Splinter tuning",
-    "desc": "Retrieval & assembly params",
+    "label": "The encoder",
+    "desc": "The small model that does the retrieval and the memory",
     "cat": "Splinter",
-    "tab": "tab-splinter",
-    "id": "tab-splinter"
+    "tab": "tab-global",
+    "id": "tab-global"
   },
   {
     "label": "Memory & RAG baseline",
@@ -807,7 +807,6 @@ def render_server_page() -> str:
 <button class="tab" data-tab="tab-agent">Agent</button>
 <button class="tab" data-tab="tab-engines">Engines</button>
 <button class="tab" data-tab="tab-library">Local Library</button>
-<button class="tab" data-tab="tab-splinter">Splinter</button>
 <button class="tab" data-tab="tab-providers">Providers</button>
 <button class="tab" data-tab="tab-hub">Hub</button>
 <button class="tab" data-tab="tab-inspect">Inspector</button>
@@ -1019,45 +1018,6 @@ wake. Nothing runs in the foreground.</p>
 <div id="local" style="display:none"></div>
 </div>
 </div>
-</section>
-</div>
-
-<div id="tab-splinter" class="tabpane" style="display:none">
-<section>
-<h2 style="margin-top:0">Splinter tuning <span class="note">(new conversations)</span></h2>
-<div class="note">Applied when a conversation is created — hit
-"New conversation" in the chat pane after changing.</div>
-<div class="row">
-<label class="inline" title="How: SplinterConfig.max_context (8192 default) caps assembly.py focal budget vs drone budget (1-6k). Does: Token ceiling for curated prompt. Changing: Up → more chunks fit but higher token_count/latency; down → truncates even high-relevance facts.">max_context  <input id="h-maxctx" type="number" size="6"></label>
-<label class="inline" title="How: SplinterConfig.max_tokens (None=backend default) → sampling max_tokens via app:1379/stream. Does: Caps reply length. Changing: Up longer answers; down ≤256 on reasoning models → empty_reply_reasoning_starved.">max_tokens  <input id="h-maxtok" type="number" size="5" placeholder="4096 ceiling"></label>
-</div>
-<div class="row">
-<label class="inline" title="How: stale_threshold 20 → decay.py age>20 *0.5 and archive to comb. Does: Stale penalty + archiving gate. Changing: Up zombies linger; down faster forgetting, comb sooner, cleaner but lose mid-horizon.">stale wall  <input id="h-stale" type="number" size="3"></label>
-<label class="inline" title="How: dedup_threshold 0.92 → ContextDeduplicator cosine>0.92 keeps denser info. Does: Filters duplicates pre-scoring. Changing: 0.98 keeps near-variants; 0.85 aggressively merges distinct facts.">dedup  <input id="h-dedup" type="number" step="0.01" size="4"></label>
-<label class="inline" title="How: drift_threshold 0.6 → TopicDriftDetector 1-cosine(recent,history)>0.6 penalises old topics *0.1. Does: Detects shift. Changing: Up less sensitive (stale surfaces); down isolates recent but hurts cross-topic.">drift  <input id="h-drift" type="number" step="0.05" size="4"></label>
-<label class="inline" title="How: remembrance_threshold 0.65 (currently unwired — RemembrancePass hardcoded). Does: Would save at deletion if relevant. Changing: No effect until wired; lower would save more, higher fewer.">remem  <input id="h-remem" type="number" step="0.05" size="4"></label>
-</div>
-<div class="row">
-<label class="inline" title="How: vocab_boost 0.15 via UltraSmallDrone vocab match. Does: Keyword bonus on cosine. Changing: Up domain terms dominate; 0 pure semantic may miss code.">vocab boost  <input id="h-vocab" type="number" step="0.05" size="4"></label>
-<label class="inline" title="How: confidence off/single/mcdropout via ultra_small 1 vs 3 passes (std). Does: Drives escalation to medium. Changing: off no escalation fastest; mcdropout enables medium re-score but 3× encode, needs medium drone for effect.">confidence  <select id="h-conf">
-<option>off</option><option>single</option><option>mcdropout</option></select></label>
-</div>
-<div class="row">
-<label class="inline"><input id="h-sanitize" type="checkbox" title="How: sanitize_context True → sanitize.py wraps <user_data> + neutralises ignore/system prompts. Does: Prevents injection. Changing: Off raw chunks to LLM (risk); on may alter legit code mentioning system:."> sanitize context </label>
-<label class="inline"><input id="h-hedge" type="checkbox" title="How: filter_hedge True → hedges.py 90ch lead-anchored drops before add_chunk (also curate/observe). Does: Drops ~50% refusals. Changing: Off stores hedges → later retrieved loops; on may drop edge factual hedges."> filter hedge replies </label>
-<label class="inline"><input id="h-medium" type="checkbox" title="How: enable_medium False → MediumDrone graphcodebert 400MB vs stub 0.5. Does: Second-pass for score>=2 complex. Changing: On better recall +20-50ms, VRAM heavy; off ultra only."> medium drone </label>
-</div>
-<details><summary>Comb (P11 surplus tier)</summary>
-<div class="row">
-<label class="inline"><input id="h-comb" type="checkbox" title="How: comb_enabled False → CombStore JSONL at harness_comb, evicted not deleted. Does: Surplus tier for returns. Changing: On long-horizon recall, forces comb_dir set."> enabled </label>
-<label class="inline" title="How: comb_top_k 5 → comb.retrieve k lexically ranked. Does: Competes vs store. Changing: Up more resurrect candidates but budget competition; down fewer faster.">top_k  <input id="h-combk" type="number" size="3"></label>
-<label class="inline" title="How: comb_gate 0.85 → fires when top_raw<0.85 or echo. Does: Gate decides comb consult (~820ms). Changing: 0.70 fires often crowding; 0.95 rarely misses returns.">gate  <input id="h-combgate" type="number" step="0.05" size="4"></label>
-<label class="inline" title="How: comb_max_records 2000 → prune LRU cap + 1000 turn prune. Does: Disk cap. Changing: Up longer horizon but disk; down sooner forgetting.">max records  <input id="h-combmax" type="number" size="5"></label>
-<label class="inline"><input id="h-combrel" type="checkbox" title="How: comb_relevant_only True → archive only once_curated (relevance_history). Does: Lean archive. Changing: Off archives every evicted (more noise/recall)."> curated-only </label>
-</div>
-</details>
-<div class="row"><span id="splinter-msg" class="note"></span>
-<button onclick="resetHiveDefaults()">Reset to defaults</button></div>
 </section>
 </div>
 
@@ -1287,7 +1247,6 @@ if (!convId) {{
   convId = 'console-' + crypto.randomUUID().slice(0, 8);
   localStorage.setItem('splinter-console-conv', convId);
 }}
-let hiveOverrides = {{}};
 // engDirty declared in unified grid block above
 
 async function api(path, method, body, signal) {{
@@ -1565,7 +1524,6 @@ for (const btn of document.querySelectorAll('.tab[data-tab]')) {{
       if (btn.dataset.tab === 'tab-library') setTimeout(loadLibrary, 10);
       else if (btn.dataset.tab === 'tab-agent') loadAgentPresets();
       else if (btn.dataset.tab === 'tab-engines') loadEngines();
-      else if (btn.dataset.tab === 'tab-splinter') loadHiveDefaults();
       else if (btn.dataset.tab === 'tab-providers') loadProviders();
       else if (btn.dataset.tab === 'tab-hub') {{ pollHubDownloads(); searchHub(); }}
     }} catch(err){{ console.error('tab click failed', err); alert('tab error: '+err.message); }}
@@ -2052,7 +2010,7 @@ const TAB_REGISTRY = [
   ['tab-home', 'Home'], ['tab-settings', 'Settings'], ['tab-global', 'Global'],
   ['tab-cascade', 'Cascade'],
   ['tab-setup', 'Docker setup'], ['tab-agent', 'Agent'], ['tab-engines', 'Engines'],
-  ['tab-library', 'Local Library'], ['tab-splinter', 'Splinter'],
+  ['tab-library', 'Local Library'],
   ['tab-providers', 'Providers'], ['tab-hub', 'Hub'], ['tab-inspect', 'Inspector'],
   ['tab-training', 'Training'],
 ];
@@ -2413,7 +2371,6 @@ async function sendChat() {{
   }}
   const provSel = document.getElementById('chat-provider')?.value;
   if (provSel) body.provider = provSel;
-  if (Object.keys(hiveOverrides).length) body.config = hiveOverrides;
   let text = '';
   let turn = '?';
   let metaText = '';
@@ -2622,9 +2579,7 @@ function newConversation() {{
   ensureSession(convId);
   persistSessions();
   document.getElementById('chatlog').innerHTML = '';
-  bubble('ai', 'Fresh session started.'
-    + (Object.keys(hiveOverrides).length
-       ? ' Splinter overrides apply from the next message.' : ''));
+  bubble('ai', 'Fresh session started.');
   renderTabs();
 }}
 
@@ -4066,336 +4021,6 @@ function engineLoadFromFit() {{
   setTimeout(()=>{{ getFitHardware().then(()=>updateFit()); }}, 600);
 }})();
 
-/* ----------------------------- splinter tab ------------------------------ */
-const SPLINTER_NUMERIC = [['max_context', 'h-maxctx'], ['max_tokens', 'h-maxtok'],
-  ['stale_threshold', 'h-stale'], ['dedup_threshold', 'h-dedup'],
-  ['drift_threshold', 'h-drift'], ['remembrance_threshold', 'h-remem'],
-  ['vocab_boost', 'h-vocab']];
-
-function hiveToForm(cfg) {{
-  for (const [key, id] of SPLINTER_NUMERIC)
-    document.getElementById(id).value =
-      (cfg[key] === undefined || cfg[key] === null) ? '' : cfg[key];
-  document.getElementById('h-conf').value = cfg.confidence_mode || 'off';
-  document.getElementById('h-sanitize').checked = !!cfg.sanitize_context;
-  document.getElementById('h-hedge').checked = !!cfg.filter_hedge_replies;
-  document.getElementById('h-medium').checked = !!cfg.enable_medium;
-  document.getElementById('h-comb').checked = !!cfg.comb_enabled;
-  document.getElementById('h-combk').value = cfg.comb_top_k ?? '';
-  document.getElementById('h-combgate').value = cfg.comb_gate_threshold ?? '';
-  document.getElementById('h-combmax').value = cfg.comb_max_records ?? '';
-  document.getElementById('h-combrel').checked = !!cfg.comb_relevant_only;
-}}
-
-function collectHiveOverrides() {{
-  const out = {{}};
-  const defaults = window.__hiveDefaults || {{}};
-  const changed = (key, value) => defaults[key] === undefined
-    || JSON.stringify(defaults[key]) !== JSON.stringify(value);
-  for (const [key, id] of SPLINTER_NUMERIC) {{
-    const v = num(id);
-    if (v !== null && changed(key, v)) out[key] = v;
-  }}
-  const conf = document.getElementById('h-conf').value;
-  if (changed('confidence_mode', conf)) out.confidence_mode = conf;
-  const checks = [['h-sanitize', 'sanitize_context'],
-    ['h-hedge', 'filter_hedge_replies'], ['h-medium', 'enable_medium']];
-  for (const [id, key] of checks) {{
-    const v = document.getElementById(id).checked;
-    if (changed(key, v)) out[key] = v;
-  }}
-  if (document.getElementById('h-comb').checked) {{
-    out.comb_enabled = true;
-    const k = num('h-combk'); if (k !== null) out.comb_top_k = k;
-    const g = num('h-combgate'); if (g !== null) out.comb_gate_threshold = g;
-    const m = num('h-combmax'); if (m !== null) out.comb_max_records = m;
-    out.comb_relevant_only = document.getElementById('h-combrel').checked;
-    out.comb_dir = 'harness_comb';
-  }}
-  return out;
-}}
-
-async function loadHiveDefaults() {{
-  try {{
-    const cfg = await api('/v1/splinter/defaults');
-    window.__hiveDefaults = cfg;
-    hiveToForm(cfg);
-    hiveOverrides = collectHiveOverrides();
-    document.getElementById('splinter-msg').textContent =
-      Object.keys(hiveOverrides).length + ' override(s) active for new conversations';
-  }} catch (e) {{ document.getElementById('splinter-msg').textContent = String(e); }}
-}}
-
-function resetHiveDefaults() {{
-  if (window.__hiveDefaults) hiveToForm(window.__hiveDefaults);
-  hiveOverrides = collectHiveOverrides();
-  document.getElementById('splinter-msg').textContent = 'defaults restored';
-}}
-
-for (const key of ['h-maxctx','h-maxtok','h-stale','h-dedup','h-drift',
-                   'h-remem','h-vocab','h-conf','h-sanitize','h-hedge',
-                   'h-medium','h-comb','h-combk','h-combgate','h-combmax',
-                   'h-combrel']) {{
-  const el = document.getElementById(key);
-  if (el) el.addEventListener('change', () => {{
-    hiveOverrides = collectHiveOverrides();
-    document.getElementById('splinter-msg').textContent =
-      Object.keys(hiveOverrides).length + ' override(s) active for new conversations';
-  }});
-}}
-
-/* --------------------------- providers tab ---------------------------- */
-let providers = [];
-let provDefault = '';
-
-async function loadProviders() {{
-  try {{
-    const data = await api('/v1/provider/config');
-    providers = data.providers.map(p => ({{...p}}));
-    provDefault = data.default || '';
-    renderProviders();
-  }} catch (e) {{ document.getElementById('prov-msg').textContent = String(e); }}
-}}
-
-function renderProviders() {{
-  const wrap = document.getElementById('prov-list');
-  wrap.innerHTML = '';
-  providers.forEach((p, i) => {{
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.style.borderTop = '1px solid #e8edf2';
-    row.style.paddingTop = '.4rem';
-    const mk = (placeholder, value, size, onChange, title) => {{
-      const inp = document.createElement('input');
-      inp.placeholder = placeholder; inp.size = size; inp.value = value || '';
-      if (title) inp.title = title;
-      inp.addEventListener('input', onChange);
-      return inp;
-    }};
-    const name = mk('name', p.name, 12, v => p.name = v, 'Provider id, e.g. anthropic or openai; key for model routing');
-    const url = mk('base_url', p.base_url, 34, v => p.base_url = v, 'OpenAI-compatible endpoint root, e.g. https://api.anthropic.com/v1');
-    const model = mk('model', p.model, 18, v => p.model = v, 'Default model id for this provider, e.g. claude-3-5-sonnet-20241022');
-    const key = mk('api_key', p.api_key, 16, v => p.api_key = v, 'API key for this provider; stored masked as *** and sent as Bearer token');
-    const def = document.createElement('input');
-    def.type = 'radio'; def.name = 'prov-default'; def.checked =
-      p.name.toLowerCase() === provDefault.toLowerCase();
-    def.title = 'default provider';
-    def.addEventListener('change', () => provDefault = p.name);
-    const del = document.createElement('button');
-    del.textContent = '✕'; del.title = 'remove';
-    del.addEventListener('click', () => {{
-      providers.splice(i, 1); renderProviders(); }});
-    const lbl = document.createElement('label');
-    lbl.className = 'inline'; lbl.title = 'default';
-    lbl.appendChild(def);
-    row.appendChild(lbl);
-    row.appendChild(name); row.appendChild(url); row.appendChild(model);
-    row.appendChild(key); row.appendChild(del);
-    wrap.appendChild(row);
-  }});
-  if (!providers.length)
-    wrap.innerHTML = '<div class="note">(none — add one)</div>';
-}}
-
-function providerAdd() {{
-  providers.push({{name: '', base_url: 'http://', api_key: '', model: '',
-                  headers: {{}}}});
-  renderProviders();
-}}
-
-async function saveProviders() {{
-  const list = providers
-    .filter(p => p.name && p.base_url)
-    .map(p => ({{name: p.name, base_url: p.base_url,
-                api_key: p.api_key || '', model: p.model || '',
-                headers: p.headers || {{}}}}));
-  try {{
-    const r = await api('/v1/provider/config', 'POST',
-      {{providers: list, default: provDefault, persist: true}});
-    providers = r.providers.map(p => ({{...p}}));
-    provDefault = r.default;
-    renderProviders();
-    document.getElementById('prov-msg').textContent =
-      'saved to ' + (r.persisted_to || 'memory');
-  }} catch (e) {{ document.getElementById('prov-msg').textContent = String(e); }}
-}}
-
-/* The Inspector is a regular tab (tab-inspect) now; the old [data-rtab]
-   sub-tab handler (which hid every .col .tabpane, including the library)
-   is gone — the only data-rtab left is the library's "System" sub-tab,
-   handled by switchLibraryTab(). */
-
-async function fetchInspection() {{
-  try {{
-    const data = await api('/v1/splinter/inspect/' + encodeURIComponent(convId));
-    renderInspection(data);
-  }} catch (e) {{
-    document.getElementById('inspect-summary').textContent =
-      'no inspection data: ' + e.message;
-  }}
-}}
-
-function renderInspection(d) {{
-  const kv = (label, v) => `<div class='kv'><span>${{label}}</span><b>${{v}}</b></div>`;
-  document.getElementById('inspect-summary').innerHTML =
-    kv('Turn', d.turn) + kv('Route', d.routing?.route_to || '-') +
-    kv('Budget', `${{d.budget?.used ?? 0}} / ${{d.budget?.total ?? 0}}`) +
-    kv('Utilization', `${{((d.budget?.utilization ?? 0) * 100).toFixed(1)}}%`) +
-    kv('Top score', d.top_raw_score) +
-    kv('Store chunks', d.store_chunks) +
-    kv('Drift', d.drift_detected ? '⚠ yes' : 'no');
-  const selWrap = document.getElementById('inspect-selected');
-  selWrap.innerHTML = '';
-  for (const c of d.selected_chunks || []) {{
-    selWrap.insertAdjacentHTML('beforeend',
-      `<div class='chunkrow sel'><span class='score'>${{c.raw_score}}</span>${{c.id}}` +
-      `<div class='preview'>${{c.preview}}</div></div>`);
-  }}
-  if (!(d.selected_chunks || []).length)
-    selWrap.textContent = '(none selected)';
-  const dropWrap = document.getElementById('inspect-dropped');
-  dropWrap.innerHTML = '';
-  for (const c of d.dropped_chunks || []) {{
-    dropWrap.insertAdjacentHTML('beforeend',
-      `<div class='chunkrow drop'><span class='score'>${{c.raw_score}}</span>${{c.id}}` +
-      `<div class='preview'>${{c.preview}}</div></div>`);
-  }}
-  document.getElementById('inspect-dropped-n').textContent =
-    d.dropped_count ? `(${{d.dropped_count}} total)` : '';
-  if (!(d.dropped_chunks || []).length)
-    dropWrap.textContent = '(none dropped)';
-  document.getElementById('inspect-assembled').textContent =
-    d.assembled_preview || '(empty)';
-  document.getElementById('inspect-timings').textContent =
-    JSON.stringify(d.timings ?? {{}}, null, 1);
-}}
-
-/* --------------------------- status poll ------------------------------ */
-async function refresh() {{
-  api('/v1/server/status').then(s => {{
-    show('status', s);
-    const rawEl = document.getElementById('dev-raw-json');
-    if (rawEl && rawEl.offsetParent !== null) rawEl.textContent = JSON.stringify(s, null, 1);
-    // "loaded" covers the Studio's own llama servers AND the strata engine
-    const loaded = s.loaded || [];
-    const title = document.getElementById('chat-title');
-    if (loaded.length) {{
-      title.textContent = loaded.length > 1
-        ? `${{loaded.length}} models loaded`
-        : 'Loaded: ' + (loaded[0].model || loaded[0].backend);
-      title.className = 'ok';
-    }} else {{
-      title.textContent = s.running ? 'Loading…' : 'No model loaded';
-      title.className = 'bad';
-    }}
-    // the chat header shows what is actually loaded
-    const modelName = document.getElementById('chat-model-name');
-    if (modelName) {{
-      const names = loaded.map(l => l.model || l.backend).filter(Boolean);
-      modelName.textContent = names.length ? names.join(' · ') : 'no model loaded';
-    }}
-    // Loaded-instance cards: per-model unload, port shown.
-    const wrap = document.getElementById('instances');
-    wrap.innerHTML = '';
-    for (const inst of s.instances || []) {{
-      const row = document.createElement('div');
-      row.className = 'librow' + (inst.healthy ? ' loaded' : '');
-      const label = document.createElement('span');
-      label.textContent = `${{inst.key}} — port ${{inst.port}}`
-        + `${{inst.adopted ? ' (adopted)' : ''}}`;
-      const unload = document.createElement('button');
-      unload.textContent = 'unload';
-      unload.title = 'stop this model server';
-      unload.addEventListener('click', async () => {{
-        if (!confirm('Unload ' + inst.key + '?')) return;
-        try {{
-          await api('/v1/server/unload', 'POST', {{key: inst.key}});
-          refresh();
-        }} catch (e) {{ alert(String(e)); }}
-      }});
-      row.appendChild(label);
-      row.appendChild(unload);
-      wrap.appendChild(row);
-    }}
-    // nothing loaded? show what the default provider would serve
-    if (!loaded.length) {{
-      api('/v1/provider/config').then(pc => {{
-        const el = document.getElementById('chat-model-name');
-        if (!el) return;
-        const prov = (pc.providers || []).find(x => x.name === pc.default);
-        el.textContent = prov ? (prov.model || prov.name) : 'no model loaded';
-      }}).catch(() => {{}});
-    }}
-  }}).catch(e => show('status', String(e)));
-  api('/v1/server/log?tail=30').then(l => {{
-    if (l.lines.length) show('srvlog', l.lines.join('\\n'));
-  }}).catch(() => {{}});
-  // Library is loaded on demand when tab-library is clicked, not on every refresh
-  // Hugging Face models downloaded on Windows (via HF API) are regular GGUFs in the System library.
-  // They appear in System. Right-click → Move to Linux copies them to /mnt/dsh_storage/models via WSL
-  // (sudo cp /mnt/c/... → /mnt/dsh_storage/models) so Docker can use them. Linux models are listed
-  // separately and can be sent back or deleted. Both locations are tracked.
-  api('/v1/models/hub/downloads').then(d => {{
-    const lines = d.downloads.map(j => `${{j.filename}}: ${{j.state}} (${{j.elapsed_s}}s)`);
-    if (lines.length) show('downloads', lines.join('\\n'));
-  }}).catch(() => {{}});
-}}
-
-/* --------------------- process manager (S4) --------------------- */
-async function refreshProcesses() {{
-  const msg = document.getElementById('proc-msg');
-  const tbody = document.getElementById('proc-table');
-  const sidecarEl = document.getElementById('proc-sidecar');
-  try {{
-    const data = await api('/v1/processes');
-    tbody.innerHTML = '';
-    if (sidecarEl) sidecarEl.textContent = `sidecar ${{data.sidecar.pid}} · ${{data.sidecar.memory_mb}} MB · ${{data.sidecar.cpu_percent}}% CPU`;
-    for (const p of data.processes || []) {{
-      const tr = document.createElement('tr');
-      const td = (t) => {{ const c=document.createElement('td'); c.textContent=t; return c; }};
-      tr.appendChild(td(String(p.pid)));
-      tr.appendChild(td(p.kind || ''));
-      const nameTd = document.createElement('td');
-      nameTd.title = (p.cmdline || []).join(' ');
-      nameTd.textContent = (p.name || '') + (p.key ? ' ('+p.key+')' : '');
-      tr.appendChild(nameTd);
-      tr.appendChild(td(String(p.cpu_percent ?? '')));
-      tr.appendChild(td(String(p.memory_mb ?? '')));
-      tr.appendChild(td(p.port ? String(p.port) : ''));
-      tr.appendChild(td(p.status || ''));
-      const killTd = document.createElement('td');
-      const btn = document.createElement('button');
-      btn.textContent = 'kill';
-      btn.title = p.key ? 'unload '+p.key : 'terminate pid '+p.pid;
-      btn.addEventListener('click', async () => {{
-        if (!confirm('Kill ' + (p.key || p.pid) + '?')) return;
-        btn.disabled = true;
-        try {{
-          const body = p.key ? {{key: p.key}} : {{pid: p.pid}};
-          await api('/v1/processes/kill','POST', body);
-          if (msg) msg.textContent = 'killed ' + (p.key || p.pid);
-          refreshProcesses(); refresh();
-        }} catch(e) {{ alert(String(e)); btn.disabled=false; }}
-      }});
-      killTd.appendChild(btn);
-      tr.appendChild(killTd);
-      tbody.appendChild(tr);
-    }}
-    if (!(data.processes||[]).length) {{
-      const tr=document.createElement('tr'); const td=document.createElement('td');
-      td.colSpan=8; td.className='note'; td.textContent='(no managed processes)'; tr.appendChild(td); tbody.appendChild(tr);
-    }}
-    if (msg) {{ msg.textContent=''; setTimeout(()=>{{ if(msg) msg.textContent=''; }},2000); }}
-  }} catch(e) {{
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="note">load failed: '+String(e).slice(0,200)+'</td></tr>';
-    if (msg) msg.textContent = String(e).slice(0,120);
-  }}
-}}
-refreshProcesses();
-setInterval(refreshProcesses, 8000);
-setTimeout(()=>{{ try{{ refresh(); }}catch(e){{ console.error(e); }} }}, 800);
-setInterval(refresh, 15000);
-loadHiveDefaults();
 // Library tab loads on demand — not on initial refresh to keep UI responsive
 console.log('studio ready, tabs active');
 document.getElementById('chatin').addEventListener('blur',

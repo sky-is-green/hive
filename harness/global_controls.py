@@ -20,61 +20,109 @@ from __future__ import annotations
 #: The hint is the house style: how it works, what it does, what changes.
 MEMORY_FIELDS: list[tuple[str, str, str, str]] = [
     ("max_context", "context window", "num",
-     "How: the tokens the model keeps. Does: the ceiling on the curated context. "
-     "Changing: bigger = more memory (the KV cache grows with it)."),
+     "How: SplinterConfig.max_context (8192 default) caps assembly.py focal "
+     "budget vs drone budget (1-6k). Does: Token ceiling for curated prompt. "
+     "Changing: Up → more chunks fit but higher token_count/latency; down → "
+     "truncates even high-relevance facts."),
     ("max_tokens", "max answer tokens", "num",
-     "How: the cap on one reply. Does: how long an answer may be. "
-     "Changing: higher = longer answers, more time."),
-    ("stale_threshold", "stale threshold", "num",
-     "How: the turn age where a chunk starts to decay. Does: how quickly old "
-     "context loses its pull. Changing: lower = the memory forgets faster."),
-    ("dedup_threshold", "dedup threshold", "num",
-     "How: the cosine above which two chunks are the same. Does: stops a "
-     "repeated fact eating the budget. Changing: higher = more aggressive dedup."),
-    ("drift_threshold", "drift threshold", "num",
-     "How: how far the topic may move before the old context is dropped. "
-     "Does: the conversation's focus. Changing: lower = it forgets on a new topic."),
-    ("remembrance_threshold", "remembrance threshold", "num",
-     "How: the relevance a chunk needs to be re-invoked. Does: whether the "
-     "memory reaches for older facts. Changing: lower = more reach, more noise."),
-    ("vocab_boost", "vocabulary boost", "num",
-     "How: how much a rare word counts. Does: the retrieval's handling of "
-     "unusual terms. Changing: higher = rarer words weigh more."),
+     "How: SplinterConfig.max_tokens (None=backend default) → sampling "
+     "max_tokens. Does: Caps reply length. Changing: Up longer answers; down "
+     "≤256 on reasoning models → empty_reply_reasoning_starved."),
+    ("stale_threshold", "stale wall", "num",
+     "How: stale_threshold 20 → decay.py age>20 *0.5 and archive to comb. "
+     "Does: Stale penalty + archiving gate. Changing: Up zombies linger; down "
+     "faster forgetting, comb sooner, cleaner but lose mid-horizon."),
+    ("dedup_threshold", "dedup", "num",
+     "How: dedup_threshold 0.92 → ContextDeduplicator cosine>0.92 keeps "
+     "denser info. Does: Filters duplicates pre-scoring. Changing: 0.98 keeps "
+     "near-variants; 0.85 aggressively merges distinct facts."),
+    ("drift_threshold", "drift", "num",
+     "How: drift_threshold 0.6 → TopicDriftDetector 1-cosine(recent,history)>0.6 "
+     "penalises old topics *0.1. Does: Detects shift. Changing: Up less "
+     "sensitive (stale surfaces); down isolates recent but hurts cross-topic."),
+    ("remembrance_threshold", "remem", "num",
+     "How: remembrance_threshold 0.65 (currently unwired — RemembrancePass "
+     "hardcoded). Does: Would save at deletion if relevant. Changing: No "
+     "effect until wired; lower would save more, higher fewer."),
+    ("vocab_boost", "vocab boost", "num",
+     "How: vocab_boost 0.15 via UltraSmallDrone vocab match. Does: Keyword "
+     "bonus on cosine. Changing: Up domain terms dominate; 0 pure semantic "
+     "may miss code."),
     ("drift_prior", "numeric prior", "select",
      "How: how much a previous answer's numbers are trusted when the topic "
      "drifts. Does: the numeric continuity of a long thread. "
      "Changing: on = the numbers stick; off = they are re-derived."),
     ("confidence_mode", "confidence", "select",
-     "How: whether the curator reports a confidence in its selection. "
-     "Does: the extra work per turn. Changing: on = the cost, the signal."),
-    ("sanitize_context", "sanitize the context", "check",
-     "How: secrets and blobs are redacted before the context is stored. "
-     "Does: keeps credentials out of the memory. "
-     "Changing: off = the raw text is kept (and may leave the box)."),
-    ("filter_hedge_replies", "drop hedged replies", "check",
-     "How: a reply that only hedges is not stored. Does: keeps the memory "
-     "worth having. Changing: off = every reply is kept."),
+     "How: confidence off/single/mcdropout via ultra_small 1 vs 3 passes "
+     "(std). Does: Drives escalation to medium. Changing: off no escalation "
+     "fastest; mcdropout enables medium re-score but 3× encode, needs medium "
+     "drone for effect."),
+    ("sanitize_context", "sanitize context", "check",
+     "How: sanitize_context True → sanitize.py wraps <user_data> + "
+     "neutralises ignore/system prompts. Does: Prevents injection. Changing: "
+     "Off raw chunks to LLM (risk); on may alter legit code mentioning "
+     "system:."),
+    ("filter_hedge_replies", "filter hedge replies", "check",
+     "How: filter_hedge True → hedges.py 90ch lead-anchored drops before "
+     "add_chunk (also curate/observe). Does: Drops ~50% refusals. Changing: "
+     "Off stores hedges → later retrieved loops; on may drop edge factual "
+     "hedges."),
     ("enable_medium", "the medium drone", "check",
-     "How: a second, larger scorer looks at the harder candidates. "
-     "Does: the quality of the selection on a big context. "
-     "Changing: off = cheaper turns, weaker selection."),
+     "How: enable_medium False → MediumDrone graphcodebert 400MB vs stub 0.5. "
+     "Does: Second-pass for score>=2 complex. Changing: On better recall "
+     "+20-50ms, VRAM heavy; off ultra only."),
     ("comb_enabled", "the comb (the SSD archive)", "check",
-     "How: the chunks that fall out of the budget are archived on disk and "
-     "can be resurrected later. Does: the long memory. "
-     "Changing: off = the memory is only what fits in the budget."),
+     "How: comb_enabled False → CombStore JSONL at harness_comb, evicted not "
+     "deleted. Does: Surplus tier for returns. Changing: On long-horizon "
+     "recall, forces comb_dir set."),
     ("comb_top_k", "comb top-k", "num",
-     "How: how many archived chunks are considered. Does: the reach of the "
-     "archive. Changing: higher = more candidates, more work."),
+     "How: comb_top_k 5 → comb.retrieve k lexically ranked. Does: Competes "
+     "vs store. Changing: Up more resurrect candidates but budget competition; "
+     "down fewer faster."),
     ("comb_gate_threshold", "comb gate", "num",
-     "How: the confidence a resurrected chunk needs. Does: keeps the weak "
-     "matches out. Changing: lower = more resurrections, more noise."),
+     "How: comb_gate 0.85 → fires when top_raw<0.85 or echo. Does: Gate "
+     "decides comb consult (~820ms). Changing: 0.70 fires often crowding; 0.95 "
+     "rarely misses returns."),
     ("comb_max_records", "comb records", "num",
-     "How: how many records the archive keeps. Does: the archive's size. "
-     "Changing: higher = a longer memory, more disk."),
-    ("comb_relevant_only", "comb: relevant only", "check",
-     "How: only the chunks the curator judged relevant are archived. "
-     "Does: keeps the archive small and clean. "
-     "Changing: off = everything is archived."),
+     "How: comb_max_records 2000 → prune LRU cap + 1000 turn prune. Does: Disk "
+     "cap. Changing: Up longer horizon but disk; down sooner forgetting."),
+    ("comb_relevant_only", "comb: curated-only", "check",
+     "How: comb_relevant_only True → archive only once_curated "
+     "(relevance_history). Does: Lean archive. Changing: Off archives every "
+     "evicted (more noise/recall)."),
+]
+
+#: The encoder-sized models: the small LLM that does the retrieval and the
+#: memory management.  The list is a suggestion - any sentence-transformers
+#: id works.
+ENCODER_CANDIDATES = [
+    "sentence-transformers/paraphrase-MiniLM-L3-v2",
+    "sentence-transformers/all-MiniLM-L6-v2",
+    "BAAI/bge-small-en-v1.5",
+    "intfloat/e5-small-v2",
+    "Qwen/Qwen3-Embedding-0.6B",
+    "nomic-ai/nomic-embed-text-v1.5",
+]
+
+ENCODER_FIELDS: list[tuple[str, str, str, str]] = [
+    ("embedding_model", "the embedding model", "text",
+     "How: the sentence-transformers model the drone embeds with. Does: the "
+     "retrieval and the memory management - the ranking, the dedup, the "
+     "decay. Changing: a different encoder changes what the memory finds; "
+     "the dim size and the speed change with it. Takes effect when the "
+     "Studio restarts (the drone is built once)."),
+    ("embedding_backend", "the embedding backend", "select",
+     "How: local runs the model here, served calls an embedding endpoint. "
+     "Does: where the encoding happens. Changing: served moves the cost to "
+     "another box (and needs the URL below)."),
+    ("embedding_url", "the served embedding URL", "text",
+     "How: the endpoint that serves the embeddings. Does: nothing unless the "
+     "backend is served. Changing: the URL the drone posts to."),
+    ("medium_model", "the medium drone's model", "text",
+     "How: the second, larger scorer the curator consults on the hard "
+     "candidates. Does: the recall on a big context. Changing: off (the "
+     "toggle) leaves the small encoder alone; a different model trades VRAM "
+     "for quality."),
 ]
 
 QUALITY_FIELDS: list[tuple[str, str, str, str]] = [
@@ -151,7 +199,9 @@ TOGGLES: list[tuple[str, str, str]] = [
 #: the select options per field
 CHOICES: dict[str, list[tuple[str, str]]] = {
     "drift_prior": [("", "off (re-derive)"), ("on", "on (keep the numbers)")],
-    "confidence_mode": [("off", "off"), ("on", "on")],
+    "confidence_mode": [("off", "off"), ("single", "single"), ("mcdropout", "mcdropout")],
+    "embedding_backend": [("local", "local (here, on the CPU)"),
+                          ("served", "served (an embedding endpoint)")],
     "judge": [("deterministic", "deterministic"), ("tiny-jev", "tiny-jev (CPU)")],
     "repair": [("auto", "auto (one round)"), ("off", "off")],
     "gate": [("off", "off (the default)"), ("intern-0.8b", "intern-0.8b (opt-in)")],
@@ -194,10 +244,23 @@ def _group(title: str, note: str, fields: list[tuple[str, str, str, str]],
 
 def render_global_pane() -> str:
     """The Global harness controls pane."""
+    encoder = _group(
+        "The encoder",
+        "The small model that does the retrieval and the memory management: "
+        "it embeds the chunks, ranks them, dedups them and ages them. Pick "
+        "the one you want here - the list is a suggestion, any "
+        "sentence-transformers id works.",
+        ENCODER_FIELDS, "ge")
+    candidates = "".join(
+        f'<option value="{name}"></option>' for name in ENCODER_CANDIDATES)
+    encoder = encoder.replace(
+        '<input type="text" id="ge-embedding_model"',
+        f'<input type="text" list="encoder-candidates" id="ge-embedding_model"')
+    encoder += (f'<datalist id="encoder-candidates">{candidates}</datalist>')
     memory = _group(
         "Memory &amp; RAG",
         "The curation baseline: what a conversation gets when it overrides "
-        "nothing. The Splinter tab layers this conversation's changes on top.",
+        "nothing.",
         MEMORY_FIELDS, "gm")
     quality = _group(
         "Quality (the cascade)",
@@ -222,18 +285,19 @@ def render_global_pane() -> str:
     return f"""<div id="tab-global" class="tabpane" style="display:none">
 <section>
 <h2 style="margin-top:0">Global harness controls</h2>
-<p class="note">The baseline the whole harness starts from: the memory a
-conversation gets, the quality a cascade run asks for, what an MCP client may
-touch, and the runtime a new engine is launched with. The Splinter tab layers
-one conversation's overrides on top; nothing here changes a conversation you
-have already started.</p>
+<p class="note">Everything the harness does, in one place: the encoder that
+does the retrieval and the memory management, the curation it applies, the
+quality a cascade run asks for, what an MCP client may touch, and the runtime
+a new engine is launched with. There is no second menu for any of it - these
+are the settings, and they apply to the next conversation or run.</p>
+{encoder}
 {memory}
 {runtime}
 <div class="row" style="flex-wrap:wrap;gap:.35rem .8rem">{toggles}</div>
 {quality}
 {mcp}
 <div class="row" style="margin-top:1rem">
-<button onclick="saveGlobalControls(this)" title="How: PUT /v1/studio/settings with the four control blocks. Does: stores the baseline the harness starts from. Changing: takes effect for the next conversation or cascade run.">Save the baseline</button>
+<button onclick="saveGlobalControls(this)" title="How: PUT /v1/studio/settings with the control blocks. Does: stores the baseline the harness starts from. Changing: takes effect for the next conversation or cascade run; the encoder takes effect when the Studio restarts.">Save the baseline</button>
 <span class="note" id="global-note"></span>
 </div>
 </section>
