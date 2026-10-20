@@ -1070,8 +1070,14 @@ class _State:
         log_dir: str,
         state_dir: Optional[Path] = None,
         engines_file: Optional[Path] = None,
+        drone_builder: Optional[Callable[[dict], object]] = None,
     ) -> None:
         self.ultra_factory = ultra_factory
+        # a choice-aware drone builder: it gets the encoder choice (the
+        # model, the backend, the scoring knobs) and returns the drone
+        # that does the retrieval.  The tests inject ``ultra_factory``
+        # instead - a no-arg fake - and that one wins.
+        self.drone_builder = drone_builder
         self.backend_factory = backend_factory
         self.runs_root = runs_root
         self.providers_file = providers_file
@@ -1083,7 +1089,14 @@ class _State:
             self.state_dir.mkdir(parents=True, exist_ok=True)
         self.registry = ProviderRegistry()
         self.engines = EngineRegistry()
-        self._ultra = None
+        # One drone per encoder choice: the Global tab can swap the model
+        # at any time and the next conversation gets a drone for the new
+        # choice.  The old ones are kept (a handful), so switching back
+        # is instant.
+        self._ultras: dict[tuple, object] = {}
+        # its own lock: the global lock is held while a conversation is
+        # built, and the build asks for a drone
+        self._drone_lock = threading.Lock()
         self.hives: dict[str, Splinter] = {}
         self.locks: dict[str, threading.Lock] = {}
         self.global_lock = threading.Lock()
@@ -1095,10 +1108,55 @@ class _State:
         self._loggers: dict[str, EventLogger] = {}
         self._conv_provider: dict[str, str] = {}  # per-conversation override
 
-    def ultra(self):
-        if self._ultra is None:
-            self._ultra = self.ultra_factory()
-        return self._ultra
+    # ------------------------------------------------------------------
+    # The controls: the Global tab's blocks, read from the settings file
+    # ------------------------------------------------------------------
+    def settings(self) -> dict:
+        """The Studio's settings, read fresh (the Global tab writes them)."""
+        from harness.studio_settings import load_settings
+
+        return load_settings(self.state_dir)
+
+    def controls(self) -> dict:
+        """The resolved baselines: curation, encoder, sampling, quality."""
+        from harness import controls
+
+        settings = self.settings()
+        return {
+            "memory": controls.memory_of(settings),
+            "encoder": controls.encoder_of(settings),
+            "sampling": controls.sampling_of(settings),
+            "launch": controls.launch_of(settings),
+            "quality": controls.quality_of(settings),
+            "mcp": controls.mcp_of(settings),
+        }
+
+    def drone_choice(self, config: Optional[dict] = None) -> dict:
+        """The drone a conversation needs: the encoder the user chose."""
+        from harness import controls
+
+        return controls.drone_choice(self.settings(), config)
+
+    def ultra(self, choice: Optional[dict] = None):
+        """The drone that does the retrieval, for the given encoder choice.
+
+        Cached per choice: the model, the backend and the scoring knobs
+        are the key, so a conversation that runs with a different encoder
+        gets its own drone and the cache never mixes two models' vectors.
+        """
+        choice = choice or {}
+        key = tuple(sorted((str(k), str(v)) for k, v in choice.items()))
+        with self._drone_lock:
+            drone = self._ultras.get(key)
+            if drone is None:
+                if self.drone_builder is not None:
+                    drone = self.drone_builder(choice)
+                else:
+                    drone = self.ultra_factory()
+                if len(self._ultras) >= 4:
+                    self._ultras.pop(next(iter(self._ultras)))
+                self._ultras[key] = drone
+            return drone
 
     def _conv_path(self, conversation_id: str) -> Optional[Path]:
         """Per-conversation state file. Content-hashed name: arbitrary ids
@@ -1145,12 +1203,22 @@ class _State:
         own shell generates) creates the splinter without an LLM backend; a
         conversation is driven either fully (/v1/splinter/turn) or externally
         (curate + observe), whichever touches it first wins.
+
+        The Global tab's baseline is applied here, under the caller's
+        overrides: every conversation - the chat's, the MCP client's, the
+        agent's - starts from the harness-wide curation, the encoder the
+        user chose and the runtime's sampling.  A caller that names its
+        own value wins.
         """
         with self.global_lock:
             splinter = self.hives.get(conversation_id)
             if splinter is not None:
                 self._last_access[conversation_id] = time.monotonic()
                 return splinter
+
+            baseline = self.controls()
+            overrides = dict(config_overrides or {})
+            conv_sampling = overrides.pop("sampling", None)
 
             def build(cfg: SplinterConfig, backend: object | None) -> Splinter:
                 logger = self._loggers.get(conversation_id)
@@ -1159,7 +1227,7 @@ class _State:
                     self._loggers[conversation_id] = logger
                 h = Splinter(
                     config=cfg,
-                    ultra=self.ultra(),
+                    ultra=self.ultra(self.drone_choice(cfg.to_dict())),
                     backend=backend,
                     logger=logger,
                 )
@@ -1186,18 +1254,29 @@ class _State:
                           "starting fresh", file=sys.stderr)
 
             config = SplinterConfig(confidence_mode="off")
-            if config_overrides:
-                merged = {**config.to_dict(), **config_overrides}
-                config = SplinterConfig.from_dict(merged)
-            if not config.sampling and self.engines.engines:
-                # Engine sampling defaults apply when the caller did not
-                # specify sampling (per-call / per-config overrides win).
+            # the harness-wide baseline first, then this conversation's
+            # own overrides on top
+            merged = {**config.to_dict(), **baseline["memory"], **overrides}
+            config = SplinterConfig.from_dict(merged)
+            # the encoder the user chose (a conversation may name its own
+            # model; the baseline fills the gap the config's default
+            # leaves)
+            if not overrides.get("ultra_model") and baseline["encoder"]["model"]:
+                config.ultra_model = baseline["encoder"]["model"]
+            if not overrides.get("medium_model") and baseline["encoder"]["medium_model"]:
+                config.medium_model = baseline["encoder"]["medium_model"]
+            # the sampling: the runtime's baseline, then the engine
+            # profile's, then this conversation's own
+            profile_sampling: dict = {}
+            if self.engines.engines:
                 try:
                     profile = self.engines.resolve(engine)
                 except LookupError:
                     profile = None
-                if profile is not None and profile.sampling:
-                    config.sampling = profile.sampling
+                if profile is not None:
+                    profile_sampling = dict(profile.sampling or {})
+            config.sampling = {**baseline["sampling"], **profile_sampling,
+                               **(conv_sampling or {})}
             splinter = build(config, self.backend_factory(None) if with_backend else None)
             self._last_access[conversation_id] = time.monotonic()
             self._evict_locked(exclude=conversation_id)
@@ -1305,8 +1384,10 @@ class ServerStartRequest(BaseModel):
     hf_file: Optional[str] = None
     key: Optional[str] = None  # instance key (defaults to the model stem)
     port: Optional[int] = None
-    ctx_size: int = 8192
-    ngl: int = 999  # GPU layers (Vulkan build: all layers on the RX 7900 XT)
+    # None = the harness-wide runtime baseline (the Global tab's Runtime
+    # block) decides, and the manager's own default when it says nothing
+    ctx_size: Optional[int] = None
+    ngl: Optional[int] = None  # GPU layers (Vulkan build: all layers on the RX 7900 XT)
     auto_fit: bool = False  # compute ngl from free VRAM + KV (unsloth-style)
     visible_devices: Optional[str] = None  # e.g. "1" or "0,1" -> HIP/CUDA_VISIBLE_DEVICES for this server
     register_provider: bool = True
@@ -1328,10 +1409,11 @@ class ServerStartRequest(BaseModel):
     pooling: Optional[str] = None  # mean | cls | last (requires embedding)
     mmproj: Optional[str] = None  # path to mmproj file for multimodal/vision models
 
-    def extra_args(self) -> list[str]:
+    def extra_args(self, threads: Optional[int] = None) -> list[str]:
         args: list[str] = []
-        if self.threads:
-            args += ["-t", str(self.threads)]
+        threads = threads if threads is not None else self.threads
+        if threads:
+            args += ["-t", str(threads)]
         if self.flash_attn:
             # current llama.cpp: -fa takes on|off|auto (a bare -fa would eat
             # the next flag as its value)
@@ -1358,10 +1440,13 @@ class ServerStartRequest(BaseModel):
             args += ["--mmproj", self.mmproj]
         return args
 
-    def load_options(self) -> dict:
+    def load_options(self, ctx_size: Optional[int] = None,
+                     ngl: Optional[int] = None,
+                     threads: Optional[int] = None) -> dict:
         """Advisory engine record of the launch configuration actually used."""
-        out = {"context": self.ctx_size, "gpu_layers": self.ngl}
-        for key, value in (("threads", self.threads),
+        out = {"context": ctx_size if ctx_size is not None else self.ctx_size,
+               "gpu_layers": ngl if ngl is not None else self.ngl}
+        for key, value in (("threads", threads if threads is not None else self.threads),
                            ("flash_attn", self.flash_attn or None),
                            ("parallel_slots", self.parallel_slots),
                            ("cache_type_k", self.cache_type_k),
@@ -1399,7 +1484,7 @@ class StrataLaunchRequest(BaseModel):
     config: str = ""                   # the base config (strata-<model>.json)
     python: str = ""                   # the interpreter (default .venv/bin/python)
     port: int = 8081
-    ctx: int = 262144                  # --max-context
+    ctx: int = 0                      # --max-context (0 = the runtime baseline)
     engine_args: list[str] = []        # the engine flags
     options: dict = {}                 # merged into the generated config
     timeout_s: float = 600
@@ -1552,15 +1637,18 @@ def create_app(
     """
     from sieve.ultra_small import UltraSmallDrone
 
-    def _default_ultra():
-        # the encoder the user chose in the Global controls; the env still
-        # wins when it is set (a deployment may pin it)
-        encoder = _load_studio_settings().get("encoder") or {}
-        backend = (encoder.get("embedding_backend")
+    def _default_drone(choice: dict):
+        """The drone that does the retrieval, for the encoder that was chosen.
+
+        The choice comes from the Global tab (the model, the backend, the
+        scoring knobs); the env still wins when it is set, because a
+        deployment may pin the model.
+        """
+        backend = (choice.get("backend")
                    or os.environ.get("HARNESS_EMBEDDING_BACKEND", "local"))
-        url = (encoder.get("embedding_url")
+        url = (choice.get("url")
                or os.environ.get("HARNESS_EMBEDDING_URL", ""))
-        model = (encoder.get("embedding_model")
+        model = (choice.get("model")
                  or os.environ.get("HARNESS_EMBEDDING_MODEL", "default"))
         if backend == "served" and url:
             from sieve.served import ServedEmbeddingDrone
@@ -1576,8 +1664,12 @@ def create_app(
         import torch
 
         torch.set_num_threads(1)
-        return UltraSmallDrone(model_name=model, confidence_mode="off",
-                               device="cpu")
+        return UltraSmallDrone(
+            model_name=model,
+            vocab_boost=float(choice.get("vocab_boost") or 0.15),
+            confidence_mode=str(choice.get("confidence_mode") or "off"),
+            device="cpu",
+        )
 
     def _default_backend(model: Optional[str], provider: Optional[str] = None):
         kw = backend_kwargs(st.registry.resolve(provider))
@@ -1606,13 +1698,17 @@ def create_app(
         return await call_next(request)
 
     st = _State(
-        ultra_factory=ultra_factory or _default_ultra,
+        ultra_factory=ultra_factory or (lambda: _default_drone({})),
         backend_factory=backend_factory or _default_backend,
         runs_root=Path(runs_root) if runs_root else DEFAULT_RUNS_ROOT,
         providers_file=Path(providers_file) if providers_file else None,
         log_dir=log_dir,
         state_dir=state_dir if state_dir is not None else Path("harness_state"),
         engines_file=Path(engines_file) if engines_file else None,
+        # the choice-aware builder is the production path: it knows the
+        # encoder the user picked.  A test that injects ``ultra_factory``
+        # (a no-arg fake) keeps that fake - see _State.ultra.
+        drone_builder=None if ultra_factory else _default_drone,
     )
     try:
         st.registry = load_registry(providers_file)
@@ -1629,7 +1725,7 @@ def create_app(
     # pool fails to spawn (EAGAIN) and the worker dies silently. Loading
     # here - before uvicorn serves - keeps the load in a clean state.
     try:
-        st.ultra()
+        st.ultra(st.drone_choice())
     except Exception as exc:  # noqa: BLE001 - never block startup on encoder
         print(f"harness: encoder pre-load failed ({exc}); will retry lazily",
               file=sys.stderr)
@@ -2305,7 +2401,12 @@ def create_app(
     # called) and CPU-default; HIVE_VALIDATOR_MODEL swaps the checkpoint.
     from harness.cascade.validator import ValidatorService
 
-    app.include_router(cascade_api.create_router(validator=ValidatorService()))
+    app.include_router(cascade_api.create_router(
+        validator=ValidatorService(),
+        # the Global tab's Quality block is the baseline every run starts
+        # from (a run that names its own knob wins)
+        defaults=lambda: st.controls()["quality"],
+    ))
 
     def _retire_orphan_providers() -> list[str]:
         """Retire the local providers whose server is gone.
@@ -2697,6 +2798,91 @@ def create_app(
                 pass
         return {"stopped": True, "conversation_id": req.conversation_id}
 
+    # ------------------------------------------------------------------
+    # The memory over MCP, with the Global tab's MCP block in force.
+    # The sibling's own endpoint is mounted at the root and would answer
+    # unconditionally; this route stands in front of it so the block
+    # (expose the memory? read-only? which tools?) is the one in charge.
+    # ------------------------------------------------------------------
+    MCP_TOOL_NAMES = ("splinter_remember", "splinter_search")
+
+    def _mcp_withheld(settings: dict) -> set[str]:
+        """The tools the client may not use, per the MCP block."""
+        from harness import controls as _controls
+
+        mcp = _controls.mcp_of(settings)
+        withheld: set[str] = set()
+        if mcp["read_only"]:
+            withheld.add("splinter_remember")
+        allowed = {str(t).strip().lower() for t in mcp["tools"]}
+        if allowed:
+            for tool in MCP_TOOL_NAMES:
+                short = tool.split("_", 1)[1]
+                if short not in allowed and tool not in allowed:
+                    withheld.add(tool)
+        return withheld
+
+    def _mcp_filter_tools(payload, withheld: set[str]):
+        """Drop the withheld tools from a tools/list answer."""
+        if not withheld:
+            return payload
+        if isinstance(payload, list):
+            return [_mcp_filter_tools(item, withheld) for item in payload]
+        if not isinstance(payload, dict):
+            return payload
+        result = payload.get("result")
+        if isinstance(result, dict) and isinstance(result.get("tools"), list):
+            result["tools"] = [t for t in result["tools"]
+                               if not (isinstance(t, dict)
+                                       and t.get("name") in withheld)]
+        return payload
+
+    @app.post("/v1/mcp")
+    async def mcp_endpoint(request: Request):
+        """The memory over MCP: the tools the Global tab allows."""
+        from splinter.mcp.server import McpContext, handle_message
+        from splinter.mcp.tools import remember as mcp_remember
+        from splinter.mcp.tools import search as mcp_search
+
+        settings = st.settings()
+        from harness import controls as _controls
+
+        mcp = _controls.mcp_of(settings)
+        if not mcp["enabled"]:
+            raise HTTPException(
+                403, "the memory over MCP is off (the Global tab's MCP block)")
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(400, "invalid JSON body")
+        withheld = _mcp_withheld(settings)
+
+        def do_remember(conversation_id: str, text: str) -> dict:
+            if "splinter_remember" in withheld:
+                raise ValueError(
+                    "the memory is read-only (the Global tab's MCP block)")
+            splinter = st.splinter_for(conversation_id, None, with_backend=False)
+            with st.lock_for(conversation_id):
+                payload = mcp_remember(splinter, text)
+                st.save_conversation(conversation_id, splinter)
+            return {"conversation_id": conversation_id, **payload}
+
+        def do_search(conversation_id: str, query: str, top_k: int) -> dict:
+            if "splinter_search" in withheld:
+                raise ValueError(
+                    "the search tool is withheld (the Global tab's MCP block)")
+            splinter = st.splinter_for(conversation_id, None, with_backend=False)
+            with st.lock_for(conversation_id):
+                payload = mcp_search(splinter, query, top_k)
+                st.save_conversation(conversation_id, splinter)
+            return {"conversation_id": conversation_id, **payload}
+
+        response = handle_message(body, McpContext(remember=do_remember,
+                                                   search=do_search))
+        if response is None:  # notifications only - nothing to answer
+            return Response(status_code=202)
+        return _mcp_filter_tools(response, withheld)
+
     @app.post("/v1/splinter/stream")
     async def splinter_stream(req: ChatTurnRequest, request: Request):
         """One chat turn: curate here, generate upstream, stream the deltas."""
@@ -2712,9 +2898,10 @@ def create_app(
                    **provider.extra_headers}
         splinter = st.splinter_for(
             req.conversation_id,
-            # the global baseline first, then this conversation's overrides
-            {**(_load_studio_settings().get("memory_defaults") or {}),
-             **(req.config or {})},
+            # the Global tab's baseline is applied inside (the curation,
+            # the encoder and the sampling); this conversation's own
+            # config rides on top of it
+            req.config or {},
             with_backend=False)
         st.begin(req.conversation_id)
         try:
@@ -2772,10 +2959,17 @@ def create_app(
                 await anyio.sleep(0.2)
 
         def sse():
+            from harness import controls as _controls
+
             yield "data: " + json.dumps({
                 "type": "meta", "turn": result.turn,
                 "token_count": result.token_count, "budget": result.budget,
                 "curated_chars": len(curated), "mode": result.mode,
+                # what the turn actually ran with: the encoder the user
+                # chose, the curation the Global tab asked for, the
+                # sampling the reply was drawn with
+                "harness": _controls.effective_summary(
+                    st.settings(), splinter.config.to_dict()),
             }) + "\n\n"
             started = time.time()
             parts: list[str] = []
@@ -3531,6 +3725,13 @@ def create_app(
         if req.pooling is not None and req.pooling.strip().lower() not in (
                 "mean", "cls", "last"):
             raise HTTPException(422, "unknown pooling; known: mean, cls, last")
+        # the Global tab's Runtime block is the baseline a launch starts
+        # from; the request's own value wins.  The fallbacks are the
+        # manager's own defaults (LlamaServerManager.load).
+        launch = st.controls()["launch"]
+        ctx_size = req.ctx_size if req.ctx_size is not None else launch.get("ctx_size", 8192)
+        ngl = req.ngl if req.ngl is not None else launch.get("ngl", 999)
+        threads = req.threads if req.threads is not None else launch.get("threads")
         try:
             env = None
             if req.visible_devices:
@@ -3540,8 +3741,9 @@ def create_app(
                 env = {vis_env: req.visible_devices}
             info = models_manager.load(
                 model=req.model, hf_repo=req.hf_repo, hf_file=req.hf_file,
-                key=req.key, port=req.port, ctx_size=req.ctx_size,
-                ngl=("auto" if req.auto_fit else req.ngl), extra_args=req.extra_args(),
+                key=req.key, port=req.port, ctx_size=ctx_size,
+                ngl=("auto" if req.auto_fit else ngl),
+                extra_args=req.extra_args(threads=threads),
                 env=env,
                 backend=req.backend,
                 embedding=bool(req.embedding),
@@ -3559,7 +3761,10 @@ def create_app(
         prov_name = ""
         if req.register_provider:
             prov_name = register_local(
-                info, load_options=req.load_options(), api_key=req.api_key,
+                info,
+                load_options=req.load_options(ctx_size=ctx_size, ngl=ngl,
+                                              threads=threads),
+                api_key=req.api_key,
                 key=info["key"], claim_default=bool(req.claim_default),
             )
             save_registry(st.registry, st.providers_file)
@@ -3631,7 +3836,9 @@ def create_app(
             "options": dict(req.options or {}),
             "timeout_s": float(req.timeout_s or 600),
         }
-        tier = Tier(role="strata", repo=repo, file="", ctx=int(req.ctx or 8192),
+        tier = Tier(role="strata", repo=repo, file="",
+                    ctx=int(req.ctx or st.controls()["launch"].get("ctx_size")
+                            or 8192),
                     launch=launch)
         # adopt a serve that is already up: never start a second one on a
         # port that already answers (the same contract the stacks use)
@@ -4616,7 +4823,9 @@ def create_app(
         task_files = sorted(
             p.name for p in cascade_api.CASCADE_DIR.glob("*.json")
         ) if cascade_api.CASCADE_DIR.is_dir() else []
-        return HTMLResponse(render_cascade_page(task_files), headers=_NO_STORE)
+        return HTMLResponse(
+            render_cascade_page(task_files, defaults=st.controls()["quality"]),
+            headers=_NO_STORE)
 
     @app.get("/favicon.svg")
     def favicon_svg():

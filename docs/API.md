@@ -120,8 +120,9 @@ curl http://127.0.0.1:8765/health
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/v1/splinter/stream` | One chat turn: the Studio curates the context, then streams the provider's deltas over SSE. The Studio owns the provider connection, so a disconnect stops the engine. — body: `#/components/schemas/ChatTurnRequest` |
+| `POST` | `/v1/splinter/stream` | One chat turn: the Studio curates the context, then streams the provider's deltas over SSE. The Studio owns the provider connection, so a disconnect stops the engine. The curation, the encoder and the sampling come from the Global tab's baseline (the `harness` field of the `meta` frame says which). — body: `#/components/schemas/ChatTurnRequest` |
 | `POST` | `/v1/chat/stop` | Stop the running turn: close the provider connection, so the engine stops generating at once. — body: `#/components/schemas/ChatStopRequest` |
+| `POST` | `/v1/mcp` | The memory over MCP (JSON-RPC): `splinter_search` and `splinter_remember`. The Global tab's MCP block is in force — off means the endpoint refuses, read-only withholds the write tool. |
 
 ### Commands — console command palette
 

@@ -2374,6 +2374,7 @@ async function sendChat() {{
   let text = '';
   let turn = '?';
   let metaText = '';
+  let harness = null;   // what the turn ran with (the Global tab's baseline)
   try {{
     const r = await fetch('/v1/splinter/stream', {{method: 'POST',
       headers: {{'content-type': 'application/json'}},
@@ -2398,11 +2399,14 @@ async function sendChat() {{
           log_scroll();
         }} else if (ev.type === 'meta') {{
           turn = ev.turn;
+          harness = ev.harness || null;
           metaText = `curated ${{ev.token_count}}/${{ev.budget}} tokens`;
         }} else if (ev.type === 'done') {{
           metaText = `splinter-curated · turn ${{turn}}`
             + (ev.tokens ? ` · ${{ev.tokens}} tok` : '')
             + (ev.tokens_per_sec ? ` · ${{ev.tokens_per_sec}} tok/s` : '')
+            + (harness && harness.encoder
+               ? ` · ${{shortModel(harness.encoder)}}` : '')
             + (ev.stored ? '' : ' · not stored');
         }} else if (ev.type === 'stopped') {{
           /* the turn was stopped: the provider connection was closed, so the
@@ -2426,6 +2430,8 @@ async function sendChat() {{
       const m = document.createElement('span');
       m.className = 'meta';
       m.textContent = metaText;
+      const summary = harnessSummary(harness);
+      if (summary) m.title = summary;
       ai.appendChild(m);
     }}
     if (body.inspection !== undefined && body.inspection) {{
@@ -2456,6 +2462,29 @@ function setBusy(b) {{
   streamBusy = b;
   document.getElementById('stopbtn').style.display = b ? '' : 'none';
   document.getElementById('sendbtn').disabled = b;
+}}
+
+/* "sentence-transformers/paraphrase-MiniLM-L3-v2" -> "MiniLM-L3-v2" */
+function shortModel(name) {{
+  if (!name) return '';
+  const parts = String(name).split('/');
+  return parts[parts.length - 1];
+}}
+
+/* The one-line report of what a turn ran with: the encoder the Global tab
+   chose, the curation it asked for, the sampling the reply was drawn with.
+   It is the tooltip of the meta line under the reply. */
+function harnessSummary(h) {{
+  if (!h) return '';
+  const bits = [];
+  if (h.encoder) bits.push('encoder: ' + h.encoder
+    + (h.backend && h.backend !== 'local' ? ' (' + h.backend + ')' : ''));
+  if (h.medium_model) bits.push('medium: ' + h.medium_model);
+  const mem = h.memory || {{}};
+  for (const [k, v] of Object.entries(mem)) bits.push(k + '=' + v);
+  const samp = h.sampling || {{}};
+  for (const [k, v] of Object.entries(samp)) bits.push(k + '=' + v);
+  return bits.join(' · ');
 }}
 
 /* Map backend/sidecar failure text to something a user can act on. The
@@ -2985,7 +3014,7 @@ function hideLoadBar(onlyIfLoading) {{
    the quality a cascade run asks for, what an MCP client may touch, the
    runtime a new engine is launched with. */
 const GLOBAL_BLOCKS = {{
-  gm: 'memory_defaults', gq: 'quality_defaults',
+  ge: 'encoder', gm: 'memory_defaults', gq: 'quality_defaults',
   gp: 'mcp', gr: 'runtime_defaults',
 }};
 
@@ -4076,6 +4105,7 @@ def render_cascade_page(task_files: list[str]) -> str:
   <label title="Repair rejected answers: auto (on with deterministic judge), on, or off.">Repair <select name="repair"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
   <label title="Ask a human before API escalation. auto = on only with TTY + API fallback.">Human gate <select name="human_gate"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select></label>
 </div>
+<p class="note" id="cascade-baseline-note"></p>
 </section>
 
 <section>
@@ -4153,5 +4183,32 @@ async function launchCascade(ev) {{
   }}
   return false;
 }}
+
+/* The form starts from the Global tab's Quality block: the harness-wide
+   baseline every run begins with.  Change a knob here and this run uses
+   yours; leave it and the baseline stands. */
+(async () => {{
+  try {{
+    const r = await fetch('/v1/studio/settings');
+    if (!r.ok) return;
+    const st = await r.json();
+    const q = (st && st.quality_defaults) || {{}};
+    const form = document.getElementById('cascade-form');
+    if (!form) return;
+    let n = 0;
+    for (const [k, v] of Object.entries(q)) {{
+      if (v === '' || v === null || v === undefined) continue;
+      const el = form.querySelector('[name="' + k + '"]');
+      if (!el) continue;
+      el.value = v;
+      n++;
+    }}
+    const note = document.getElementById('cascade-baseline-note');
+    if (note && n) {{
+      note.textContent = n + ' knob(s) start from the Global tab\\'s baseline '
+        + '(the Quality block) - change one here and this run uses yours.';
+    }}
+  }} catch (e) {{ /* the form still works without the baseline */ }}
+}})();
 </script>
 </body></html>"""
