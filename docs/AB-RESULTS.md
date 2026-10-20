@@ -157,6 +157,36 @@ not an F1.
 
 ---
 
+## 3A-3B. The cascade's own arms, measured on the 35B
+
+The same 28 organic tasks, the 35B, T=0.7. Only the arm changes.
+
+| arm | served-correct | false rejects | accepted-and-wrong | repairs | mean |
+|---|---|---|---|---|---|
+| **no verifier, no repair** | 0.786 (22/28) | 0 | 6 | - | 8.1 s |
+| **the deterministic verifier, no repair** | **0.643 (18/28)** | 0 | 10 | - | 6.7 s |
+| **the deterministic verifier + the repair leg** | **0.857 (24/28)** | 0 | 4 | **2/3** | 6.7 s |
+
+**This is the cascade's economics in three numbers.**
+
+- **A verifier on its own is a tax.** It caught 4 wrong answers and, with
+  no repair leg, they were simply *not served*: the served count fell from
+  22 to 18. A verifier that drops what it catches and fixes nothing makes
+  the system worse (-4 items).
+- **The repair leg is what makes verification pay.** With it, the same
+  verifier's 4 catches became 2 fixes (2/3 cleared), and the served count
+  rose to **24 - two items above the no-verification baseline and six
+  above the verifier alone**.
+- **The false-reject budget is zero in every arm** - the 0 false rejects
+  are what makes the trade worth making, because a verifier that rejects
+  correct answers is worse than no verifier.
+
+(The 176B's published numbers say the same thing from the other side:
+4 of the 5 wrong answers it caught live were repaired, and the served
+count went 58/66 → 62/66.)
+
+---
+
 ## The encoder sweep (all the candidates)
 
 | encoder | params | dim | dedup F1 @ 0.92 | dedup best | drift F1 @ 0.6 | drift best | drift AUC | ms/chunk |
