@@ -133,6 +133,9 @@ sees an answer key; the verifier reads a gold-stripped `runtime_spec`.
   that fits), the leak gate (does an unload really give the memory back?),
   the launch verification (are the weights there, does it fit, is the binary
   there, is the port free — each with the fix), and the model discovery.
+- **The encoder suite** — the three jobs the harness gives its encoder
+  (rank, dedup, drift), measured on the harness's own traffic with lexical
+  labels, plus the cost of each candidate. See `docs/ENCODER-NOTES.md`.
 
 ---
 
@@ -259,7 +262,14 @@ a single hive theme (yellow/black) across every page.
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |
-| `/docs` | Live OpenAPI docs for all 103 operations |
+| `/docs` | Live OpenAPI docs for all 106 operations |
+
+### Papers
+
+| Paper | What it is |
+|---|---|
+| [`docs/SPLINTER-MEMORY.md`](docs/SPLINTER-MEMORY.md) | **Long-Context Memory Curation Management** — the Splinter Memory white paper in the form the Hub reads it: the card is the paper |
+| [`docs/CASCADE-PAPER.md`](docs/CASCADE-PAPER.md) | **The Hive Cascade** — detect → repair → escalate: the gold-free runtime contract, the role taxonomy, the measured results and the pre-registered negative result |
 
 ### Console features
 
