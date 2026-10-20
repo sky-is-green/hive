@@ -445,3 +445,24 @@ measurement. The verifier's catch rate on the same tasks and the same
 model ranges from 0 to 4 out of 28 across draws, so every number in this
 log that moved a headline verdict was re-measured with three draws (84
 items) before it was believed. The gate's verdict changed when it was.
+
+
+---
+
+## 1B. The cascade over each model, same tasks
+
+The same 10 organic tasks, the same cascade, the same verifiers, the two
+models:
+
+| | the 35B-A3B | the 176B-A6B |
+|---|---|---|
+| the served-correct | **0.800** | **0.800** |
+| the false rejects | **0** | **0** |
+| the wrong-accepted | 2 | 2 |
+| the repairs | 0 needed | 0 needed |
+| **the mean per item** | **5.4 s** | **229.7 s** |
+
+**Identical quality, 42.5x the latency.** The 176B spends 2.3x the
+tokens thinking and 42.5x the seconds getting there. On this class the
+small tier is not a compromise - it is the same answer, faster and twelve
+times lighter.
