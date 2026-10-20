@@ -223,7 +223,28 @@ the repair leg on, T=0.7):
 
 The loop does its job on the small tier: one wrong answer caught and
 repaired, nothing false-rejected, and the served answer is better than the
-model's own. The 176B's arm over the same set is running.
+model's own.
+
+**And the comparable pair** - the same 10 tasks, the same cascade, the
+two models:
+
+| | the 35B-A3B | the 176B-A6B |
+|---|---|---|
+| the model's own accuracy | 0.800 | 0.800 |
+| **the cascade's served-correct** | **0.800** | **0.800** |
+| the false rejects | **0** | **0** |
+| the accepted-and-wrong | 2 | 2 |
+| the repairs | 0 | 0 |
+| **the mean per-item latency** | **5.36 s** | **229.67 s** |
+| the mean tokens | 329 | 745 |
+
+**Identical outcomes, 42.9x the wall clock.** The same accuracy, the
+same false rejects, the same false accepts, the same repairs - and the
+176B spends 2.3x the tokens thinking and 43x the seconds getting there.
+On this class the small tier is not a compromise: it is the same answer,
+faster and twelve times lighter. What the large tier buys is the 8 items
+of the head-to-head where it was right and the small one was not - which
+is what an arbiter would be for, and not what a bigger model is for.
 
 **What this does and does not say.** One draw per task, 28 tasks, one
 class (arithmetic, code, multiple choice), and the latencies are measured

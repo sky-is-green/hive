@@ -97,13 +97,28 @@ The loop does its job on the small tier: one wrong answer caught and
 repaired, nothing false-rejected, and the served answer is better than
 the model's own.
 
-**The latency is the tiering story.** The 176B answers the same class at
-**2-5 minutes an item** (the expert weights stream from storage: 43-55 s
-to read the prompt, then 3 tok/s of generation), against the 35B's
-**5.4 s**. That is a **40-60x** difference per item, on the same card,
-for accuracy that the two models share (21/28 against 19/28 on the
-head-to-head). The 176B's arm over the same 10 tasks is running, to put
-the two cascade runs side by side.
+**And the comparable pair - the same 10 tasks, the same cascade, the
+two models:**
+
+| | the 35B-A3B | the 176B-A6B |
+|---|---|---|
+| the model's own accuracy | 0.800 | 0.800 |
+| **the cascade's served-correct** | **0.800** | **0.800** |
+| the false rejects | **0** | **0** |
+| the accepted-and-wrong | 2 | 2 |
+| the repairs | 0 | 0 |
+| **the mean per-item latency** | **5.36 s** | **229.67 s** |
+| the mean tokens | 329 | 745 |
+
+**Identical outcomes, 42.9x the wall clock.** Same accuracy, same false
+rejects, same false accepts, same repairs - and the 176B spends 2.3x the
+tokens thinking and 43x the seconds getting there. On this class the
+small tier is not a compromise: it is the same answer, faster and
+twelve times lighter.
+
+**The latency is the tiering story.** The 176B answers at 2-5 minutes an
+item (the expert weights stream from storage: 43-55 s to read the prompt,
+then 3 tok/s of generation), against the 35B's 5.4 s.
 
 ---
 
