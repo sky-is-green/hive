@@ -199,7 +199,7 @@ published next to this card.
 |---|---|---|
 | P1 | Constant throughput over 500 turns | **PASS** |
 | P2 | Retrieval precision ≥85% at ≥90% recall | **SPLIT** - recall PASS (90.3%), precision FAIL (the encoder ceiling) |
-| P3 | Context sufficiency ≥80% of turns vs. an equal-size FIFO window | **PASS** (85.1%) |
+| P3 | Context sufficiency ≥80% of turns vs. an equal-size FIFO window | **PASS** (85.1% on the 27B); on the 35B-A3B the answer-level result is a tie (88.4% at-least-as-good, 13 strict wins to 17) - see §7.3 |
 | P4 | Domain-dependent decay curve (code vs. prose separate) | **PASS** (code m90 1.8 vs. prose 1.2) |
 | P5 | Targeted masking | **PASS** |
 | P6 | Confidence escalation | **FAIL** |
@@ -288,6 +288,40 @@ slightly, not down:
 The encoder can be improved because it improves the *ranking* of what is a
 duplicate. The threshold cannot be lowered because lowering it moves the
 *boundary*, and the boundary is where the distinct facts get caught.
+
+### 7.3 The curation's advantage is generator-dependent
+
+The paired A/B - the same model, the same turns, the curated context
+against the last-4k-token window of the same history - is the memory
+system's headline measurement (P3). It was measured on a 27B, and it has
+now been measured on the **35B-A3B ternary** (180 measurable turns):
+
+| | the curated arm | the FIFO arm |
+|---|---|---|
+| the answer's fact recall | 81.1% | 81.7% |
+| the context fidelity (the answer's terms sourced from its own context) | **0.241** | 0.208 |
+| the turns where the answer is at least as good | **88.4%** (the bar: 80%) | - |
+| the strictly-better turns | 13 | 17 |
+| the context sufficiency (P3-style) | **97.5%** >= FIFO | - |
+
+**On the 27B the curated arm won 115 turns outright to 26 (4.4:1). On the
+35B it is 13 to 17** - a tie - and the answers are equal (81.1% against
+81.7%). The "neither" bucket collapses too (145 of 175 on the 27B, 34 of
+180 here): the 35B answers from *whatever* context it is given.
+
+**The scoping result: the better the generator is at long context, the
+less the curation has to add.** The FIFO window is the most recent turns
+verbatim, and a model that uses them well does not need a curation to find
+them. This is what Postulate 3 (the separation) implies - the curation is
+a substitute for a *weaker* reader - and it is the first thing the
+measurements had not tested.
+
+**What survives.** The curated context is still sufficient on 97.5% of the
+turns, its fidelity is ahead, and - the part the numbers above do not
+touch - the curation is what keeps the context **bounded**: the FIFO arm
+is 4k tokens of pure recency, and the two arms are equal *at that
+budget*. The honest claim for a strong generator is the bounded context
+and the cost, not the better answers.
 
 ### 7.2 What we changed, and what we did not
 
