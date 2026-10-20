@@ -212,6 +212,37 @@ silent wrongs** (4 here, 1 there) and its false flags are the thing the
 budget exists to bound. The mechanism works; the head does not separate
 well enough on this distribution to pay for itself.
 
+### 2A. The curation against the FIFO window (the memory's headline claim)
+
+The paired A/B: the same model, the same turns, two arms - the context the
+curation assembles, and the last-4k-token window of the same history. The
+35B as the generator, 10 conversations x 12 turns (33 measurable turns).
+
+| | the curated arm | the FIFO arm |
+|---|---|---|
+| the answer's fact recall | 97.0% | **100.0%** |
+| the average fact hit ratio | 0.944 | **0.985** |
+| the context fidelity (the answer's terms sourced from its own context) | 0.232 | **0.352** |
+| the turns where the arm's fidelity is higher | **42.4%** (the pre-registered bar: 45.5%) | 57.6% |
+| the turns where the answer is at least as good | 93.8% | - |
+| the strictly-better turns | **0** | 2 |
+| the context sufficiency (P3-style) | 100.0% >= FIFO | - |
+
+**On the 35B the curation does not beat the raw window.** The pre-registered
+bar (45.5% of the turns) is **not met** - 42.4% - and the curated arm
+never wins a turn outright (0 against 2). The context-level measure still
+passes (the curated context is sufficient on 100% of the turns), but the
+answer-level one does not.
+
+**This is the published P3 result not reproducing**, and the difference is
+the generator: the published 85.1% was measured on a 27B. A model this
+strong at long context uses the *most recent* 4k tokens very well - the
+FIFO window is the most recent turns, verbatim - so the curation's
+selection has less to add. A larger sample is running before this is
+written up as a result rather than a surprise.
+
+---
+
 ### 3D. The router (the local Tiny-Jev)
 
 The router's "api" route and the escalation tier both need the frontier
