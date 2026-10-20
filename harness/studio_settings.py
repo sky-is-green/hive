@@ -34,7 +34,8 @@ BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode")
 #: every string the Studio stores
 STR_KEYS = ("strata_base", "strata_repo")
 #: the grouped control blocks the Global tab owns
-DICT_KEYS = ("memory_defaults", "quality_defaults", "mcp", "runtime_defaults")
+DICT_KEYS = ("memory_defaults", "quality_defaults", "mcp", "runtime_defaults",
+             "encoder")
 
 DEFAULTS: dict[str, Any] = {
     "sandbox_enabled": True,
@@ -52,6 +53,13 @@ DEFAULTS: dict[str, Any] = {
     "mcp": {"enabled": True, "tools": ["remember", "search"], "read_only": False},
     # the runtime baseline: the context, the GPU layers, the sampling
     "runtime_defaults": {},
+    # the encoder: the small model that does the retrieval and the memory
+    "encoder": {
+        "embedding_model": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+        "embedding_backend": "local",
+        "embedding_url": "",
+        "medium_model": "microsoft/graphcodebert-base",
+    },
 }
 
 

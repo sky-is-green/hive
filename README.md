@@ -83,10 +83,11 @@ sees an answer key; the verifier reads a gold-stripped `runtime_spec`.
   refused.
 - **MCP** — the memory over `POST /v1/mcp`, with the tools an external
   client may call, and a read-only mode.
-- **Global harness controls** — one baseline for the whole harness: the
-  curation and retrieval defaults, the cascade's defaults, the MCP surface,
-  and the runtime a new engine is launched with. The Splinter tab layers one
-  conversation's overrides on top.
+- **Global harness controls** — one place for everything the harness does:
+  **the encoder** (the small model that does the retrieval and the memory
+  management — you choose it), the curation and retrieval defaults, the
+  cascade's defaults, the MCP surface, and the runtime a new engine is
+  launched with. There is no second menu for any of it.
 
 ### The console — HiveBench Studio
 
@@ -254,7 +255,7 @@ a single hive theme (yellow/black) across every page.
 | Page | What it does |
 |---|---|
 | `/` → `/runs` | Run bundle index |
-| `/server` | The console: **Home**, **Settings**, **Global**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Splinter, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
+| `/server` | The console: **Home**, **Settings**, **Global**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |
@@ -266,9 +267,11 @@ a single hive theme (yellow/black) across every page.
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
 - **Settings tab** — a searchable settings index: 33 settings across 8
   categories, each linking to where it lives.
-- **Global tab** — the harness-wide baseline: the memory and RAG defaults, the
+- **Global tab** — the harness-wide controls, in one place: **the encoder**
+  (the small model that does the retrieval and the memory management — the
+  one you pick is the one that runs), the memory and RAG defaults, the
   cascade's defaults, the MCP surface, the runtime a new engine is launched
-  with. The Splinter tab layers one conversation's overrides on top.
+  with. The separate Splinter menu is gone; there is one home for all of it.
 - **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
   `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`, `compact`, `dev`,
