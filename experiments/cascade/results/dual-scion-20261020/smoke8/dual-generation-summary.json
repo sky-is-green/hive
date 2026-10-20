@@ -1,0 +1,61 @@
+{
+ "items": 8,
+ "models": [
+  "scion35b",
+  "scion176b"
+ ],
+ "wall_s": 1006.3426468372345,
+ "agreement": {
+  "both_answered": 8,
+  "agreed": 5,
+  "disagreed": 3
+ },
+ "latency_ms": {
+  "scion35b": {
+   "median": 75869.31204795837,
+   "mean": 62694.37378644943,
+   "p90": 170018.19229125977,
+   "errors": 0
+  },
+  "scion176b": {
+   "median": 87968.85681152344,
+   "mean": 105682.10372328758,
+   "p90": 186255.08904457092,
+   "errors": 0
+  }
+ },
+ "budget": {
+  "scion35b": {
+   "hit_cap": 0,
+   "no_final": 0
+  },
+  "scion176b": {
+   "hit_cap": 0,
+   "no_final": 0
+  }
+ },
+ "checker_accuracy": {
+  "scion35b": {
+   "n": 8,
+   "wrong_vs_label": 6,
+   "wrong_rate": 0.75,
+   "false_reject": 0,
+   "false_accept": 0,
+   "consistency_flagged": 0
+  },
+  "scion176b": {
+   "n": 8,
+   "wrong_vs_label": 7,
+   "wrong_rate": 0.875,
+   "false_reject": 0,
+   "false_accept": 0,
+   "consistency_flagged": 0
+  }
+ },
+ "on_disagreements": {
+  "n": 8,
+  "a_right": 2,
+  "b_right": 1,
+  "neither": 5
+ }
+}
