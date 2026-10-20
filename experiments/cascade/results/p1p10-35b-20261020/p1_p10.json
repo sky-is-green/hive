@@ -1,0 +1,195 @@
+[
+  {
+    "id": "P1",
+    "title": "Constant throughput",
+    "status": "PASS",
+    "evidence": {
+      "metric": "decode_tps",
+      "early_tps": 66.8,
+      "late_tps": 72.5,
+      "drift_pct": 8.5,
+      "turns": 48,
+      "excluded_sleep_turns": 0
+    },
+    "note": ""
+  },
+  {
+    "id": "P2",
+    "title": "Retrieval precision/recall",
+    "status": "FAIL",
+    "evidence": {
+      "precision": 0.897,
+      "recall": 0.565,
+      "tp": 26,
+      "fp": 3,
+      "fn": 20,
+      "pairs": 200
+    },
+    "note": ""
+  },
+  {
+    "id": "P3",
+    "title": "Context sufficiency (splinter>=FIFO)",
+    "status": "PASS",
+    "evidence": {
+      "metric": "deterministic_fact_presence",
+      "compared": 154,
+      "first_mention_excluded": 157,
+      "fact_retrievable_turns": 86,
+      "hive_only": 51,
+      "fifo_only": 16,
+      "both_sufficient": 19,
+      "neither_sufficient": 68,
+      "hive_ge_fifo_ratio": 0.814,
+      "strict_hive_only_ratio": 0.593,
+      "target": 0.8
+    },
+    "note": "sufficiency = fixture answer-fact terms present in context; paper protocol: splinter >= FIFO on turns where the facts were actually in history (ties count); first-mention turns excluded (no fact in history for either system)."
+  },
+  {
+    "id": "P4",
+    "title": "Domain-dependent decay curve",
+    "status": "PASS",
+    "evidence": {
+      "code": {
+        "best_multiplier": 1.2,
+        "best_recall": 91.0,
+        "recall_by_multiplier": {
+          "1.2": 91.0,
+          "1.4": 89.3,
+          "1.6": 89.3,
+          "1.8": 85.4,
+          "2.0": 80.9,
+          "2.2": 78.1,
+          "2.5": 71.9
+        },
+        "m90": 1.8,
+        "flat_across_multipliers": false
+      },
+      "prose": {
+        "best_multiplier": 1.2,
+        "best_recall": 15.3,
+        "recall_by_multiplier": {
+          "1.2": 15.3,
+          "1.4": 4.5,
+          "1.6": 4.5,
+          "1.8": 3.5,
+          "2.0": 3.5,
+          "2.2": 2.8,
+          "2.5": 2.8
+        },
+        "m90": 1.2,
+        "flat_across_multipliers": false
+      },
+      "m90_gap": 0.6,
+      "code_vs_prose_differ": true
+    },
+    "note": "long-horizon replay sweep (fixed 1000-token budget, fact-level retrievability): code m90 1.8 @ 91.0% max, prose m90 1.2 @ 15.3% max, gap 0.6 \u2014 PASS: domains separate beyond the 0.2 band"
+  },
+  {
+    "id": "P5",
+    "title": "Targeted-masking beats random masking",
+    "status": "SKIP",
+    "evidence": {},
+    "note": "run experiments.p5_targeted_masking (training experiment)"
+  },
+  {
+    "id": "P6",
+    "title": "Confidence escalation recall",
+    "status": "FAIL",
+    "evidence": {
+      "small_only_recall": 0.565,
+      "escalated_recall": 0.174,
+      "improvement": -0.391,
+      "escalation_rate": 0.215
+    },
+    "note": ""
+  },
+  {
+    "id": "P7",
+    "title": "Auditor-human label agreement >=90%",
+    "status": "SKIP",
+    "evidence": {},
+    "note": "measured live via experiments.human_label (single human rater protocol, 500 items): 90.25% agreement on the 400 valid items (2026-08-23); rerun with a fresh rater to re-measure"
+  },
+  {
+    "id": "P8",
+    "title": "Routing accuracy",
+    "status": "PASS",
+    "evidence": {
+      "accuracy": 1.0,
+      "correct": 200,
+      "total": 200
+    },
+    "note": "optimal labels are heuristic-proxy; real auditor labels would be stricter"
+  },
+  {
+    "id": "P9",
+    "title": "Densest-duplicate retention",
+    "status": "PASS",
+    "evidence": {
+      "informative_turns": 12,
+      "control_turns": 12,
+      "merges": 644,
+      "densest_wins": 12,
+      "recency_wins": 0,
+      "ties": 0,
+      "densest_share": 1.0,
+      "recency_share": 0.0,
+      "densest_hits": 12,
+      "recency_hits": 12,
+      "densest_fact_tokens": 371,
+      "recency_fact_tokens": 680,
+      "densest_per_1k": 32.3,
+      "recency_per_1k": 17.6,
+      "control_densest_per_1k": 30.5,
+      "control_recency_per_1k": 30.5
+    },
+    "note": "densest wins on 100.0% of turns vs recency 0.0%"
+  },
+  {
+    "id": "P10",
+    "title": "Drift reset accelerates recovery within 3 turns",
+    "status": "FAIL",
+    "evidence": {
+      "reset_on_recall": 55.3,
+      "reset_off_recall": 55.3,
+      "improvement_pts": 0.0,
+      "window": "3 turns after topic switch"
+    },
+    "note": "deterministic fact-presence within 3 turns of a fixture topic switch; drift detector forced ON (threshold 0.1, fires 571/628) vs OFF (0.99, fires 0). Measured: reset has ~no effect on recent-fact survival \u2014 drift penalties multiply old chunks' decayed scores, but the relevant facts are recent and already win selection."
+  },
+  {
+    "id": "P11",
+    "title": "Comb resurrection (topic-return recall)",
+    "status": "PASS",
+    "evidence": {
+      "full_replay": {
+        "comb_off_return_recall": 100.0,
+        "comb_on_return_recall": 100.0,
+        "comb_off_non_return_recall": 56.4,
+        "comb_on_non_return_recall": 56.4,
+        "n_return": 30,
+        "archived": 56,
+        "resurrected": 180
+      },
+      "pressure_replay": {
+        "comb_off_return_recall": 20.0,
+        "comb_on_return_recall": 100.0,
+        "comb_on_retrievable_recall": 100.0,
+        "n_return": 30,
+        "n_retrievable": 30,
+        "archived": 0,
+        "resurrected": 238
+      },
+      "keep_last_n_recall": 20.0,
+      "clauses": {
+        "mechanism_ge_90_pct_retrievable": true,
+        "no_archiving_regression": true,
+        "no_crowding": true,
+        "beats_keep_last_n": true
+      }
+    },
+    "note": "deterministic replay of the return corpus (real sentence-transformers/paraphrase-MiniLM-L3-v2 drone); pressure regime max_chunks=8, fixed 1000-token budget. pressure comb recall 100.0% vs no-comb 20.0% (retrievable 100.0%); full replay 100.0% vs 100.0%."
+  }
+]
