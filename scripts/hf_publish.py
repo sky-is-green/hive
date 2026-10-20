@@ -7,6 +7,10 @@ The tool is deliberately small: it creates the repo if it does not exist,
 uploads a folder, and prints the URL.  Nothing else - no commits to a
 branch that is not yours, no deletions.
 
+**Always show the operator the file list and get their go before an
+upload.**  Publishing to the Hub is not a git push: it is a release, and
+it is their call.  Use ``--dry-run`` to produce the list.
+
 Token resolution, in order:
 
   1. ``--token``

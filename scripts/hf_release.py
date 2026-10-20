@@ -30,6 +30,7 @@ RELEASES = {
                          "pes.png", "budget.png", "b.png"],
         "citation": SIBLING / "CITATION.cff",
         "readme": "README.md",
+        "files": [],
     },
     "hive-cascade": {
         "card": REPO / "docs" / "CASCADE-PAPER.md",
@@ -37,6 +38,17 @@ RELEASES = {
         "figure_files": [],
         "citation": REPO / "CITATION.cff",
         "readme": "README.md",
+        # the benchmark (with its train/test split) and the run reports
+        "files": [
+            (REPO / "experiments" / "cascade" / "tasks-bench.json", "tasks-bench.json"),
+            (REPO / "experiments" / "cascade" / "tasks-community.json", "tasks-community.json"),
+            (REPO / "experiments" / "cascade" / "results"
+             / "runner-cascade-sampled-nothink-20261018" / "run" / "report.json",
+             "results/runner-cascade-sampled-nothink-20261018-report.json"),
+            (REPO / "experiments" / "cascade" / "results"
+             / "runner-cascade-sampled-20261018" / "run" / "report.json",
+             "results/runner-cascade-sampled-20261018-report.json"),
+        ],
     },
 }
 
@@ -64,6 +76,13 @@ def build(name: str, out: Path) -> int:
             if src.exists():
                 shutil.copy2(src, target / filename)
                 copied += 1
+    for src, rel in spec.get("files", []):
+        if src.exists():
+            dst = out / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+        else:
+            print(f"  (missing: {src})", file=sys.stderr)
     license_src = REPO / "LICENSE"
     if license_src.exists():
         shutil.copy2(license_src, out / "LICENSE")
