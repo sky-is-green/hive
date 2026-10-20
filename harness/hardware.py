@@ -83,6 +83,11 @@ def linux_amd_devices() -> list[dict]:
                         break
             except OSError:
                 continue
+        if not display:
+            # the boot VGA card is the display even when the connector
+            # status is not readable (headless over SSH, a KVM)
+            boot_vga = read("boot_vga")
+            display = boot_vga == "1"
         busy = read("gpu_busy_percent")
         vendor, device_id = read("vendor"), read("device")
         mem = _gb(total)
@@ -108,6 +113,31 @@ def linux_amd_devices() -> list[dict]:
     for index, device in enumerate(devices):
         device["index"] = index
     return devices
+
+
+def non_display_index(devices: list[dict] | None = None) -> Optional[int]:
+    """The HIP index of the card that is *not* the display.
+
+    The desktop's card belongs to the desktop: an engine that takes it
+    makes the window stutter, and the launch fails outright when the
+    display's VRAM is nearly full.  So a launch that does not name a
+    card gets the spare one.
+
+    The order is the HIP order (the devices are sorted by BDF, which is
+    what ROCm enumerates), so the returned index is what
+    ``HIP_VISIBLE_DEVICES`` wants.
+    """
+    if devices is None:
+        try:
+            devices = linux_amd_devices()
+        except Exception:  # noqa: BLE001 - the probe is best effort
+            return None
+    for device in devices:
+        if not device.get("display"):
+            index = device.get("index")
+            if index is not None:
+                return int(index)
+    return None
 
 
 def _fdinfo_vram_bytes(pid: int) -> int:
