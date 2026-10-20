@@ -205,12 +205,24 @@ default" is a statement about one configuration, not about the mechanism.
 The honest summary: the gate is *free of false rejects* on both
 configurations measured; what varies is how many silent wrongs it finds.
 
-### 3D-3E. The router and the escalation
+### 3D. The router (the local Tiny-Jev)
 
 The router's "api" route and the escalation tier both need the frontier
 API, and **the configured key has expired** (HTTP 401,
-`api_key_expired`). The arms were re-pointed at the local 176B - a
-legitimate "large tier" stand-in - and are running.
+`api_key_expired`), so both were re-pointed at the local 176B - a
+legitimate "large tier" stand-in.
+
+| | |
+|---|---|
+| **the router's agreement with the large model** | **0.70** |
+| the served-correct (the measure mode does not change the answers) | 0.800 (8/10) |
+| the false rejects | 0 |
+| the mean per-item latency | 37.2 s |
+
+The local 1.7B router agrees with the 176B on **70% of the items** - the
+cascade's "the router is a floor" claim, measured. (The 37.2 s is the
+*measurement's* cost: the measure mode fetches the large model's
+comparison answer for every item, which is not a serving cost.)
 
 ---
 
