@@ -194,6 +194,11 @@ TOGGLES: list[tuple[str, str, str]] = [
      "How: the developer surface appears (the deep-research queue, the "
      "Docker setup tab, the raw status). Does: nothing but show things. "
      "Changing: on = those panes are visible."),
+    ("harvest_enabled", "harvest the turns",
+     "How: every chat turn (the query, the reply, the chunks the curation "
+     "selected) is appended to harness_state/harvest.jsonl. Does: builds the "
+     "dataset the encoder is trained on. Changing: on = the file grows with "
+     "your own words - it is the training data, so it is your call."),
 ]
 
 #: the select options per field

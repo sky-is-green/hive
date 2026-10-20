@@ -142,7 +142,9 @@ curl http://127.0.0.1:8765/health
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/v1/studio/settings` | The console's toggles: sandbox, tool use, auto-compact, dev mode, the Strata base URL. |
+| `GET` | `/v1/studio/settings` | The console's toggles: sandbox, tool use, auto-compact, dev mode, the Strata base URL, the harvest. |
+| `GET` | `/v1/studio/harvest` | The harvested turns: the data the encoder is trained on (the query, the reply, the curation). Empty unless `harvest_enabled` is on. |
+| `DELETE` | `/v1/studio/harvest` | Throw the harvested turns away. |
 | `PUT` | `/v1/studio/settings` | Change those toggles; returns the stored result. |
 | `GET` | `/v1/studio/strata` | Probe the local Strata engine: alive, base URL, model, health. Never raises. |
 

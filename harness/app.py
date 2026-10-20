@@ -3031,6 +3031,25 @@ def create_app(
                 stored = splinter.store.add_chunk(splinter.turn, reply) is not None
                 if stored:
                     st.save_conversation(req.conversation_id, splinter)
+            # the harvest: the turn, with the curation that was used, for
+            # the encoder's training data.  Off unless the user asked.
+            try:
+                if st.settings().get("harvest_enabled"):
+                    from harness import harvest as _harvest
+
+                    _harvest.append_turn(st.state_dir, _harvest.build_record(
+                        query=query, reply=reply,
+                        conversation_id=req.conversation_id,
+                        turn=result.turn,
+                        selected=list(getattr(assembled, "selected_chunk_ids", []) or []),
+                        curated=curated,
+                        candidates=dict(getattr(assembled, "raw_scores", {}) or {}),
+                        config=splinter.config.to_dict(),
+                        encoder=splinter.config.ultra_model,
+                        token_count=result.token_count, budget=result.budget,
+                        mode=result.mode))
+            except Exception:  # noqa: BLE001 - a failed harvest loses nothing
+                pass
             elapsed = max(time.time() - started, 1e-6)
             completion_tokens = (usage or {}).get("completion_tokens") or 0
             yield "data: " + json.dumps({
@@ -4643,6 +4662,29 @@ def create_app(
     def studio_settings():
         """The Studio's toggles: sandbox, tool use, auto-compaction."""
         return _load_studio_settings()
+
+    @app.get("/v1/studio/harvest")
+    def studio_harvest(limit: int = Query(default=0, ge=0, le=1000)):
+        """The harvested turns - the data the encoder is trained on.
+
+        Off unless ``harvest_enabled`` is on: the file holds the user's
+        own words, so it is the user's call.
+        """
+        from harness import harvest as _harvest
+
+        return {
+            "enabled": bool(_load_studio_settings().get("harvest_enabled")),
+            "path": str(_harvest.harvest_path(st.state_dir)),
+            "turns": _harvest.count_turns(st.state_dir),
+            "records": _harvest.read_turns(st.state_dir, limit=limit),
+        }
+
+    @app.delete("/v1/studio/harvest")
+    def studio_harvest_clear():
+        """Throw the harvested turns away."""
+        from harness import harvest as _harvest
+
+        return {"cleared": _harvest.clear(st.state_dir)}
 
     def _strata_base() -> str:
         return (_load_studio_settings().get("strata_base")

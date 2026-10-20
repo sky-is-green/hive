@@ -20,6 +20,11 @@ The keys:
     Reveal the developer surface: the deep-research queue, the Docker/VHDX
     setup tab, and the raw status.  Off by default; the ``/dev`` console
     command turns it on.
+``harvest_enabled``
+    Record every chat turn (the query, the reply, the curation that was
+    used) to ``harness_state/harvest.jsonl``.  This is the data the
+    encoder is trained on, so it is off by default: the file holds the
+    user's own words.
 """
 
 from __future__ import annotations
@@ -30,7 +35,8 @@ from pathlib import Path
 from typing import Any
 
 #: every boolean the Studio stores
-BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode")
+BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode",
+             "harvest_enabled")
 #: every string the Studio stores
 STR_KEYS = ("strata_base", "strata_repo")
 #: the grouped control blocks the Global tab owns
@@ -42,6 +48,8 @@ DEFAULTS: dict[str, Any] = {
     "tools_enabled": True,
     "auto_compact": True,
     "dev_mode": False,
+    # the encoder's training data: every turn, with its curation
+    "harvest_enabled": False,
     "strata_base": os.environ.get("CASCADE_SCION_BASE") or "http://127.0.0.1:8081/v1",
     "strata_repo": "",          # the Strata checkout (the sibling by default)
     # the harness-wide baseline: what a conversation gets when it overrides
