@@ -326,7 +326,10 @@ duplicate. The threshold cannot be lowered because lowering it moves the
 pytest tests/unit tests/integration -q
 
 # the encoder sweep on your own traffic
-python -m experiments.encoder_suite --encoders l3 l6 bge-small
+python -m experiments.encoder_suite --encoders l3 l6 bge-small e5-small gte-small
+
+# the threshold replay (deterministic: no model, no generation)
+python -m experiments.threshold_ab
 
 # the cascade pilot (local model, deterministic verifiers)
 open http://127.0.0.1:8765/cascade
@@ -334,6 +337,19 @@ open http://127.0.0.1:8765/cascade
 
 The repository ships the run bundles, the event logs and the label files, so
 a verdict can be traced back to the bytes that produced it.
+
+### The artifacts
+
+| artifact | what it is |
+|---|---|
+| `SkyIsNotGreen/splinter-memory` | this paper, the figures, the license and the citation |
+| `SkyIsNotGreen/splinter-encoder` | the tuned drone encoder, its card, its configuration and its gate results |
+| `SkyIsNotGreen/hive-cascade` | the cascade's benchmark (a 70/30 split) and two full run reports |
+| `SkyIsNotGreen/Scion-35B-A3B` | the ternary 35B-A3B model and its decision head |
+| `SkyIsNotGreen/Scion-FlashNext-176B-A6B` | the ternary 176B-A6B model |
+
+The releases are private while the results are being refreshed; they open
+when the refreshed numbers are in.
 
 ## License and citation
 
