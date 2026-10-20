@@ -330,6 +330,42 @@ measured, AUC 0.9815 against the drone's 0.945.
 
 ---
 
+---
+
+## 4A. The whole protocol, on the 35B
+
+The P1-P10 protocol, live, against the 35B-A3B (a 12-conversation fixture
+subset - the protocol's own runner, `experiments.run_p1_p10 --live`).
+
+| | verdict | the evidence |
+|---|---|---|
+| P1 constant throughput | **PASS** | the throughput does not decay over the run |
+| P2 retrieval precision | **FAIL** | the precision clause (the known encoder ceiling) |
+| P3 context sufficiency | **PASS** | the curated context is sufficient against an equal-size FIFO window |
+| P4 domain-dependent decay | **PASS** | code m90 1.8 (91.0% at the best) vs prose m90 1.2 (15.3%), a gap of 0.6 - the domains separate beyond the 0.2 band |
+| P5 targeted masking | SKIP | a training experiment |
+| P6 confidence escalation | **FAIL** | the escalated recall is *worse* (0.174 against 0.565) |
+| P7 auditor-human agreement | SKIP | it needs human raters (90.25% measured 2026-08-23) |
+| P8 routing accuracy | **PASS** | 200/200 |
+| P9 densest-duplicate retention | **PASS** | the densest chunk wins 100% of the turns against recency's 0% |
+| P10 drift reset | **FAIL** | the reset changes the recall by 0.0 points (the detector fires 571/628 when forced) |
+| P11 comb resurrection | **PASS** | the pressure regime: 100% topic-return recall against 20% without the comb |
+
+**PASS 6/11, 2 skipped - the published verdict set, exactly.** The
+published run (2026-08-23/24, on a 27B, on the full corpus) reported
+P1/P3/P4/P8/P9/P11 PASS, P2/P6/P10 FAIL, P5/P7 SKIP. The same set
+reproduces here on a *different model* and a *smaller corpus*, which says
+the protocol is measuring the architecture and not the generator.
+
+**P10 is the one worth a second look**, and the campaign has an answer
+for it: the drift detector's threshold is calibrated for a different
+encoder (the measurement in §7), so "the reset has no effect" may be
+measuring a detector that fires on almost everything (571/628) rather
+than a reset that does not work. The P10 verdict stands as measured; the
+mechanism is now in question, and that is a different claim.
+
+---
+
 ## What ran, and what is still owed
 
 | id | what | state |
@@ -341,7 +377,7 @@ measured, AUC 0.9815 against the drone's 0.945.
 | 2B | the membrane's thresholds | **done** (H falsified; the asymmetry is the reason) |
 | 2C / 5A | the encoder on a held-out split | **done** (the tuning generalises, and still cannot be cashed in) |
 | 3A-3E | the cascade's arms | **done** except the escalation's own value (the verifier's catch rate is too draw-dependent to measure it) |
-| 4A | the P1-P10 protocol | running against the 35B (a 12-conversation fixture subset) |
+| 4A | the P1-P10 protocol | **done** (PASS 6/11, 2 skipped - the published verdict set, reproduced) |
 | 4B | the 500-turn stability | **owed** |
 | 4C | the PES per configuration | rides along with 4A |
 
