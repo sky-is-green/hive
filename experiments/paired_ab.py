@@ -489,6 +489,15 @@ def main(argv: list[str] | None = None) -> int:
         ultra = UltraSmallDrone(model_name=args.encoder or
                                 "sentence-transformers/paraphrase-MiniLM-L3-v2",
                                 confidence_mode=args.confidence)
+        ultra._ensure_loaded()
+        backend = LMStudioBackend(base_url=args.base_url, model=args.model,
+                                  api_key=pkw.get("api_key", "lm-studio"),
+                                  extra_headers=pkw.get("extra_headers"),
+                                  disable_thinking=args.no_thinking,
+                                  timeout=args.timeout)
+        if not backend.health():
+            print(f"LM Studio not reachable at {args.base_url}")
+            return 3
         if args.warmup:
             # the first request on a sparse MoE streams its experts from
             # storage: minutes, not seconds.  Fill the cache before the
@@ -499,15 +508,6 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as exc:  # noqa: BLE001 - a warm-up failure is not fatal
                 print(f"[paired] the warm-up failed: {exc}", flush=True)
             print("[paired] warm.", flush=True)
-        ultra._ensure_loaded()
-        backend = LMStudioBackend(base_url=args.base_url, model=args.model,
-                                  api_key=pkw.get("api_key", "lm-studio"),
-                                  extra_headers=pkw.get("extra_headers"),
-                                  disable_thinking=args.no_thinking,
-                                  timeout=args.timeout)
-        if not backend.health():
-            print(f"LM Studio not reachable at {args.base_url}")
-            return 3
         live = True
 
     medium = MediumDrone(score_pair_fn=lambda q, c: 0.5)
