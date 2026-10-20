@@ -406,6 +406,13 @@ def main(argv: list[str] | None = None) -> int:
              "embedding model yields confidence ~1.0 regardless)",
     )
     parser.add_argument(
+        "--encoder", default="",
+        help="the curation's encoder (a sentence-transformers id). The default "
+             "is the stock MiniLM. A model from the *generator's* family is "
+             "the interesting arm: the selection then happens in the same "
+             "semantic space the generator reads.",
+    )
+    parser.add_argument(
         "--max-tokens", type=int, default=None,
         help="cap both arms' reply length (default: uncapped). On reasoning "
              "models a small cap yields empty replies unless --no-thinking is "
@@ -469,7 +476,9 @@ def main(argv: list[str] | None = None) -> int:
                                   transport=MockTransport())
         live = False
     else:
-        ultra = UltraSmallDrone(confidence_mode=args.confidence)
+        ultra = UltraSmallDrone(model_name=args.encoder or
+                                "sentence-transformers/paraphrase-MiniLM-L3-v2",
+                                confidence_mode=args.confidence)
         ultra._ensure_loaded()
         backend = LMStudioBackend(base_url=args.base_url, model=args.model,
                                   api_key=pkw.get("api_key", "lm-studio"),
