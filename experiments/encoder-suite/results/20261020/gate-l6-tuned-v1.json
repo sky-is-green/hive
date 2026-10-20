@@ -1,0 +1,124 @@
+{
+ "checkpoint": {
+  "info": {
+   "model": "experiments/encoder-suite/results/20261020/l6-tuned-v1",
+   "params": 22713216,
+   "params_m": 22.7,
+   "dim": 384,
+   "load_s": 0.1,
+   "query_prefix": ""
+  },
+  "dedup": {
+   "n": 2141,
+   "positives": 561,
+   "at_0.92": {
+    "precision": 0.9819,
+    "recall": 0.4831,
+    "f1": 0.6476
+   },
+   "pos_p50": 0.9186,
+   "neg_p50": 0.4261,
+   "separation": 0.4925,
+   "best": {
+    "f1": 0.8824,
+    "precision": 0.9343,
+    "recall": 0.836,
+    "threshold": 0.82
+   }
+  },
+  "drift": {
+   "n": 6533,
+   "positives": 230,
+   "auc": 0.8066,
+   "at_0.6": {
+    "precision": 0.1063,
+    "recall": 0.7609,
+    "f1": 0.1865
+   },
+   "best": {
+    "f1": 0.2414,
+    "precision": 0.2784,
+    "recall": 0.213,
+    "threshold": 0.78
+   },
+   "signal_p50": 0.5358,
+   "signal_min": 0.0225,
+   "signal_max": 1.1564
+  },
+  "cost": {
+   "ms_per_chunk": 2.71,
+   "ms_per_100_chunks": 0.3
+  }
+ },
+ "baseline": {
+  "info": {
+   "model": "sentence-transformers/all-MiniLM-L6-v2",
+   "params": 22713216,
+   "params_m": 22.7,
+   "dim": 384,
+   "load_s": 2.7,
+   "query_prefix": ""
+  },
+  "dedup": {
+   "n": 2141,
+   "positives": 561,
+   "at_0.92": {
+    "precision": 1.0,
+    "recall": 0.0553,
+    "f1": 0.1047
+   },
+   "pos_p50": 0.7284,
+   "neg_p50": 0.3978,
+   "separation": 0.3306,
+   "best": {
+    "f1": 0.8273,
+    "precision": 0.7147,
+    "recall": 0.9822,
+    "threshold": 0.56
+   }
+  },
+  "drift": {
+   "n": 6533,
+   "positives": 230,
+   "auc": 0.8066,
+   "at_0.6": {
+    "precision": 0.0747,
+    "recall": 0.8174,
+    "f1": 0.1369
+   },
+   "best": {
+    "f1": 0.2441,
+    "precision": 0.2653,
+    "recall": 0.2261,
+    "threshold": 0.8
+   },
+   "signal_p50": 0.5731,
+   "signal_min": 0.0194,
+   "signal_max": 1.1573
+  },
+  "cost": {
+   "ms_per_chunk": 3.3,
+   "ms_per_100_chunks": 0.3
+  }
+ },
+ "verdict": {
+  "dedup_f1": true,
+  "drift_f1": true,
+  "cost_ok": true,
+  "pass": true
+ },
+ "reported": {
+  "dedup_best_f1": {
+   "checkpoint": 0.8824,
+   "baseline": 0.8273
+  },
+  "drift_best_f1": {
+   "checkpoint": 0.2414,
+   "baseline": 0.2441
+  },
+  "drift_auc": {
+   "checkpoint": 0.8066,
+   "baseline": 0.8066
+  }
+ }
+}

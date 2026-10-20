@@ -170,10 +170,10 @@ they have to travel with the model.
 
 **None of this ships yet.** v6 is a measurement, not a release: it was
 trained on the same traffic it was measured on, so it is a *fit*, not a
-generalisation. The next round is from the best base (L6-v2) and is
-measured on a held-out split, with the operating points travelling with
-the model. Until then the Studio ships the stock model at the stock
-thresholds - the configuration the published evidence was produced with.
+generalisation. The next round is from the same base, measured on a
+held-out split, with the operating points travelling with the model.
+Until then the Studio ships the stock model at the stock thresholds - the
+configuration the published evidence was produced with.
 
 
 ## 7. What we do about it
@@ -202,12 +202,21 @@ validated**:
 > recalibrated thresholds lose a fact or cost throughput, the hypothesis
 > is false and the shipped points stand.
 
-**The next fine-tune is from the best base we tested.** The base for the
-tuned encoder is `all-MiniLM-L6-v2` (22.7M params): it has the best
-dedup decision of any stock model measured (F1 0.822 at its own 0.60) and
-a drift decision within a point of the best (0.545 vs 0.554), so it is
-the strongest starting point - and it is the same size class and the same
-CPU cost class as the shipped one (1.6 ms/chunk vs 1.3).
+**The next fine-tune is from the best base we tested - and the best base
+is the one we already ship.** `paraphrase-MiniLM-L3-v2` wins the drift
+decision decisively (F1 0.554 at its own threshold, against 0.244 for
+L6-v2, 0.501 for e5-small and 0.500 for gte-small) and is within a point
+of the best on the dedup (0.761, against 0.827 for L6-v2 and 0.821 for
+gte-small). L6-v2's dedup is better, but its drift is dead at every
+threshold that was tried - and a drone that cannot see the topic change
+is not a drone, it is a ranker.
+
+The L6 lineage was trained anyway, as a control: from L6-v2, the dedup
+task only, one gentle epoch, the dedup's F1 at the shipped threshold
+goes 0.105 → **0.648** (the best of any run) and the drift's AUC is
+untouched (0.807 → 0.807) - but the drift's *decision* stays broken
+(F1 0.241). The recipe works on both bases; the base decides how much
+of the harness's behaviour survives.
 
 **The teacher lane** - a 568M retrieval encoder as the teacher for a
 larger distillation round - is measured but not shipped: the CPU budget
