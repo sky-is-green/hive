@@ -310,3 +310,82 @@ def test_an_empty_settings_block_is_not_a_baseline():
     assert controls.launch_of({}) == {}
     assert controls.quality_of({}) == {}
     assert controls.mcp_of({})["enabled"] is True
+
+
+# ----------------------------------------------------------------------
+# the harvest: the data the encoder is trained on
+# ----------------------------------------------------------------------
+def _fake_provider(client):
+    client.post("/v1/provider/config", json={
+        "providers": [{"name": "fake", "base_url": "http://127.0.0.1:9/v1",
+                       "api_key": "k", "model": "m"}],
+        "default": "fake",
+    })
+
+
+def test_the_harvest_is_off_by_default(client):
+    """The file holds the user's own words, so it is their call."""
+    body = client.get("/v1/studio/settings").json()
+    assert body["harvest_enabled"] is False
+    assert client.get("/v1/studio/harvest").json()["enabled"] is False
+
+
+def test_a_turn_is_harvested_when_asked_for(client, app, monkeypatch):
+    """With the harvest on, the turn and its curation are recorded."""
+    _fake_provider(client)
+    _set(client, harvest_enabled=True)
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def iter_lines(self, decode_unicode=True):
+            yield 'data: {"choices":[{"delta":{"content":"the answer"}}]}'
+            yield "data: [DONE]"
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr("harness.app.requests.post",
+                        lambda *a, **k: FakeResponse())
+    with client.stream("POST", "/v1/splinter/stream",
+                       json={"query": "the question",
+                             "conversation_id": "c-harvest"}) as r:
+        list(r.iter_lines())
+    body = client.get("/v1/studio/harvest").json()
+    assert body["turns"] == 1
+    record = body["records"][0]
+    assert record["query"] == "the question"
+    assert record["reply"] == "the answer"
+    assert record["encoder"]
+    assert "config" in record
+
+
+def test_the_harvest_can_be_thrown_away(client, app, monkeypatch):
+    """The user's data, the user's call."""
+    _fake_provider(client)
+    _set(client, harvest_enabled=True)
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def iter_lines(self, decode_unicode=True):
+            yield 'data: {"choices":[{"delta":{"content":"x"}}]}'
+            yield "data: [DONE]"
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr("harness.app.requests.post",
+                        lambda *a, **k: FakeResponse())
+    with client.stream("POST", "/v1/splinter/stream",
+                       json={"query": "q", "conversation_id": "c-clear"}) as r:
+        list(r.iter_lines())
+    assert client.get("/v1/studio/harvest").json()["turns"] == 1
+    client.delete("/v1/studio/harvest")
+    assert client.get("/v1/studio/harvest").json()["turns"] == 0

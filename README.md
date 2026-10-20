@@ -15,7 +15,7 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](https://github.com/sky-is-green/splinter-memory) system. The
-Studio serves **104 REST operations** across 96 paths (95 operations under `/v1/`).
+Studio serves **106 REST operations** across 97 paths (97 operations under `/v1/`).
 The suite is green (**1093 unit + 126 integration** tests, verified Oct 20); the
 live batteries and the Studio are under active development.
 
@@ -317,7 +317,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (95 operations across 87 paths under `/v1/`)
+### API surface (97 operations across 88 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
