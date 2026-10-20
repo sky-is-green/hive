@@ -157,53 +157,60 @@ not an F1.
 
 ---
 
-## 3A-3B. The cascade's own arms, measured on the 35B
+## 3A-3E. The cascade's own arms, measured on the 35B
 
-The same 28 organic tasks, the 35B, T=0.7. Only the arm changes.
+The same 28 organic tasks, the 35B, T=0.7, **three draws each** (84 items
+per arm - the multi-sample regime, because a single draw is a direction and
+not a measurement). Only the arm changes.
 
-| arm | served-correct | false rejects | accepted-and-wrong | repairs | mean |
-|---|---|---|---|---|---|
-| **no verifier, no repair** | 0.786 (22/28) | 0 | 6 | - | 8.1 s |
-| **the deterministic verifier, no repair** | **0.643 (18/28)** | 0 | 10 | - | 6.7 s |
-| **the deterministic verifier + the repair leg** | **0.857 (24/28)** | 0 | 4 | **2/3** | 6.7 s |
+| arm | served-correct | the misses | the verifier rejected | of which false | the repair leg | the gate | the mean |
+|---|---|---|---|---|---|---|---|
+| **no verifier, no repair** | 64/84 (76.2%) | 20 | - | - | - | - | 7.6 s |
+| **the deterministic verifier, no repair** | **63/84 (75.0%)** | 21 | 6 | 1 | - | - | 6.5 s |
+| **the verifier + the repair leg** | **67/84 (79.8%)** | 17 | 9 | 1 | **8/9 cleared** | - | 6.6 s |
+| **+ the learned gate** | **70/84 (83.3%)** | 14 | 12 | 3 | 8/11 | fired 7 (4 true, **3 false**) | 8.1 s |
 
-**This is the cascade's economics in three numbers.**
+**The cascade's economics, with effect sizes.**
 
-- **A verifier on its own is a tax.** It caught 4 wrong answers and, with
-  no repair leg, they were simply *not served*: the served count fell from
-  22 to 18. A verifier that drops what it catches and fixes nothing makes
-  the system worse (-4 items).
-- **The repair leg is what makes verification pay.** With it, the same
-  verifier's 4 catches became 2 fixes (2/3 cleared), and the served count
-  rose to **24 - two items above the no-verification baseline and six
-  above the verifier alone**.
-- **The false-reject budget is zero in every arm** - the 0 false rejects
-  are what makes the trade worth making, because a verifier that rejects
-  correct answers is worse than no verifier.
+- **A verifier on its own is a tax: -1.2 points.** It caught 5 wrong
+  answers and, with no repair leg, they were simply *not served*. A
+  verifier that drops what it catches and fixes nothing makes the system
+  worse.
+- **The repair leg is what makes verification pay: +4.8 points** over the
+  verifier alone, and **+3.6 over no verification at all** (79.8% vs
+  76.2%) - 8 of the 9 catches cleared.
+- **The learned gate adds +3.5 points** (83.3% vs 79.8%) - and **3 false
+  flags against the pre-registered budget of 2, so by its own rule the
+  gate stays OFF**.
 
-(The 176B's published numbers say the same thing from the other side:
-4 of the 5 wrong answers it caught live were repaired, and the served
-count went 58/66 → 62/66.)
+**The last row is why the regime matters.** The single-draw gate arm
+looked like a clean win (+1 served item, 0 false rejects, 2 flags in 56
+items). At 84 items the same arm shows **3 false flags** - over the
+budget - and the verdict is the one the rule was written for: **off**. A
+single draw would have shipped it.
+
+**A correction to the earlier claim.** The "0 false rejects" in the
+published 66-item table is the *escalation's* bookkeeping, not the
+verifier's: the runner's `false_reject` field only exists once something
+escalates, and nothing escalated in these runs. The verifier's own false
+rejects - a rejected answer that was right - are **1, 1 and 3** across
+the three arms, computed from the verdict and the local answer's
+correctness. They are not zero, and the trade is still worth making: the
+verifier catches 8 wrong answers for every 1 correct answer it drops.
 
 ### 3C. The learned gate, on the 35B
 
-| arm | served-correct | false rejects | accepted-and-wrong | the gate | repairs | mean |
-|---|---|---|---|---|---|---|
-| the gate off | 0.857 (24/28) | 0 | 4 | - | 2/3 | 6.7 s |
-| **the gate on (intern-0.8B)** | **0.893 (25/28)** | **0** | 3 | scored 26, **fired 2**, cleared 0 | 2/4 | 7.6 s |
+The gate's verdict is in the table above (the 84-item regime): **+3.5
+points, 4 true catches, 3 false flags - over the pre-registered budget of
+2, so it stays off by its own rule**, exactly as the 176B's measurement
+did (3 false flags, 2026-10-18). The single-draw arm that appeared to
+flip the verdict was the sampling noise, and the multi-sample regime put
+it back.
 
-**+1 served item, 0 false rejects, +12% wall clock.** The gate fired on
-26 scored drafts, caught 2 silently-wrong answers, and one of them was
-repaired into a right one.
-
-**This flips the earlier verdict - and that is the point of running it.**
-The pre-registered rule (the 176B, 2026-10-18: 3 false flags against a
-budget of 2) put the gate **off**. Here, on a different model and a
-different set, the gate's flags were all true positives and it netted a
-served item. The gate's value is **model- and set-dependent**, so "off by
-default" is a statement about one configuration, not about the mechanism.
-The honest summary: the gate is *free of false rejects* on both
-configurations measured; what varies is how many silent wrongs it finds.
+What is consistent across both measurements: the gate **catches real
+silent wrongs** (4 here, 1 there) and its false flags are the thing the
+budget exists to bound. The mechanism works; the head does not separate
+well enough on this distribution to pay for itself.
 
 ### 3D. The router (the local Tiny-Jev)
 
