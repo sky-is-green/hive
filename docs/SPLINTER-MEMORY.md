@@ -81,6 +81,46 @@ milliseconds.
 Full protocol, per-hypothesis logic chains and falsification conditions:
 §5 of the canonical paper.
 
+### The whole protocol, refreshed on the 35B-A3B
+
+The P1-P11 protocol re-run live against the **35B-A3B ternary** (a
+12-conversation fixture subset), to ask whether the verdict set is a
+property of the architecture or of the generator it was measured on:
+
+| | verdict | the evidence |
+|---|---|---|
+| P1 constant throughput | **PASS** | the throughput does not decay |
+| P2 retrieval precision | **FAIL** | the precision clause (the known encoder ceiling, §7) |
+| P3 context sufficiency | **PASS** | the curated context against an equal-size FIFO window |
+| P4 domain-dependent decay | **PASS** | code m90 1.8 vs prose m90 1.2 - a gap of 0.6, beyond the 0.2 band |
+| P5 targeted masking | SKIP | a training experiment |
+| P6 confidence escalation | **FAIL** | the escalated recall is worse (0.174 vs 0.565) |
+| P7 auditor-human agreement | SKIP | it needs human raters (90.25% measured 2026-08-23) |
+| P8 routing accuracy | **PASS** | 200/200 |
+| P9 densest-duplicate retention | **PASS** | the densest chunk wins 100% of the turns |
+| P10 drift reset | **FAIL** | the reset changes the recall by 0.0 points |
+| P11 comb resurrection | **PASS** | the pressure regime: 100% topic-return recall against 20% without the comb |
+
+**PASS 6/11, 2 skipped - the published verdict set, exactly.** The
+published run (2026-08-23/24, on a 27B, on the full corpus) reported
+P1/P3/P4/P8/P9/P11 PASS, P2/P6/P10 FAIL, P5/P7 SKIP. The same set
+reproduces on a different model and a smaller corpus, which says the
+protocol measures the architecture rather than the generator.
+
+**One of the failures now has a candidate mechanism.** P10 (the drift
+reset) measures a detector whose threshold was calibrated for a different
+encoder (§7): forced on, it fires on 571 of 628 turns, so "the reset has
+no effect" may be measuring a detector that fires on almost everything
+rather than a reset that does not work. The verdict stands as measured;
+the mechanism is now in question, which is a different claim.
+
+**And the one result that does not carry over is P3's margin.** On the
+27B the curated context won 115 turns outright to 26; on the 35B it is a
+tie (§7.3). The *verdict* holds (the curated context is sufficient, and
+at least as good on 88.4% of the turns); the *margin* does not. The
+curation's accuracy advantage is a function of the generator - what
+survives for a strong one is the bounded context and the cost.
+
 ## Use it
 
 Three ways, in increasing order of control:
