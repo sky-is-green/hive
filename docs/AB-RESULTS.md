@@ -224,6 +224,18 @@ cascade's "the router is a floor" claim, measured. (The 37.2 s is the
 *measurement's* cost: the measure mode fetches the large model's
 comparison answer for every item, which is not a serving cost.)
 
+### 3E. The escalation tier
+
+With the repair leg on, the escalation **never fired** (0.0): the two
+wrong answers the verifier caught were both cleared by the repair leg
+(2/2), so nothing was left for the expensive tier.
+
+That is the ladder working as designed - the cheap leg comes before the
+expensive one - but it means the arm measures the ladder, not the
+escalation. The arm that measures the escalation is the one with the
+repair leg **off**, so the verifier's catches fall through to the large
+tier; it is running now.
+
 ---
 
 ## The encoder sweep (all the candidates)
