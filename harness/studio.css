@@ -732,3 +732,5 @@ table .note, .card .note, .kv-grid .note, .kv .note, .lib-tabpane .note { color:
 .launch-pane input[type="number"] { width: 4.5rem; }
 .launch-pane input[type="text"], .launch-pane select { max-width: 100%; }
 #launch-note { color: #FFDD00; }
+
+.fit-plan { margin-top: .3rem; font-size: .74rem; line-height: 1.45; }

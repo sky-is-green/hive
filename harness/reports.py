@@ -899,6 +899,7 @@ wake. Nothing runs in the foreground.</p>
           <span id="fit-pct" class="fit-pct"></span>
         </div>
         <div class="fit-bar"><div id="fit-fill" class="fit-fill" style="width:0%"></div></div>
+        <div id="fit-plan" class="note fit-plan"></div>
         <div class="row fit-controls">
           <label class="inline">context <input id="fit-ctx" type="range" min="2048" max="131072" step="1024" value="8192"> <span id="fit-ctx-label" title="How: fit needs vs hardware via /v1/server/status. Does: Visual guide, disables Load if needs>has. Changing: Slider only visual — Auto/Save commits.">8k</span> → <b id="fit-needs-val">—</b> </label>
           <button type="button" id="eng-load-fit" onclick="engineLoadFromFit()" disabled>Load</button>
@@ -3911,8 +3912,16 @@ async function updateFit() {{
   let hw;
   try {{ hw = await getFitHardware(); }} catch(e) {{ hw = {{available_gb:8}}; }}
   const has_gb = Number(hw.available_gb)||8;
-  const kv_gb = (ctx/1024)*0.25;
-  const needs_gb = size_gb + kv_gb;
+  // the server owns the estimate: the tiers (VRAM, RAM, disk), the disk
+  // guard and the context that fits
+  let plan = null;
+  try {{
+    const kv = document.getElementById('eng-ctk')?.value || 'q8_0';
+    plan = await api('/v1/server/fit?model_gb=' + encodeURIComponent(size_gb) +
+                     '&ctx=' + encodeURIComponent(ctx) + '&kv=' + encodeURIComponent(kv));
+  }} catch (e) {{ plan = null; }}
+  const kv_gb = plan ? plan.metrics.kv_gb : (ctx/1024)*0.07;
+  const needs_gb = plan ? plan.metrics.total_gb : size_gb + kv_gb;
   const ratio = has_gb>0 ? needs_gb/has_gb : 1;
   const needsEl = document.getElementById('fit-needs');
   const hasEl = document.getElementById('fit-has');
@@ -3931,6 +3940,21 @@ async function updateFit() {{
   if (fill) {{
     fill.style.width = Math.min(100, ratio*100).toFixed(1)+'%';
     fill.className = 'fit-fill ' + (ratio>1 ? 'red' : ratio>0.7 ? 'amber' : 'green');
+  }}
+  const planEl = document.getElementById('fit-plan');
+  if (planEl) {{
+    if (!plan) {{
+      planEl.textContent = '';
+    }} else {{
+      const m = plan.metrics, f = plan.flags;
+      const tiers = `vram ${{m.tier1_vram_gb.toFixed(1)}}GB · ram ${{m.tier2_ram_gb.toFixed(1)}}GB · disk ${{m.tier3_disk_gb.toFixed(1)}}GB`;
+      const notes = [];
+      if (f.recommend_cap) notes.push('fits up to ' + formatCtx(f.recommend_cap));
+      if (f.io_latency_warning) notes.push('the disk serves part of it - long prompts get slower');
+      if (f.disk_full) notes.push('the disk is nearly full');
+      planEl.textContent = tiers + (notes.length ? ' — ' + notes.join('; ') : '');
+      planEl.style.color = f.disk_full ? '#FF9B9B' : (f.io_latency_warning ? '#FFD54F' : '#FFDD00');
+    }}
   }}
   if (btn) {{
     const fits = needs_gb <= has_gb;
