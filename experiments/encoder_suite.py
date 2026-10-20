@@ -257,6 +257,9 @@ def make_encoder(name: str) -> tuple[Callable[[list[str]], np.ndarray], dict]:
     if name.startswith("checkpoint:"):
         # a trained SentenceTransformer checkpoint
         return _sentence_transformer(name.split(":", 1)[1])
+    if "/" in name or name.endswith(".gguf"):
+        # any sentence-transformers id (a local path counts)
+        return _sentence_transformer(name)
     raise SystemExit(f"unknown encoder: {name!r}")
 
 

@@ -1,0 +1,19 @@
+{
+ "student": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+ "teacher": "",
+ "examples": 348,
+ "epochs": 1,
+ "batch_size": 16,
+ "lr": 5e-06,
+ "temperature": 0.05,
+ "alpha": 0.5,
+ "hard_weight": 0.5,
+ "seed": 20261020,
+ "seconds": 31.4,
+ "history": [
+  {
+   "epoch": 0,
+   "steps": 21
+  }
+ ]
+}

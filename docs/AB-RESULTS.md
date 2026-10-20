@@ -98,8 +98,26 @@ At the **shipped** thresholds, the tuned encoder against the stock:
 Six times more true duplicates merged, the same precision, the facts
 slightly better. The model is the lever; the threshold is not.
 
-**Still owed:** the held-out split (the current checkpoint was trained and
-measured on the same traffic, so it is a fit, not a generalisation).
+**The held-out test** (the conversations split in half, trained on one
+half, measured on the other - `experiments/encoder_holdout.py`):
+
+| | the stock L3-v2 | the tuned one |
+|---|---|---|
+| the dedup's best F1 on the holdout | 0.698 | **0.827** |
+| the dedup's recall at the shipped 0.92 | 0.047 | 0.047 |
+| the drift's AUC on the holdout | 0.957 | 0.956 |
+
+**The tuning generalises** (18% better separation on unseen
+conversations) **and it still cannot be cashed in**: at the shipped
+threshold the two encoders are a wash, and moving the tuned one to its own
+best threshold costs facts (the replay: 46.3% against the stock's 50.6%).
+
+**The negative result, stated plainly:** as it stands, the tuning buys a
+better ranking and nothing else, because the only way to use a better
+ranking is to move the threshold - and moving the threshold is what costs
+the facts. The next objective is therefore a **hinge at the operating
+point** (the duplicates' cosine above 0.92, the distinct pairs' below),
+not an F1.
 
 ---
 

@@ -57,6 +57,9 @@ SHIPPED = {"dedup": 0.92, "drift": 0.6}
 DEDUP_ONLY = {"dedup": 0.57, "drift": 0.6}
 DRIFT_ONLY = {"dedup": 0.92, "drift": 0.77}
 RECALIBRATED = {"dedup": 0.57, "drift": 0.77}
+#: the tuned encoder at its own best threshold (0.67, measured on the
+#: held-out half): the model and the operating point travel together
+TUNED_POINT = {"dedup": 0.67, "drift": 0.6}
 
 
 def load_fixture_conversations(fixtures: Path) -> list[dict]:
@@ -222,7 +225,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                      "arms": {}}
     for name, points in (("shipped", SHIPPED), ("dedup_only", DEDUP_ONLY),
                          ("drift_only", DRIFT_ONLY),
-                         ("recalibrated", RECALIBRATED)):
+                         ("recalibrated", RECALIBRATED),
+                         ("tuned_point", TUNED_POINT)):
         print(f"\n=== {name} (dedup {points['dedup']}, drift {points['drift']})",
               flush=True)
         records = replay(conversations, answers, points,
