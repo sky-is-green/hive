@@ -239,10 +239,40 @@ because it improves the *ranking* of what is a duplicate; the threshold
 cannot be lowered because lowering it moves the boundary, and the
 boundary is where the distinct facts get caught.
 
+**The held-out test: the tuning generalises, and it still cannot be
+shipped.** The checkpoint above was trained and measured on the same
+traffic, so it is a fit. The held-out run divides the 82 conversations in
+half (deterministically, by id), trains on one half and measures both
+encoders on the other (`experiments/encoder_holdout.py`):
+
+| | the stock L3-v2 | the tuned one |
+|---|---|---|
+| the dedup's best F1 on the holdout | 0.698 | **0.827** |
+| the dedup's recall at the shipped 0.92 | 0.047 | 0.047 |
+| the drift's AUC on the holdout | 0.957 | 0.956 |
+
+**The separation generalises** - the tuned encoder is 18% better at
+separating duplicates on conversations it never saw ✓✓. **And it still
+cannot be cashed in**: at the shipped threshold the two encoders behave
+identically (the facts are kept, 50.79% against the stock's 50.55% - a
+wash ✓), and moving the tuned encoder to *its own* best threshold (0.67)
+costs facts (the recall 46.3% ✗ - the same asymmetry, the same loss ✓).
+
+So the honest conclusion is a negative one: **as it stands the tuning
+buys a better ranking and nothing else**, because the only way to use a
+better ranking is to move the threshold, and moving the threshold is
+exactly what costs the facts. The stock model at the shipped threshold
+remains the best configuration (50.55% against 50.79% - a wash, with the
+facts kept in both).
+
 **The next fine-tune takes the lesson.** The current one optimises the
-decision's F1, which is the wrong target for an asymmetric cost. The
-next one weights a false merge above a missed merge (precision-weighted
-at the operating point), on a held-out split.
+decision's F1, which is the wrong target for an asymmetric cost. The next
+one optimises **the decision at the operating point**: a hinge at 0.92
+that pushes the true duplicates' cosine above it and the distinct pairs'
+below it, so the separation improves *where the system actually runs*
+instead of at a threshold that cannot be reached. Measured on a held-out
+split, because the current one was fitted and measured on the same
+traffic.
 
 **The next fine-tune is from the best base we tested - and the best base
 is the one we already ship.** `paraphrase-MiniLM-L3-v2` wins the drift
