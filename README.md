@@ -271,6 +271,14 @@ a single hive theme (yellow/black) across every page.
 | [`docs/SPLINTER-MEMORY.md`](docs/SPLINTER-MEMORY.md) | **Long-Context Memory Curation Management** — the Splinter Memory white paper in the form the Hub reads it: the card is the paper |
 | [`docs/CASCADE-PAPER.md`](docs/CASCADE-PAPER.md) | **The Hive Cascade** — detect → repair → escalate: the gold-free runtime contract, the role taxonomy, the measured results and the pre-registered negative result |
 
+### The A/B campaign
+
+| Document | What it is |
+|---|---|
+| [`docs/AB-PLAN.md`](docs/AB-PLAN.md) | The scope: the comparisons, their metrics, their falsification conditions and their costs, ordered by information per hour |
+| [`docs/AB-RESULTS.md`](docs/AB-RESULTS.md) | The results so far: the two Scions head to head, the cascade's arms in the multi-sample regime, the curation against the FIFO window, and the encoder's three jobs |
+| [`docs/ENCODER-NOTES.md`](docs/ENCODER-NOTES.md) | Which encoder the harness should use: the sweep, the held-out test, and the falsified hypothesis about the membrane's thresholds |
+
 ### Console features
 
 - **Home tab** — orientation, quick links, and the **backend selector**
