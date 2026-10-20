@@ -1025,8 +1025,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--api-fallback", default="",
-        help="OpenAI-compatible base URL used ONLY when validation rejects and "
-             "no other API role is configured; empty (default) = API off",
+        help="the OpenAI-compatible endpoint used ONLY when validation rejects "
+             "and no other API role is configured (the FULL url, e.g. "
+             "http://127.0.0.1:8081/v1/chat/completions); empty (default) = API off",
     )
     parser.add_argument("--api-fallback-model", default="",
                         help="model name for the fallback (default: CASCADE_API_MODEL)")
