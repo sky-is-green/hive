@@ -953,7 +953,7 @@ wake. Nothing runs in the foreground.</p>
       <label title="How: -t <n> or omit auto. Does: CPU parallelism. Changing: 4→16 up tok/s, over→down.">threads  <input id="eng-threads" type="number" placeholder="auto" oninput="engDirty=true"></label>
       <label title="How: -ngl <n> 999=all, clamped to est_layers. Does: GPU VRAM linear. Changing: 999→28 on 8GB fits but slower; 999 oom→exit.">gpu_layers  <input id="eng-gpu" type="number" value="999" oninput="engDirty=true"></label>
       <label title="How: auto_fit → ngl from free VRAM + KV (GET /v1/server/status). Does: Offloads overflow layers to CPU/GTT instead of OOM. Changing: on overrides gpu_layers.">auto-fit <input id="eng-autofit" type="checkbox" onchange="engDirty=true"></label>
-      <label title="How: visible_devices → HIP/CUDA_VISIBLE_DEVICES for this server. Does: Pins the model to specific card(s). Changing: e.g. 1 = second HIP device (PCI order).">GPU(s) <select id="eng-devices" onfocus="fillGpuDevices()" onchange="engDirty=true"><option value="">auto (all visible)</option></select></label>
+      <label title="How: visible_devices → HIP/CUDA_VISIBLE_DEVICES for this server. Does: Pins the model to specific card(s). Changing: e.g. 1 = second HIP device (PCI order). 'auto' takes the card that is NOT the display, so the desktop keeps its own VRAM.">GPU(s) <select id="eng-devices" onfocus="fillGpuDevices()" onchange="engDirty=true"><option value="">auto (the spare card)</option></select></label>
       <label title="How: -fa on if set, auto on when ctx>=8192. Does: Faster long ctx. Changing: off→on +10-30% at 32k, needs GPU.">flash_attn  <select id="eng-flash" onchange="engDirty=true"><option value="">off</option><option value="on">on</option><option value="auto">auto</option></select></label>
       <label title="How: -np <n> parallel slots. Does: Concurrent decode, ctx/slots. Changing: 1→4 throughput up, per-slot ctx down.">parallel  <input id="eng-parallel" type="number" placeholder="1" oninput="engDirty=true"></label>
       <label title="How: -b <n> 512 default. Does: Tokens/step RAM. Changing: 512→2048 prompt faster, more VRAM/spill.">batch  <input id="eng-batch" type="number" placeholder="512" oninput="engDirty=true"></label>
@@ -3800,6 +3800,13 @@ async function fillGpuDevices() {{
       opt.value = String(d.index);
       opt.textContent = `${{d.index}}: ${{d.name || d.bdf || 'gpu'}} ${{d.free_gb ?? '?'}}GB free${{d.display ? ' (display)' : ''}}`;
       sel.appendChild(opt);
+    }}
+    // say which card "auto" will take
+    const spare = devs.find(d => !d.display);
+    const auto = sel.querySelector('option[value=""]');
+    if (auto && spare) {{
+      auto.textContent = `auto (the spare card: ${{spare.index}})`;
+      auto.title = `GPU ${{spare.index}} is not the display, so the desktop keeps its own VRAM`;
     }}
     sel.dataset.filled = '1';
   }} catch (e) {{}}
