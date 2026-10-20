@@ -33,6 +33,8 @@ from typing import Any
 BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode")
 #: every string the Studio stores
 STR_KEYS = ("strata_base", "strata_repo")
+#: the grouped control blocks the Global tab owns
+DICT_KEYS = ("memory_defaults", "quality_defaults", "mcp", "runtime_defaults")
 
 DEFAULTS: dict[str, Any] = {
     "sandbox_enabled": True,
@@ -41,6 +43,15 @@ DEFAULTS: dict[str, Any] = {
     "dev_mode": False,
     "strata_base": os.environ.get("CASCADE_SCION_BASE") or "http://127.0.0.1:8081/v1",
     "strata_repo": "",          # the Strata checkout (the sibling by default)
+    # the harness-wide baseline: what a conversation gets when it overrides
+    # nothing.  The Splinter tab layers this conversation's overrides on top.
+    "memory_defaults": {},
+    # the cascade's defaults: the judge, the repair, the gate, the escalation
+    "quality_defaults": {},
+    # the memory over MCP: the endpoint, its tools, what the agent may do
+    "mcp": {"enabled": True, "tools": ["remember", "search"], "read_only": False},
+    # the runtime baseline: the context, the GPU layers, the sampling
+    "runtime_defaults": {},
 }
 
 
@@ -65,6 +76,12 @@ def load_settings(state_dir: str | Path | None = None) -> dict[str, Any]:
         value = str(raw.get(key) or "").strip()
         if value:
             out[key] = value
+    for key in DICT_KEYS:
+        value = raw.get(key)
+        if isinstance(value, dict):
+            merged = dict(DEFAULTS[key]) if isinstance(DEFAULTS.get(key), dict) else {}
+            merged.update(value)
+            out[key] = merged
     return out
 
 
@@ -79,6 +96,12 @@ def save_settings(data: dict[str, Any],
         value = str(data.get(key) or "").strip()
         if value:
             current[key] = value
+    for key in DICT_KEYS:
+        value = data.get(key)
+        if isinstance(value, dict):
+            merged = dict(current.get(key) or {})
+            merged.update(value)
+            current[key] = merged
     path = settings_path(state_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(current, indent=1), encoding="utf-8")
