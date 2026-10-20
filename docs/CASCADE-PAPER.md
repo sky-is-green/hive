@@ -186,6 +186,54 @@ rejection, and a cleared attempt is re-framed, never rewritten.
 `results/runner-cascade-sampled-nothink-20261018/`) reported 3 truncations
 caught and flagged, and 0 false rejects in both.
 
+### 4.1 The tiered refresh: the two Scions, measured side by side
+
+The 2026-10-18 numbers above come from the 176B alone. The question the
+tiered design actually poses is *which tier does the work*, so both
+Scion models were served at once - on one card, sharing it - and run over
+the same 28 organic tasks.
+
+**The models, head to head** (one draw each, T=0.7, 640 tokens, 62 minutes
+wall, 0 errors; `experiments/cascade/results/dual-scion-20261020/full28/`):
+
+| | the 35B-A3B | the 176B-A6B |
+|---|---|---|
+| correct (the task's own checker) | **21/28** | 19/28 |
+| the weight | 11.3 GB | ~132 GB |
+| latency, median (under co-hosting) | 84.9 s | 93.9 s |
+| latency, p90 | 189.5 s | 213.5 s |
+
+They are **equivalent on this class within noise** - the split on the
+disagreements is 8 to 6 - and the 176B is twelve times the weight. They
+also **disagree on 16 of 28**, so neither dominates: the disagreement is
+the raw material for an arbiter, and a router that knows *which* model to
+trust per item is worth more than either model alone.
+
+**The cascade over the 35B** (the same 28 tasks, the deterministic judge,
+the repair leg on, T=0.7):
+
+| | |
+|---|---|
+| the model's own accuracy | 0.821 (23/28) |
+| **the cascade's served-correct** | **0.857 (24/28)** |
+| the repair leg | 1 attempted, **1 cleared** |
+| **false rejects** | **0** |
+| false accepts | 4 (0.143) |
+| the mean per-item latency | **6.9 s** |
+
+The loop does its job on the small tier: one wrong answer caught and
+repaired, nothing false-rejected, and the served answer is better than the
+model's own. The 176B's arm over the same set is running.
+
+**What this does and does not say.** One draw per task, 28 tasks, one
+class (arithmetic, code, multiple choice), and the latencies are measured
+under co-hosting - so they are the numbers a tiered deployment sees, not
+the isolated ones. The tiering claim that survives this measurement is
+narrow and worth stating exactly: **on this class the small tier can take
+the work outright**, and the value of the large tier is not accuracy but
+the 8 items where it was right and the small one was not - which is
+exactly what an arbiter would be for.
+
 ## 5. The learned gate: a negative result we kept
 
 The deterministic detectors have a measured blind spot: answers that are
