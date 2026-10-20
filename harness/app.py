@@ -78,7 +78,8 @@ from backend.providers import (
 from cortex.config import SplinterConfig
 from cortex.splinter import Splinter
 from experiments.model_probe import _list_models, probe_model
-from harness.hardware import disk_summary, parse_visible_indices
+from harness.hardware import (disk_summary, non_display_index,
+                               parse_visible_indices)
 from harness.models import LlamaServerManager
 from harness.cascade import api as cascade_api
 from harness.reports import (
@@ -3753,11 +3754,20 @@ def create_app(
         threads = req.threads if req.threads is not None else launch.get("threads")
         try:
             env = None
-            if req.visible_devices:
+            visible = req.visible_devices
+            if not visible:
+                # a launch that does not name a card takes the spare one:
+                # the display's card belongs to the desktop, and taking it
+                # makes the window stutter (or fails outright when the
+                # display's VRAM is nearly full)
+                spare = non_display_index()
+                if spare is not None:
+                    visible = str(spare)
+            if visible:
                 vis_env = ("CUDA_VISIBLE_DEVICES"
                            if (req.backend or "").strip().lower() == "cuda"
                            else "HIP_VISIBLE_DEVICES")
-                env = {vis_env: req.visible_devices}
+                env = {vis_env: visible}
             info = models_manager.load(
                 model=req.model, hf_repo=req.hf_repo, hf_file=req.hf_file,
                 key=req.key, port=req.port, ctx_size=ctx_size,
