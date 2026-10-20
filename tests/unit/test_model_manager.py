@@ -47,8 +47,12 @@ def manager(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     spawned = {}
 
-    def fake_spawner(cmd, stdout=None, stderr=None):
+    def fake_spawner(cmd, stdout=None, stderr=None, env=None):
+        # the launch passes env when it pins a card (the spare one by
+        # default), so the fake has to accept it
         spawned["cmd"] = cmd
+        if env:
+            spawned["env"] = env
         return FakeProc()
 
     # healthy immediately, advertising the model id from the -m argument
@@ -136,8 +140,12 @@ def test_load_uses_backend_binary(tmp_path, monkeypatch):
 
     spawned = {}
 
-    def fake_spawner(cmd, stdout=None, stderr=None):
+    def fake_spawner(cmd, stdout=None, stderr=None, env=None):
+        # the launch passes env when it pins a card (the spare one by
+        # default), so the fake has to accept it
         spawned["cmd"] = cmd
+        if env:
+            spawned["env"] = env
         return FakeProc()
 
     def fake_prober(base_url):
@@ -1020,8 +1028,12 @@ def test_load_auto_ngl_uses_fit(tmp_path, monkeypatch):
     (model_dir / "m.gguf").write_bytes(b"x")
     spawned = {}
 
-    def fake_spawner(cmd, stdout=None, stderr=None):
+    def fake_spawner(cmd, stdout=None, stderr=None, env=None):
+        # the launch passes env when it pins a card (the spare one by
+        # default), so the fake has to accept it
         spawned["cmd"] = cmd
+        if env:
+            spawned["env"] = env
         return FakeProc()
 
     mgr = mm.LlamaServerManager(
