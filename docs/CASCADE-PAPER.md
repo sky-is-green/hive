@@ -225,6 +225,27 @@ The loop does its job on the small tier: one wrong answer caught and
 repaired, nothing false-rejected, and the served answer is better than the
 model's own.
 
+**The arms, in the multi-sample regime** (the same 28 tasks, the 35B,
+three draws each - 84 items per arm, because a single draw is a
+direction and not a measurement):
+
+| arm | served-correct | the verifier rejected | of which false | the repair leg |
+|---|---|---|---|---|
+| no verifier, no repair | 64/84 (76.2%) | - | - | - |
+| the deterministic verifier, no repair | 63/84 (75.0%) | 6 | 1 | - |
+| the verifier + the repair leg | 67/84 (79.8%) | 9 | 1 | 8/9 cleared |
+| + the learned gate | 70/84 (83.3%) | 12 | 3 | 8/11 |
+
+**A verifier on its own is a tax: -1.2 points.** It catches the wrong
+answers and, with no repair leg, they are simply not served. **The repair
+leg is what makes verification pay: +4.8 points over the verifier alone,
++3.6 over no verification at all** - 8 of the 9 catches cleared. The gate
+adds +3.5 more, at the cost of 3 false flags against its pre-registered
+budget of 2 (so it stays off - see §5).
+
+And the trade is worth making: the verifier catches **8 wrong answers for
+every 1 correct answer it drops**.
+
 **And the comparable pair** - the same 10 tasks, the same cascade, the
 two models:
 
