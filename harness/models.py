@@ -1437,6 +1437,14 @@ class LlamaServerManager:
                 cmd += ["--pooling", pooling]
         if mmproj:
             cmd += ["--mmproj", mmproj]
+        if (backend or "").strip().lower() == "scion" and not any(
+                str(a).startswith("--skip-chat-parsing") for a in (extra_args or [])):
+            # the Scion fork parses the reply with its structured-output
+            # ("peg-native") parser by default, and it answers 500 when the
+            # model replies in plain prose.  A plain chat wants a plain
+            # content parser: everything (reasoning included) in the
+            # content section.
+            cmd += ["--skip-chat-parsing"]
         cmd += [str(a) for a in (extra_args or [])]
 
         self.log_dir.mkdir(parents=True, exist_ok=True)

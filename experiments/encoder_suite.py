@@ -249,6 +249,10 @@ def make_encoder(name: str) -> tuple[Callable[[list[str]], np.ndarray], dict]:
     if name == "qwen3-0.6b":
         return _sentence_transformer("Qwen/Qwen3-Embedding-0.6B")
     if name == "qwen3-0.6b-p":
+        # the model's own recommendation: a prefix on the query side
+        return _sentence_transformer("Qwen/Qwen3-Embedding-0.6B",
+                                     query_prefix="query: ")
+    if name == "qwen3-0.6b-p":
         return _sentence_transformer("Qwen/Qwen3-Embedding-0.6B",
                                      query_prefix="query: ")
     if name == "e5-small-p":
