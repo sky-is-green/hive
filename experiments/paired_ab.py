@@ -406,6 +406,16 @@ def main(argv: list[str] | None = None) -> int:
              "embedding model yields confidence ~1.0 regardless)",
     )
     parser.add_argument(
+        "--timeout", type=int, default=300,
+        help="the backend's read timeout (s). A local large tier streams its "
+             "experts from storage on the first request, which takes minutes.",
+    )
+    parser.add_argument(
+        "--warmup", action="store_true",
+        help="send one throwaway generation first, so the engine's expert "
+             "cache is filled before the measured turns",
+    )
+    parser.add_argument(
         "--encoder", default="",
         help="the curation's encoder (a sentence-transformers id). The default "
              "is the stock MiniLM. A model from the *generator's* family is "
@@ -479,11 +489,22 @@ def main(argv: list[str] | None = None) -> int:
         ultra = UltraSmallDrone(model_name=args.encoder or
                                 "sentence-transformers/paraphrase-MiniLM-L3-v2",
                                 confidence_mode=args.confidence)
+        if args.warmup:
+            # the first request on a sparse MoE streams its experts from
+            # storage: minutes, not seconds.  Fill the cache before the
+            # measured turns, or the first turn is a timeout.
+            print("[paired] warming the engine ...", flush=True)
+            try:
+                backend.generate("", "Reply with the word ready.", None)
+            except Exception as exc:  # noqa: BLE001 - a warm-up failure is not fatal
+                print(f"[paired] the warm-up failed: {exc}", flush=True)
+            print("[paired] warm.", flush=True)
         ultra._ensure_loaded()
         backend = LMStudioBackend(base_url=args.base_url, model=args.model,
                                   api_key=pkw.get("api_key", "lm-studio"),
                                   extra_headers=pkw.get("extra_headers"),
-                                  disable_thinking=args.no_thinking)
+                                  disable_thinking=args.no_thinking,
+                                  timeout=args.timeout)
         if not backend.health():
             print(f"LM Studio not reachable at {args.base_url}")
             return 3
