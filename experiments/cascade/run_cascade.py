@@ -487,7 +487,11 @@ class ScionTier:
 
     def alive(self) -> bool:
         try:
-            r = requests.get(f"{self.base}/models", timeout=5)
+            # a llama.cpp server answers /v1/models only when a slot is
+            # free, so a busy engine can take longer than a probe's
+            # patience - a 5 second timeout reports a healthy server as
+            # unreachable
+            r = requests.get(f"{self.base}/models", timeout=30)
             return r.status_code == 200
         except Exception:  # noqa: BLE001
             return False
