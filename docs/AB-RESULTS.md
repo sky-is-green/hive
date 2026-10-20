@@ -330,13 +330,23 @@ measured, AUC 0.9815 against the drone's 0.945.
 
 ---
 
-## Still to run
+## What ran, and what is still owed
 
-| id | what |
-|---|---|
-| 1B | the cascade over each model (running) |
-| 1C | the MTP drafter on/off (the sidecar is in the Strata format, not llama.cpp's `-md`) |
-| 3A-3E | the cascade's arms: the judge, the repair, the gate, the router, the escalation |
-| 2A | curated vs FIFO, each model as the generator |
-| 2C / 5A | the encoder on a held-out split |
-| 4A-4C | the P1-P10 protocol with each model, the 500-turn stability, the PES |
+| id | what | state |
+|---|---|---|
+| 1A | the two Scions, head to head | **done** (28 tasks; equivalent, 12x the weight apart) |
+| 1B | the cascade over each model | **done** (identical outcomes, 42.9x the latency) |
+| 1C | the MTP drafter on/off | **owed** - the Hub sidecar is in the Strata format, not llama.cpp's `-md` |
+| 2A | curated vs FIFO | **done** (180 turns; a tie on the 35B - the generator scopes it) |
+| 2B | the membrane's thresholds | **done** (H falsified; the asymmetry is the reason) |
+| 2C / 5A | the encoder on a held-out split | **done** (the tuning generalises, and still cannot be cashed in) |
+| 3A-3E | the cascade's arms | **done** except the escalation's own value (the verifier's catch rate is too draw-dependent to measure it) |
+| 4A | the P1-P10 protocol | running against the 35B (a 12-conversation fixture subset) |
+| 4B | the 500-turn stability | **owed** |
+| 4C | the PES per configuration | rides along with 4A |
+
+**The rule the campaign learned:** a single draw is a direction, not a
+measurement. The verifier's catch rate on the same tasks and the same
+model ranges from 0 to 4 out of 28 across draws, so every number in this
+log that moved a headline verdict was re-measured with three draws (84
+items) before it was believed. The gate's verdict changed when it was.
