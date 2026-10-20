@@ -58,6 +58,15 @@ DRIFT_THRESHOLD = 0.6
 DUP_JACCARD = 0.5       # a duplicate: the same content words
 DRIFT_JACCARD = 0.05    # a topic change: almost no shared content words
 
+#: The text handed to the encoder is capped.  The encoders truncate at
+#: 256 tokens anyway, so the cap changes nothing that is measured - but
+#: the drift detector's own input is the older half of a whole
+#: conversation, which is megabytes of text per turn, and building those
+#: strings for thousands of cases costs gigabytes of RAM.  (That the hot
+#: path embeds the whole older half is a finding in its own right: the
+#: drift check's cost grows with the conversation.)
+MAX_EMBED_CHARS = 8000
+
 WORD_RE = re.compile(r"[a-z0-9]{4,}")
 STOPWORDS = {
     "about", "after", "again", "against", "because", "been", "before",
@@ -186,17 +195,17 @@ def build_drift_cases(conversations: list[dict], window: int = 3,
         if len(chunks) < min_history + window:
             continue
         terms = [content_terms(c["text"]) for c in chunks]
+        older_half = chunks[:len(chunks) // 2]
+        older_terms = set().union(*terms[:len(chunks) // 2]) if older_half else set()
         for cut in range(min_history, len(chunks) - window + 1):
             recent = chunks[cut:cut + window]
-            older = chunks[:len(chunks) // 2]
-            if not older:
+            if not older_half:
                 continue
-            jac = jaccard(set().union(*terms[cut:cut + window]),
-                          set().union(*terms[:len(chunks) // 2]))
+            jac = jaccard(set().union(*terms[cut:cut + window]), older_terms)
             cases.append({
                 "conversation_id": conv["id"],
-                "recent": " ".join(c["text"] for c in recent),
-                "older": " ".join(c["text"] for c in older),
+                "recent": " ".join(c["text"] for c in recent)[:MAX_EMBED_CHARS],
+                "older": " ".join(c["text"] for c in older_half)[:MAX_EMBED_CHARS],
                 "drift": bool(jac < DRIFT_JACCARD),
                 "jaccard": round(jac, 4),
             })
@@ -370,7 +379,8 @@ def measure_cost(embed, texts: list[str]) -> dict:
 # The run
 # ---------------------------------------------------------------------------
 def run(encoders: list[str], corpus_dirs: list[str], per_conv: int,
-        out_path: Optional[Path], rank_pairs: int) -> dict:
+        out_path: Optional[Path], rank_pairs: int,
+        max_pairs: int = 0, max_cases: int = 0) -> dict:
     conversations = load_conversations(corpus_dirs)
     chunks_total = sum(len(c["chunks"]) for c in conversations)
     print(f"corpus: {len(conversations)} conversations, {chunks_total} chunks")
@@ -378,6 +388,10 @@ def run(encoders: list[str], corpus_dirs: list[str], per_conv: int,
         raise SystemExit("no conversations found; pass --corpus")
     dedup_pairs = build_dedup_pairs(conversations, per_conv=per_conv)
     drift_cases = build_drift_cases(conversations)
+    if max_pairs:
+        dedup_pairs = dedup_pairs[:max_pairs]
+    if max_cases:
+        drift_cases = drift_cases[:max_cases]
     print(f"dedup pairs: {len(dedup_pairs)} "
           f"({sum(1 for p in dedup_pairs if p['duplicate'])} positive)")
     print(f"drift cases: {len(drift_cases)} "
@@ -455,10 +469,16 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="the duplicate pairs sampled per conversation")
     parser.add_argument("--rank-pairs", type=int, default=400,
                         help="the ranking pairs (the fixtures)")
+    parser.add_argument("--max-pairs", type=int, default=0,
+                        help="cap the duplicate pairs (0 = all) - the big "
+                             "encoders need a subset on the CPU")
+    parser.add_argument("--max-cases", type=int, default=0,
+                        help="cap the drift cases (0 = all)")
     parser.add_argument("--out", type=Path, default=None,
                         help="where to write the JSON result")
     args = parser.parse_args(argv)
-    run(args.encoders, args.corpus, args.per_conv, args.out, args.rank_pairs)
+    run(args.encoders, args.corpus, args.per_conv, args.out, args.rank_pairs,
+        max_pairs=args.max_pairs, max_cases=args.max_cases)
     return 0
 
 
