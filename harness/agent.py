@@ -278,9 +278,19 @@ def _windows_bash_path() -> Optional[str]:
     return None
 
 
-def _runtime_env() -> dict:
-    """Extra env for the dsh runtime subprocess."""
+def _runtime_env(session_root: str | None = None,
+                 cordis: str | None = None) -> dict:
+    """Extra env for the dsh runtime subprocess.
+
+    The SDK used to inject DSH_SESSION_ROOT and DSH_CORDIS_CONFIG from its
+    own config; it no longer does (the profile owns the persistence now), so
+    the caller passes them through the environment.
+    """
     env: dict[str, str] = {}
+    if session_root:
+        env["DSH_SESSION_ROOT"] = session_root
+    if cordis:
+        env["DSH_CORDIS_CONFIG"] = cordis
     if os.name == "nt":
         git_bin = _windows_bash_path()
         if git_bin:
@@ -446,6 +456,8 @@ class DshAgentService:
             os.environ["DSH_RUNTIME_MODE"] = "node"
             os.environ.setdefault("DSH_HOME",
                                   str(REPO_ROOT / ".dsh-home"))
+            dsh_home = REPO_ROOT / ".dsh-home"
+            dsh_home.mkdir(parents=True, exist_ok=True)
             self.session_root.mkdir(parents=True, exist_ok=True)
             self._harness = DeepSeekHarness(
                 provider="deepseek-official",
@@ -453,9 +465,14 @@ class DshAgentService:
                 api_key=api_key or "lm-studio",
                 model=model,
                 cwd=str(self.default_cwd),
-                session_root=str(self.session_root),
-                cordis=cordis,
-                env=_runtime_env(),
+                # the profile owns the runtime composition, the persistence
+                # and the tools; the home is explicit (the SDK never guesses
+                # ~/.dsh) and the cold profile handshake gets its own budget
+                dsh_home=str(dsh_home),
+                profile="sdk",
+                initialize_timeout_seconds=120.0,
+                env=_runtime_env(session_root=str(self.session_root),
+                                 cordis=cordis),
             )
             self._target = key
             return self._harness
