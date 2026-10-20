@@ -88,6 +88,13 @@ actually wants.
 | bge-small-en-v1.5 | 33.4M | 384 | 0.085 | 0.662 @ 0.76 | 0.000 | 0.489 | 0.725 | 1.9 |
 | e5-small-v2 | 33.4M | 384 | 0.536 | 0.692 @ 0.91 | 0.000 | 0.501 | 0.882 | 1.7 |
 | gte-small | 33.4M | 384 | 0.574 | 0.821 @ 0.90 | 0.000 | 0.500 | 0.877 | 2.0 |
+| nomic-embed-v1.5 | 136.7M | 768 | 0.036 | 0.753 @ 0.77 | 0.000 | 0.600 @ 0.38 | **0.9815** | 18.4 |
+
+(nomic was measured on a subset - 1,500 duplicate pairs and 2,000 drift
+cases - because a 137M-parameter model on the CPU is eighteen times the
+cost per chunk of the drone. It is not a drone candidate; it is a
+**teacher** candidate: its topic-change signal is the best measured of
+anything, AUC 0.9815 against the drone's 0.945.)
 
 ## 5. What the measurement found
 
