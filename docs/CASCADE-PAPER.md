@@ -232,7 +232,40 @@ lane feeds offline training. It is the seed for three consumers:
 The lane is what turns a serving loop into a training-data pipeline without
 touching the runtime's contract.
 
-## 7. What is not claimed
+## 7. The reporting
+
+A verdict nobody can trace is a rumour. Every run therefore leaves three
+artifacts, and they are published next to this card.
+
+**`report.json`** - the per-item record. For every item: the verdict
+(`accepted`, `accepted_repaired`, `escalated`, `error`), the detector
+findings (the false equation, the traceback), the repair attempt and its
+outcome, the generations it took, the timing, and the ladder's
+resolution. The summary block carries the served-correct count, the
+repaired set, the blind spot and the detector tallies.
+
+**`manifest.json`** - the provenance. The model's sha256, the stack, the
+git commit, the task-set sha and the decode settings, plus the per-task
+and per-benchmark aggregates with both the sample-accuracy and the
+task-macro. A run can be reproduced because the manifest says what to
+reproduce.
+
+**`MODEL-CARD.md`** - generated from the manifest, for the model page.
+
+**`escalation.jsonl`** - the harvest: one line per item the ladder
+resolved, carrying the task, the full draft, the structured findings, the
+repair attempt and the resolution. The serving loop appends and forgets;
+nothing in the runtime reads it, so the gold-free contract is untouched
+while the lane feeds offline training.
+
+The point of the separation is that the *runtime* evidence (what the
+verifiers caught, what the repair fixed, what the ladder did) and the
+*evaluation* evidence (whether the answers were right) never mix. The
+first is produced by the serving path with no access to the answer key;
+the second is produced afterwards, with the key, and is never consulted
+by the loop.
+
+## 8. What is not claimed
 
 - **Not** that the cascade fixes most wrong answers. It caught 6 of 9 wrong
   answers in one regime, and 0 in the greedy regime.
@@ -245,7 +278,7 @@ touching the runtime's contract.
 - **Not** that the taxonomy is complete. 22 roles is a map of what the
   measurements needed so far.
 
-## 8. Reproduce
+## 9. Reproduce
 
 ```bash
 git clone https://github.com/sky-is-green/hivebench
@@ -271,7 +304,7 @@ and task-macro), `streams.json` (the full traces, regenerable), and a
 generated `MODEL-CARD.md`. Manifests and cards are tracked in git; the large
 stream traces are ignored.
 
-## 9. License
+## 10. License
 
 MIT.
 
