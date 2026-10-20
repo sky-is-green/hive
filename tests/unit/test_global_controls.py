@@ -126,3 +126,23 @@ def test_the_settings_index_has_no_dead_links(client):
             continue
         assert f'data-tab="{tab}"' in page, (
             f"the settings index points at {tab}, which the console does not have")
+
+
+def test_an_unset_control_is_not_written_as_false(client):
+    """Opening the tab and pressing Save must not switch off the defaults.
+
+    The controls that were never stored are *unset*, not false: the tab
+    has to remember the difference, or a save would write false for
+    every control the user never touched.
+    """
+    page = client.get("/server").text
+    assert "el.dataset.unset" in page
+    assert "if (el.checked) values[key] = true;" in page
+    # the fill marks a control with no stored value as unset
+    assert "el.dataset.unset = '1'" in page
+
+
+def test_the_global_tab_sends_the_encoder_block(client):
+    """The encoder is a stored block, so the tab has to save it."""
+    page = client.get("/server").text
+    assert "ge: 'encoder'" in page

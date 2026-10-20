@@ -169,20 +169,24 @@ def in_batch_loss(anchor: torch.Tensor, positive: torch.Tensor,
     return F.cross_entropy(sim, labels)
 
 
-def kd_loss(student: torch.Tensor, teacher: torch.Tensor,
-            labels: torch.Tensor, temperature: float = 0.05,
-            alpha: float = 0.5) -> torch.Tensor:
+def kd_loss(student_a: torch.Tensor, student_p: torch.Tensor,
+            teacher_a: torch.Tensor, teacher_p: torch.Tensor,
+            temperature: float = 0.05, alpha: float = 0.5) -> torch.Tensor:
     """The teacher's similarity matrix as the soft target.
 
     ``alpha`` is the teacher's share: at 0.5 the student is pulled half
     toward the hard labels and half toward the teacher's distribution.
     """
-    t = F.normalize(teacher, dim=-1) @ F.normalize(teacher, dim=-1).t() / temperature
-    s = F.normalize(student, dim=-1) @ F.normalize(student, dim=-1).t() / temperature
+    sa = F.normalize(student_a, dim=-1)
+    sp = F.normalize(student_p, dim=-1)
+    ta = F.normalize(teacher_a, dim=-1)
+    tp = F.normalize(teacher_p, dim=-1)
+    s = sa @ sp.t() / temperature
+    t = ta @ tp.t() / temperature
     soft = F.kl_div(F.log_softmax(s, dim=-1),
                     F.softmax(t.detach(), dim=-1),
                     reduction="batchmean")
-    hard = F.cross_entropy(s, labels)
+    hard = F.cross_entropy(s, torch.arange(s.size(0), device=s.device))
     return alpha * soft + (1.0 - alpha) * hard
 
 
@@ -234,20 +238,35 @@ def train(args) -> dict:
     history: list[dict] = []
     step = 0
     t0 = time.time()
+    # The batches are single-task on purpose.  The in-batch negatives
+    # are the other examples' positives, so mixing the tasks in one
+    # batch makes the drift task push the anchor away from *other
+    # tasks'* positives - which is not what the task means, and it
+    # measurably cost the drift signal the first time it was run.
+    by_task: dict[str, list[dict]] = {}
+    for example in examples:
+        by_task.setdefault(example["task"], []).append(example)
+    for rows in by_task.values():
+        random.shuffle(rows)
+    tasks = sorted(by_task)
     for epoch in range(args.epochs):
-        random.shuffle(examples)
-        for i in range(0, len(examples) - args.batch_size + 1, args.batch_size):
-            batch = examples[i:i + args.batch_size]
+        order = []
+        for task in tasks:
+            rows = by_task[task]
+            for i in range(0, len(rows) - args.batch_size + 1, args.batch_size):
+                order.append((task, rows[i:i + args.batch_size]))
+        random.shuffle(order)
+        for _task, batch in order:
             anchors = [e["anchor"] for e in batch]
             positives = [e["positive"] for e in batch]
             a_vec = embed(anchors, module, student_tokenizer)
             p_vec = embed(positives, module, student_tokenizer)
             if teacher is not None:
                 with torch.no_grad():
-                    t_vec = embed(positives, teacher[0].auto_model, teacher_tokenizer)
-                loss = kd_loss(p_vec, t_vec,
-                               torch.arange(p_vec.size(0)), temperature=args.temperature,
-                               alpha=args.alpha)
+                    t_a = embed(anchors, teacher[0].auto_model, teacher_tokenizer)
+                    t_p = embed(positives, teacher[0].auto_model, teacher_tokenizer)
+                loss = kd_loss(a_vec, p_vec, t_a, t_p,
+                               temperature=args.temperature, alpha=args.alpha)
             else:
                 loss = in_batch_loss(a_vec, p_vec, temperature=args.temperature)
             # the hard negative: the anchor should be far from it
@@ -309,12 +328,16 @@ def evaluate(args) -> dict:
     conversations = load_conversations(args.corpus)
     pairs = build_dedup_pairs(conversations, per_conv=args.per_conv)
     cases = build_drift_cases(conversations)
-    out: dict = {"checkpoint": args.checkpoint, "baseline": args.baseline}
-    for label, name in (("checkpoint", args.checkpoint), ("baseline", args.baseline)):
+    checkpoint = args.evaluate
+    out: dict = {"checkpoint": checkpoint, "baseline": args.baseline}
+    for label, name in (("checkpoint", checkpoint), ("baseline", args.baseline)):
         if not name:
             continue
         if name.startswith("checkpoint:"):
-            embed, info = make_encoder("checkpoint:" + name.split(":", 1)[1])
+            embed, info = make_encoder(name)
+        elif label == "checkpoint":
+            # a path to a saved checkpoint
+            embed, info = make_encoder("checkpoint:" + name)
         else:
             embed, info = make_encoder(name)
         from experiments.encoder_suite import measure_cost, measure_dedup, measure_drift

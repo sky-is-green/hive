@@ -254,6 +254,9 @@ def make_encoder(name: str) -> tuple[Callable[[list[str]], np.ndarray], dict]:
     if name == "e5-small-p":
         return _sentence_transformer("intfloat/e5-small-v2",
                                      query_prefix="query: ")
+    if name.startswith("checkpoint:"):
+        # a trained SentenceTransformer checkpoint
+        return _sentence_transformer(name.split(":", 1)[1])
     raise SystemExit(f"unknown encoder: {name!r}")
 
 
@@ -364,10 +367,15 @@ def measure_drift(cases: list[dict], embed) -> dict:
 
 
 def measure_cost(embed, texts: list[str]) -> dict:
-    """What the encoder costs: the time to embed a turn's worth of chunks."""
+    """What the encoder costs: the time to embed a turn's worth of chunks.
+
+    The first call loads the model, so the measurement is warmed up
+    first - otherwise the number is the load time, not the cost.
+    """
     if not texts:
         return {}
     sample = texts[:32]
+    embed(sample[:2])          # the warm-up: the model load is not the cost
     t0 = time.perf_counter()
     embed(sample)
     per = (time.perf_counter() - t0) / len(sample)
