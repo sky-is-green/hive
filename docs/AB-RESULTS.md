@@ -81,8 +81,29 @@ The duplicate test's two errors are not interchangeable - a false merge
 threshold is the wrong target. The topic-drift test only penalises, so its
 recalibration is free.
 
-**The 35B's and the 176B's arms are running** (1B): the cascade over the
-same 28 tasks, each model, the deterministic judge and the repair leg on.
+**The cascade over the 35B** (the same 28 tasks, the deterministic judge and
+the repair leg on):
+
+| | the 35B (28 tasks) | the 35B (10 tasks) |
+|---|---|---|
+| the model's own accuracy | 0.821 (23/28) | 0.800 (8/10) |
+| **the cascade's served-correct** | **0.857 (24/28)** | 0.800 (8/10) |
+| the repair leg | 1 attempted, **1 cleared** | 0 (nothing catchable) |
+| **false rejects** | **0** | **0** |
+| false accepts | 4 (0.143) | 2 (0.200) |
+| **the mean per-item latency** | **6.9 s** | **5.4 s** |
+
+The loop does its job on the small tier: one wrong answer caught and
+repaired, nothing false-rejected, and the served answer is better than
+the model's own.
+
+**The latency is the tiering story.** The 176B answers the same class at
+**2-5 minutes an item** (the expert weights stream from storage: 43-55 s
+to read the prompt, then 3 tok/s of generation), against the 35B's
+**5.4 s**. That is a **40-60x** difference per item, on the same card,
+for accuracy that the two models share (21/28 against 19/28 on the
+head-to-head). The 176B's arm over the same 10 tasks is running, to put
+the two cascade runs side by side.
 
 ---
 
