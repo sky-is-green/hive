@@ -282,6 +282,14 @@ button:hover { border-color: var(--accent); color: var(--accent); }
   color: var(--muted); margin-top: 4px; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.timing { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+  font-size: .76rem; color: var(--muted); }
+.timing span { border: 1px solid var(--line); border-radius: 999px;
+  padding: 2px 8px; transition: border-color .3s, color .3s; }
+.timing b { color: var(--fg); font-weight: 600; }
+.timing span.active { border-color: var(--accent); color: var(--accent); }
+.timing .total { border-color: var(--accent); color: var(--accent); }
+.timing-note { font-size: .78rem; color: var(--muted); margin-top: 6px; }
 .paper-card { border-left: 3px solid var(--accent); padding: .1rem 0 .1rem 1rem; }
 .paper-card h3 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .paper-card p { color: var(--muted); }
@@ -449,7 +457,18 @@ STAGE_CONTROLLER = """
       <span><i style="background: var(--c-mem)"></i>memory / context</span>
       <span><i style="background: var(--c-exec)"></i>execution</span>
     </div>
+    <div class="timing" aria-label="stage times">
+      <span data-time-step="1"><b>35B</b> 6.68 s</span>
+      <span data-time-step="2"><b>judge</b> 2.52 s</span>
+      <span data-time-step="3"><b>checker</b> &mdash;</span>
+      <span data-time-step="4"><b>27B</b> 8.92 s</span>
+      <span data-time-step="5"><b>checker</b> &mdash;</span>
+      <span class="total"><b>total</b> 18.1 s</span>
+    </div>
     <p class="caption" data-route-caption aria-live="polite"></p>
+    <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
+      27B 8.92 s. The checker is unmeasured, so it is not in the 18.1 s
+      total.</p>
   </div>
 """
 
@@ -1022,6 +1041,12 @@ JS = """
         travel(e, "var(--good)", 850);
       }
       burst([{edge: "e-ctl-answer", color: "var(--good)", count: 3}]);
+    }
+    const timing = stage.querySelector(".timing");
+    if (timing) {
+      timing.querySelectorAll("[data-time-step]").forEach(function (s) {
+        s.classList.toggle("active", Number(s.dataset.timeStep) === i);
+      });
     }
     const cap = document.querySelector("[data-route-caption]");
     if (cap) cap.innerHTML = step.caption;
