@@ -907,6 +907,84 @@ was net-zero on the class, so the tier's *value* was never measured -
 only its cost. It is now: **the 176B's generation buys nothing on this
 class, and its judge buys the errors it flags for a tenth of the price.**
 
+---
+
+## 1B-quinque. The judge tier: is a JEV model better than the 176B's own head?
+
+The architecture under test: **the 35B generates, a judge says whether
+the answer is right, and the 176B answers only when the judge sends it
+up.** The judge is therefore the most valuable thing in the cascade, and
+the question is which judge to put there.
+
+Every candidate is judged on the **same 28 organic tasks and the same
+35B answers**, so the arms are paired
+(`experiments/judge_gate.py`; the artefact is
+`experiments/cascade/results/judge-gate-20261021/`).
+
+| the judge | the AUC | the cost a verdict | the errors caught that the deterministic stack misses | the correct answers it breaks |
+|---|---|---|---|---|
+| **the 176B's own head** (a readout) | **0.864** | 2.52 s | **3 of 5** | **0** |
+| JEV-9B (prompted) | 0.837 | 0.21 s | **4 of 5** | 3 |
+| Intern-Decision-4B (prompted) | 0.738 | 0.16 s | 2 of 5 | 3 |
+| Tiny-Jev-1.7B (prompted) | 0.646 | 0.05 s | 0 of 5 | 0 |
+| Intern-Decision-0.8B (prompted) | 0.527 | 0.08 s | 0 of 5 | 0 |
+
+**A JEV model does work as a gate.** JEV-9B is the best *prompted*
+judge (AUC 0.837) and it catches **4 of the 5** errors the cascade's
+deterministic verifiers (the arithmetic consistency check and
+`code_exec`) miss - one more than the 176B's own head.
+
+**And the readout beats the prompted judge at every scale.** The order
+is monotone in the model's size and in the mechanism: the 176B's own
+readout (0.864) > the prompted JEV-9B (0.837) > the prompted
+Intern-Decision-4B (0.738) > the prompted Tiny-Jev-1.7B (0.646) > the
+prompted Intern-Decision-0.8B (0.527, a coin). **The two small JEV
+models are near chance on another model's answers and are useless as
+gates** - which is the same finding the decision-head study recorded
+("the readout class generalises: trained-low-bit bodies keep it"), now
+on a *third* model's answers.
+
+**The net is the same either way, and that is the finding.** The 176B's
+generation fixes 2 of 7 errors and breaks 2 of 21 correct answers, so a
+routed error is worth 2/7 and a routed correct answer costs 2/21:
+
+| the gate | the routed | the broken | the net | the time for 28 items |
+|---|---|---|---|---|
+| the 176B's own head (at 0.65) | 3 | 0 | **+0.86 answers (+3.1 points)** | 132.6 s |
+| JEV-9B (at 0.80) | 4 | 3 | **+0.86 answers (+3.1 points)** | 88.6 s |
+| the OR of both | 4 | 3 | +0.86 answers | 178.2 s |
+
+JEV-9B's extra catch is **exactly cancelled** by the three correct
+answers it routes to a model that breaks 2 of 21. The head's version
+never touches a correct answer; JEV-9B's is 12x cheaper a verdict
+(0.21 s against 2.52 s - and the head's 2.52 s is *with* the resident
+tier on, 3.20 s without it), which is worth 44 s over 28 items.
+
+**The constraint that decides it is the box, not the quality.** A 9B
+judge in bf16 needs ~18 GB of host RAM to load and does not fit beside
+the 176B on this machine (a load attempt took the box to 4 GB of
+`MemAvailable`, and the server with it). The two judges that *do* fit
+(0.8B, 1.7B) are near chance. So the choice is between:
+
+- **the 176B's own head** - the best gate (AUC 0.864, 3 unique catches,
+  0 false rejects), no extra model, no extra VRAM, 2.52 s a verdict;
+- **JEV-9B** - the same net, 12x cheaper a verdict, 3 false rejects,
+  and a 9B model that cannot share the box with the 176B.
+
+**The head is the one to ship, and the reason is the false rejects.**
+A judge that routes a correct answer to a model with a 2-in-21 break
+rate is buying its extra catch with a coin-flip on the answers that were
+already right. The head's 0 false rejects is not a small difference -
+it is the whole difference between a gate that can be trusted and one
+that needs a second opinion.
+
+**And the honest ceiling.** Even the best gate buys **+3.1 points** on
+this class (0.821 -> 0.852), because the 176B's generation is net-zero
+here. The gate is worth what the escalation is worth, and the escalation
+is worth nothing on this class. The judge's value will be on the
+classes where the big model is actually better - which is the
+measurement the tier has still not made.
+
 
 
 **The honest summary of the levers**, in the order they pay:
