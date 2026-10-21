@@ -281,6 +281,65 @@ the work outright**, and the value of the large tier is not accuracy but
 the 8 items where it was right and the small one was not - which is
 exactly what an arbiter would be for.
 
+## 4b. The escalation tier: a generation that buys nothing, and a judgement that does
+
+The 229.7 s above is not a property of the model. The same engine's log
+says the 176B decodes at **67.7 tok/s** over the 4,424 generations it has
+served. It is bimodal, and the engine says which mode it is in: a fresh
+prompt read costs 5 tok/s, a reused prefix 71 tok/s, and the cold phase
+is the OS pulling the model's expert weights off the NVMe ("the OS read
+96842 MB from storage"). Warm and alone, the same 28 tasks cost **26.9 s
+an item** - so about 7x of the 42.5x was contention and a cold cache, and
+about 6x is the tier.
+
+That leaves the question the campaign never asked: **what is the
+escalation tier worth?** The tier asked the 176B to *answer again*. Both
+arms were then measured on the same 28 tasks, the same 35B answers, the
+same 176B - the arms separately, because interleaving them makes each
+inherit the other's expert cache:
+
+| | the generate arm | the judge arm |
+|---|---|---|
+| what the 176B does | answers again | reads the 35B's answer |
+| the cost for 28 items | 579.1 s | **129.8 s** |
+| the mean per item | 20.68 s | **4.64 s** |
+| the errors it fixes | 2 of 7 | 2 of 7 (found) |
+| the correct answers it breaks | 2 of 21 | **0 of 21** |
+| the net | **+0** | - |
+
+**The generation arm is worth nothing on this class.** Scored with the
+tasks' own checkers, the 176B's fresh answer fixes 2 of the 35B's 7
+errors and breaks 2 of its 21 correct ones: net zero, at 20.68 s an item.
+
+**The judge arm is the same model, reading itself.** The 176B has a
+decision head - the last prompt token's hidden state, read through the
+engine's `emb=` as a *prefill* - and the head is in our own published
+dataset (`SkyIsNotGreen/decision-heads`). It was re-verified before use:
+the AUC on its own frozen test split recomputes to 0.9941 (the published
+0.9941), and the live engine agrees with the stored states to within
+0.027. On the 35B's answers the head reads at AUC 0.864, and at p < 0.5
+it flags 2 of the 7 errors while keeping 21 of the 21 correct answers.
+
+So the tier's honest options are: **ask the 176B to answer** (20.68 s an
+item, net zero), **ask it to judge** (4.64 s an item, 2 errors found and
+none broken), or **ask the 35B and stop** (6.68 s an item, the 35B's own
+accuracy). The judge arm is 4.5x cheaper than the generation arm and is
+the only one of the three with a positive expected value on the errors.
+
+**The caveat is the filter's, not the head's.** It found 2 of 7 errors,
+not 7. The right shape is the two together - judge first, generate only
+for what the judge sends up - which on this set is 2 generations out of
+28. And the head's own dataset says the *in-domain* community head
+should beat the frozen one on this body; on this task set it does not
+(AUC 0.782 against 0.864, and it keeps five fewer correct answers at
+0.90), so the frozen head is the one to ship here - the dataset's own
+"validate per model" caveat, in action.
+
+**What this changes.** The cascade's escalation tier was paying 20.68 s
+(230 s co-sited) for an answer that was no better than the one it
+replaced. It is now a 4.64 s judgement, and the runner carries the
+option (`--verdict-url`).
+
 ## 5. The learned gate: a negative result we kept
 
 The deterministic detectors have a measured blind spot: answers that are
