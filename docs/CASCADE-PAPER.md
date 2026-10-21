@@ -281,7 +281,7 @@ the work outright**, and the value of the large tier is not accuracy but
 the 8 items where it was right and the small one was not - which is
 exactly what an arbiter would be for.
 
-## 4b. The escalation tier: a generation that buys nothing, and a judgement that does
+## 4b. The escalation tier: the 176B's generation buys nothing; a 27B dense one buys five
 
 The 229.7 s above is not a property of the model. The same engine's log
 says the 176B decodes at **67.7 tok/s** over the 4,424 generations it has
@@ -310,6 +310,17 @@ inherit the other's expert cache:
 **The generation arm is worth nothing on this class.** Scored with the
 tasks' own checkers, the 176B's fresh answer fixes 2 of the 35B's 7
 errors and breaks 2 of its 21 correct ones: net zero, at 20.68 s an item.
+
+**Correction (2026-10-21): the generator, not the tier.** The same
+generate arm on a 27B dense model (Bonsai 2, ternary, 7.2 GB) fixes 6 of
+the 7 errors and breaks 1 of the 21 correct: **net +5 at 8.92 s an
+item**, against the 176B's net zero at 20.68 s. The 176B is a judgement
+model; its generation is not better than the 35B's. The tier was never
+worthless - the 176B was the wrong occupant. Gated by the head at its
+best threshold, the same loop reaches 23/28 (3 escalations, all errors,
+none correct) against the oracle gate's 27/28; the head's four misses are
+plausible answers at `p >= 0.97`, which is why the next tier is a
+*checker*, not a better judge. (`AB-RESULTS.md` §1B-sexies.)
 
 **The judge arm is the same model, reading itself.** The 176B has a
 decision head - the last prompt token's hidden state, read through the

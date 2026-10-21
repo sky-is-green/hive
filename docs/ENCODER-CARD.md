@@ -23,6 +23,17 @@ long-context memory system actually has to make. It runs on the CPU
 (about one millisecond per chunk), so the memory it serves never competes
 with the model it serves.
 
+> **Status (2026-10-21): a research checkpoint, not a release.** The
+> corpus behind these numbers included an ingested knowledge-base
+> attachment (79% of its chunks) and one conversation loaded twice. The
+> drift column is **withdrawn**, the dedup figures are marked for
+> re-measurement, and the replay priced the recommended 0.67 threshold
+> as a fact deletion: at the shipped 0.92 this checkpoint keeps 32.66%
+> of the facts against the stock's 60.51%. **Do not deploy it with the
+> thresholds below**; the shipped encoder and the shipped 0.92 stay. The
+> checkpoint and the recipe are published as a record of the training
+> and the measurement instrument (`AB-RESULTS.md` §2C-septies).
+
 ---
 
 ## What it is for
@@ -45,7 +56,8 @@ system.
 - **Base**: `sentence-transformers/paraphrase-MiniLM-L3-v2` (17.4M params,
   384 dims, 3 layers)
 - **Data**: 561 duplicate pairs and 2,838 topic-change windows, built from
-  81 real conversations (6,975 stored chunks) and labelled **lexically** -
+  81 real conversations (6,975 stored chunks; the corpus included an
+  ingested attachment - see the status note) and labelled **lexically** -
   the label is the shared content words, not a model's opinion, so it is
   independent of the encoder being trained
 - **Loss**: in-batch negatives over the anchor/positive pairs, plus a
@@ -63,22 +75,20 @@ the base model, at the operating points the system ships.
 
 | | dedup F1 | drift F1 | drift AUC | ms/chunk |
 |---|---|---|---|---|
-| the base model, at the thresholds the harness shipped | 0.089 | 0.151 | 0.945 | 1.3 |
-| the base model, at its own best thresholds | 0.761 | 0.554 | 0.945 | 1.3 |
-| **this model, at its own thresholds** | **0.862** | **0.573** | 0.943 | 1.1 |
+| the base model, at the thresholds the harness shipped | 0.089 | withdrawn* | withdrawn* | 1.3 |
+| the base model, at its own best thresholds | 0.761 | withdrawn* | withdrawn* | 1.3 |
+| **this model, at its own thresholds** | **0.862** | withdrawn* | withdrawn* | 1.1 |
 
-**The thresholds are part of the release.** They are per-encoder - the
-cosine distribution moves when the model is trained - so the operating
-points that ship with this model are:
+\* The drift column was measured on the pre-correction corpus and is
+withdrawn; the dedup row is from the same corpus and is marked for
+re-measurement.
 
-```json
-{"dedup_threshold": 0.67, "drift_threshold": 0.74}
-```
-
-Using the base model with these thresholds is much worse than using the
-base model with its own (0.761 / 0.554), and using this model with the
-old thresholds loses most of the gain. Model and thresholds travel
-together.
+**The thresholds are per-encoder - and that is exactly why they are not
+shipped here.** This card used to recommend `{"dedup_threshold": 0.67,
+"drift_threshold": 0.74}`. The replay says the dedup half of that
+recommendation halves the facts (32.66% against 60.51% at the shipped
+0.92), and the drift corpus that produced 0.74 was invalid. Treat the
+table above as the recipe's gate, not as an operating point.
 
 ## How to use it
 
@@ -92,10 +102,11 @@ similarity = float(vectors[0] @ vectors[1])   # > 0.67: the same fact
 ```
 
 The architecture is unchanged from the base model: one embedding
-function, mean pooling, a cosine. It is a drop-in replacement for the
-model the HiveBench Studio loads, and the Studio can run it directly -
-pick it in the Global tab's encoder block, set the two thresholds above,
-and restart the Studio (the drone is built once per choice).
+function, mean pooling, a cosine. It is a **research checkpoint, not a
+drop-in** for the Studio's drone: the replay in `AB-RESULTS.md`
+§2C-quater shows why the shipped encoder keeps its place. The checkpoint
+loads, and the gate reproduces with
+`experiments/encoder_finetune.py --evaluate <path>`.
 
 ## The measurement
 

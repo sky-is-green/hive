@@ -109,10 +109,12 @@ protocol measures the architecture rather than the generator.
 
 **One of the failures now has a candidate mechanism.** P10 (the drift
 reset) measures a detector whose threshold was calibrated for a different
-encoder (§7): forced on, it fires on 571 of 628 turns, so "the reset has
-no effect" may be measuring a detector that fires on almost everything
-rather than a reset that does not work. The verdict stands as measured;
-the mechanism is now in question, which is a different claim.
+encoder (§7): forced on, it fires on most turns, so "the reset has no
+effect" may be measuring a detector that fires far too often rather than
+a reset that does not work. (The exact rate was measured on the
+pre-correction corpus and is withdrawn with the rest of §7.) The verdict
+stands as measured; the mechanism is now in question, which is a
+different claim.
 
 **And the one result that does not carry over is P3's margin.** On the
 27B the curated context won 115 turns outright to 26; on the 35B it is a
@@ -255,6 +257,17 @@ protocol that only reports passes is not evidence.
 
 ## 7. The encoder: what we measured on our own traffic
 
+> **Correction (2026-10-21).** The corpus behind this section included an
+> ingested knowledge-base attachment: 17 of its 82 files were chunked
+> `[block n/m]` documents (5,531 of 6,977 chunks), and one conversation
+> was loaded from two state directories. The drift figures below (the
+> 0.945 AUC and the "fires on 571 of 628 turns" mechanism) are
+> **withdrawn**, and the tuned encoder was rejected by the replay (see
+> below). The shipped encoder and the shipped 0.92 stay. The correction
+> and the clean measurement are in `AB-RESULTS.md` §2C-septies; the
+> retrieval results elsewhere in this card come from different runs and
+> are unaffected.
+
 The harness gives its encoder three jobs, and only one of them is a ranking:
 
 | job | question | where |
@@ -286,7 +299,7 @@ not re-derived.
 | dedup at the shipped threshold (0.92) | precision 1.00, **recall 0.03** - the duplicate test almost never fires |
 | dedup at its own best threshold (~0.56) | F1 **0.75** (precision 0.62, recall 0.95) |
 | drift at the shipped threshold (0.6) | precision 0.08, **recall 0.96** - the topic-change test fires on almost every turn |
-| drift as a *ranking* signal | **AUC 0.945** - the signal is strong; the threshold is wrong |
+| drift as a *ranking* signal | **withdrawn** - measured on the pre-correction corpus (79% an ingested attachment), see above |
 
 ### 7.1 The F1 is the wrong target, and the threshold is not the lever
 
@@ -314,20 +327,20 @@ the price of catching only 5% of the redundancy.
 The topic-drift test is the opposite case: it only *penalises* the
 off-topic chunks, it never deletes them, so its recalibration is free.
 
-**The model is the lever, not the threshold.** A small encoder tuned on
-the harness's own traffic (17M parameters, one epoch, the dedup task
-only, labelled with the same lexical rule) merges **six times more true
-duplicates** at the *same* precision - and the fact recall goes *up*
-slightly, not down:
+**The model is not the lever either.** A small encoder tuned on the
+harness's own traffic (17M parameters, one epoch, the dedup task only)
+raises the dedup decision at 0.92 from a recall of 0.046 to 0.986 on the
+held-out job test. The replay then prices that decision: at the shipped
+0.92 the tuned encoder keeps **32.66%** of the facts against the stock's
+**60.51%**, for a context 2.7x smaller. The decision improved; the
+curation nearly halved. The shipped encoder and the shipped 0.92 stay.
 
-| encoder | fact recall | the dedup's recall at 0.92 | the dedup's precision |
-|---|---|---|---|
-| the stock L3-v2 | 50.55% | 0.046 | 1.00 |
-| the tuned encoder | **50.93%** | **0.292** | 1.00 |
-
-The encoder can be improved because it improves the *ranking* of what is a
-duplicate. The threshold cannot be lowered because lowering it moves the
-*boundary*, and the boundary is where the distinct facts get caught.
+The reason is structural: a true duplicate merged is a fact deleted from
+the context, so improving the dedup decision is improving the deletion.
+The threshold and the model are two dials on the same trade-off curve,
+and the fact-preservation constraint fixes where on it the system sits.
+The clean replay and the three failed fine-tunes are in `AB-RESULTS.md`
+§2C-quater through §2C-septies.
 
 ### 7.4 The curation's cost grows with the conversation it curates
 
