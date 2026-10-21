@@ -96,7 +96,7 @@ So the plan, reordered by measured effect:
 |---|---|---|
 | a | **run the engines one at a time** - the campaign's arms are sequential, and the Studio refuses a second launch on a leased card | to do |
 | b | **the drain** - an unload waits for `/slots` to go idle before stopping the engine (a 176B reply is minutes of work) | **done** |
-| c | **the prefetch** - a launch asks the kernel to read the weights into the page cache first, so a model that fits starts warm | **done** |
+| c | **the prefetch** - a launch asks the kernel to read the weights into the page cache first, so a model that fits starts warm | **done** (and see the correction below) |
 | d | **the warm/cold readout** - `mincore` per loaded engine in `/v1/server/status`: the number VRAM cannot show | **done** |
 | e | the Q4/X160 re-quantisation - the real constraint is a 132 GB working set against a 13 GB page cache | to do (a large download) |
 | f | the riser + RAID0 - more escalation candidates resident, on a dedicated ext4 array (not btrfs-on-mdraid) | to do (hardware) |
@@ -107,6 +107,55 @@ not the bottleneck, so it would buy nothing) and zswap (the swapfile plus
 `swappiness=10` already fixed the actual failure mode, and both
 alternatives make the *disk* faster, which is the path the fix moved off).
 
+### 1c. The correction, and what replaced (c)
+
+Fact 1 above was measured wrong, and the correction matters more than
+the plan it changed.
+
+**The 176B's decode rate is bimodal, and the campaign measured the cold
+mode.** The engine's own log says it decodes at **67.7 tok/s** over the
+4,424 generations it has served (4,095 of them above 20 tok/s). The
+3.1 tok/s of the last sixty generations is the *cold* mode: a fresh
+prompt read costs 5 tok/s, a reused prefix 71 tok/s, and the difference
+is the OS pulling the model's expert weights off the NVMe. Re-running
+the campaign's own 28 tasks against the 176B, **alone and warm**, gives
+**26.9 s an item against the 229.7 s** the campaign recorded. About 7x
+of the 42.5x was contention and a cold cache; about 6x is the tier.
+
+**And (c), the whole-file prefetch, does not work - it cannot.** The
+176B's Q6_K file is 60.2 GB and the box has ~13 GB of page cache.
+`posix_fadvise(WILLNEED)` over the whole file, then polling `mincore`
+for 80 s, left the file at **0.0% cached** the entire time. The
+controlled A/B agrees: 36.9 s with the prefetch, 33.6 s without, both
+at ~7 tok/s. The prefetch is still right for the **35B** (11.3 GB, which
+fits), and it is left alone for the Strata path, which serves the 176B.
+
+**What replaced it: the engine's resident tier.** Strata can keep the
+experts its VRAM cache cannot hold **in ordinary RAM**
+(`--resident-budget-gib N`), so they are never re-read from the file.
+With an 8 GiB budget, from the same cold state:
+
+| | the stock engine | the resident tier |
+|---|---|---|
+| the first (cold) request | 33.8 s (7.6 tok/s) | **17.3 s (14.8 tok/s)** |
+| the warm rate | 63-74 tok/s | 74 tok/s |
+| the storage read, the second request | 1,415 MB | **204 MB** |
+| the blobs served from RAM | 0 | **19,178** |
+
+**1.9x on the cold request, 10x less storage traffic after it, the warm
+rate unchanged**, at the price of 8 GiB of the box's 30 GB. This is
+DeepInfer's EPLB idea (re-place experts by their measured routing
+counts) and Strata already has it: `--expert-profile-save` writes out
+what the adaptive tier learned, `--expert-profile` reads it back.
+
+**And the escalation tier's shape changed.** The tier asked the 176B to
+*answer again*, and that was never measured - only priced. It is now:
+the generation arm is **net zero** on this class (2 of 7 errors fixed,
+2 of 21 correct answers broken, 20.68 s an item), while the 176B's own
+decision head *judging* the small tier's answer is **4.64 s an item**
+and finds 2 of 7 errors while breaking none of the 21 correct ones. The
+runner carries the tier now (`--verdict-url`).
+
 ---
 
 ## 2. The order
@@ -115,20 +164,36 @@ The order is by *information per hour*, not by ambition.
 
 1. **2B (the cheap half)** - the thresholds' effect on the fact-presence
    recall, no generation. It is the falsification of hypothesis H, and
-   it is nearly free.
+   it is nearly free. **done** - H is falsified: the fact recall falls
+   50.6% -> 39.7% at the recalibrated dedup threshold, because a false
+   merge *deletes* a fact while a missed merge only wastes budget, and
+   F1 weights the two alike. The fix is a better model, not a better
+   threshold.
 2. **1A** - the two models head to head. Everything else is downstream of
    it: if the 35B is as good as the 176B on the class the 35B can take,
-   the 176B's budget goes somewhere else.
+   the 176B's budget goes somewhere else. **done** - the 35B is as good
+   (0.800 both), and the escalation tier's own value is now measured too
+   (§1c): the generation arm is net zero, the judge arm is 4.5x cheaper
+   and finds the errors.
 3. **1B** - the cascade over each model. This is the table the paper's
-   §8 wants, per model.
+   §8 wants, per model. **done** - 26.9 s an item warm and alone
+   against 229.7 s co-sited.
 4. **3A-3E** - the cascade's own arms, on the cheaper model (the arms
    are about the loop, not the model) - so the expensive model is spent
-   once, on the cascade that ships.
+   once, on the cascade that ships. **done** - the arms are in
+   `docs/AB-RESULTS.md`; the gate stays off by its own pre-registered
+   rule.
 5. **2A** - the curation A/B, with each model as the generator. This is
-   the memory paper's P3, refreshed.
-6. **2C / 5A** - the encoder, on a held-out split.
+   the memory paper's P3, refreshed. **partly done** - the paired arms
+   are at conversation 5/15 (stock) and 2/15 (the Qwen encoder); the
+   pair still wants a clean, unconfounded run with the engines
+   sequential.
+6. **2C / 5A** - the encoder, on a held-out split. **the script is
+   written** (`experiments/encoder_holdout.py`), the run is not.
 7. **4A-4C** - the full protocol and the stability run, last, on the
-   configuration that survived 1-6.
+   configuration that survived 1-6. **done** - P1-P11 on the 35B
+   (PASS 6/11, 2 skipped, the published verdict set) and the 2,000-turn
+   stability run.
 
 **The 35B's weights** (11.3 GB) have to come from the Hub first, and a
 llama.cpp ROCm serve has to come up on card 1 beside the 176B's Strata
