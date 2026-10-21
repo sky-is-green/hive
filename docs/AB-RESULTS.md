@@ -703,6 +703,30 @@ takes a first request to fill (the engine's 71 GB first read is the
 arena filling itself). What it buys is that every request *after* that
 one reads 100-200 MB from storage instead of 1.4 GB.
 
+**And it is now a control, not a command line.** The Studio's Global tab
+carries it as the *resident experts* field (the runtime block, the launch
+baseline), and the launch panel passes it to the engine as
+`--resident-budget-gib`. The same launch, measured both ways on this
+box, the 176B alone:
+
+| through the Studio's own launch | the resident budget off | the resident budget 8 GiB |
+|---|---|---|
+| the first (cold) request | 14.2 s (18.0 tok/s) | **7.5 s (34.1 tok/s)** |
+| the warm rate | 84.7-94.3 tok/s | **93.3-101.9 tok/s** |
+| the storage read, the next request | 54-261 MB (11-54 faults) | **0.6-2.4 MB (0 faults)** |
+
+The engine's own line with the budget on: *"resident RAM mode: 8.00 GiB
+of experts in RAM (page-locked), 11707 in the GPU cache; adaptive swaps
+exchange them with the GPU cache (no file reads)"* and *"layer split:
+90% of the experts resident"*. With it, the file tier is **never
+touched** - 0 major faults a request.
+
+(The cold numbers here are "the engine restarted, the page cache still
+warm"; the *true* cold - the file's pages evicted with
+`fadvise(DONTNEED)` - is the 33.8 s against 17.3 s above. The ratio is
+the same in both, which is the point.)
+
+
 This is the DeepInfer idea, already implemented in our engine:
 DeepInfer's **EPLB** (Expert Parallel Load Balancer) re-places experts
 by their measured routing counts, and Strata's **adaptive tier** does

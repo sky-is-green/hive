@@ -3884,12 +3884,28 @@ def create_app(
             raise HTTPException(400, "a strata config profile is required")
         port = int(req.port or 8081)
         endpoint = f"http://127.0.0.1:{port}"
+        # The launch baseline's resident budget: the Strata engine's resident
+        # tier, which keeps the experts the VRAM cache cannot hold in ordinary
+        # RAM so they are never re-read from the disk.  Measured on the 176B:
+        # 8 GiB took the cold first request from 33.8 s to 17.3 s and the
+        # storage read on the second request from 1,415 MB to 204 MB, with the
+        # warm rate unchanged.  0 (the default) leaves the engine's own
+        # default alone.
+        engine_args = [str(a) for a in (req.engine_args or [])]
+        resident_gib = st.controls()["launch"].get("resident_gib")
+        if resident_gib:
+            try:
+                gib = float(resident_gib)
+            except (TypeError, ValueError):
+                gib = 0.0
+            if gib > 0:
+                engine_args += ["--resident-budget-gib", str(gib)]
         launch = {
             "kind": "strata",
             "repo": repo,
             "config": config,
             "python": req.python or ".venv/bin/python",
-            "engine_args": [str(a) for a in (req.engine_args or [])],
+            "engine_args": engine_args,
             "options": dict(req.options or {}),
             "timeout_s": float(req.timeout_s or 600),
         }

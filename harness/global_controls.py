@@ -184,6 +184,14 @@ RUNTIME_FIELDS: list[tuple[str, str, str, str]] = [
     ("top_k", "top-k", "num",
      "How: how many tokens may be sampled from. Does: the tail. "
      "Changing: lower = more focused."),
+    ("resident_gib", "resident experts (GiB)", "num",
+     "How: the GiB of experts kept in ordinary RAM for the ones the VRAM "
+     "cache cannot hold (the Strata engine's resident tier). Does: how "
+     "much of the model is served from RAM instead of the disk. Changing: "
+     "more = a faster first request, less RAM for everything else. "
+     "Measured on the 176B: 8 GiB took the cold first request from 33.8 s "
+     "to 17.3 s and the storage read on the second from 1,415 MB to "
+     "204 MB, with the warm rate unchanged. 0 = off."),
 ]
 
 #: The Studio's own switches that belong to the harness rather than to a
