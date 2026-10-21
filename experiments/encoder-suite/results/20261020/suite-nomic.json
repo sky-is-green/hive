@@ -1,8 +1,8 @@
 {
  "corpus": {
   "dirs": [
-   "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/harness_state",
-   "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/splinter-memory/harness_state"
+   "<work>/hivebench/harness_state",
+   "<work>/splinter-memory/harness_state"
   ],
   "conversations": 82,
   "chunks": 6977

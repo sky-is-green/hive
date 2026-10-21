@@ -6,7 +6,7 @@
 # Guard: scion-tgu-spend (floor $0.5, 150 min cap).
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=${JOBDIR:-$Q/pod/remote-gate-q4x160-up}
 RECIPE=$Q/pod/remote-w1w2/recipe

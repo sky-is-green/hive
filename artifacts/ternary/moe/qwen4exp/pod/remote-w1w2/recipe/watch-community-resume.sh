@@ -5,7 +5,7 @@
 # the pod as soon as it sees the first run's COMMUNITY_DONE marker).
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=$Q/pod/remote-community
 KEY=$HOME/.ssh/id_runpod

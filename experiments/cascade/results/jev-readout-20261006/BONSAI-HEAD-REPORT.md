@@ -6,7 +6,7 @@
 trained 2-bit ternary **dense** model (Qwen3.8-27B backbone, hybrid attention,
 2.13 bpw, Hadamard-rotated g128 weights), the trained-low-bit counterpart of
 the Scion-35B-A3B MoE.
-**Runtime:** moe-corr fork (`/home/penis/llama.cpp`, llama.cpp 0.2.0-dev build
+**Runtime:** moe-corr fork (`~/llama.cpp`, llama.cpp 0.2.0-dev build
 10721), `llama-server --embeddings --pooling last --embd-normalize -1`; hidden
 dim **5120**.  The in-tree Prism build (`work/prism-ml-llama.cpp`, build 11248)
 predates the codec and rejects the file (`tensor 'output.weight' has invalid

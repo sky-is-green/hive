@@ -41,7 +41,7 @@
     "role": "A2",
     "date": "2026-10-17",
     "device": "cpu",
-    "host": "Penis-machine",
+    "host": "<host>",
     "reps_per_image": 3,
     "images": 6,
     "run_elapsed_s": 118.9,

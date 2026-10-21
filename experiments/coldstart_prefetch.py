@@ -32,7 +32,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 STRATA = REPO.parent / "strata"
-NATIVE = Path("/home/penis/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf")
+NATIVE = (Path.home() / "models" / "scion-strata"
+          / "Scion-FlashNext-176B-A6B-Q6K.gguf")
 CONFIG = "strata-q6k-176b.json"
 PORT = 8081
 LIB = ctypes.CDLL("libc.so.6", use_errno=True)

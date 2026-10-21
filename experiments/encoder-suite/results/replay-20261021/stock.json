@@ -1,6 +1,6 @@
 {
  "the_encoder": "sentence-transformers/paraphrase-MiniLM-L3-v2",
- "the_fixtures": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/tests/fixtures/generated",
+ "the_fixtures": "<work>/hivebench/tests/fixtures/generated",
  "the_arms": {
   "shipped": {
    "the_points": {

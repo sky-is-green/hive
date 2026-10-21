@@ -4,7 +4,7 @@ Same serve, same prompt shape as the harvest; the live 176B on `http://127.0.0.1
 
 ```sh
 .venv/bin/python experiments/cascade/repair_pass.py \
-    --bench /run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl \
+    --bench <work>/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl \
     --out experiments/cascade/results/repair-pass-20261018
 ```
 

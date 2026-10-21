@@ -15,12 +15,12 @@
 
 set -uo pipefail
 
-ROOT=/home/penis/Desktop/work/hivebench
+ROOT=<work>/hivebench
 MOE=$ROOT/artifacts/ternary/moe
 Q=$MOE/qwen35
-FORK=/home/penis/llama.cpp
+FORK=~/llama.cpp
 BIN=$FORK/build/bin
-MODEL=/home/penis/Desktop/qwen35-release.gguf
+MODEL=<home>/Desktop/qwen35-release.gguf
 SIDECAR=$Q/mtp-sidecar-v2.gguf
 PROBE=$Q/mtp-release
 OUT=$Q/mtp-sidecar-confirm

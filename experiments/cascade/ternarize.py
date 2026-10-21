@@ -37,7 +37,7 @@ import sys
 import time
 from pathlib import Path
 
-FORK = Path("/home/penis/llama.cpp")
+FORK = Path.home() / "llama.cpp"
 CONVERT = FORK / "convert_hf_to_gguf.py"
 GGUF_PY = FORK / "gguf-py"
 QUANTIZE = FORK / "build" / "bin" / "llama-quantize"

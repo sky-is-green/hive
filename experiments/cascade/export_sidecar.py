@@ -30,7 +30,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 CASCADE = REPO / "experiments" / "cascade"
 R = CASCADE / "results" / "jev-readout-20261006"
-DEFAULT_GGUF_PY = Path("/home/penis/llama.cpp/gguf-py")
+DEFAULT_GGUF_PY = Path.home() / "llama.cpp" / "gguf-py"
 
 ARCH = "decision-head"
 

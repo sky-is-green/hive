@@ -7,7 +7,7 @@ PORT=$(awk '{print $2}' /tmp/opencode/pod-endpoint)
 KEY=$HOME/.ssh/id_runpod
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -p $PORT root@$IP"
 SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -P $PORT"
-Q=/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/qwen4exp
+Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
 SRC=/tmp/opencode/llama-qwen4exp-src.tar.gz
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 POD=$(cat /tmp/opencode/pod-id)
@@ -20,7 +20,7 @@ if [ "${FREE_WS:-0}" -gt 70000000 ]; then MODELDIR=/workspace/models; else MODEL
 echo "MODELDIR=$MODELDIR (workspace free ${FREE_WS}kB)"
 $SSH "mkdir -p $MODELDIR"
 $SCP "$SRC" root@$IP:/root/
-$SCP /home/penis/Desktop/work/scion/moe/cap_eval.py /home/penis/Desktop/work/scion/moe/cap_tasks.json root@$IP:/root/
+$SCP <work>/scion/moe/cap_eval.py <work>/scion/moe/cap_tasks.json root@$IP:/root/
 $SSH 'cd /root && tar -xzf llama-qwen4exp-src.tar.gz && ls llama-qwen4exp/src/models/qwen4exp.cpp llama-qwen4exp/common/build-info.cpp.in'
 $SSH 'rm -rf /root/llama-qwen4exp/build'
 echo "=== building (CPU-only) $(date -u +%H:%M:%SZ)"

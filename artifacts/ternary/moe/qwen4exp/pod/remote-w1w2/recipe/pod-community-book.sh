@@ -2,7 +2,7 @@
 # pod-bench-book.sh - book the A100 80GB bench pod (full-GPU), wait for the
 # endpoint, launch pod-community-run.sh as the systemd user unit scion-community-driver.
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=$Q/pod/remote-community
 RECIPE=$Q/pod/remote-w1w2/recipe

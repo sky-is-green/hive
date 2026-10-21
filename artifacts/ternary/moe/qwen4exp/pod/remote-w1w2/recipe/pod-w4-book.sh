@@ -10,7 +10,7 @@
 # Run detached:
 #   setsid nohup bash pod-w4-book.sh >/dev/null 2>&1 & disown
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 W4DIR=$Q/pod/remote-w4
 RECIPE=$Q/pod/remote-w1w2/recipe

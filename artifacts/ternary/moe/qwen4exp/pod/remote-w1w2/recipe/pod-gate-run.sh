@@ -6,7 +6,7 @@
 # stop target = the gate JSON.
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR="${JOBDIR:-$Q/pod/remote-gate4000}"
 WS=$WORK/scion/moe/pod_watch

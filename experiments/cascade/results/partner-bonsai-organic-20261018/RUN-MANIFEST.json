@@ -32,7 +32,7 @@
       "ROCR_VISIBLE_DEVICES=",
       "CUDA_VISIBLE_DEVICES="
     ],
-    "binary": "/home/penis/llama.cpp/build/bin/llama-server",
+    "binary": "~/llama.cpp/build/bin/llama-server",
     "flags": [
       "-ngl 0",
       "--device none",

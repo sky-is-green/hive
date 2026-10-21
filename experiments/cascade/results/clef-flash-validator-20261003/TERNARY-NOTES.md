@@ -25,7 +25,7 @@ orthogonal (cos 0.007) to the f16/HF reference.  With Lloyd: cos 0.417.
 
 - f16 GGUF: fork converter (`--no-mtp`; Qwen3_5 text backbone), 17.9 GB.
 - PQ2_0 Lloyd: `GGML_PQ2_0_LLOYD=1 llama-quantize ... PQ2_0`, **3.26 GB**
-  (2.90 BPW).  Fork: `/home/penis/llama.cpp` (`moe-corr-runtime`).
+  (2.90 BPW).  Fork: `~/llama.cpp` (`moe-corr-runtime`).
 - Hidden-state bridge: `clef_embed` (C++ helper, ~90 lines, libllama
   `llama_set_embeddings` + `llama_get_embeddings_ith`, CPU or GPU) feeding
   per-token states to the joint schema head in torch.  Verified exact:
@@ -47,7 +47,7 @@ placements need a design pass for the dense/hybrid Qwen3.5 stack), then merge
 and re-run this parity benchmark.  That is a training run; decide local
 7900 XT pair vs a rented card before starting.
 
-Artifacts: `/home/penis/Desktop/work/models/clef-flash-ternary/` (f16, PQ2_0
+Artifacts: `<work>/models/clef-flash-ternary/` (f16, PQ2_0
 Lloyd, lm_head, hf-head/), bridge source kept at `/tmp/opencode/clef_embed.cpp`
 (port to `tools/clef-bridge/` when the model lands).
 

@@ -27,8 +27,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from moe_proxy import ternary_absmean  # noqa: E402
 
-MODEL = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/olmoe-hf")
-OUT = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/olmoe")
+MODEL = Path("<work>/hivebench/artifacts/ternary/moe/olmoe-hf")
+OUT = Path("<work>/hivebench/artifacts/ternary/moe/olmoe")
 CACHE = OUT / "teacher-cache.pt"
 
 

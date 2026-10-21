@@ -27,8 +27,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-BASE = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/canary/hf")
-OUT = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/proxy")
+BASE = Path("<work>/hivebench/artifacts/ternary/canary/hf")
+OUT = Path("<work>/hivebench/artifacts/ternary/moe/proxy")
 
 
 # ---------------------------------------------------------------- quantizer --

@@ -4,7 +4,7 @@
 # driver (default pod-paired-code-run.sh) as the systemd user unit
 # scion-pc-driver (override via DRIVER / UNIT).
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=${JOBDIR:-$Q/pod/remote-paired}
 RECIPE=$Q/pod/remote-w1w2/recipe

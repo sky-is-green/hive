@@ -26,7 +26,7 @@ import numpy as np
 import torch
 from safetensors import safe_open
 
-FORENSICS = Path("/home/penis/Desktop/work/bonsai2-ternary-forensics")
+FORENSICS = Path("<work>/bonsai2-ternary-forensics")
 sys.path.insert(0, str(FORENSICS))
 
 from bonsai_forensics import rotation as R  # noqa: E402

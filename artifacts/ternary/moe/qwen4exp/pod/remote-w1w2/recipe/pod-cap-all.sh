@@ -4,7 +4,7 @@ set -u
 K=$(cat $HOME/.runpod-api-key)
 PUB=$(cat $HOME/.ssh/id_runpod.pub)
 KEY=$HOME/.ssh/id_runpod
-Q=/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/qwen4exp
+Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
 SRC=/tmp/opencode/llama-qwen4exp-src.tar.gz
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT_SHA=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
@@ -67,7 +67,7 @@ if [ "${FREE_WS:-0}" -gt 70000000 ]; then MODELDIR=/workspace/models; else MODEL
 echo "MODELDIR=$MODELDIR"
 $SSH "mkdir -p $MODELDIR"
 $SCP "$SRC" root@$IP:/root/ || die_keep "source upload"
-$SCP /home/penis/Desktop/work/scion/moe/cap_eval.py /home/penis/Desktop/work/scion/moe/cap_tasks.json root@$IP:/root/ || die_keep "cap_eval upload"
+$SCP <work>/scion/moe/cap_eval.py <work>/scion/moe/cap_tasks.json root@$IP:/root/ || die_keep "cap_eval upload"
 $SSH 'cd /root && tar -xzf llama-qwen4exp-src.tar.gz && ls llama-qwen4exp/common/build-info.cpp.in llama-qwen4exp/cmake/build-info.cmake llama-qwen4exp/src/models/qwen4exp.cpp' || die_keep "extract"
 $SSH 'rm -rf /root/llama-qwen4exp/build'
 echo "=== building (CPU-only) $(date -u +%H:%M:%SZ)"

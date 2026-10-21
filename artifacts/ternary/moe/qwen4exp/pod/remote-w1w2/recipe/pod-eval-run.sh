@@ -5,10 +5,10 @@
 # Reads $EVAL_JOBDIR/{pod-id,pod-endpoint,eval-gguf,eval-name,eval-log,eval-sha}.
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 EVAL_JOBDIR="${EVAL_JOBDIR:-$Q/pod/remote-eval}"
-STAGE="${EVAL_STAGE:-/run/media/penis/30CE2C97CE2C577E/storage/evalstage}"
+STAGE="${EVAL_STAGE:-<drive-3>/storage/evalstage}"
 SRC_TAR="${EVAL_SRC_TAR:-$Q/pod/llama-qwen4exp-src.tar.gz}"
 KEY=$HOME/.ssh/id_runpod
 mkdir -p "$EVAL_JOBDIR"

@@ -14,7 +14,7 @@
 # extraction used, and restores the service whichever way it ends.  The trap is the safety net:
 # the user's serve always comes back.
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work
+W=<work>
 PY=$W/hivebench/.venv/bin/python
 OUT=${WINDOW_OUT:-$W/hivebench/experiments/cascade/results/scion176b-self-organic-20261018}
 BENCH=${WINDOW_BENCH:-$W/hivebench/experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl}
@@ -56,16 +56,16 @@ cat > "$OUT/dh-server.json" <<EOF
 {
  "exe": "$W/strata-dh/build-hip/strata",
  "args": [
-  "--pack", "/home/penis/models/scion-strata/pack-q6k",
-  "--native", "/home/penis/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf",
-  "--ple-gguf", "/home/penis/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf",
-  "--embd-gguf", "/home/penis/models/scion-strata/scion-embd-bf16.gguf",
-  "--expert-profile", "/home/penis/Desktop/work/strata/data/expert-profile.bin",
+  "--pack", "~/models/scion-strata/pack-q6k",
+  "--native", "~/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf",
+  "--ple-gguf", "~/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf",
+  "--embd-gguf", "~/models/scion-strata/scion-embd-bf16.gguf",
+  "--expert-profile", "<work>/strata/data/expert-profile.bin",
   "--expert-cache", "auto",
   "--prefill", "8192",
   "--spec", "4",
   "--spec-min-p", "0.5",
-  "--mtp", "/home/penis/Desktop/work/strata-data/mtp/rt",
+  "--mtp", "<work>/strata-data/mtp/rt",
   "--max-context", "4096",
   "--ple-io", "direct",
   "--mmap-experts",
@@ -75,7 +75,7 @@ cat > "$OUT/dh-server.json" <<EOF
   "--pipeline-windows", "2"
  ],
  "cwd": "$W/strata-dh",
- "tokenizer": "/home/penis/models/scion-strata/pack-q6k/tokenizer",
+ "tokenizer": "~/models/scion-strata/pack-q6k/tokenizer",
  "model_name": "scion-flashnext-176b-a6b-q6k-dh",
  "log": "$OUT/engine.log",
  "lib_dirs": ["/opt/rocm/lib"],

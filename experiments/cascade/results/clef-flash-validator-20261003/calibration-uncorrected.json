@@ -1,5 +1,5 @@
 {
- "body": "/home/penis/Desktop/work/models/clef-flash-ternary/clef-flash-PQ2_0.gguf",
+ "body": "<work>/models/clef-flash-ternary/clef-flash-PQ2_0.gguf",
  "body_sha256": "8c36444c54b096cf3941f5953881608d96cdc6a03274acd350acc0236057e680",
  "protocol": "p_cal = sigmoid(a * (logit(p_raw) - logit(t))); a = Platt slope (BCE), t = raw threshold maximizing balanced accuracy on the fit set; fit set = bench-train + training negatives",
  "fit": {

@@ -1,7 +1,7 @@
 # Strata feasibility - scion-strata-20261009
 
-Engine: `/home/penis/Desktop/work/strata` @ `db4f91a1171d`
-Model: `/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` sha `69820c02ec7d0b45…`
+Engine: `<work>/strata` @ `db4f91a1171d`
+Model: `<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` sha `69820c02ec7d0b45…`
 Flags: ``
 
 | phase | wall s | prompt t | reused | prefill t/s | generated | decode t/s | finish |

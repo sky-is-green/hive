@@ -1,8 +1,8 @@
 # Strata feasibility - strata-feasibility-20261002
 
-Engine: `/home/penis/Desktop/work/strata` @ `db4f91a1171d`
-Model: `/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` sha `69820c02ec7d0b45…`
-Flags: `--pack /home/penis/Desktop/work/strata-data/packs/q2_0 --native /home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf --ple-gguf /home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf --expert-profile /home/penis/Desktop/work/strata/data/expert-profile.bin --expert-cache auto --prefill 512 --spec 4 --spec-min-p 0.5 --mtp /home/penis/Desktop/work/strata-data/mtp/rt --max-context 4096 --mmap-experts --vram-reserve-mib 3072`
+Engine: `<work>/strata` @ `db4f91a1171d`
+Model: `<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` sha `69820c02ec7d0b45…`
+Flags: `--pack <work>/strata-data/packs/q2_0 --native <work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf --ple-gguf <work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf --expert-profile <work>/strata/data/expert-profile.bin --expert-cache auto --prefill 512 --spec 4 --spec-min-p 0.5 --mtp <work>/strata-data/mtp/rt --max-context 4096 --mmap-experts --vram-reserve-mib 3072`
 
 | phase | wall s | prompt t | reused | prefill t/s | generated | decode t/s | finish |
 |---|---:|---:|---:|---:|---:|---:|---|

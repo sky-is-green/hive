@@ -5,11 +5,11 @@
 # (GPU) and evaluates trace-relative readouts.
 #   systemd-run --user --unit=qwen-ctx --collect /bin/sh <this>
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench
-MQ=/home/penis/Downloads/Qwen3.8-27B-UD-IQ4_XS.gguf
-PY=/home/penis/Desktop/work/.venv-rocm/bin/python
-B=/home/penis/llama.cpp/build/bin/llama-server
-P=/home/penis/llama.cpp/build/bin/test-mtp-probe
+W=<work>/hivebench
+MQ=~/Downloads/Qwen3.8-27B-UD-IQ4_XS.gguf
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
+P=~/llama.cpp/build/bin/test-mtp-probe
 R=$W/experiments/cascade/results/jev-readout-20261006
 D=$W/experiments/cascade/streams/qwen-bench-monitor-ctx
 S=$R/qwen-monitor-samples.jsonl

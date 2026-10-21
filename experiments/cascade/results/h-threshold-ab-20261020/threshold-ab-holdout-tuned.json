@@ -1,5 +1,5 @@
 {
- "fixtures": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/tests/fixtures/generated",
+ "fixtures": "<work>/hivebench/tests/fixtures/generated",
  "encoder": "experiments/encoder-suite/results/20261020/holdout/holdout-tuned",
  "arms": {
   "shipped": {

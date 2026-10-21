@@ -8,10 +8,10 @@
 #   systemd-run --user --unit=scion-flashnext-community /bin/sh <this>
 # Mirrors results/jev-readout-20261006/run-community-scion.sh.
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench
-PY=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/.venv-rocm/bin/python
-B=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/llama-qwen4exp/build-q4exp-hip/bin/llama-server
-M=/home/penis/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
+B=<work>/llama-qwen4exp/build-q4exp-hip/bin/llama-server
+M=~/models/scion-strata/Scion-FlashNext-176B-A6B-Q6K.gguf
 R=$W/experiments/cascade/results/scion-flashnext-community-20261009
 export HIP_VISIBLE_DEVICES=0,1
 export HF_HUB_OFFLINE=1
@@ -22,7 +22,7 @@ echo "== start scion-flashnext server $(date -Is)"
 "$B" -m "$M" -ngl 99 -ot "per_layer_token_embd=CPU" -c 8192 --no-warmup \
     --host 127.0.0.1 --port 8897 \
     --embeddings --pooling last --embd-normalize -1 -fa auto --jinja \
-    > /home/penis/models/scion-strata/community-srv.log 2>&1 &
+    > ~/models/scion-strata/community-srv.log 2>&1 &
 SRV=$!
 up=0
 for i in $(seq 1 300); do

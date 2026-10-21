@@ -6,7 +6,7 @@
 # Reads $JOBDIR/{pod-id,pod-endpoint,pod-rate}.
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 CASCADE=$WORK/hivebench/experiments/cascade
 JOBDIR=${JOBDIR:-$Q/pod/remote-gate-table}

@@ -1,8 +1,8 @@
 ---
-base_model: /home/penis/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d
+base_model: ~/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d
 library_name: peft
 tags:
-- base_model:adapter:/home/penis/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d
+- base_model:adapter:~/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d
 - lora
 - transformers
 ---

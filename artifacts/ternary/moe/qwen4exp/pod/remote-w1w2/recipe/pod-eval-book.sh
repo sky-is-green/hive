@@ -11,7 +11,7 @@
 # Run detached:
 #   setsid nohup bash pod-eval-book.sh >/dev/null 2>&1 & disown
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 RECIPE=$Q/pod/remote-w1w2/recipe
 EVAL_GGUF="${EVAL_GGUF:-$Q/qwen4exp-48l-ptq1_0-corr-step4096-ple.gguf}"
@@ -95,7 +95,7 @@ except Exception: pass' 2>/dev/null)
             --property=StandardOutput=append:"$EVAL_JOBDIR/eval-driver.log" \
             --property=StandardError=append:"$EVAL_JOBDIR/eval-driver.log" \
             --setenv=EVAL_JOBDIR="$EVAL_JOBDIR" \
-            --setenv=EVAL_STAGE="${EVAL_STAGE:-/run/media/penis/30CE2C97CE2C577E/storage/evalstage}" \
+            --setenv=EVAL_STAGE="${EVAL_STAGE:-<drive-3>/storage/evalstage}" \
             bash "$RECIPE/pod-eval-run.sh"; then
             log "eval driver launched as unit w4eval-driver"
         else

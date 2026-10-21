@@ -4,10 +4,10 @@
 # balanced in-format refit.  Serially after the main bonsai-run unit.
 #   systemd-run --user --unit=bonsai-attrib /bin/sh <this>
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench
-PY=/home/penis/Desktop/work/.venv-rocm/bin/python
-B=/home/penis/llama.cpp/build/bin/llama-server
-M=/home/penis/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
+M=~/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1
 export HF_HUB_OFFLINE=1

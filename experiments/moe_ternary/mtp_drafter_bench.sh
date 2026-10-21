@@ -8,7 +8,7 @@
 # Usage:
 #   mtp_drafter_bench.sh <model.gguf> <drafter.gguf|-> [port] [n_predict]
 #
-# Env: HIP_VISIBLE_DEVICES (default 1), FORK (default /home/penis/llama.cpp),
+# Env: HIP_VISIBLE_DEVICES (default 1), FORK (default ~/llama.cpp),
 #      PROMPT, N_PREDICT_OVERRIDE via the positional arg.
 set -uo pipefail
 
@@ -18,7 +18,7 @@ PORT=${3:-8137}
 N_PREDICT=${4:-160}
 PROMPT=${PROMPT:-"The history of science is the study of the development of"}
 HIP_VISIBLE_DEVICES=${HIP_VISIBLE_DEVICES:-1}
-FORK=${FORK:-/home/penis/llama.cpp}
+FORK=${FORK:-~/llama.cpp}
 BIN=$FORK/build/bin
 export LD_LIBRARY_PATH="$BIN:${LD_LIBRARY_PATH:-}"
 

@@ -7,7 +7,7 @@ Run with the local hivebench cascade harness; checked programmatically.
 | field | value |
 |---|---|
 | run | `strata-bench-test-capped-20261003` (2026-10-03 02:30:13) |
-| model | `/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` |
+| model | `<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf` |
 | model sha256 | `69820c02ec7d0b45…` |
 | stack / serving | `strata-125b`, 1 slots, ctx 4096 |
 | git | `5cd95a87e3bb` (19 dirty files) |

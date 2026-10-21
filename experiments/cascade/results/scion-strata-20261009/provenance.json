@@ -1,19 +1,19 @@
 {
  "created": "2026-10-09 01:36:15",
  "strata": {
-  "repo": "/home/penis/Desktop/work/strata",
+  "repo": "<work>/strata",
   "branch": "main",
   "commit": "db4f91a1171d697928b0d2e1f50ef95e25559d4c",
   "dirty_files": 0,
-  "engine_binary": "/home/penis/Desktop/work/strata/build-hip/strata",
+  "engine_binary": "<work>/strata/build-hip/strata",
   "engine_binary_sha256": "9c91cbfb88b3ddc8c0280f0ab65ed3fae3bfef33da4925f445f54457db357979",
-  "data_dir": "/home/penis/Desktop/work/strata-data",
+  "data_dir": "<work>/strata-data",
   "packs": [
-   "/home/penis/Desktop/work/strata-data/packs/q2_0"
+   "<work>/strata-data/packs/q2_0"
   ]
  },
  "model": {
-  "source_gguf": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "source_gguf": "<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
   "sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720"
  },
  "flags": "",

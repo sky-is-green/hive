@@ -91,7 +91,7 @@ Setup:
 
 ```sh
 # the fork binary (ternary PQ2_0 + drafter) as a named backend
-ln -s /home/penis/llama.cpp/build/bin/llama-server tools/backends/scion/llama-server
+ln -s ~/llama.cpp/build/bin/llama-server tools/backends/scion/llama-server
 ./start_harness.sh                                   # sidecar on :8765
 curl -X POST localhost:8765/v1/stacks/scion-35b-cascade/apply
 # Scion GGUF must be in the model library (~/.lmstudio/models or models/gguf)

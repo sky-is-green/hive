@@ -14,12 +14,12 @@
 # Re-runnable: curl -C - resumes, so an interrupted fetch just continues.
 set -euo pipefail
 
-DEST="${DEST:-/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/empero-hf}"
+DEST="${DEST:-<work>/hivebench/artifacts/ternary/moe/empero-hf}"
 BASE="${BASE:-https://huggingface.co/empero-ai/Qwen3.8-35B-A3B-Distill/resolve/main}"
-INDEX="${INDEX:-/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/empero-index.json}"
+INDEX="${INDEX:-<work>/hivebench/artifacts/ternary/moe/empero-index.json}"
 LAYERS="${1:-4}"
 PLAN="${2:-}"
-PY="${PY:-/home/penis/Desktop/work/hivebench/.venv/bin/python}"
+PY="${PY:-<work>/hivebench/.venv/bin/python}"
 
 # Small files the loader needs regardless of depth: config, tokenizer, index.
 META=(config.json tokenizer.json tokenizer_config.json generation_config.json

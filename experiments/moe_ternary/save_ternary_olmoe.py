@@ -16,7 +16,7 @@ sys.path.insert(0, str(HERE))
 from olmoe_doctors import quantize_bank_inplace  # noqa: E402
 from olmoe_proxy import load_model  # noqa: E402
 
-OUT = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/olmoe-ternary-hf")
+OUT = Path("<work>/hivebench/artifacts/ternary/moe/olmoe-ternary-hf")
 
 
 def main() -> None:

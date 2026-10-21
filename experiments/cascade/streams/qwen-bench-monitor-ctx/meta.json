@@ -1,5 +1,5 @@
 {
- "samples": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/qwen-monitor-samples.jsonl",
+ "samples": "<work>/hivebench/experiments/cascade/results/jev-readout-20261006/qwen-monitor-samples.jsonl",
  "order": [
   "gsm8k-0001:0",
   "gsm8k-0001:1",

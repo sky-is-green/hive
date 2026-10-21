@@ -1,5 +1,5 @@
 {
- "states_176b": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work/overnight/probe-states-main176b.npz",
+ "states_176b": "<work>/scion/decision-heads-work/overnight/probe-states-main176b.npz",
  "labels_match_across_sources": true,
  "slices": {
   "bench-train-262": {
@@ -13,7 +13,7 @@
  },
  "signals": {
   "176b-own-jbench": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads/scion-176b-a6b-decision-head.json",
+   "path": "<work>/scion/decision-heads/scion-176b-a6b-decision-head.json",
    "stored_threshold": 0.6,
    "bench-train-262": {
     "n": 262,
@@ -47,7 +47,7 @@
    }
   },
   "176b-own-community": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work/overnight/scion176b-community-indomain-head.json",
+   "path": "<work>/scion/decision-heads-work/overnight/scion176b-community-indomain-head.json",
    "stored_threshold": 0.5,
    "bench-train-262": {
     "n": 262,
@@ -73,7 +73,7 @@
    }
   },
   "bonsai-frozen-partner": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
+   "path": "<work>/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
    "stored_threshold": 0.58,
    "bench-train-262": {
     "n": 262,
@@ -107,7 +107,7 @@
    }
   },
   "080-L0.5": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "path": "<work>/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
    "stored_threshold": 0.5,
    "bench-train-262": {
     "n": 262,
@@ -133,7 +133,7 @@
    }
   },
   "080-MLP": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "path": "<work>/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
    "stored_threshold": 0.5,
    "bench-train-262": {
     "n": 262,
@@ -159,7 +159,7 @@
    }
   },
   "080-p_raw": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
+   "path": "<work>/hivebench/experiments/cascade/results/decision-readout-r2-20261017",
    "stored_threshold": 0.5,
    "bench-train-262": {
     "n": 262,

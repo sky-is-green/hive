@@ -25,10 +25,10 @@ sys.path.insert(0, str(HERE))
 from moe_proxy import ternary_absmean  # noqa: E402
 from olmoe_proxy import MODEL, load_model, windows, gate_hook  # noqa: E402
 
-sys.path.insert(0, "/home/penis/Desktop/work/bonsai2-ternary-forensics")
+sys.path.insert(0, "<work>/bonsai2-ternary-forensics")
 from bonsai_forensics import rotation as R  # noqa: E402
 
-OUT = Path("/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/olmoe")
+OUT = Path("<work>/hivebench/artifacts/ternary/moe/olmoe")
 
 
 def fwht(x: torch.Tensor) -> torch.Tensor:

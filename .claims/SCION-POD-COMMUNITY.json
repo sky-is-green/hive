@@ -1,6 +1,6 @@
 {
   "task_id": "SCION-POD-COMMUNITY",
-  "worker": "sky-is-green @ /home/penis/Desktop/work/hivebench",
+  "worker": "sky-is-green @ <work>/hivebench",
   "coordination_doc": "HIVE-PLAN.md",
   "provider": "runpod",
   "target_files": [

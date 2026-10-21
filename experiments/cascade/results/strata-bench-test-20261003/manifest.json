@@ -1,7 +1,7 @@
 {
  "run": "strata-bench-test-20261003",
  "created": "2026-10-03 00:37:01",
- "host": "Penis-machine",
+ "host": "<host>",
  "git": {
   "commit": "5cd95a87e3bbdb94c9c372737cb1f316b05c4a2e",
   "dirty_files": 13
@@ -9,14 +9,14 @@
  "generator": {
   "stack": "strata-125b",
   "base": "http://127.0.0.1:8080/v1",
-  "model_path": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "model_path": "<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
   "model_sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720",
   "total_slots": 1,
   "n_ctx": 4096,
   "build": "Strata 0.1.37"
  },
  "tasks": {
-  "file": "/home/penis/Desktop/work/hivebench/experiments/cascade/tasks-bench.json",
+  "file": "<work>/hivebench/experiments/cascade/tasks-bench.json",
   "name": "cascade-bench-v1",
   "sha256": "c2891dc3ec049fba620cc605796c1e580174c5f0113e57828619517c8587784f",
   "split": "test",

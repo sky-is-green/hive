@@ -4,7 +4,7 @@
  "started": "2026-10-02 23:15:14",
  "base": "http://127.0.0.1:8080",
  "model": "strata",
- "engine_log": "/home/penis/Desktop/work/strata/strata-q2_0.log",
+ "engine_log": "<work>/strata/strata-q2_0.log",
  "requests": {
   "cold1k": {
    "ok": true,

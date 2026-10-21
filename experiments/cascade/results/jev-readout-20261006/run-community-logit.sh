@@ -3,10 +3,10 @@
 # a CPU tokenize server, batch readout on GPU, then the community analysis.
 #   systemd-run --user --unit=community-logit --collect /bin/sh <this>
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench
-PY=/home/penis/Desktop/work/.venv-rocm/bin/python
-B=/home/penis/llama.cpp/build/bin/llama-server
-P=/home/penis/llama.cpp/build/bin/test-decision-head
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
+P=~/llama.cpp/build/bin/test-decision-head
 R=$W/experiments/cascade/results/jev-readout-20261006
 cd "$W" || exit 1
 exec >> "$R/community-logit.log" 2>&1
@@ -59,11 +59,11 @@ run_one() {
 }
 
 run_one scion-community \
-    /run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/Scion-35B-A3B-PQ2_0-corr.gguf \
+    <work>/scion/Scion-35B-A3B-PQ2_0-corr.gguf \
     "$R/scion-35b-a3b-decision-head.json"
 
 run_one bonsai-community \
-    /home/penis/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf \
+    ~/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf \
     "$R/bonsai-2-27b-decision-head.json"
 
 echo "== all done $(date -Is)"

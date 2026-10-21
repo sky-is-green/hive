@@ -2,7 +2,7 @@
  "prefix": "scion-community",
  "head": "answer",
  "head_src": "experiments/cascade/results/jev-readout-20261006/scion-35b-a3b-decision-head.json",
- "states": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/scion-community-states.npz",
+ "states": "<work>/hivebench/experiments/cascade/results/jev-readout-20261006/scion-community-states.npz",
  "n_test": 199,
  "n_train": 465,
  "majority_test": 154,

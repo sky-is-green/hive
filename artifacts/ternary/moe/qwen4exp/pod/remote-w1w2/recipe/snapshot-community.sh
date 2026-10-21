@@ -3,7 +3,7 @@
 # loss cannot take the samples with it (the 2026-10-09 16:15 loss did exactly that).
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp/pod
 JOBDIR=${SNAP_JOBDIR:-$Q/remote-community}
 mkdir -p "$JOBDIR/snapshots"

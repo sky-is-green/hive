@@ -1,11 +1,11 @@
 {
  "created": "2026-10-18T15:50:25",
  "endpoint": "http://127.0.0.1:8081",
- "bench": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl",
+ "bench": "<work>/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl",
  "tasks": [
-  "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/tasks-bench.json",
-  "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/tasks-community.json",
-  "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/tasks-community-code.json"
+  "<work>/hivebench/experiments/cascade/tasks-bench.json",
+  "<work>/hivebench/experiments/cascade/tasks-community.json",
+  "<work>/hivebench/experiments/cascade/tasks-community-code.json"
  ],
  "detected": {
   "consistency": [

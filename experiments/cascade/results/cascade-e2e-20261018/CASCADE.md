@@ -4,7 +4,7 @@
 
 ```sh
 .venv/bin/python experiments/cascade/cascade.py \
-    --bench /run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl \
+    --bench <work>/hivebench/experiments/cascade/results/dual-generation-20261018/organic-66.jsonl \
     --out experiments/cascade/results/cascade-e2e-20261018 --score
 ```
 

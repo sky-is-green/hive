@@ -1,5 +1,5 @@
 {
- "states": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/scion176b-harvest-20261018/probe-states-scion176b-harvest.npz",
+ "states": "<work>/hivebench/experiments/cascade/results/scion176b-harvest-20261018/probe-states-scion176b-harvest.npz",
  "n": 937,
  "dim": 2560,
  "selection": "GroupKFold(5) by task_id on the 871 harvest train items",

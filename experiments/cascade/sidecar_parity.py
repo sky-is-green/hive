@@ -34,7 +34,8 @@ from community_eval import SYSTEM, load_jsonl, order_body  # noqa: E402
 
 CASCADE = REPO / "experiments" / "cascade"
 R = CASCADE / "results" / "jev-readout-20261006"
-DEFAULT_HARNESS = Path("/home/penis/llama.cpp/build/bin/test-decision-head")
+DEFAULT_HARNESS = (Path.home() / "llama.cpp" / "build" / "bin"
+                   / "test-decision-head")
 
 
 def post(url: str, path: str, body: dict) -> dict:

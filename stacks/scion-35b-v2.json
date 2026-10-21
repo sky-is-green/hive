@@ -13,7 +13,7 @@
       "cache_v": "q8_0",
       "pin": "HIP_VISIBLE_DEVICES=1",
       "spec": { "type": "draft-mtp-sidecar", "n_max": 1 },
-      "engine_args": ["-md", "/home/penis/Desktop/work/hivebench/models/gguf/mtp-sidecar-v2-cur05.gguf"]
+      "engine_args": ["-md", "<work>/hivebench/models/gguf/mtp-sidecar-v2-cur05.gguf"]
     }
   ],
   "routing": { "workers_as": "subagent" }

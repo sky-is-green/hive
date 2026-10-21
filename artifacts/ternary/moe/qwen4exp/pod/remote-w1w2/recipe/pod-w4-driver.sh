@@ -10,7 +10,7 @@
 # w4-watch-gate.  The puller keeps local copies every 5 min.
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 W4DIR=$Q/pod/remote-w4
 RECIPE=$Q/pod/remote-w1w2/recipe

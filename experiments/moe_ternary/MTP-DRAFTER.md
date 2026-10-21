@@ -22,7 +22,7 @@ HiveBench and how to bench it.
    ms/token / speedup / acceptance; for an mtp2 sidecar it routes to the fork's
    `test-mtp-sidecar dspark` harness instead (the head is not server-wired yet).
 
-Prereqs: the fork's ROCm build (`FORK=/home/penis/llama.cpp`,
+Prereqs: the fork's ROCm build (`FORK=~/llama.cpp`,
 `build/bin/llama-server` + `test-mtp-sidecar`), `HIP_VISIBLE_DEVICES`.
 
 ## Run

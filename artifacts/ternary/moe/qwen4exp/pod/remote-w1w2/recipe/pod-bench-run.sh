@@ -4,7 +4,7 @@
 #   bench logs -> terminate.  Guard: w4bench-spend cap 7.5.
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=$Q/pod/remote-bench
 RECIPE=$Q/pod/remote-w1w2/recipe

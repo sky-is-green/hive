@@ -3,7 +3,7 @@
 # default), wait for the endpoint, launch pod-table-gate-run.sh as unit
 # scion-tg-driver.  Override GPUS="NVIDIA L40S" for the fallback.
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=${JOBDIR:-$Q/pod/remote-gate-table}
 RECIPE=$Q/pod/remote-w1w2/recipe

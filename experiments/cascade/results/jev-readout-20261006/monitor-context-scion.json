@@ -1,5 +1,5 @@
 {
- "windows": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/streams/scion-bench-monitor-ctx",
+ "windows": "<work>/hivebench/experiments/cascade/streams/scion-bench-monitor-ctx",
  "positions": "trace-relative",
  "horizons": {
   "start64": {

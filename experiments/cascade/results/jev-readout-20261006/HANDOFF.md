@@ -237,17 +237,17 @@ Scripts (in `experiments/cascade/`): `judge_bench.py`, `readout_judge.py`,
 **Artifacts on disk (outside the repo):**
 - Scion model: `work/scion/Scion-35B-A3B-PQ2_0-corr.gguf`, 11,336,908,288 B,
   sha256 `545d83a93c6ad147…` (identical to `SkyIsNotGreen/Scion-35B-A3B`).
-- Bonsai model: `/home/penis/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf`,
+- Bonsai model: `~/Downloads/Ternary-Bonsai-2-27B-PQ2_0.gguf`,
   7,206,168,928 B, sha256
   `3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1` — served
   by the moe-corr fork (it carries `GGML_TYPE_PQ2_0 = 142`); the in-tree
   Prism build rejects the file.
-- Fork: `/home/penis/llama.cpp` (`moe-corr-runtime`; `llama-server`,
+- Fork: `~/llama.cpp` (`moe-corr-runtime`; `llama-server`,
   `test-mtp-probe`, build `0.2.0-dev build 10721`).
 - Prism build: `work/prism-ml-llama.cpp/build-hip/bin/` — predates the
   Bonsai-2 ternary codec (build 11248; no type 142), so it is **not** the
   runtime for the Q2_0 file.
-- venv: `/home/penis/Desktop/work/.venv-rocm/bin/python` (transformers 5.5.0,
+- venv: `<work>/.venv-rocm/bin/python` (transformers 5.5.0,
   torch 2.14+rocm).
 - HF cache: `Qwen3.5-0.8B`, `Qwen3-1.7B`, `Qwen3.5-4B` (all **instruct**),
   `empero-ai/Qwen3.8-35B-A3B-Distill` (Scion's base), OLMoE-1B-7B, judges

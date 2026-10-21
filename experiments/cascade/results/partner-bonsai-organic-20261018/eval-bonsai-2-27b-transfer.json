@@ -1,7 +1,7 @@
 {
   "name": "bonsai-2-27b-transfer",
   "protocol": "frozen Bonsai J-Bench head; held-out organic/QA transfer; no refit",
-  "head": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
+  "head": "<work>/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
   "head_training": {
     "bench_sha256": "3289dcb8ed2f5e8a3589f916289c2fb69040e79de92fc4050f344d2abf6ca9b3",
     "bench_items": 378,

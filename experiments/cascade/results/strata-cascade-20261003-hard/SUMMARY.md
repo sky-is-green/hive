@@ -1,6 +1,6 @@
 # Cascade pilot (E4=Strata) — strata-cascade-20261003-hard
 
-Strata: `/home/penis/Desktop/work/strata` @ `db4f91a1171d` (served model `qwen3.8-flash-next-q2_0`, ctx 4096)
+Strata: `<work>/strata` @ `db4f91a1171d` (served model `qwen3.8-flash-next-q2_0`, ctx 4096)
 Model sha256: `69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720`
 Tasks: `experiments/cascade/tasks-hard.json` (14 tasks, measure mode)
 

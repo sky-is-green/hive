@@ -3,7 +3,7 @@
 The Cloudflare Clef releases are a Qwen3.5 backbone plus a **joint schema
 head** that reads per-token hidden states, input ids/spans and the lm_head
 weight.  A quantized GGUF backbone cannot run that head itself, so this bridge
-decodes exact token ids in the fork (`/home/penis/llama.cpp`, the
+decodes exact token ids in the fork (`~/llama.cpp`, the
 `moe-corr-runtime` build with PQ2_0) and dumps `llama_get_embeddings_ith`
 states for a Python head sidecar.
 
@@ -15,7 +15,7 @@ Verified exact on the f16 model: the dumped states match the HF backbone's
 CPU-only (used for the ternary benchmark; no ROCm context):
 
 ```sh
-P=/home/penis/llama.cpp
+P=~/llama.cpp
 g++ -O2 -std=c++17 -I$P/include -I$P/ggml/include clef_embed.cpp \
   -L$P/build-cpu/bin -Wl,-rpath,$P/build-cpu/bin -lllama -lggml -lggml-base -o clef_embed
 ```

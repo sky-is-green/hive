@@ -3,8 +3,8 @@
 # Measures one 24-token completion plus the read_bytes delta (the readahead
 # amplification trap).  Run only when the desktop can take the I/O pressure.
 set -u
-Q=/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/qwen4exp
-BIN=/home/penis/Desktop/work/llama-qwen4exp/build-q4exp-hip/bin/llama-server
+Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
+BIN=<work>/llama-qwen4exp/build-q4exp-hip/bin/llama-server
 LOG=$Q/pod/remote-w1w2/cpu-moe-probe-server.log
 export HIP_VISIBLE_DEVICES=1
 rm -f "$LOG"

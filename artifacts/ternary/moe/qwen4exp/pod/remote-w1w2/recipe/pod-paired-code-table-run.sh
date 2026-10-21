@@ -8,7 +8,7 @@
 # Guard: scion-pct-spend (floor $0.5, 240 min cap).
 set -u
 export PATH=/usr/local/bin:/usr/bin:/bin
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 CASCADE=$WORK/hivebench/experiments/cascade
 JOBDIR=${JOBDIR:-$Q/pod/remote-paired-table}

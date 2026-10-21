@@ -4,7 +4,7 @@
  "started": "2026-10-09 01:28:28",
  "base": "http://127.0.0.1:8081",
  "model": "strata",
- "engine_log": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/logs/strata_8081.engine.log",
+ "engine_log": "<work>/hivebench/logs/strata_8081.engine.log",
  "requests": {
   "cold1k": {
    "ok": true,

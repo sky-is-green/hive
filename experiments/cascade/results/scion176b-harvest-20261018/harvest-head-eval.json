@@ -1,5 +1,5 @@
 {
- "states": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/experiments/cascade/results/scion176b-harvest-20261018/probe-states-scion176b-harvest.npz",
+ "states": "<work>/hivebench/experiments/cascade/results/scion176b-harvest-20261018/probe-states-scion176b-harvest.npz",
  "n": 937,
  "dim": 2560,
  "splits": {
@@ -15,7 +15,7 @@
  },
  "frozen_heads": {
   "176b-own-jbench": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads/scion-176b-a6b-decision-head.json",
+   "path": "<work>/scion/decision-heads/scion-176b-a6b-decision-head.json",
    "harvest-train-871": {
     "n": 871,
     "wrong": 461,
@@ -102,7 +102,7 @@
    }
   },
   "176b-own-community": {
-   "path": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work/overnight/scion176b-community-indomain-head.json",
+   "path": "<work>/scion/decision-heads-work/overnight/scion176b-community-indomain-head.json",
    "harvest-train-871": {
     "n": 871,
     "wrong": 461,

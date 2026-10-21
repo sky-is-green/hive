@@ -4,7 +4,7 @@
 set -u
 IP=195.26.232.178; PORT=27379
 KEY=$HOME/.ssh/id_runpod
-Q=/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/qwen4exp
+Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
 POD=ycsups8e119kej

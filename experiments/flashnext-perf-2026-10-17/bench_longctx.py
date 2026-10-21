@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 
 URL = "http://127.0.0.1:8081/v1/chat/completions"
-LOG = "/home/penis/Desktop/work/hivebench/logs/strata_q6k.engine.log"
+LOG = "<work>/hivebench/logs/strata_q6k.engine.log"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results_longctx.json")
 
 SENT = ("The routing layer keeps the busiest experts resident on the cards while the rest wait in RAM. "

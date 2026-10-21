@@ -17,11 +17,11 @@
 # The trap restores it; it reaches the engines by port as well as by PID, because an earlier
 # window's TERM landed on a neighbouring PID and left the serve down.
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work
+W=<work>
 OUT=${WINDOW_OUT:-$W/hivebench/experiments/cascade/results/dual-generation-20261018}
-MODEL35B=${MODEL35B:-/home/penis/models/scion-strata/35b-a3b/Scion-35B-A3B-PQ2_0-corr.gguf}
-MODEL27B=${MODEL27B:-/home/penis/Desktop/models/hub/Ternary-Bonsai-2-27B-PQ2_0.gguf}
-TOK35B=${TOK35B:-/home/penis/models/scion-strata/pack-35b/tokenizer}
+MODEL35B=${MODEL35B:-~/models/scion-strata/35b-a3b/Scion-35B-A3B-PQ2_0-corr.gguf}
+MODEL27B=${MODEL27B:-<home>/Desktop/models/hub/Ternary-Bonsai-2-27B-PQ2_0.gguf}
+TOK35B=${TOK35B:-~/models/scion-strata/pack-35b/tokenizer}
 TOK27B=${TOK27B:-$W/strata-bonsai2/data/packs/qwen3.8-27b/tokenizer}
 Q36=$W/strata/build-hip/strata-q36
 DENSE=$W/strata-bonsai2/build-hip/strata-dense

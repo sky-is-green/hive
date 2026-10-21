@@ -2,10 +2,10 @@
 # Re-read variant (reasoning tail) + answer-only retry. Resumable.
 #   systemd-run --user --unit=answer-run /bin/sh <this>
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench
-T=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion
-PY=/home/penis/Desktop/work/.venv-rocm/bin/python
-B=/home/penis/llama.cpp/build/bin/llama-server
+W=<work>/hivebench
+T=<work>/scion
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1
 cd "$W" || exit 1

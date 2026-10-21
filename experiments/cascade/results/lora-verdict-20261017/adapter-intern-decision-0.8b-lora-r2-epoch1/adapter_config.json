@@ -6,7 +6,7 @@
     "base_model_class": "Qwen3_5ForConditionalGeneration",
     "parent_library": "transformers.models.qwen3_5.modeling_qwen3_5"
   },
-  "base_model_name_or_path": "/home/penis/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d",
+  "base_model_name_or_path": "~/.cache/huggingface/hub/models--internlm--Intern-Decision-0.8B/snapshots/85a0cc5a99d67ea8d56dfe98115689212867171d",
   "bias": "none",
   "corda_config": null,
   "ensure_weight_tying": false,

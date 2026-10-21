@@ -1,8 +1,8 @@
 {
- "exe": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2/build-hip/strata-dense",
- "args": ["--native", "/home/penis/Desktop/models/hub/Ternary-Bonsai-2-27B-PQ2_0.gguf", "--context", "4096", "--no-prefill"],
- "cwd": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2",
- "tokenizer": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/strata-bonsai2/data/packs/qwen3.8-27b/tokenizer",
+ "exe": "<work>/strata-bonsai2/build-hip/strata-dense",
+ "args": ["--native", "<home>/Desktop/models/hub/Ternary-Bonsai-2-27B-PQ2_0.gguf", "--context", "4096", "--no-prefill"],
+ "cwd": "<work>/strata-bonsai2",
+ "tokenizer": "<work>/strata-bonsai2/data/packs/qwen3.8-27b/tokenizer",
  "model_name": "bonsai-2-27b-dense",
  "log": "experiments/cascade/results/dual-generation-20261018/full-66/engine27b.log",
  "lib_dirs": [],

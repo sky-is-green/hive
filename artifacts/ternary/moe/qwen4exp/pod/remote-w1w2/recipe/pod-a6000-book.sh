@@ -2,7 +2,7 @@
 # pod-a6000-book.sh - book the cheapest fitting card (RTX A6000 48GB, $0.33/h), wait for the endpoint, launch
 # the probe driver. The pod is NOT terminated by the driver: it stays for the full run if the probe passes.
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=$Q/pod/remote-a6000
 RECIPE=$Q/pod/remote-w1w2/recipe

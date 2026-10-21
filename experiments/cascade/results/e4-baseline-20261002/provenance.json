@@ -7,8 +7,8 @@
   "dirty_files": 9
  },
  "engine": {
-  "repo": "/home/penis/Desktop/work/prism-ml-llama.cpp",
-  "binary": "/home/penis/Desktop/work/hivebench/tools/backends/rocm/llama-server",
+  "repo": "<work>/prism-ml-llama.cpp",
+  "binary": "<work>/hivebench/tools/backends/rocm/llama-server",
   "binary_sha256": "62f422b8f4b97ec7fa047c145a1e2e66d69463afcf2fa1f985a48e24f381f584",
   "version": "version: 0.5.0-dev (build 11244, commit 9cd9e3f57)",
   "branch": "engine/ember",
@@ -16,7 +16,7 @@
   "dirty_files": 0
  },
  "model": {
-  "path": "/home/penis/Desktop/work/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "path": "<work>/models/qwen38-q2_0/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
   "size_bytes": 37623740192,
   "mtime": 1790524129,
   "shards": [
@@ -42,7 +42,7 @@
   "sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720"
  },
  "box": {
-  "hostname": "Penis-machine",
+  "hostname": "<host>",
   "kernel": "6.18.52-1-cachyos-lts",
   "cpu": "AMD Ryzen 7 7800X3D 8-Core Processor",
   "mem_total_kb": 32453296,
@@ -115,7 +115,7 @@
   }
  },
  "prompts": {
-  "source": "/home/penis/Desktop/work/ternary-serve/wiki.test.raw",
+  "source": "<work>/ternary-serve/wiki.test.raw",
   "source_sha256": "696cca6b65a171b0a358a4be6732cdfdf2dd6164a32e20fd70e3c13fc4dfae83",
   "source_bytes": 1296370,
   "slices": {

@@ -32,7 +32,7 @@ Round-trip verified (`--verify`): sidecar vs JSON p delta < 2e-9.
 Build:
 
 ```sh
-cd /home/penis/llama.cpp
+cd ~/llama.cpp
 cmake -B build && cmake --build build --target test-decision-head -j16
 build/bin/test-decision-head -m model.gguf --head head.gguf \
     --prompt-file prompt.txt --format-sha <sha>

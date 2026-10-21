@@ -3,7 +3,7 @@
 # add phase prints to the pod's stage_train, and relaunch once.
 # Run locally (not as a unit) after stopping w4-driver.
 set -u
-cd /home/penis/Desktop/work
+cd <work>
 Q=hivebench/artifacts/ternary/moe/qwen4exp
 W4=$Q/pod/remote-w4
 IP=$(awk '{print $1}' "$W4/pod-endpoint")
@@ -62,6 +62,6 @@ systemd-run --user --unit=w4-watch-train --collect \
     --setenv=PW_STAGE=train-resume --setenv=PW_LOG_IDLE_S=3600 \
     --setenv=PW_STEP_IDLE_S=3600 \
     --setenv=PW_KILL_PATTERN="qwen4exp_proxy.py train" \
-    bash /home/penis/Desktop/work/scion/moe/pod_watch/stage_watchdog.sh
+    bash <work>/scion/moe/pod_watch/stage_watchdog.sh
 
 log "relaunch issued; monitor with: ssh tail /workspace/logs/train-resume.log"

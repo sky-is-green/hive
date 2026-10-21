@@ -2,7 +2,7 @@
 # pod-gate-book.sh - book the step-4000 gate-only pod and launch pod-gate-run.sh
 # as the systemd user unit w4gate-driver.  Writes $JOBDIR state + dead-man 4.5 h.
 set -u
-WORK=/home/penis/Desktop/work
+WORK=<work>
 Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 JOBDIR=$Q/pod/remote-gate4000
 RECIPE=$Q/pod/remote-w1w2/recipe

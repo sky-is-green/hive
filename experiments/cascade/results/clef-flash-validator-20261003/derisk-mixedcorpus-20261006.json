@@ -1,5 +1,5 @@
 {
- "model_dir": "/home/penis/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+ "model_dir": "~/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
  "coverage": {
   "rotated": 132,
   "unrotated": 18,
@@ -11,15 +11,15 @@
   ]
  },
  "args": {
-  "model_dir": "/home/penis/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
-  "out": "/home/penis/Desktop/work/models/qwen35-0.8b-qat-derisk/run_mixedcorpus",
+  "model_dir": "~/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "out": "<work>/models/qwen35-0.8b-qat-derisk/run_mixedcorpus",
   "seq": 512,
   "batch": 4,
   "steps": 1500,
   "lr": 5e-05,
   "warmup": 10,
   "train_windows": 2048,
-  "corpus_npy": "/home/penis/Desktop/work/models/qwen35-0.8b-qat-derisk/mixed-corpus/windows.npy",
+  "corpus_npy": "<work>/models/qwen35-0.8b-qat-derisk/mixed-corpus/windows.npy",
   "sample_every": 300,
   "eval_windows": 16,
   "eval_every": 100,

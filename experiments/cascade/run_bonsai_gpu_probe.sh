@@ -15,12 +15,12 @@
 # The trap restores scion-flashnext no matter how this exits, and reaches the engines by port as
 # well as by PID (an earlier TERM aimed at the wrong PID left the service down).
 set -u
-W=/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work
+W=<work>
 PY=$W/hivebench/.venv/bin/python
 OUT=${WINDOW_OUT:-$W/hivebench/experiments/cascade/results/dual-generation-20261018}
-MODEL35B=${MODEL35B:-/home/penis/models/scion-strata/35b-a3b/Scion-35B-A3B-PQ2_0-corr.gguf}
+MODEL35B=${MODEL35B:-~/models/scion-strata/35b-a3b/Scion-35B-A3B-PQ2_0-corr.gguf}
 MODEL27B=${MODEL27B:-$W/hivebench/artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf}
-LLAMA=${LLAMA:-/home/penis/llama.cpp/build/bin/llama-server}
+LLAMA=${LLAMA:-~/llama.cpp/build/bin/llama-server}
 BENCH=${BENCH:-$OUT/organic-66.jsonl}
 LIMIT=${LIMIT:-4}
 MAXTOK=${MAXTOK:-320}
@@ -140,7 +140,7 @@ cat > "$OUT/serve35b.json" <<EOF
  "exe": "$W/strata/build-hip/strata-q36",
  "args": ["--model", "$MODEL35B", "--max-context", "4096", "--chunk", "512"],
  "cwd": "$W/strata",
- "tokenizer": "/home/penis/models/scion-strata/pack-35b/tokenizer",
+ "tokenizer": "~/models/scion-strata/pack-35b/tokenizer",
  "model_name": "scion-35b-a3b-pq2_0-corr",
  "log": "$OUT/engine35b.log",
  "lib_dirs": ["/opt/rocm/lib"],

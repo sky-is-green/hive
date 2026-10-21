@@ -4,11 +4,11 @@
 set -u
 IP=195.26.232.178; PORT=27379
 KEY=$HOME/.ssh/id_runpod
-Q=/home/penis/Desktop/work/hivebench/artifacts/ternary/moe/qwen4exp
+Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
 POD=ycsups8e119kej
-WD=/home/penis/Desktop/work/tmp-export
+WD=<work>/tmp-export
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -p $PORT root@$IP"
 SCPOPT="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Compression=no -i $KEY -P $PORT"
 ( sleep 12600; curl -s --max-time 30 -X DELETE https://rest.runpod.io/v1/pods/$POD -H "Authorization: Bearer $(cat $HOME/.runpod-api-key)" >/dev/null 2>&1; echo "dead-man fired $POD" ) &

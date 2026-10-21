@@ -33,7 +33,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 ARM = REPO / "experiments/cascade/results/cascade-arm-escalation-20261020/report.json"
 TASKS = REPO / "experiments/cascade/tasks-organic-28.json"
-WORK = Path("/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/scion/decision-heads-work")
+WORK = Path("<work>/scion/decision-heads-work")
 HEADS = {
     "the J-Bench head": WORK / "scion-176b-a6b-decision-head.json",
     "the community head": WORK / "overnight/scion176b-community-indomain-head.json",
