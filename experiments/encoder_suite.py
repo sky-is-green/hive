@@ -99,13 +99,25 @@ def jaccard(a: set[str], b: set[str]) -> float:
 # ---------------------------------------------------------------------------
 # The corpus: the harness's own conversations
 # ---------------------------------------------------------------------------
+#: The marker the harness puts on an ingested attachment's chunks
+#: ("[block 7/328] ...").  Such a file is a document, not a dialogue: its
+#: "drift" cases are short queries against the document and its
+#: "duplicates" are template repeats, so neither is the membrane's job.
+INGESTED_BLOCK = re.compile(r"^\[block \d+/\d+\]")
+
+
 def load_conversations(dirs: Iterable[str]) -> list[dict]:
+    # The same id can exist in both state directories, and the longer copy
+    # wins; an ingested attachment is dropped.  Both matter: the first can
+    # put one conversation in both the train and the hold-out half, the
+    # second turns "query vs document" into "drift" and a repeated header
+    # into a "duplicate".
     """The conversations the Studio and the sibling actually served.
 
     Each conversation is ``{"id": str, "chunks": [{"turn": int, "text": str}]}``
     in the order they were stored.
     """
-    out: list[dict] = []
+    by_id: dict[str, dict] = {}
     for raw in dirs:
         base = Path(raw).expanduser()
         if not base.is_dir():
@@ -122,9 +134,22 @@ def load_conversations(dirs: Iterable[str]) -> list[dict]:
                 text = (c.get("content") or "").strip()
                 if text:
                     chunks.append({"turn": int(c.get("turn") or 0), "text": text})
-            if len(chunks) >= 2:
-                out.append({"id": path.stem, "chunks": chunks})
-    return out
+            if len(chunks) < 2:
+                continue
+            previous = by_id.get(path.stem)
+            if previous is None or len(chunks) > len(previous["chunks"]):
+                by_id[path.stem] = {"id": path.stem, "chunks": chunks}
+    kept, dropped = [], []
+    for conv in by_id.values():
+        blocks = sum(1 for c in conv["chunks"] if INGESTED_BLOCK.match(c["text"]))
+        if blocks > len(conv["chunks"]) / 2:
+            dropped.append(conv["id"])
+        else:
+            kept.append(conv)
+    if dropped:
+        print(f"  ({len(kept)} conversations after dropping {len(dropped)} "
+              f"ingested-block documents)", file=sys.stderr)
+    return kept
 
 
 # ---------------------------------------------------------------------------

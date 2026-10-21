@@ -1,0 +1,191 @@
+{
+ "the_seed": 20261020,
+ "the_arms": {
+  "the cosine": {
+   "the_auc": 0.1092,
+   "the_train_best": {
+    "the_threshold": 0.1725,
+    "the_precision": 0.0049,
+    "the_recall": 1.0,
+    "the_f1": 0.0098,
+    "the_fires": 0.993
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.1725,
+    "the_precision": 0.1903,
+    "the_recall": 0.6705,
+    "the_f1": 0.2965,
+    "the_fires": 0.901
+   },
+   "the_holdout_oracle": {
+    "the_threshold": -0.145,
+    "the_precision": 0.2558,
+    "the_recall": 1.0,
+    "the_f1": 0.4074,
+    "the_fires": 1.0
+   }
+  },
+  "pair+len": {
+   "the_features": 3,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.6499,
+   "the_train_best": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 1.0,
+    "the_f1": 1.0,
+    "the_fires": 0.005
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 0.0057,
+    "the_f1": 0.0113,
+    "the_fires": 0.001
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.0564,
+    "the_precision": 0.4092,
+    "the_recall": 0.9602,
+    "the_f1": 0.5739,
+    "the_fires": 0.6
+   }
+  },
+  "pairdiff+len": {
+   "the_features": 3,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.6499,
+   "the_train_best": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 1.0,
+    "the_f1": 1.0,
+    "the_fires": 0.005
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 0.0057,
+    "the_f1": 0.0113,
+    "the_fires": 0.001
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.0564,
+    "the_precision": 0.4092,
+    "the_recall": 0.9602,
+    "the_f1": 0.5739,
+    "the_fires": 0.6
+   }
+  },
+  "pair": {
+   "the_features": 385,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.7413,
+   "the_train_best": {
+    "the_threshold": 0.9635,
+    "the_precision": 1.0,
+    "the_recall": 1.0,
+    "the_f1": 1.0,
+    "the_fires": 0.005
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.9635,
+    "the_precision": 1.0,
+    "the_recall": 0.0057,
+    "the_f1": 0.0113,
+    "the_fires": 0.001
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.018,
+    "the_precision": 0.446,
+    "the_recall": 0.9148,
+    "the_f1": 0.5996,
+    "the_fires": 0.525
+   }
+  },
+  "pairdiff": {
+   "the_features": 769,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.8586,
+   "the_train_best": {
+    "the_threshold": 0.968,
+    "the_precision": 1.0,
+    "the_recall": 1.0,
+    "the_f1": 1.0,
+    "the_fires": 0.005
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.968,
+    "the_precision": 1.0,
+    "the_recall": 0.0057,
+    "the_f1": 0.0113,
+    "the_fires": 0.001
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.0234,
+    "the_precision": 0.5361,
+    "the_recall": 0.8011,
+    "the_f1": 0.6424,
+    "the_fires": 0.382
+   }
+  },
+  "cos+len": {
+   "the_features": 3,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.6499,
+   "the_train_best": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 1.0,
+    "the_f1": 1.0,
+    "the_fires": 0.005
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.8905,
+    "the_precision": 1.0,
+    "the_recall": 0.0057,
+    "the_f1": 0.0113,
+    "the_fires": 0.001
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.0564,
+    "the_precision": 0.4092,
+    "the_recall": 0.9602,
+    "the_f1": 0.5739,
+    "the_fires": 0.6
+   }
+  },
+  "cos": {
+   "the_features": 1,
+   "the_cv_auc": NaN,
+   "the_c": 0.003,
+   "the_auc": 0.8908,
+   "the_train_best": {
+    "the_threshold": 0.5941,
+    "the_precision": 0.4,
+    "the_recall": 1.0,
+    "the_f1": 0.5714,
+    "the_fires": 0.012
+   },
+   "the_holdout_at_train": {
+    "the_threshold": 0.5941,
+    "the_precision": 0.783,
+    "the_recall": 0.4716,
+    "the_f1": 0.5887,
+    "the_fires": 0.154
+   },
+   "the_holdout_oracle": {
+    "the_threshold": 0.5333,
+    "the_precision": 0.5698,
+    "the_recall": 0.858,
+    "the_f1": 0.6848,
+    "the_fires": 0.385
+   }
+  }
+ }
+}
