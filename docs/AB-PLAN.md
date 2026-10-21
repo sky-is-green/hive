@@ -94,13 +94,21 @@ So the plan, reordered by measured effect:
 
 | | what | status |
 |---|---|---|
-| a | **run the engines one at a time** - the campaign's arms are sequential, and the Studio refuses a second launch on a leased card | to do |
+| a | **run the engines one at a time** - the campaign's arms are sequential, and the Studio refuses a second launch on a leased card | **done** (the paired A/B's two arms, sequential) |
 | b | **the drain** - an unload waits for `/slots` to go idle before stopping the engine (a 176B reply is minutes of work) | **done** |
-| c | **the prefetch** - a launch asks the kernel to read the weights into the page cache first, so a model that fits starts warm | **done** (and see the correction below) |
+| c | **the prefetch** - a launch asks the kernel to read the weights into the page cache first, so a model that fits starts warm | **done** for the 35B; **it cannot work for the 176B** (§1c) |
 | d | **the warm/cold readout** - `mincore` per loaded engine in `/v1/server/status`: the number VRAM cannot show | **done** |
 | e | the Q4/X160 re-quantisation - the real constraint is a 132 GB working set against a 13 GB page cache | to do (a large download) |
 | f | the riser + RAID0 - more escalation candidates resident, on a dedicated ext4 array (not btrfs-on-mdraid) | to do (hardware) |
-| g | the frontier key - the cascade's paid tier needs a refreshed key in the auth store | to do |
+| g | the frontier key - the cascade's paid tier needs a refreshed key in the auth store | to do - **the key is expired** (`api_key_expired`, re-checked 2026-10-21: `/v1/models` returns `{"code":"api_key_expired"}`) |
+
+**Two items are answered by measurement rather than by work.** (e) and
+(f) are the *capacity* projects, and the paired A/B's result is why they
+matter less than they looked: the curation's advantage on a strong
+generator is a tie, and the large tier's own escalation was net zero
+(§1c). What the box needs is not more capacity but a cheaper decision
+- the 176B's *judgement* at 4.64 s, not its generation at 20.68 s.
+
 
 Dropped from the earlier list: raising `--pool-workers` (the storage is
 not the bottleneck, so it would buy nothing) and zswap (the swapfile plus
@@ -184,16 +192,33 @@ The order is by *information per hour*, not by ambition.
    `docs/AB-RESULTS.md`; the gate stays off by its own pre-registered
    rule.
 5. **2A** - the curation A/B, with each model as the generator. This is
-   the memory paper's P3, refreshed. **partly done** - the paired arms
-   are at conversation 5/15 (stock) and 2/15 (the Qwen encoder); the
-   pair still wants a clean, unconfounded run with the engines
-   sequential.
-6. **2C / 5A** - the encoder, on a held-out split. **the script is
-   written** (`experiments/encoder_holdout.py`), the run is not.
+   the memory paper's P3, refreshed. **done** - the paired arm is
+   complete (66 comparable turns: a tie at the answer level, 85.15%
+   against 84.67%, and a 35% smaller context with the same facts), and
+   so is the **family-match arm** (the Qwen-family encoder: 0 discordant
+   pairs against the FIFO window where the stock's loses 3, at 22x the
+   cost). The hypothesis is confirmed at the mechanism and rejected as a
+   deployment.
+6. **2C / 5A** - the encoder, on a held-out split. **done** - the
+   held-out gate passes for the contrastive tune (the separation
+   generalises, the cash-in does not), and the hinge at the operating
+   point *does* move the operating point (the recall at 0.92 goes 0.047
+   to 0.986) **and breaks the drift decision** (the AUC falls 0.957 to
+   0.731). The membrane's two decisions cannot both be served by one
+   encoder at the shipped thresholds.
 7. **4A-4C** - the full protocol and the stability run, last, on the
    configuration that survived 1-6. **done** - P1-P11 on the 35B
    (PASS 6/11, 2 skipped, the published verdict set) and the 2,000-turn
    stability run.
+
+**What is left is not a measurement.** Every comparison in this plan is
+now run. What remains is: the frontier key (the user refreshes it), the
+capacity projects (e) and (f) - which the results above make less
+urgent, not more - and the *ship* of what the measurements selected:
+the verdict tier in the cascade (done, `--verdict-url`), the resident
+tier's config in the launch panel, and a drift-specific encoder as a
+configuration rather than a new mechanism.
+
 
 **The 35B's weights** (11.3 GB) have to come from the Hub first, and a
 llama.cpp ROCm serve has to come up on card 1 beside the 176B's Strata
