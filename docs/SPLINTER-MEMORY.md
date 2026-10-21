@@ -417,6 +417,20 @@ and the cost, not the better answers.
   isolate conversations per store and filter refusals out of the store.
 - **The decay curve is an engineering heuristic** with cognitive-science
   inspiration, not a validated model of human forgetting.
+- **The large tier is a state, not a model.** The 176B-A6B answers at
+  60-73 tok/s warm and 3 tok/s cold, on the same engine and the same
+  request: a fresh prompt read costs 5 tok/s and a reused prefix 71, and
+  the cold phase is the OS pulling 60 GB of expert weights off the NVMe
+  (the file is 20.8% page-cached on a 30 GB box). Warm and alone it
+  answers the cascade's 28 tasks in 26.9 s an item; co-sited with the
+  small tier, in 229.7 s. A deployment that measures the large tier
+  cold, or with another engine resident, measures the box and not the
+  model. Two levers pay and the rest do not: keep it warm, and run it
+  alone. A whole-file prefetch does not - a 13 GB page cache cannot hold
+  a 60 GB file, and the kernel's `WILLNEED` left it at 0% cached for
+  80 s. The engine's resident tier (`--resident-budget-gib`) does: it
+  keeps what the VRAM cache cannot hold in ordinary RAM, and the storage
+  read on the second request falls from 1.4 GB to 146 MB.
 
 ## Reproduce
 
