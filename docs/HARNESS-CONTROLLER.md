@@ -10,7 +10,9 @@ same. What changes is the driver, not the system.
 This document is the **drop-in contract**: the tools, the invariants,
 the table and the log. Anyone can point their own controller at these
 tools, and the measurements in `docs/AB-RESULTS.md` remain the reference
-for what each tier is worth.
+for what each tier is worth. `docs/CONTROLLER-PRIOR-ART.md` is the survey
+of how other harnesses implement the same role, and which of their
+patterns this contract borrows.
 
 ## Why the controller is a model *and* a table
 
@@ -45,15 +47,21 @@ with the harness, whatever model it is.
 // -> { "answer": "string", "model": "...", "ms": 0,
 //      "tokens": { "prompt": 0, "completion": 0 } }
 
-// 2. verify - the checker writes a program, the sandbox runs it
+// 2. verify - the harness picks the method, the evidence is the verdict
 {
   "name": "verify",
   "arguments": { "task": "string", "answer": "string" }
 }
 // -> { "verdict": "pass | fail | unknown",
-//      "evidence": "stdout/exit/why-unknown",
-//      "check": "the program that was run",
+//      "method": "execution | grounding | none",
+//      "evidence": "stdout/exit | the cited sources | why-unknown",
+//      "check": "the program, or the claim set that was grounded",
 //      "mutated_ok": true }   // the check failed a corrupted answer
+//
+// execution: a program decides (run the code, recompute the arithmetic).
+// grounding: claim-level support against the retrieved context, each
+// claim cited; an uncited claim is not a pass.
+// The harness chooses; the controller never writes the verdict itself.
 
 // 3. score - the judge head (the 176B's judgements, or a distilled copy)
 {
@@ -82,7 +90,13 @@ falsifiable.
   evidence and re-checks once (a bad check is a real failure mode). A
   second `fail` rejects the answer.
 - **`unknown` is honest.** A check that cannot be *falsified against a
-  mutated answer* (`mutated_ok=false`) is `unknown`, never `pass`.
+  mutated answer* (`mutated_ok=false`) is `unknown`, never `pass`. A
+  grounding check that cannot cite is also `unknown`.
+- **Two verifiers, one interface.** `execution` for what a program can
+  settle (code, arithmetic); `grounding` for what only evidence can
+  settle (claims against sources). They are the same tool because the
+  controller should not have to know which one it needs - but the log
+  records the method, so the routing table can be measured per method.
 - **`score` never overrides execution.** A high `p_correct` on a checked
   answer is ignored; a `score` is only consulted where `verify` is
   `unknown`.
