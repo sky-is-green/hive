@@ -66,7 +66,7 @@ one tier with no measurement.
 
 | the artifact | where | the state |
 |---|---|---|
-| **the paper** | `huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper` | public, a static Space (the Blog Article format needs PRO; the body is the same markdown) |
+| **the paper** | `huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper` | public, a static Space: the paper plus a showcase of the four tools and the measured table. Built by `scripts/hf_space.py`; the Blog Article format needs PRO |
 | the memory system card | `huggingface.co/SkyIsNotGreen/splinter-memory` | public |
 | the encoder checkpoint | `huggingface.co/SkyIsNotGreen/splinter-encoder` | public, **research checkpoint** |
 | the task sets | `huggingface.co/datasets/SkyIsNotGreen/hive-cascade` | public; a **dataset card** (the two sets, fields, sources), not the paper |
