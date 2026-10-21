@@ -311,6 +311,23 @@ the arms are equal *at that budget*. It says the curation's *accuracy*
 advantage is generator-dependent, and that the honest claim is the bounded
 context, not the better answers.
 
+**The paired arm, re-run to the end** (15 conversations x 16 turns, the
+same generator, the engines sequential so the read is unconfounded),
+because §2A.2's family-match arm needs a complete arm to be paired
+against. 66 comparable turns, 11 conversations:
+
+| | the curated arm | the FIFO arm |
+|---|---|---|
+| the answer's fact recall | 85.15% | 84.67% |
+| the context fidelity | 0.803 | 0.803 |
+| the turns where the curated arm is at least as good | 84.85% | - |
+| the strictly-better turns | 4 | 2 |
+| the curated context's mean size | **355 tokens** | 544 tokens |
+
+The same verdict as the 180-turn run: a tie at the answer level, and the
+curation's real output is a **35% smaller context with the same facts**.
+
+
 ### 2A.2 The hypothesis this suggests: the encoder and the generator are
 ### different architectures
 
@@ -333,7 +350,70 @@ measured - the gap the hypothesis names.
 **The test.** The same paired A/B (the same tasks, the same generator,
 the same arms) with the curation's encoder swapped for
 `Qwen/Qwen3-Embedding-0.6B` - a Qwen3 decoder trained as a bi-encoder,
-1024 dims - against the stock MiniLM on the identical sample. Running.
+1024 dims - against the stock MiniLM on the identical sample.
+
+**Both arms are now run to the end, on the same 66 comparable turns**
+(15 conversations x 16 turns, the 35B as the generator, the engines
+sequential so the read is unconfounded; `experiments/paired_ab_summary`
+reads the common prefix).
+
+**The answer level, which carries the sampling noise.** Both arms tie
+the FIFO window:
+
+| | the curated arm's recall | the FIFO arm's recall | the curated >= FIFO |
+|---|---|---|---|
+| the stock MiniLM | 85.15% | 84.67% | 84.85% |
+| the Qwen3-Embedding | 81.59% | 84.87% | 77.27% |
+
+The two arms are separate runs with separate draws, so their answers are
+not comparable to each other - and the 3.3-point gap the table shows is
+that noise, not a result.
+
+**The selection level, which does not.** The store replays the fixture
+answers (the fair-selection default), so the *curated context* is a
+deterministic function of the conversation and the encoder: the only
+sampled thing in the run is the reply. The measure is therefore exact,
+and it is the mechanism the hypothesis is about - did the curation's
+*selection* put the facts in the context?
+
+| on the same 66 turns | the curated context carried the facts | the FIFO window | the curated only | the FIFO only |
+|---|---|---|---|---|
+| the stock MiniLM | 59/66 (89.4%) | 62/66 (93.9%) | **0** | **3** |
+| the Qwen3-Embedding | **62/66 (93.9%)** | 62/66 (93.9%) | **0** | **0** |
+
+**The mechanism is confirmed, and it is a real effect.** The
+Qwen-family encoder's curation carries the facts on **every** turn the
+FIFO window does - **0 discordant pairs in either direction**. The
+stock MiniLM's curation **loses 3 turns** to the raw window and never
+wins one. So the hypothesis's mechanism is right: a bi-encoder from the
+generator's own family selects better than a BERT-family one, and the
+whole of the stock encoder's deficit is those 3 turns.
+
+**But it does not change the deployment, for two measured reasons.**
+
+1. **The answer level is unchanged** - the 35B answers from whatever
+   context it is given (§2A's scoping result), so a better selection
+   has no answer-level effect to amplify. The curated context is 401
+   tokens against the FIFO window's 544, so the Qwen arm does deliver
+   the same facts in 26% fewer tokens; that is the bounded context, the
+   architecture's actual claim, and it is now delivered by the
+   generator's own family.
+2. **The cost is 22x.** The curation scores *every stored chunk* on
+   *every turn*, so the encoder's per-chunk cost is the whole budget:
+   **0.9 ms a chunk** for the stock MiniLM against **19.6 ms** for the
+   Qwen3-Embedding (measured, 64 chunks, warm). At the store sizes the
+   stability run measured (1,612 chunks) that is 1.5 s a turn against
+   31 s a turn - the drone's cost goes from the measured 157 ms a turn
+   to over a minute, and the curation's cost is linear in the store.
+
+**So the hypothesis is confirmed at the mechanism and rejected as a
+deployment.** The family-match encoder is the *right* encoder for the
+selection - it is the only candidate measured that never loses a turn -
+and it is 22x too expensive to be the drone. That is Option A's own
+verdict in `docs/ENCODER-PLAN.md` ("a quality ceiling, not a shippable
+drone"), now measured rather than argued, and it points at the same
+place the plan already pointed: **the Qwen encoder is a teacher, and the
+drone must be a student of it.**
 
 ---
 
