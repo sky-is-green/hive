@@ -125,6 +125,18 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
 .chunk.kept { border-color: var(--good); }
 .chunk.dimmed { opacity: .4; border-color: var(--accent); }
 .chunk.dropped { opacity: .18; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px;
+  overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: .26rem .68rem;
+  background: transparent; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { color: #1a1815; } }
+.ledger { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.fact { font-size: .72rem; font-family: ui-monospace, monospace;
+  border: 1px solid var(--line); border-radius: 999px; padding: .1rem .5rem;
+  color: var(--good); transition: color .3s, border-color .3s, opacity .3s; }
+.fact.lost { color: var(--bad); border-color: var(--bad);
+  text-decoration: line-through; opacity: .8; }
 .budget { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden;
   margin-top: 12px; }
 .budget i { display: block; height: 100%; background: var(--accent2); width: 100%;
@@ -190,21 +202,30 @@ MEMORY = """
     said?) and <strong>drift</strong> (did the topic change?), and the
     assembler keeps the context under budget.</p>
 
-  <div class="demo" data-demo="curation">
-    <div class="demo-head"><h3>An illustrative curated turn</h3>
-      <button type="button">Play</button></div>
+  <div class="demo" data-demo="curation" data-threshold="0.92">
+    <div class="demo-head"><h3>The same pair, two thresholds</h3>
+      <div class="seg" role="group" aria-label="dedup threshold">
+        <button type="button" data-threshold="0.92" aria-pressed="true">shipped 0.92</button>
+        <button type="button" data-threshold="0.67" aria-pressed="false">tuned 0.67</button>
+      </div></div>
     <div class="chunks">
-      <div class="chunk" data-dup="keep"><span>The order schema is 3NF with a denormalized read model.</span><span class="tag">fact A</span></div>
-      <div class="chunk" data-dup="drop"><span>Order schema: 3NF plus a denormalized read model.</span><span class="tag">duplicate</span></div>
+      <div class="chunk" data-near="keep"><span>Order schema: 3NF with a denormalized read model.</span><span class="tag">fact A</span></div>
+      <div class="chunk" data-near="merge"><span>Order schema: 3NF with a denormalized read model, soft deletes via deleted_at.</span><span class="tag">fact A + fact D</span></div>
       <div class="chunk"><span>Indexes: composite on (customer_id, created_at).</span><span class="tag">fact B</span></div>
       <div class="chunk"><span>Migrations: Alembic, forward-only.</span><span class="tag">fact C</span></div>
-      <div class="chunk" data-old="true"><span>Kubernetes deploys the sidecar on port 8765.</span><span class="tag">other topic</span></div>
+      <div class="chunk dimmed"><span>Kubernetes deploys the sidecar on port 8765.</span><span class="tag">other topic — penalised, never deleted</span></div>
+    </div>
+    <div class="ledger" aria-label="facts kept">
+      <span class="fact" data-fact="A">A</span>
+      <span class="fact" data-fact="B">B</span>
+      <span class="fact" data-fact="C">C</span>
+      <span class="fact" data-fact="D">D · soft deletes</span>
     </div>
     <div class="budget" title="context budget"><i></i></div>
-    <p class="caption" aria-live="polite">Five chunks in the store. Press Play.</p>
+    <p class="caption" aria-live="polite"></p>
   </div>
 
-  <p class="small">The animation is illustrative. The numbers below are the
+  <p class="small">The example is illustrative. The numbers below are the
     measured replay (<code>docs/AB-RESULTS.md</code> §2C-quater).</p>
 
   <div class="grid">
@@ -381,12 +402,35 @@ JS = """
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const timers = new WeakMap();
 
-  const CURATION = [
-    ["Five chunks in the store, 1,240 tokens. Press Play.", null],
-    ["<strong>dedup.</strong> The second chunk says the same thing as the first; the membrane keeps one and merges the other. A false merge here would delete the fact.", 1],
-    ["<strong>drift.</strong> The last chunk is from another topic. The detector only <em>penalises</em> it - it never deletes - so its error is cheap.", 2],
-    ["<strong>assemble.</strong> Three facts, one topic penalty, 620 tokens. The fact survived because the duplicate was not the fact.", 3],
-  ];
+  const CURATION_CAPTIONS = {
+    "0.92": "<strong>0.92:</strong> both stay. The pair is close but not the same fact, so the context can still say how deletes work.",
+    "0.67": "<strong>0.67:</strong> the near-duplicate merges into fact A. <strong>D is gone</strong> - the context shrinks and can no longer answer the delete question. This is the mechanism behind the 60.51% -> 32.66% result."
+  };
+
+  function setCuration(demo, threshold) {
+    const merge = threshold === "0.67";
+    demo.dataset.threshold = threshold;
+    demo.querySelectorAll("[data-near]").forEach(function (el) {
+      el.classList.toggle("merged", merge && el.dataset.near === "merge");
+      el.classList.toggle("kept", !merge && el.dataset.near === "keep");
+      const tag = el.querySelector(".tag");
+      if (tag && el.dataset.near === "merge")
+        tag.textContent = merge ? "merged - fact D lost" : "fact A + fact D";
+    });
+    const d = demo.querySelector('[data-fact="D"]');
+    if (d) {
+      d.classList.toggle("lost", merge);
+      d.textContent = merge ? "D - lost" : "D - soft deletes";
+    }
+    const bar = demo.querySelector(".budget i");
+    if (bar) bar.style.width = merge ? "55%" : "100%";
+    const cap = demo.querySelector(".caption");
+    if (cap) cap.innerHTML = CURATION_CAPTIONS[threshold];
+    demo.querySelectorAll(".seg button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.threshold === threshold));
+    });
+  }
+
   const ROUTING = [
     ["The 35B answers <strong>24.50</strong>. The task looks settled.", 0],
     ["The judge reads it: <strong>p = 0.973</strong>. Plausible - so it keeps it. This is one of the four errors at p &ge; 0.97.", 1],
@@ -394,18 +438,6 @@ JS = """
     ["The 27B answers <strong>245</strong>.", 3],
     ["The checker recomputes: <strong>PASS</strong>. Two tiers, one verdict, and the judge never had the last word.", 4],
   ];
-
-  function setCuration(demo, step) {
-    demo.querySelectorAll("[data-dup]").forEach(function (el) {
-      el.classList.toggle("merged", step >= 1 && el.dataset.dup === "drop");
-      el.classList.toggle("kept", step >= 1 && el.dataset.dup === "keep");
-    });
-    demo.querySelectorAll("[data-old]").forEach(function (el) {
-      el.classList.toggle("dimmed", step >= 2);
-    });
-    const bar = demo.querySelector(".budget i");
-    if (bar) bar.style.width = step >= 3 ? "50%" : "100%";
-  }
 
   function setRouting(demo, step) {
     demo.querySelectorAll(".station").forEach(function (el) {
@@ -418,12 +450,10 @@ JS = """
     });
   }
 
-  function render(demo, step) {
-    const kind = demo.dataset.demo;
-    const steps = kind === "curation" ? CURATION : ROUTING;
+  function renderRouting(demo, step) {
     const caption = demo.querySelector(".caption");
-    if (caption) caption.innerHTML = steps[step][0];
-    if (kind === "curation") setCuration(demo, step); else setRouting(demo, step);
+    if (caption) caption.innerHTML = ROUTING[step][0];
+    setRouting(demo, step);
     demo.dataset.step = String(step);
   }
 
@@ -434,23 +464,29 @@ JS = """
 
   function play(demo) {
     stop(demo);
-    const steps = demo.dataset.demo === "curation" ? CURATION : ROUTING;
     let i = Number(demo.dataset.step || 0);
-    if (i >= steps.length - 1) i = -1;
+    if (i >= ROUTING.length - 1) i = -1;
     const tick = function () {
-      i = (i + 1) % steps.length;
-      render(demo, i);
-      if (i === steps.length - 1) stop(demo);
+      i = (i + 1) % ROUTING.length;
+      renderRouting(demo, i);
+      if (i === ROUTING.length - 1) stop(demo);
     };
     tick();
     timers.set(demo, setInterval(tick, 2400));
   }
 
   document.querySelectorAll(".demo").forEach(function (demo) {
-    render(demo, 0);
+    if (demo.dataset.demo === "curation") {
+      setCuration(demo, "0.92");
+      demo.querySelectorAll(".seg button").forEach(function (b) {
+        b.addEventListener("click", function () { setCuration(demo, b.dataset.threshold); });
+      });
+      return;
+    }
+    renderRouting(demo, 0);
     const button = demo.querySelector("button");
     if (!button) return;
-    if (reduced) { render(demo, 1); button.hidden = true; return; }
+    if (reduced) { renderRouting(demo, ROUTING.length - 1); button.hidden = true; return; }
     button.addEventListener("click", function () { play(demo); });
     if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver(function (entries) {
