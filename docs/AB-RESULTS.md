@@ -635,9 +635,10 @@ where a generation costs 27 s and the campaign's engine cost 230 s.
 **And the thing it is competing with is worth less than it looks.**
 Comparing the two models on the same 28 tasks, the 176B's *generation*
 fixed 6 of the 35B's errors and **broke 8** - net zero, at 40x the
-latency. A 2.4 s verdict that catches a third of the errors and breaks
-none of the correct answers is a better use of the 176B than a 27 s
-generation that breaks more than it fixes.
+latency. (Re-measured later, warm and alone, on the same tasks: it
+fixes 2 and breaks 2 - still net zero.) A 2.4 s verdict that catches a
+third of the errors and breaks none of the correct answers is a better
+use of the 176B than a 27 s generation that breaks more than it fixes.
 
 **The honest limit.** The head's AUC on the 35B's answers (0.871) is
 well below its AUC on its own model's answers (0.994) - it is reading a
@@ -649,19 +650,64 @@ cost, not a 10x. The dataset's own community head reaches 0.852
 per-sample (0.965 within-pool) and says the same thing: *"the in-domain
 refit beats the frozen J-Bench head ... validate per model"*.
 
-**What this changes in the design.** The escalation tier has two
-options, and the campaign only measured one:
+---
 
-1. **generate** with the 176B (what the campaign did): 27 s warm, 230 s
-   co-sited, and on this class it fixed 6 and broke 8.
-2. **judge** with the 176B's head (what the dataset already supports and
-   what this measures): 2.4 s, catches a third of the errors, breaks
-   none of the correct answers.
+## 1B-quater. The escalation tier, measured both ways
 
-Option 2 is 11x cheaper than option 1 warm and 96x cheaper than the
-campaign's engine, and it is the only one of the two with a positive
-expected value on the errors. The campaign's escalation arms should be
-re-run against it.
+The two arms are **alternatives**, so they are measured **separately** -
+interleaving them makes each inherit the other's expert cache (a
+generation's decode evicts the judge's experts, and the verdict after it
+costs 23 s instead of 4.6 s). `experiments/escalation_arms.py`, the
+same 28 organic tasks, the same 35B answers, the same 176B:
+
+| | the generate arm | the judge arm |
+|---|---|---|
+| what the 176B does | answers again | reads the 35B's answer |
+| the cost for 28 items | **579.1 s** | **129.8 s** |
+| the mean per item | 20.68 s | **4.64 s** |
+| the median per item | 22.72 s | **3.82 s** |
+| the errors it fixes | 2 | - |
+| the correct answers it breaks | 2 | 0 |
+| the net | **+0** | - |
+
+**The generate arm is worth nothing here.** Scored with the tasks' own
+checkers, the 176B's fresh answer fixes 2 of the 35B's 7 errors and
+breaks 2 of the 21 correct ones: **net zero, at 20.68 s an item.** (The
+earlier co-sited run said 6 fixes against 8 breaks on the same 28 tasks
+- also net zero, and noisier.)
+
+**The judge arm finds 2 of the 7 errors and breaks none of the 21
+correct answers**, at 4.64 s an item. Both of its escalations are real
+errors (`gsm8k-0033` at p=0.427, `truthfulqa-0015` at p=0.397) and none
+of its 21 correct answers went up.
+
+**So the escalation tier's honest options are:**
+
+| | the cost | the net effect |
+|---|---|---|
+| ask the 176B to answer | 20.68 s an item | **+0** on this class |
+| ask the 176B to judge | 4.64 s an item | 2 errors found, 0 broken |
+| ask the 35B to answer and stop | 6.68 s an item | the 35B's own accuracy |
+
+**4.5x cheaper, and the only one of the three with a positive expected
+value on the errors.** The tier the campaign shipped - a 176B
+generation - was paying 20.68 s (and 230 s co-sited) for nothing.
+
+**What this does not claim.** The judge arm is a *filter*: it found 2 of
+7 errors, not 7. The remaining 5 are the escalation the tier still has
+to pay for. The right shape is the two together - judge first, generate
+only for what the judge sends up - which on this set is 2 generations
+out of 28. The head is also the *frozen* J-Bench one; the dataset's own
+community head (per-sample AUC 0.852, within-pool 0.965) and its
+in-domain refit are the next thing to measure, on the 28-task set and
+then on the community set.
+
+**What the tier was hiding.** The campaign's escalation arms never fired
+with the repair leg on (0 escalations) and the 176B's own generation
+was net-zero on the class, so the tier's *value* was never measured -
+only its cost. It is now: **the 176B's generation buys nothing on this
+class, and its judge buys the errors it flags for a tenth of the price.**
+
 
 
 **The honest summary of the levers**, in the order they pay:
