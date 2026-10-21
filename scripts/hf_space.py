@@ -14,6 +14,7 @@ card. This builds both from ``docs/CASCADE-PAPER.md``.
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -87,6 +88,8 @@ code { background: var(--code); padding: .12em .38em; border-radius: 4px;
 pre { background: var(--code); padding: 1rem 1.1rem; border-radius: 8px;
   overflow-x: auto; font-size: .86rem; line-height: 1.5; }
 pre code { background: none; padding: 0; }
+a.ref { text-decoration: none; border-bottom: 1px dotted var(--accent); }
+a.ref code { color: inherit; }
 blockquote { margin: 1.2rem 0; padding: .1rem 0 .1rem 1rem;
   border-left: 3px solid var(--accent); color: var(--muted); }
 hr { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
@@ -226,7 +229,7 @@ MEMORY = """
   </div>
 
   <p class="small">The example is illustrative. The numbers below are the
-    measured replay (<code>docs/AB-RESULTS.md</code> §2C-quater).</p>
+    measured replay (<a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/AB-RESULTS.md"><code>docs/AB-RESULTS.md</code></a> §2C-quater).</p>
 
   <div class="grid">
     <div class="card"><h3>the shipped point</h3><p><strong>60.51%</strong> of
@@ -365,8 +368,8 @@ CHECKER = """
       A check that cannot cite is <code>unknown</code>.</p></div>
   </div>
   <p class="small">This is the last unmeasured tier. The contract and the
-    prior art are in <code>docs/HARNESS-CONTROLLER.md</code> and
-    <code>docs/CONTROLLER-PRIOR-ART.md</code>.</p>
+    prior art are in <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/HARNESS-CONTROLLER.md"><code>docs/HARNESS-CONTROLLER.md</code></a> and
+    <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CONTROLLER-PRIOR-ART.md"><code>docs/CONTROLLER-PRIOR-ART.md</code></a>.</p>
 </div></section>
 """
 
@@ -392,7 +395,7 @@ LINKS = """
 
 FOOT = """
 <footer><div class="wrap">HiveBench Studio contributors · MIT · the paper is
-  also in the repository at <code>docs/CASCADE-PAPER.md</code>.
+  also in the repository at <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
 </div></footer>
 """
 
@@ -500,6 +503,36 @@ JS = """
 """
 
 
+
+_REPO = "https://github.com/sky-is-green/hivebench"
+_REF = re.compile(
+    r"<code>((?:docs|experiments|harness|scripts|tests|tools|configs|stacks)/[A-Za-z0-9_./-]+)</code>")
+
+
+def link_refs(html: str) -> str:
+    """Link every inline code span that names a file that exists here."""
+    def repl(match):
+        path = match.group(1)
+        target = REPO / path
+        if not target.exists():
+            return match.group(0)
+        kind = "tree" if target.is_dir() else "blob"
+        url = f"{_REPO}/{kind}/main/{path}"
+        return f'<a class="ref" href="{url}"><code>{path}</code></a>'
+    html = _REF.sub(repl, html)
+    html = html.replace(
+        "<code>SkyIsNotGreen/decision-heads</code>",
+        '<a class="ref" href="https://huggingface.co/datasets/SkyIsNotGreen/decision-heads">'
+        "<code>SkyIsNotGreen/decision-heads</code></a>")
+    for name in ("results/runner-cascade-sampled-20261018/",
+                 "results/runner-cascade-sampled-nothink-20261018/"):
+        html = html.replace(
+            f"<code>{name}</code>",
+            f'<a class="ref" href="https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade/tree/main/results">'
+            f"<code>{name}</code></a>")
+    return html
+
+
 def build() -> tuple[str, str]:
     import markdown
 
@@ -511,8 +544,8 @@ def build() -> tuple[str, str]:
     if lines and lines[0].startswith("# "):
         lines = lines[1:]
     body_md = "\n".join(lines)
-    body_html = markdown.markdown(
-        body_md, extensions=["tables", "fenced_code", "sane_lists"])
+    body_html = link_refs(markdown.markdown(
+        body_md, extensions=["tables", "fenced_code", "sane_lists"]))
     html = (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -522,7 +555,7 @@ def build() -> tuple[str, str]:
         + HERO + NAV + "<main>\n" + MEMORY + MOVE + CONTROLLER + MEASURED
         + CHECKER
         + '<section id="paper"><div class="wrap"><h2>The paper</h2>'
-        + '<details><summary>The full text (also in <code>docs/CASCADE-PAPER.md</code>)</summary>'
+        + '<details><summary>The full text (also in <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>)</summary>'
         + body_html + "</details></div></section>\n"
         + LINKS + "</main>\n" + FOOT + JS + "\n</body>\n</html>\n"
     )
