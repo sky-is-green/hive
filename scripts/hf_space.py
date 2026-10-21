@@ -1,6 +1,6 @@
 """Render and publish the HF Space page for the cascade paper.
 
-Six tabs (the memory, the move, the controller, what is measured, the
+Six tabs (the memory, the routing, the controller, what is measured, the
 checker, the paper). Above the tab's content sits a **stage**: the
 example for that tab, which changes with it. The demos are
 dependency-free, respect ``prefers-reduced-motion``, and the page works
@@ -246,7 +246,14 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .map { display: grid; gap: 5px; }
 .map-row { display: grid; grid-template-columns: 1fr 22px 1fr; align-items: center;
   gap: 8px; padding: 6px 9px; border-radius: 7px; font-size: .85rem;
-  transition: background .35s; }
+  transition: background .35s; position: relative; cursor: help; }
+.map-row:focus { outline: 1px solid var(--accent); outline-offset: 1px; }
+.map-row::after { content: attr(data-tip); position: absolute; left: 0; right: 0;
+  top: calc(100% + 5px); background: var(--card); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 8px 10px; font-size: .78rem; line-height: 1.45;
+  color: var(--fg); opacity: 0; pointer-events: none; transition: opacity .15s;
+  z-index: 10; box-shadow: 0 8px 22px rgba(0, 0, 0, .18); }
+.map-row:hover::after, .map-row:focus::after, .map-row.show-tip::after { opacity: 1; }
 .map-row .arrow { text-align: center; color: var(--muted); }
 .map-row.active { background: var(--code); }
 .bars { display: grid; gap: 7px; margin-top: 10px; }
@@ -344,7 +351,7 @@ TABS = """
 <nav class="tabs" aria-label="sections"><div class="wrap" role="tablist">
   <a role="tab" href="#premise" data-tab="premise" aria-selected="true">the premise</a>
   <a role="tab" href="#memory" data-tab="memory" aria-selected="false">the memory</a>
-  <a role="tab" href="#move" data-tab="move" aria-selected="false">the move</a>
+  <a role="tab" href="#routing" data-tab="routing" aria-selected="false">the routing</a>
   <a role="tab" href="#controller" data-tab="controller" aria-selected="false">the controller</a>
   <a role="tab" href="#measured" data-tab="measured" aria-selected="false">what is measured</a>
   <a role="tab" href="#checker" data-tab="checker" aria-selected="false">the checker</a>
@@ -441,15 +448,23 @@ STAGE_MEMORY = """
   </div>
 """
 
-STAGE_MOVE = """
-  <div class="stage-panel" data-stage="move" hidden>
-    <div class="map">
-      <div class="map-row" data-i="0"><span>the router scores every chunk</span><span class="arrow">→</span><span><code>ask(model, prompt)</code></span></div>
-      <div class="map-row" data-i="1"><span>dedup and drift decide</span><span class="arrow">→</span><span><code>verify</code> decides</span></div>
-      <div class="map-row" data-i="2"><span>the judge is a readout</span><span class="arrow">→</span><span><code>score</code> is the fallback</span></div>
-      <div class="map-row" data-i="3"><span>a false merge deletes a fact</span><span class="arrow">→</span><span>a false accept ships a wrong answer</span></div>
+STAGE_ROUTING = """
+  <div class="stage-panel" data-stage="routing" hidden>
+    <div class="map" data-map>
+      <div class="map-row" data-i="0" tabindex="0"
+           data-tip="The memory's router scores every stored chunk against the query and keeps the top ones under the budget. The controller's ask does the same at the tier level: the table scores what each tier can settle, and the task goes to the one that fits.">
+        <span>the router scores every chunk</span><span class="arrow">→</span><span><code>ask(model, prompt)</code></span></div>
+      <div class="map-row" data-i="1" tabindex="0"
+           data-tip="Dedup is the hard decision: a merge removes a chunk, so a wrong merge deletes a fact. Drift is the soft one: it only demotes old-topic chunks, so a wrong drift is cheap. The controller mirrors this: verify can reject, while score only advises. The threshold matters most on the hard side.">
+        <span>dedup decides; drift only penalises</span><span class="arrow">→</span><span><code>verify</code> decides; <code>score</code> only advises</span></div>
+      <div class="map-row" data-i="2" tabindex="0"
+           data-tip="A similarity score never deletes; it only ranks. In the controller, score never overrides a check; it is consulted only when verify is unknown. In both places the readout is evidence, not the gate.">
+        <span>the judge is a readout</span><span class="arrow">→</span><span><code>score</code> is the fallback</span></div>
+      <div class="map-row" data-i="3" tabindex="0"
+           data-tip="Both failures are irreversible consequences behind an agreeable decision: the merge looks fine until the fact is gone; the answer looks plausible until it ships. That is why both thresholds are conservative.">
+        <span>a false merge deletes a fact</span><span class="arrow">→</span><span>a false accept ships a wrong answer</span></div>
     </div>
-    <p class="caption" data-move-caption aria-live="polite"></p>
+    <p class="caption" data-routing-caption aria-live="polite"></p>
   </div>
 """
 
@@ -651,10 +666,10 @@ PANEL_MEMORY = """
 </section>
 """
 
-PANEL_MOVE = """
-<section class="tab-panel" data-panel="move" id="move" role="tabpanel">
+PANEL_ROUTING = """
+<section class="tab-panel" data-panel="routing" id="routing" role="tabpanel">
   <div class="wrap">
-    <h2>The move: the same loop, one level up</h2>
+    <h2>The routing: the same loop, one level up</h2>
     <p>The membrane answers "what should stay in the context?" The controller
       answers "what should handle this task, and when is it done?" They are the
       same question at different scope, so the machinery carries over:</p>
@@ -662,13 +677,13 @@ PANEL_MOVE = """
       <thead><tr><th>the memory</th><th>the controller</th></tr></thead>
       <tbody>
         <tr><td>the router scores every chunk</td><td><code>ask(model, prompt)</code> routes to the tier</td></tr>
-        <tr><td>dedup and drift are decisions with consequences</td><td><code>verify</code> is the decision with a consequence</td></tr>
+        <tr><td>dedup decides; drift only penalises</td><td><code>verify</code> decides; <code>score</code> only advises</td></tr>
         <tr><td>the judge is a readout, not the gate</td><td><code>score</code> is consulted only when <code>verify</code> is unknown</td></tr>
         <tr><td>the assembler keeps the facts under budget</td><td>the loop keeps the answer under a step budget</td></tr>
         <tr><td>a false merge deletes a fact</td><td>a false accept ships a wrong answer</td></tr>
       </tbody>
     </table>
-    <p>The move is not a different mechanism. It is the same trade - what to
+    <p>The routing is not a different mechanism. It is the same trade - what to
       keep, what to check, when to stop - with the consequence moved from the
       context to the answer.</p>
   </div>
@@ -810,10 +825,10 @@ JS = """
 <script>
 (function () {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const NAMES = {premise: "the premise", memory: "the memory", move: "the move",
+  const NAMES = {premise: "the premise", memory: "the memory", routing: "the routing",
                  controller: "the controller",
                  measured: "what is measured", checker: "the checker", paper: "the paper"};
-  let moveTimer = null, routeTimer = null;
+  let mapTimer = null, routeTimer = null;
 
   // ---- memory: the drone lab
   const VECTORS = {
@@ -924,30 +939,51 @@ JS = """
     }, 1900);
   }
 
-  // ---- move: highlight the mapping, one row at a time
-  const MOVE_CAPTIONS = [
+  // ---- routing: highlight the mapping, one row at a time
+  const MAP_CAPTIONS = [
     "The chunk router. The controller does the same, one level up.",
-    "The memory's two decisions become the controller's single verification decision.",
+    "Dedup removes; drift only demotes. Verify rejects; score only advises. The hard side is the one whose threshold is constrained.",
     "A readout is never the gate - in either place.",
     "The consequence moves from the context (a deleted fact) to the answer (a wrong one)."
   ];
-  function setMove(index) {
+  function setMap(index) {
     const value = index % 4;
-    document.querySelectorAll("[data-stage='move'] .map-row").forEach(function (row) {
+    document.querySelectorAll("[data-stage='routing'] .map-row").forEach(function (row) {
       row.classList.toggle("active", Number(row.dataset.i) === value);
     });
-    const cap = document.querySelector("[data-move-caption]");
-    if (cap) cap.innerHTML = MOVE_CAPTIONS[value];
+    const cap = document.querySelector("[data-routing-caption]");
+    if (cap) cap.innerHTML = MAP_CAPTIONS[value];
   }
-  function startMove() {
-    stopMove(); setMove(0);
-    moveTimer = setInterval(function () {
-      const active = document.querySelector("[data-stage='move'] .map-row.active");
+  function startMap() {
+    stopMap(); setMap(0);
+    mapTimer = setInterval(function () {
+      const active = document.querySelector("[data-stage='routing'] .map-row.active");
       const next = active ? Number(active.dataset.i) + 1 : 0;
-      setMove(next);
+      setMap(next);
     }, 1800);
   }
-  function stopMove() { if (moveTimer) { clearInterval(moveTimer); moveTimer = null; } }
+  function stopMap() { if (mapTimer) { clearInterval(mapTimer); mapTimer = null; } }
+  const mapStage = document.querySelector("[data-map]");
+  if (mapStage) {
+    mapStage.querySelectorAll(".map-row").forEach(function (row) {
+      function focusRow() {
+        stopMap(); setMap(Number(row.dataset.i));
+        mapStage.querySelectorAll(".map-row").forEach(function (r) { r.classList.remove("show-tip"); });
+        row.classList.add("show-tip");
+      }
+      row.addEventListener("mouseenter", focusRow);
+      row.addEventListener("focus", focusRow);
+      row.addEventListener("mouseleave", function () { row.classList.remove("show-tip"); });
+      row.addEventListener("blur", function () { row.classList.remove("show-tip"); });
+    });
+    mapStage.addEventListener("mouseleave", function () {
+      mapStage.querySelectorAll(".map-row").forEach(function (r) { r.classList.remove("show-tip"); });
+      startMap();
+    });
+    mapStage.addEventListener("focusout", function (e) {
+      if (!mapStage.contains(e.relatedTarget)) startMap();
+    });
+  }
 
   // ---- controller: the hub and its tool calls
   const STEPS = [
@@ -1193,7 +1229,7 @@ JS = """
     });
     const label = document.getElementById("stage-name");
     if (label) label.textContent = NAMES[name];
-    if (name !== "move") stopMove(); else startMove();
+    if (name !== "routing") stopMap(); else startMap();
     if (name !== "controller") stopRoute();
     stopHero();
     if (name !== "controller") startHero();
@@ -1289,9 +1325,9 @@ def build() -> tuple[str, str]:
         "<title>The Hive Cascade - from memory to a global controller</title>\n"
         '<meta name="description" content="A gold-free verification loop for local language models: the memory, the move to a global controller, and what is measured.">\n'
         '<link rel="stylesheet" href="style.css">\n</head>\n<body>\n'
-        + HERO + TABS + STAGE_OPEN + STAGE_PREMISE + STAGE_MEMORY + STAGE_MOVE + STAGE_CONTROLLER
+        + HERO + TABS + STAGE_OPEN + STAGE_PREMISE + STAGE_MEMORY + STAGE_ROUTING + STAGE_CONTROLLER
         + STAGE_MEASURED + STAGE_CHECKER + STAGE_PAPER + STAGE_CLOSE
-        + "<main>\n" + PANEL_PREMISE + PANEL_MEMORY + PANEL_MOVE + PANEL_CONTROLLER
+        + "<main>\n" + PANEL_PREMISE + PANEL_MEMORY + PANEL_ROUTING + PANEL_CONTROLLER
         + PANEL_MEASURED + PANEL_CHECKER + PANEL_PAPER_OPEN + body_html
         + PANEL_PAPER_CLOSE + "</main>\n" + LINKS + FOOT + JS
         + "\n</body>\n</html>\n"
