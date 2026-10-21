@@ -447,6 +447,54 @@ first is produced by the serving path with no access to the answer key;
 the second is produced afterwards, with the key, and is never consulted
 by the loop.
 
+## 7b. The router is the product: the cascade is symmetric
+
+The protocol above is written local-first - the local model answers, the
+judge gates, the API is the last resort - because that is the order the
+campaign measured. The order is a *deployment* choice, not the
+architecture. The same tiers can be driven from the other end: an API
+orchestrator can call the local models as tools, and the routing table
+is identical. What the system owns is the table - which tier can settle
+which kind of task, at what cost and with what measured error - not the
+direction the requests flow.
+
+**The measured table** (the same 28 organic tasks throughout):
+
+| the tier | what it settles | the measured number | the cost |
+|---|---|---|---|
+| the 35B | the bulk | 21/28 (0.750) | the cheapest local |
+| the 27B (Bonsai 2) | the 35B's repairable errors | 26/28 (0.929); +5 net | 8.9 s/item |
+| the 176B head | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
+| the checker | the *executable* errors | **not yet measured** | a sandbox call |
+| the API | what nothing local settles | not yet measured (the key is expired) | per token |
+
+The table says routing is not one axis. **Checkability comes before
+competence**: four of the seven errors the 176B's head gave `p >= 0.97`
+were arithmetic and code answers - a better *reader* cannot see them, and
+a sandbox can. A router that sends every task to the strongest model is
+buying tokens to solve problems that a `python -c` would have settled.
+
+**The two drivers, one table.**
+
+- *The local driver* (the human in the Studio, or the local judge): start
+  at the 35B; send up when a check fails or the judge is uncertain; end
+  at the API when neither local tier settles it.
+- *The API driver*: the frontier model plans and calls the local tiers
+  as tools (`ask_local`, `run_checker`, `get_verdict`); the locals carry
+  the bulk and the verification; the API pays for the plan and the
+  residue.
+
+The API driver needs exactly two things the local driver does not: a
+tool schema over the existing endpoints, and a sandbox the checker can
+call. Neither is a new model. The `--verdict-url` tier is already a
+judge as a service; the checker is the same shape with an executor
+behind it.
+
+**What is not yet claimed.** The API-driven direction has not been
+measured at all: the paid tier's key is expired, and the checker is a
+design, not a run. The table's local rows are measured; the two bottom
+rows are the programme.
+
 ## 8. What is not claimed
 
 - **Not** that the cascade fixes most wrong answers. It caught 6 of 9 wrong
