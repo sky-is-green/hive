@@ -69,6 +69,13 @@ LAUNCH_KEYS: dict[str, tuple[str, ...]] = {
     "ctx_size": ("ctx_size", "context"),
     "ngl": ("ngl", "gpu_layers"),
     "threads": ("threads",),
+    # The Strata engine's resident tier: the GiB of experts kept in ordinary
+    # RAM for the ones the VRAM cache cannot hold.  Measured on the 176B
+    # (Q6_K, 2x7900XT, 30 GB of RAM): with an 8 GiB budget the cold first
+    # request falls from 33.8 s to 17.3 s and the storage read on the second
+    # request from 1,415 MB to 204 MB, with the warm rate unchanged
+    # (63-74 tok/s).  It costs RAM: the budget is a share of the box.
+    "resident_gib": ("resident_gib", "resident_budget_gib"),
 }
 
 
