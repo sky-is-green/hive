@@ -172,10 +172,7 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .caption { min-height: 2.9em; margin: .7rem 0 0; font-size: .88rem; color: var(--muted); }
 .caption strong { color: var(--fg); }
 .labflow { margin-top: 6px; }
-.labflow.running .link:nth-of-type(2) i { animation: travel 1s linear; }
-.labflow.running .link:nth-of-type(4) i { animation: travel 1s linear .7s; }
-.labflow.running .link:nth-of-type(6) i { animation: travel 1s linear 1.4s; }
-.labflow.running .link:nth-of-type(8) i { animation: travel 1s linear 2.1s; }
+.flow .node b { font-weight: 700; }
 .lab { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-top: 12px; }
 @media (max-width: 760px) { .lab { grid-template-columns: 1fr; } }
 .lab-row { display: grid; grid-template-columns: 44px 1fr 52px 38px 16px; gap: 7px;
@@ -383,14 +380,13 @@ STAGE_PREMISE = """
 
 STAGE_MEMORY = """
   <div class="stage-panel" data-stage="memory">
-    <div class="demo-head"><h3>The drone at work</h3>
-      <button type="button" data-lab-run>Run</button></div>
+    <div class="demo-head"><h3>The drone at work</h3></div>
     <div class="flow labflow" data-labflow aria-hidden="true">
       <span class="node" data-lab-node="store">store · 5</span><span class="link"><i></i></span>
       <span class="node" data-lab-node="drone">drone · 17M</span><span class="link"><i></i></span>
       <span class="node" data-lab-node="cosine">cosine</span><span class="link"><i></i></span>
-      <span class="node" data-lab-node="membrane">membrane</span><span class="link"><i></i></span>
-      <span class="node" data-lab-node="context">context</span>
+      <span class="node" data-lab-node="membrane">membrane · <b data-lab-membrane>2</b> kept</span><span class="link"><i></i></span>
+      <span class="node" data-lab-node="context">context · <b data-lab-context-count>2</b></span>
     </div>
     <div class="query">the prompt: <strong>“How are order deletions handled?”</strong></div>
     <div class="lab">
@@ -852,6 +848,10 @@ JS = """
     if (d) d.classList.toggle("lost", merge);
     const bar = stage.querySelector("[data-lab-budget]");
     if (bar) bar.style.width = merge ? "55%" : "100%";
+    const mem = stage.querySelector("[data-lab-membrane]");
+    if (mem) mem.textContent = merge ? "1" : "2";
+    const cc = stage.querySelector("[data-lab-context-count]");
+    if (cc) cc.textContent = merge ? "1" : "2";
     const dec = stage.querySelector("[data-lab-decision]");
     if (dec) dec.innerHTML = merge
       ? "<strong>Merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D merges into A; the delete question can no longer be answered."
@@ -1197,17 +1197,6 @@ JS = """
   const labSlider = document.querySelector("[data-lab-threshold]");
   if (labSlider) {
     labSlider.addEventListener("input", function () { setMemory(labSlider.value); });
-  }
-  const labRun = document.querySelector("[data-lab-run]");
-  if (labRun) {
-    labRun.addEventListener("click", function () {
-      const labflow = document.querySelector("[data-labflow]");
-      if (!labflow || reduced) return;
-      labflow.classList.remove("running");
-      void labflow.offsetWidth;
-      labflow.classList.add("running");
-      setTimeout(function () { labflow.classList.remove("running"); }, 4200);
-    });
   }
   document.querySelectorAll(".seg button[data-check]").forEach(function (b) {
     b.addEventListener("click", function () { setCheck(b.dataset.check); });
