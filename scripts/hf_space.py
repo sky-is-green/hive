@@ -82,6 +82,18 @@ body { margin: 0; background: var(--bg); color: var(--fg);
   border-radius: 4px; background: var(--packet, var(--accent)); opacity: 0; }
 .flow .link.dashed i { top: -5px; }
 .flow .link.active i { animation: travel 1.15s linear; opacity: 1; }
+.flow .link .p { position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  opacity: 0; pointer-events: none; }
+.flow .link .p.ltr { background: var(--c-mem); top: -5px; }
+.flow .link .p.rtl { background: var(--c-prompt); top: 3px; }
+.flow .link.exchange { overflow: visible; }
+.flow .link.exchange .p.ltr { animation: ex-ltr 1.25s linear infinite; }
+.flow .link.exchange .p.rtl { animation: ex-rtl 1.25s linear infinite; }
+.flow .link.exchange .p.d1 { animation-delay: .62s; }
+@keyframes ex-ltr { 0% { left: -6px; opacity: 0; } 12% { opacity: 1; }
+  88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+@keyframes ex-rtl { 0% { left: 100%; opacity: 0; } 12% { opacity: 1; }
+  88% { opacity: 1; } 100% { left: -6px; opacity: 0; } }
 @keyframes travel { 0% { left: -8px; opacity: 0; } 15% { opacity: 1; }
   85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
   88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
@@ -289,7 +301,7 @@ HERO = """
     <span class="pill">MIT</span><span class="pill">updated 2026-10-21</span></p>
   <div class="flow" data-flow aria-hidden="true">
     <span class="node" data-flow-node="memory">memory</span>
-    <span class="link dashed" data-to="prompt"><i></i></span>
+    <span class="link dashed" data-to="prompt"><i></i><b class="p ltr d0"></b><b class="p ltr d1"></b><b class="p rtl d0"></b><b class="p rtl d1"></b></span>
     <span class="node" data-flow-node="prompt">prompt</span>
     <span class="link" data-to="35b"><i></i></span>
     <span class="node" data-flow-node="35b">35B</span>
@@ -787,6 +799,17 @@ JS = """
     });
     const node = flow.querySelector('[data-flow-node="' + nodeName + '"]');
     if (node) node.style.setProperty("--packet", value);
+    if (nodeName === "prompt") heroExchange(2400);
+  }
+  function heroExchange(duration) {
+    const link = document.querySelector('[data-to="prompt"]');
+    if (!link) return;
+    link.classList.remove("exchange");
+    void link.offsetWidth;
+    link.classList.add("exchange");
+    if (link._exTimer) clearTimeout(link._exTimer);
+    link._exTimer = setTimeout(function () { link.classList.remove("exchange"); },
+                               duration || 2600);
   }
   function stopHero() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
   function startHero() {
@@ -920,6 +943,7 @@ JS = """
     }
     const cap = document.querySelector("[data-route-caption]");
     if (cap) cap.innerHTML = step.caption;
+    if (i === 0) heroExchange(2800);
     const hero = [["35b", "var(--c-model)"], ["judge", "var(--c-judge)"],
                   ["verify", "var(--bad)"], ["27b", "var(--c-model)"],
                   ["verify", "var(--good)"], ["answer", "var(--good)"]][i];
