@@ -31,6 +31,43 @@ tool-call healing. What it does not do: verify the *answer*. Its
 "self-healing" loop repairs malformed tool calls; correctness is left to
 the agent's own loop.
 
+**OpenCode** is the closest architectural match to what we are building,
+and the difference is instructive. It is a client-server coding agent
+with sessions and a fixed tool catalog (`read`, `glob`, `grep`, `edit`,
+`write`, `patch`, `shell`, `webfetch`, `websearch`, `question`, `skill`,
+`subagent`, `execute`, plus MCP tools). It has **no answer verifier**:
+verification is `shell` - the agent runs the project's tests and linter,
+reads the output, and repairs - plus the human approval gate. What it
+has that the others do not is a **structural policy plane**, and it is
+worth copying almost verbatim.
+
+- **Permissions** are ordered `(action, resource, effect)` rules -
+  `allow`, `deny`, or `ask` - matched per agent, last match wins. A
+  reviewer subagent in their own docs is defined by `edit: deny` and
+  `shell: deny`: the *role* is its permission set, not its prompt.
+- **Policies** are a second, non-interactive plane that can only
+  *tighten*: a `deny` cannot be lifted by an agent or a project, and a
+  managed/Console policy outranks both. The model cannot talk its way
+  past it.
+- **`steps`** caps the model steps per turn; on the last step the tools
+  are removed and the model must summarize in text. A loop bound, not a
+  hope.
+- **Code Mode** (`execute`) lets the controller write a small JavaScript
+  program that calls tools, runs independent calls in parallel, and
+  returns one condensed result - nested tools still enforce their own
+  permissions. That is how a controller keeps its context small while
+  the policy stays auditable.
+- The **Console gateway** serves other harnesses (Claude Code, Codex,
+  Hermes, Pi, Raycast) with session routing - the same host/controller
+  split as Unsloth Start, from the other side.
+
+What OpenCode does *not* have is the part our campaign measured: a table
+of which tier is competent at what, a cost-aware escalation, a
+falsifiable check (no mutation test, no `unknown`), or claim-level
+grounding. Its verification is only as good as the tests the model
+chooses to run. That is precisely the gap the controller's measured
+table fills.
+
 **LangGraph's Self-RAG and CRAG** are the clearest published state
 machines for the verification role. Self-RAG names four signals: whether
 to retrieve (`Retrieve`), whether a passage is relevant (`ISREL`),
@@ -86,7 +123,7 @@ have already worked out the *shape* of the loop, the conditional edges
 and the metrics. They have not worked out the execution branch, which is
 where our measured value is.
 
-## Four things to adopt
+## Five things to adopt
 
 1. **Stage the checks, cheap to expensive.** Retrieval grade, then
    grounding/execution, then usefulness. One signal per stage; no single
@@ -98,9 +135,16 @@ where our measured value is.
    that passes a deliberately mutated answer is rejected as `unknown`.
    This is the anti-`print("PASS")` rule, and it is what a 0.8B checker
    needs in order to be safe.
-4. **The host is controller-agnostic.** Unsloth Start is the precedent:
-   a stable endpoint plus a launcher, and any agent can drive it. Our
-   four tools are the equivalent contract.
+4. **The host is controller-agnostic.** Unsloth Start and OpenCode's
+   Console gateway are the precedents: a stable endpoint plus a
+   launcher, and any agent can drive it. Our four tools are the
+   equivalent contract.
+5. **Enforce the invariants outside the model.** OpenCode's two-plane
+   design is the model to copy: permissions say what the agent may do,
+   policies say what it cannot do at all, and neither is a prompt. Our
+   "a pass is authoritative" and "the controller cannot mark its own
+   answer correct" should be properties of the tool surface and the
+   policy engine, not sentences the controller is asked to respect.
 
 ## Two things not to copy
 
@@ -122,6 +166,8 @@ where our measured value is.
 | `score(task, answer)` | Self-RAG's `ISUSE`; the 176B head as the judge |
 | `ask_human(...)` | Databricks' human-in-the-loop; the Studio's human gate |
 | the JSONL log | Databricks' observability; LangSmith traces |
+| the invariants | OpenCode's two planes: permissions (what the agent may do, `ask` allowed) and policies (hard `deny`, non-interactive, cannot be lifted by the agent) |
+| the loop bound | OpenCode's `steps`: a hard cap, then the tools are removed and the model must answer |
 
 ## What this changes in our build
 
@@ -144,6 +190,13 @@ model's opinion.
   search with citations, OpenAI-compatible API, `unsloth start`):
   <https://unsloth.ai/docs/new/studio> and
   <https://unsloth.ai/docs/integrations/unsloth-start>
+- OpenCode V2 (tools, agents and subagents, permissions, policies,
+  `steps`, Code Mode, Console harness gateway):
+  <https://opencode.ai/v2/docs/tools>,
+  <https://opencode.ai/v2/docs/agents>,
+  <https://opencode.ai/v2/docs/permissions>,
+  <https://opencode.ai/v2/docs/policies>,
+  <https://opencode.ai/v2/docs/console/harnesses>
 - LangGraph, "Self-Reflective RAG" (Self-RAG `Retrieve`/`ISREL`/`ISSUP`/
   `ISUSE`, CRAG retrieval evaluator and web fallback):
   <https://www.langchain.com/blog/agentic-rag-with-langgraph>

@@ -82,7 +82,11 @@ with the harness, whatever model it is.
 ## The invariants
 
 These are not prompt suggestions; they are what makes the system
-falsifiable.
+falsifiable, and the harness enforces them - the tool interfaces and the
+policy layer, not the prompt. The controller is told them so it can
+plan; it does not get to opt out. (OpenCode's two-plane design is the
+precedent: permissions say what an agent may do, policies say what it
+cannot do at all, and neither is a sentence in a prompt.)
 
 - **A `pass` is authoritative.** The checker's program ran and printed a
   pass. The controller does not override it with a judgement.
@@ -105,6 +109,10 @@ falsifiable.
   not for the whole task.
 - **Every decision is logged** (see below). The controller's own
   confidence is not evidence and is not logged as one.
+- **The loop is bounded.** After a configured number of steps the
+  harness removes the tools and requires a final answer - `accepted`,
+  `escalated` or `rejected`. An unbounded controller is a bug, not a
+  feature (OpenCode's `steps` is the same bound).
 
 ## The routing table (measured, 2026-10-21)
 
