@@ -627,6 +627,11 @@ PANEL_MEMORY = """
       near-duplicate merges before selection, and the only evidence for deletes
       goes with it. The drift chunk dims in both states: it is only penalised,
       never deleted.</p>
+    <p class="small">The slider is there to be explored: the pair's cosine is
+      0.89, so the boundary is discoverable, and either side has a visible cost.
+      But the shipped 0.92 is not derived from this pair - it is set by the
+      corpus replay in the cards below (60.51% of the facts at 0.92, 32.66% at
+      0.67). A threshold is a population decision; the lab is one case.</p>
     <div class="grid">
       <div class="card"><h3>The shipped point</h3><p><strong>60.51%</strong> of
         the facts kept in <strong>374</strong> tokens. Precision 1.00: it never
