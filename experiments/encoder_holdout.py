@@ -55,6 +55,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=5e-6)
     parser.add_argument("--tasks", default="dedup")
+    parser.add_argument("--hinge-margin", type=float, default=0.0,
+                        help="the dedup task's objective: a hinge at this "
+                             "cosine margin (the shipped threshold is 0.92). "
+                             "0 = the contrastive loss, which optimises a "
+                             "ranking rather than the decision")
     parser.add_argument("--per-conv", type=int, default=20)
     parser.add_argument("--seed", type=int, default=20261020)
     parser.add_argument("--out", type=Path, default=None)
@@ -91,6 +96,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 out=str(checkpoint), epochs=args.epochs,
                 batch_size=args.batch_size, lr=args.lr, temperature=0.05,
                 alpha=0.5, hard_weight=0.5, seed=args.seed, log_every=40,
+                hinge_margin=args.hinge_margin,
                 tasks=args.tasks))
         finally:
             ft.build_examples = original

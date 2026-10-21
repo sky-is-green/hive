@@ -155,6 +155,59 @@ the facts. The next objective is therefore a **hinge at the operating
 point** (the duplicates' cosine above 0.92, the distinct pairs' below),
 not an F1.
 
+### 2C-bis. The hinge at the operating point: it moves the point, and it breaks the other decision
+
+The hinge was the log's own next step, so it was run
+(`--hinge-margin 0.92`, on the same held-out split, 12 epochs at
+lr 5e-5 - the contrastive arm's 42 steps were far too few to say
+anything). The objective replaces the dedup task's contrastive loss with
+the decision itself: the duplicates' cosine above 0.92, the distinct
+pairs' below it, the two errors weighted alike because the decision
+weights them alike.
+
+| on the held-out half | the stock L3-v2 | the contrastive tune | the hinge, dedup only | the hinge, dedup + drift |
+|---|---|---|---|---|
+| the dedup's recall at 0.92 | 0.047 | 0.047 | **0.986** | **0.916** |
+| the dedup's precision at 0.92 | 1.000 | 1.000 | 0.722 | 0.833 |
+| the dedup's best F1 | 0.698 | 0.824 | 0.930 | 0.908 |
+| **the drift's AUC** | **0.957** | 0.956 | **0.731** | **0.420** |
+| the held-out gate | - | passes | **fails** | **fails** |
+
+**The premise is confirmed.** The contrastive objective could not move a
+fixed threshold - the recall at 0.92 was 0.047 either way. The hinge
+moves it to **0.986**: the decision at the operating point is
+*reachable*, and the only way to reach it is to optimise the decision.
+That is the campaign's claim, now measured rather than argued.
+
+**And the candidate still fails the gate, on the drift task.** The
+dedup hinge moves the whole distribution - the positives' median cosine
+goes 0.678 (stock) to 0.826, and the negatives' with it - so the drift
+pairs' cosines move under the change too, and the drift AUC falls from
+0.957 to 0.731.
+
+**And training the drift task alongside does not fix it - it makes it
+worse** (0.420, below chance). The drift task's own contrastive loss
+and the dedup hinge want opposite things from one encoder: the hinge
+wants every positive high, the drift signal wants the *topical*
+distance between two chunks to be sharp, and a shared representation
+that satisfies the first does not give the second. The two membrane
+decisions are not two readouts of one geometry.
+
+**So the shipped defaults stay where they are** - the candidate loses a
+job, and the gate says a candidate that wins one job and loses another
+is not a release. The finding is the negative one, and it is a real
+one: **the membrane's two decisions cannot both be served by the same
+encoder at the shipped thresholds**, and the fix is two encoders (or a
+different one), not a better training of this one.
+
+*What the next experiment would be:* the dedup decision and the drift
+decision are different questions, so they should not share a model. The
+hivebench's Global tab already switches the encoder per conversation
+(a per-choice drone cache), so a *drift-specific* encoder is a
+configuration change, not a new mechanism - and the drift decision is
+the cheaper one to move, because its threshold is free (hypothesis H
+falsified it: the drift threshold buys nothing and the fact recall pays).
+
 ---
 
 ## 3A-3E. The cascade's own arms, measured on the 35B

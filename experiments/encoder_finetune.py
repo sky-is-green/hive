@@ -281,21 +281,37 @@ def train(args) -> dict:
             positives = [e["positive"] for e in batch]
             a_vec = embed(anchors, module, student_tokenizer)
             p_vec = embed(positives, module, student_tokenizer)
-            if teacher is not None:
-                with torch.no_grad():
-                    t_a = embed(anchors, teacher[0].auto_model, teacher_tokenizer)
-                    t_p = embed(positives, teacher[0].auto_model, teacher_tokenizer)
-                loss = kd_loss(a_vec, p_vec, t_a, t_p,
-                               temperature=args.temperature, alpha=args.alpha)
-            else:
-                loss = in_batch_loss(a_vec, p_vec, temperature=args.temperature)
             # the hard negative: the anchor should be far from it
             negatives = [e["negative"] for e in batch]
             n_vec = embed(negatives, module, student_tokenizer)
             neg_sim = (F.normalize(a_vec, dim=-1)
                        * F.normalize(n_vec, dim=-1)).sum(dim=-1)
-            hard = F.relu(neg_sim - 0.8).mean()
-            loss = loss + args.hard_weight * hard
+            if _task == "dedup" and args.hinge_margin > 0.0:
+                # The hinge at the operating point.  The contrastive loss
+                # optimises a *ranking* (and F1 is a ranking metric), but
+                # the harness makes one *decision* - is this cosine above
+                # the threshold? - and a better ranking does not move a
+                # fixed threshold.  So the objective is the decision: the
+                # duplicates' cosine above the margin, the distinct pairs'
+                # below it.  The false merge and the missed merge are
+                # weighted alike, which is what the decision does.
+                pos_sim = (F.normalize(a_vec, dim=-1)
+                           * F.normalize(p_vec, dim=-1)).sum(dim=-1)
+                margin = float(args.hinge_margin)
+                loss = (F.relu(margin - pos_sim).mean()
+                        + F.relu(neg_sim - margin).mean())
+            elif teacher is not None:
+                with torch.no_grad():
+                    t_a = embed(anchors, teacher[0].auto_model, teacher_tokenizer)
+                    t_p = embed(positives, teacher[0].auto_model, teacher_tokenizer)
+                loss = kd_loss(a_vec, p_vec, t_a, t_p,
+                               temperature=args.temperature, alpha=args.alpha)
+                hard = F.relu(neg_sim - 0.8).mean()
+                loss = loss + args.hard_weight * hard
+            else:
+                loss = in_batch_loss(a_vec, p_vec, temperature=args.temperature)
+                hard = F.relu(neg_sim - 0.8).mean()
+                loss = loss + args.hard_weight * hard
 
             optimizer.zero_grad()
             loss.backward()
@@ -417,6 +433,15 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--alpha", type=float, default=0.5,
                         help="the teacher's share of the loss")
     parser.add_argument("--hard-weight", type=float, default=0.5)
+    parser.add_argument("--hinge-margin", type=float, default=0.0,
+                        help="the dedup task's objective: a hinge at this cosine "
+                             "margin - the duplicates' cosine above it, the "
+                             "distinct pairs' below it.  0 (the default) keeps "
+                             "the contrastive loss, which optimises a ranking; "
+                             "the harness makes a decision at a fixed "
+                             "threshold, so the hinge is the objective that "
+                             "matches the decision.  The shipped dedup "
+                             "threshold is 0.92")
     parser.add_argument("--tasks", default="",
                         help="the tasks to train on (dedup, drift, rank); "
                              "empty = all of them")
