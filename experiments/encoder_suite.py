@@ -261,6 +261,13 @@ def make_encoder(name: str) -> tuple[Callable[[list[str]], np.ndarray], dict]:
     if name.startswith("checkpoint:"):
         # a trained SentenceTransformer checkpoint
         return _sentence_transformer(name.split(":", 1)[1])
+    if name.startswith("qwen-student:"):
+        # our own Qwen-family bi-encoder (experiments/qwen_encoder.py): a
+        # Qwen3 decoder with the Qwen3-Embedding pooling (last token), unit
+        # length, measured the way the harness uses every encoder - one
+        # function for both sides, on the CPU, like the rest.
+        from experiments.qwen_encoder import student_encoder
+        return student_encoder(name.split(":", 1)[1])
     if "/" in name or name.endswith(".gguf"):
         # any sentence-transformers id (a local path counts)
         return _sentence_transformer(name)
