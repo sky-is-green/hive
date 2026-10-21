@@ -12,6 +12,32 @@ their trained weights (Gate 3), so no local training is required.
 | Fork binary | `artifacts/ternary/oracle/prism-fork/bin/llama-prism-b10709-9a9394a/llama-server` |
 | Driver | `experiments/ternary_eval.py` (T11) |
 
+**Verified on this box (2026-10-21).** The fork build that ships with the
+model's quant type is not the one under `artifacts/`; it is
+`prism-qwen4exp-shrink/build-hip/bin/llama-server` (it defines
+`GGML_TYPE_PQ2_0 = 142`; the `prism-ml-llama.cpp` build rejects the
+weights with `tensor 'output.weight' has invalid ggml type 142`). The
+serving command is:
+
+```sh
+HIP_VISIBLE_DEVICES=1 \
+  ./prism-qwen4exp-shrink/build-hip/bin/llama-server \
+    -m hivebench/artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf \
+    -ngl 99 -c 8192 --host 127.0.0.1 --port 8897 \
+    --chat-template-kwargs '{"enable_thinking": false}'
+```
+
+- **`HIP_VISIBLE_DEVICES=1` is the non-display card on this box.** The
+  HIP ordinals are `0 -> 0000:03:00.0 (DRM card1, boot_vga=1, the
+  display)` and `1 -> 0000:07:00.0 (DRM card0, the non-display)`; the
+  old note ("`=1` keeps the desktop GPU0 free") is right, the inverted
+  one ("`=0` is the non-display") is wrong. Verified by the VRAM moving
+  to card0 and the display's usage staying at 1.3 GB.
+- 7.94 GB of VRAM, ~8 s a task at 1024 output tokens, and the server
+  answers `/v1/chat/completions` like any OpenAI-compatible endpoint -
+  `experiments/cascade/bonsai_arm.py` is the escalation arm that uses it.
+
+
 ## Serve / evaluate
 
 ```sh

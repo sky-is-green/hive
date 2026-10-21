@@ -361,6 +361,57 @@ One caveat on the numbers: this corpus is `tests/fixtures/generated`, not
 the `harness_state` corpus behind 2C's 50.55%; compare *within* the
 table, not across the two sections.
 
+### 2C-quinquies. Why the student inverts on the drift decision
+
+The 4-layer student's drift AUC is 0.457 - below chance - while the stock
+L3-v2 is 0.957. Capacity is not the story: the 8-layer student is 0.226,
+the 28-layer 0.444. The diagnostic separates pooling, truncation and the
+cosine scale, on 600 of the 3,575 hold-out cases (27 drift, the class
+rate is 4.5%):
+
+| the arm | AUC | within-conversation AUC | cos (drift) | cos (same) | signal p50 | corr(signal, length) |
+|---|---|---|---|---|---|---|
+| the stock (mean, 256) | 0.934 | 0.919 | 0.351 | 0.573 | 0.429 | -0.414 |
+| the student (last, 192) | 0.421 | 0.338 | 0.425 | 0.406 | 0.605 | +0.036 |
+| the student (mean, 192) | 0.360 | 0.645 | 0.930 | 0.926 | 0.069 | -0.121 |
+| the student (last, 512) | 0.408 | 0.623 | 0.411 | 0.392 | 0.626 | +0.025 |
+| the student (mean, 512) | 0.575 | **0.853** | 0.952 | 0.961 | 0.034 | -0.484 |
+
+**Last-token pooling on a truncated document is the primary cause.** At
+the same 192 tokens, mean pooling lifts the within-conversation AUC
+0.338 -> 0.645. The student's last token is at position 192 of a
+7,000-character window - mid-sentence - and its state is a poor summary
+of the window.
+
+**Truncation is the second.** Mean pooling at 512 tokens lifts it
+0.645 -> 0.853. The student was trained at 192; the drift windows are
+~1,800 tokens, so it reads a tenth of the evidence.
+
+**The cosine scale is the third, and it breaks the threshold even for
+the stock.** Mean pooling puts every cosine at ~0.95 (signal p50 0.034);
+last-token puts them at ~0.41 (p50 0.605). The shipped 0.6 is a point on
+neither scale, so the same constant fires on half the turns for one
+model and almost never for the other. **A threshold is a property of an
+encoder's signal distribution, not of the decision.**
+
+**And the metric has a length shortcut that the stock uses.** The stock's
+signal correlates -0.414 with the recent window's length: the shorter the
+window, the lower its Jaccard against the long older half, and the more
+likely the lexical label says drift. That is a property of the label
+construction, and the stock exploits it. The student does not (-0.04 to
++0.04), which is part of why its pooled AUC is lower than its
+within-conversation ordering.
+
+**What this settles.** The student is not "bad at drift"; it is a model
+trained to summarise a short chunk, asked to summarise a long window with
+the wrong pooling. Mean pooling at 512 recovers 0.853 within
+conversations - still behind the stock's 0.919, at 11x the cost. The
+shippable path is therefore not the student: it is a drift-specific
+encoder at the stock's cost, which 2C-sexies trains.
+
+`experiments/drift_diagnose.py` (GPU, `--device cuda`); the artifact is
+`experiments/encoder-suite/results/drift-diagnose.json`.
+
 ---
 
 ## 3A-3E. The cascade's own arms, measured on the 35B
@@ -1166,3 +1217,56 @@ the 176B alone, the engine warm):
 The 42.5x gap against the 35B was **~7x contention and cold cache, and
 ~6x the model**. Both are real; only the second one is the price of the
 tier.
+
+## 1B-sexies. The escalation generator: a 27B dense, not the 176B
+
+The escalation tier's generate arm was net zero with the 176B - 2 of 7
+errors fixed, 2 of 21 correct broken - and the reading was that
+escalation is worth nothing on this class. The reading was about the
+*generator*, not the tier. The 176B is a judgement model: its generation
+costs 20.7 s an item and is no better than the 35B's.
+
+The same arm, same 28 organic tasks, same 35B answers, same checkers, on
+**Bonsai 2 27B** (`Ternary-Bonsai-2-27B-PQ2_0`, 7.2 GB, one card):
+
+| the arm | correct | errors fixed | correct broken | the cost |
+|---|---|---|---|---|
+| the 35B alone | 21/28 (0.750) | - | - | - |
+| **Bonsai 2 27B alone** | **26/28 (0.929)** | 6 | 1 | 8.92 s/item |
+| the 176B head gate (0.65) -> Bonsai | 23/28 (0.821) | 2 | 0 | 3 escalations |
+| the oracle gate -> Bonsai | 27/28 (0.964) | 6 | 0 | 7 escalations |
+
+**The tier is worth +5 net on the tasks where the 176B was worth zero**,
+and the escalation is cheaper: 8.92 s/item against 20.68 s. (One sample
+per task at temperature 0.7, the same protocol as the 176B arm; the one
+broken answer - `math-0013` - is the kind a majority vote would settle,
+so the +5 is a lower bound, not a point estimate.)
+
+**The gate is now the bottleneck, and its misses are not noise.** The
+176B's head sends up 3 of the 7 errors and none of the 21 correct
+answers - a clean gate - yet it gives **four of the seven errors
+`p >= 0.97`**: both arithmetic answers and both code answers. Those are
+*plausible* wrong answers, and a head that reads the answer cannot see
+the difference. The head's ceiling on this set is 3 of 7, and no
+retraining of a judgement model moves it: the missing signal is in
+*executing* the answer, not in reading it.
+
+**So the local cascade's shape is now clear**, and it is not the one the
+campaign started with:
+
+1. the 35B answers the bulk;
+2. a **checker** where the domain allows one (run the code, recompute
+   the arithmetic) - the only tier that can see the four errors the head
+   cannot;
+3. the judge for the uncheckable remainder (3 of 7 here);
+4. Bonsai for what the gate sends up (it fixes 6 of the 7);
+5. the API only for what neither the check nor the local generator
+   settles.
+
+Steps 1, 3 and 4 are measured; step 2 is the next experiment, not a
+result - the benchmark's own checkers are gold answers, and a
+production checker is a sandbox the harness does not have yet.
+
+`experiments/cascade/bonsai_arm.py`, the artifact in
+`experiments/cascade/results/bonsai-escalation-20261021/` (the rows and
+the serve recipe are in `docs/BONSAI-RUNTIME.md`).

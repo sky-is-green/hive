@@ -1,0 +1,76 @@
+{
+ "the_n": 600,
+ "the_device": "cuda",
+ "the_rows": [
+  {
+   "the_arm": "stock L3 (mean,256)",
+   "the_auc": 0.9344,
+   "the_auc_within_conversation": 0.9194,
+   "the_conversations": 3,
+   "the_drift_cases": 27,
+   "the_cos_drift_mean": 0.3507,
+   "the_cos_same_mean": 0.5731,
+   "the_cos_std": 0.0957,
+   "the_signal_p50": 0.4292,
+   "the_corr_signal_jaccard": -0.333,
+   "the_corr_signal_len_recent": -0.414,
+   "the_corr_signal_len_older": -0.091
+  },
+  {
+   "the_arm": "student (last,192)",
+   "the_auc": 0.4211,
+   "the_auc_within_conversation": 0.3382,
+   "the_conversations": 3,
+   "the_drift_cases": 27,
+   "the_cos_drift_mean": 0.425,
+   "the_cos_same_mean": 0.4058,
+   "the_cos_std": 0.0902,
+   "the_signal_p50": 0.6052,
+   "the_corr_signal_jaccard": -0.044,
+   "the_corr_signal_len_recent": 0.036,
+   "the_corr_signal_len_older": 0.053
+  },
+  {
+   "the_arm": "student (mean,192)",
+   "the_auc": 0.3602,
+   "the_auc_within_conversation": 0.6454,
+   "the_conversations": 3,
+   "the_drift_cases": 27,
+   "the_cos_drift_mean": 0.9303,
+   "the_cos_same_mean": 0.9264,
+   "the_cos_std": 0.024,
+   "the_signal_p50": 0.0689,
+   "the_corr_signal_jaccard": -0.195,
+   "the_corr_signal_len_recent": -0.121,
+   "the_corr_signal_len_older": -0.148
+  },
+  {
+   "the_arm": "student (last,512)",
+   "the_auc": 0.4083,
+   "the_auc_within_conversation": 0.6232,
+   "the_conversations": 3,
+   "the_drift_cases": 27,
+   "the_cos_drift_mean": 0.4108,
+   "the_cos_same_mean": 0.3915,
+   "the_cos_std": 0.116,
+   "the_signal_p50": 0.626,
+   "the_corr_signal_jaccard": 0.023,
+   "the_corr_signal_len_recent": 0.025,
+   "the_corr_signal_len_older": 0.005
+  },
+  {
+   "the_arm": "student (mean,512)",
+   "the_auc": 0.5746,
+   "the_auc_within_conversation": 0.853,
+   "the_conversations": 3,
+   "the_drift_cases": 27,
+   "the_cos_drift_mean": 0.9523,
+   "the_cos_same_mean": 0.9611,
+   "the_cos_std": 0.0235,
+   "the_signal_p50": 0.0342,
+   "the_corr_signal_jaccard": 0.013,
+   "the_corr_signal_len_recent": -0.484,
+   "the_corr_signal_len_older": -0.477
+  }
+ ]
+}
