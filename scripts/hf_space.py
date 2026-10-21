@@ -59,19 +59,31 @@ body { margin: 0; background: var(--bg); color: var(--fg);
 .meta { font-size: .84rem; color: var(--muted); margin-top: 1.1rem; }
 .meta .dot { display: inline-block; width: .55em; height: .55em; background: var(--good);
   border-radius: 50%; margin-right: .45em; vertical-align: .06em; }
-.flow { display: flex; align-items: center; gap: 6px; margin-top: 20px; flex-wrap: wrap;
-  font-size: .78rem; }
-.flow .node { border: 1px solid var(--line); background: var(--card); border-radius: 8px;
-  padding: 5px 9px; font-family: ui-monospace, monospace; }
-.flow .node.hot { border-color: var(--accent); color: var(--accent); }
-.flow .link { flex: 1 1 40px; min-width: 30px; height: 2px; background: var(--line);
+.flow { display: flex; align-items: center; gap: 5px; margin-top: 20px;
+  flex-wrap: wrap; font-size: .74rem; }
+.flow .node { border: 1px solid var(--line); background: var(--card); border-radius: 7px;
+  padding: 5px 8px; font-family: ui-monospace, monospace; color: var(--muted);
+  transition: border-color .3s, color .3s, box-shadow .3s; }
+.flow .node[data-flow-node="memory"] { color: var(--c-mem); }
+.flow .node[data-flow-node="prompt"] { color: var(--c-prompt); }
+.flow .node[data-flow-node="35b"],
+.flow .node[data-flow-node="27b"] { color: var(--c-model); }
+.flow .node[data-flow-node="judge"] { color: var(--c-judge); }
+.flow .node[data-flow-node="verify"],
+.flow .node[data-flow-node="answer"] { color: var(--good); }
+.flow .node.api { color: var(--c-exec); opacity: .55; }
+.flow .node.active { border-color: var(--packet, var(--accent));
+  color: var(--packet, var(--accent));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--packet, var(--accent)) 18%, transparent); }
+.flow .link { flex: 1 1 22px; min-width: 16px; height: 2px; background: var(--line);
   position: relative; overflow: hidden; }
-.flow .link i { position: absolute; top: -2px; left: -10px; width: 8px; height: 6px;
-  border-radius: 3px; background: var(--accent); animation: travel 3.2s linear infinite; }
-.flow .link:nth-of-type(4) i { animation-delay: .8s; }
-.flow .link:nth-of-type(6) i { animation-delay: 1.6s; }
-.flow .link:nth-of-type(8) i { animation-delay: 2.4s; }
-@keyframes travel { 0% { left: -10px; opacity: 0; } 12% { opacity: 1; }
+.flow .link.dashed { background: none; border-top: 2px dashed var(--line); height: 0; }
+.flow .link i { position: absolute; top: -3px; left: -8px; width: 7px; height: 8px;
+  border-radius: 4px; background: var(--packet, var(--accent)); opacity: 0; }
+.flow .link.dashed i { top: -5px; }
+.flow .link.active i { animation: travel 1.15s linear; opacity: 1; }
+@keyframes travel { 0% { left: -8px; opacity: 0; } 15% { opacity: 1; }
+  85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
   88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
 
 .tabs { position: sticky; top: 0; z-index: 20;
@@ -239,12 +251,22 @@ HERO = """
     harness. The controller is the current work.</p>
   <p class="meta"><span class="dot"></span>not a product yet ·
     <span class="pill">MIT</span><span class="pill">updated 2026-10-21</span></p>
-  <div class="flow" aria-hidden="true">
-    <span class="node">35B</span><span class="link"><i></i></span>
-    <span class="node hot">verify</span><span class="link"><i></i></span>
-    <span class="node">judge</span><span class="link"><i></i></span>
-    <span class="node">27B</span><span class="link"><i></i></span>
-    <span class="node">API</span>
+  <div class="flow" data-flow aria-hidden="true">
+    <span class="node" data-flow-node="memory">memory</span>
+    <span class="link dashed" data-to="prompt"><i></i></span>
+    <span class="node" data-flow-node="prompt">prompt</span>
+    <span class="link" data-to="35b"><i></i></span>
+    <span class="node" data-flow-node="35b">35B</span>
+    <span class="link" data-to="judge"><i></i></span>
+    <span class="node" data-flow-node="judge">judge</span>
+    <span class="link" data-to="verify"><i></i></span>
+    <span class="node" data-flow-node="verify">verify</span>
+    <span class="link" data-to="27b"><i></i></span>
+    <span class="node" data-flow-node="27b">27B</span>
+    <span class="link" data-to="answer"><i></i></span>
+    <span class="node" data-flow-node="answer">answer</span>
+    <span class="link dashed" data-to="api"><i></i></span>
+    <span class="node api" data-flow-node="api">API · residue</span>
   </div>
 </div></header>
 """
@@ -606,6 +628,42 @@ JS = """
     });
   }
 
+  // ---- hero: the process strip (driven by the example on the controller tab)
+  const FLOW_COLORS = {
+    memory: "var(--c-mem)", prompt: "var(--c-prompt)", "35b": "var(--c-model)",
+    judge: "var(--c-judge)", verify: "var(--good)", "27b": "var(--c-model)",
+    answer: "var(--good)", api: "var(--c-exec)"
+  };
+  const FLOW_ORDER = ["prompt", "35b", "judge", "verify", "27b", "answer"];
+  let heroTimer = null;
+
+  function heroSet(nodeName, color) {
+    const flow = document.querySelector("[data-flow]");
+    if (!flow) return;
+    const value = color || FLOW_COLORS[nodeName] || "var(--accent)";
+    flow.querySelectorAll(".node").forEach(function (n) {
+      n.classList.toggle("active", n.dataset.flowNode === nodeName);
+    });
+    flow.querySelectorAll(".link").forEach(function (l) {
+      const on = l.dataset.to === nodeName;
+      l.classList.toggle("active", on);
+      if (on) l.style.setProperty("--packet", value);
+    });
+    const node = flow.querySelector('[data-flow-node="' + nodeName + '"]');
+    if (node) node.style.setProperty("--packet", value);
+  }
+  function stopHero() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
+  function startHero() {
+    stopHero();
+    if (reduced) { heroSet("answer"); return; }
+    let i = 0;
+    heroSet(FLOW_ORDER[0]);
+    heroTimer = setInterval(function () {
+      i = (i + 1) % FLOW_ORDER.length;
+      heroSet(FLOW_ORDER[i]);
+    }, 1900);
+  }
+
   // ---- move: highlight the mapping, one row at a time
   const MOVE_CAPTIONS = [
     "The chunk router. The controller does the same, one level up.",
@@ -726,6 +784,10 @@ JS = """
     }
     const cap = document.querySelector("[data-route-caption]");
     if (cap) cap.innerHTML = step.caption;
+    const hero = [["35b", "var(--c-model)"], ["judge", "var(--c-judge)"],
+                  ["verify", "var(--bad)"], ["27b", "var(--c-model)"],
+                  ["verify", "var(--good)"], ["answer", "var(--good)"]][i];
+    if (hero) heroSet(hero[0], hero[1]);
   }
 
   function stopRoute() {
@@ -791,6 +853,8 @@ JS = """
     if (label) label.textContent = NAMES[name];
     if (name !== "move") stopMove(); else startMove();
     if (name !== "controller") stopRoute();
+    stopHero();
+    if (name !== "controller") startHero();
     if (name === "measured") animateBars();
     if (name === "controller" && !reduced) playRoute();
     if (push !== false) history.replaceState(null, "", "#" + name);
