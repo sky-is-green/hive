@@ -1,0 +1,75 @@
+# Status — 2026-10-21
+
+**This is a research harness, not a usable product yet.** The reference
+serves are down or reserved for engine work, and the paid tier's key is
+expired. What is published is the measurement record, the code that
+produced it and the contracts the next phase is built against.
+
+## Measured (the same 28 organic tasks unless stated)
+
+| the arm | the result | the cost |
+|---|---|---|
+| the 35B alone | 21/28 (0.750) | the cheapest local |
+| **Bonsai 2 27B** | **26/28 (0.929); +5 net** (6 fixed, 1 broken) | 8.92 s/item |
+| the 176B generating | net 0 (2 fixed, 2 broken) | 20.68 s/item |
+| the 176B head judging the 35B | AUC 0.864; 3 of 7 errors, **0 of 21** correct sent up | 2.52 s/verdict |
+| the judge + Bonsai | 23/28 (0.821); 3 escalations, all errors | - |
+| the oracle gate + Bonsai | 27/28 (0.964) | - |
+
+The latency decomposition and the resident tier are in
+`docs/AB-RESULTS.md` §1B and §1B-bis: cold 33.8 s vs 17.3 s, warm
+84.7-94.3 → 93.3-101.9 tok/s, storage traffic 54-261 MB → 0.6-2.4 MB.
+The curation replay (§2C-quater): the stock encoder keeps 60.51% of the
+facts in 374 tokens; the tuned dedup encoder keeps 32.66% in 139. The
+dedup decision cannot be moved; the drift threshold is the free dial.
+
+## Invalidated (do not cite these)
+
+- **The drift numbers in `AB-RESULTS.md` §2C through §2C-sexies.** The
+  corpus behind them was 79% an ingested knowledge-base attachment and
+  one conversation was loaded twice. The drift AUC 0.957/0.945, the
+  student's 0.457, the fine-tune's 0.277 and the head's 0.994 were
+  measuring "short query against a document", not topic drift. The
+  correction is §2C-septies; the clean corpus cannot support the split
+  (2 drift cases in train, 176 in the hold-out).
+- **The encoder card's deployment recommendation.** It used to advise a
+  dedup threshold of 0.67; the replay prices that as a fact deletion.
+  The checkpoint is public as a research record, marked not-a-release.
+
+## Unmeasured (the next phase)
+
+- the **checker**: execution (code and arithmetic) and grounding
+  (claim-level support). The measured need: the judge misses four of
+  seven errors at `p >= 0.97`; those errors are executable.
+- the **controller loop**: the four tools, the bounded loop, the log.
+  The contract is `docs/HARNESS-CONTROLLER.md`.
+- the **API driver** (blocked on the key) and the **drift benchmark**
+  (being rebuilt: size-matched windows, conversation-disjoint split).
+
+## Blocked
+
+The paid tier: the `opencode-go` key is expired, so the API arm is the
+one tier with no measurement.
+
+## Where to start
+
+| the document | what it is |
+|---|---|
+| `docs/AB-RESULTS.md` | the campaign's log, with the corrections and the negative results |
+| `docs/CASCADE-PAPER.md` | the method and the measured tier results |
+| `docs/HARNESS-CONTROLLER.md` | the drop-in controller contract: four tools, four invariants, the bounded loop |
+| `docs/CONTROLLER-PRIOR-ART.md` | what other harnesses do for verification and routing |
+| `docs/SPLINTER-MEMORY.md` | the memory system, its limits and the correction |
+| `docs/ENCODER-PLAN.md` / `docs/ENCODER-CARD.md` | the encoder programme and the research checkpoint |
+
+## The published artifacts
+
+| the artifact | where | the state |
+|---|---|---|
+| the memory system card | `huggingface.co/SkyIsNotGreen/splinter-memory` | public |
+| the encoder checkpoint | `huggingface.co/SkyIsNotGreen/splinter-encoder` | public, **research checkpoint** |
+| the cascade dataset | `huggingface.co/datasets/SkyIsNotGreen/hive-cascade` | public |
+
+The corpus's local paths were replaced with `<work>`, `<drive>` and
+`<drive-id>` in the published tree; the git history predating that commit
+still contains them (rewriting it would need a force-push).
