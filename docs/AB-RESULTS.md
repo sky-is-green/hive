@@ -406,11 +406,59 @@ within-conversation ordering.
 trained to summarise a short chunk, asked to summarise a long window with
 the wrong pooling. Mean pooling at 512 recovers 0.853 within
 conversations - still behind the stock's 0.919, at 11x the cost. The
-shippable path is therefore not the student: it is a drift-specific
-encoder at the stock's cost, which 2C-sexies trains.
+obvious shippable path was a drift-specific encoder at the stock's cost;
+2C-sexies trains it, and the stock beats it (0.957 against 0.277).
 
 `experiments/drift_diagnose.py` (GPU, `--device cuda`); the artifact is
 `experiments/encoder-suite/results/drift-diagnose.json`.
+
+### 2C-sexies. The drift encoder: we trained it, and the stock is still the ceiling
+
+The drift decision's threshold is free (H), so a model that ranks better
+should be shippable. The candidate was the shipped L3-v2 (same cost)
+fine-tuned *only* on the drift triplets from the train half - the
+topic-close older window as the positive, the topic-far one as the
+negative - 25 epochs, 1,289 triplets.
+
+The hold-out (3,575 cases, 172 drift, 4.8%):
+
+| the encoder | AUC | F1 at the shipped 0.6 | F1 at the train-calibrated threshold | oracle F1 | fires at 0.6 |
+|---|---|---|---|---|---|
+| the stock L3-v2 | **0.957** | 0.205 | 0.376 (t 0.824) | **0.629** (t 0.734) | 41.1% |
+| the drift-fine-tuned | **0.277** | 0.081 | 0.049 (t 0.998) | 0.093 | 92.4% |
+
+The fine-tune does not merely fail to improve it: it **destroys the
+topical geometry** (0.277, below even the student's 0.457). Its signal's
+median jumps 0.581 -> 0.851: the contrastive objective spread the whole
+space apart, and the ordering went with it.
+
+**This is the third fine-tune to lose to the stock on this job** - the
+multi-task variant 0.420, the dedup hinge 0.731, the drift-only 0.277 -
+and it settles the question the two-encoder angle opened. Our pair sets
+are too small and too narrow to improve on a pre-trained topical space;
+the stock's 0.957 is not a lucky number, it is the ceiling of what our
+data can teach. The two-encoder design is still *sound* (a second
+instance cannot hurt the dedup), but there is no better encoder to put
+in it.
+
+**The table also shows where the value actually is: the threshold.** At
+the shipped 0.6 the stock keeps 97.7% of the drifts and fires on 41.1%
+of all turns - a topic reset on two turns in five. At its own 0.734 it
+keeps 73.8%, fires on 6.5%, and the F1 goes 0.205 -> 0.629. The replay
+already showed that moving the drift threshold costs no facts (60.51%
+either way). So the drift decision's problem was never the encoder, and
+it is not the model: it is the constant.
+
+**Two cautions on the calibration.** The train split's prevalence is
+2.0% (58/2,958) against the hold-out's 4.8% (172/3,575), so a threshold
+fitted on train is too strict for the hold-out (F1 0.376 against the
+oracle's 0.629): a threshold must be re-derived for the deployment's
+prevalence, not carried across a split. And 0.734 is an oracle; the
+deployable number is the F1 at a prior-corrected threshold on a
+held-out period, which has not been measured.
+
+`experiments/drift_encoder.py`; the artifact is
+`experiments/encoder-suite/results/drift-encoder/drift-encoder.json`.
 
 ---
 
