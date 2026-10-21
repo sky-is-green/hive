@@ -178,9 +178,23 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .labflow.running .link:nth-of-type(8) i { animation: travel 1s linear 2.1s; }
 .lab { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-top: 12px; }
 @media (max-width: 760px) { .lab { grid-template-columns: 1fr; } }
-.lab-row { display: grid; grid-template-columns: 48px 1fr 62px; gap: 8px;
+.lab-row { display: grid; grid-template-columns: 44px 1fr 52px 38px 16px; gap: 7px;
   align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line);
   font-size: .8rem; }
+.lab-row .lab-text { font-size: .77rem; color: var(--muted); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; }
+.lab-row.selected .pick { color: var(--good); }
+.lab-row .pick { color: var(--muted); text-align: center; }
+.lab-row.merge .lab-text { color: var(--bad); text-decoration: line-through; }
+@media (max-width: 720px) { .lab-row { grid-template-columns: 40px 1fr 38px 14px; }
+  .lab-row .vec { display: none; } }
+.query { margin-top: 10px; font-size: .9rem; color: var(--muted); }
+.query strong { color: var(--fg); }
+.context-box { border: 1px solid var(--line); border-radius: 8px; padding: 7px;
+  display: grid; gap: 5px; margin-top: 5px; }
+.ctx-item { font-size: .76rem; background: var(--code); border-radius: 5px;
+  padding: 5px 7px; transition: color .3s, opacity .3s; }
+.ctx-item.lost { color: var(--bad); text-decoration: line-through; opacity: .55; }
 .lab-row .lab-name { font-family: ui-monospace, monospace; color: var(--muted); }
 .lab-row .cos { text-align: right; font-family: ui-monospace, monospace;
   color: var(--muted); font-size: .74rem; }
@@ -368,7 +382,7 @@ STAGE_PREMISE = """
 
 
 STAGE_MEMORY = """
-  <div class="stage-panel" data-stage="memory" hidden>
+  <div class="stage-panel" data-stage="memory">
     <div class="demo-head"><h3>The drone at work</h3>
       <button type="button" data-lab-run>Run</button></div>
     <div class="flow labflow" data-labflow aria-hidden="true">
@@ -378,20 +392,46 @@ STAGE_MEMORY = """
       <span class="node" data-lab-node="membrane">membrane</span><span class="link"><i></i></span>
       <span class="node" data-lab-node="context">context</span>
     </div>
+    <div class="query">the prompt: <strong>“How are order deletions handled?”</strong></div>
     <div class="lab">
       <div>
-        <div class="lab-row"><span class="lab-name">A</span><span class="vec" data-vec="a"></span><span class="cos">—</span></div>
-        <div class="lab-row" data-lab-row="ad"><span class="lab-name">A + D</span><span class="vec" data-vec="ad"></span><span class="cos">0.89</span></div>
-        <div class="lab-row"><span class="lab-name">B</span><span class="vec" data-vec="b"></span><span class="cos">0.24</span></div>
-        <div class="lab-row"><span class="lab-name">C</span><span class="vec" data-vec="c"></span><span class="cos">0.31</span></div>
-        <div class="lab-row dim"><span class="lab-name">K</span><span class="vec" data-vec="k"></span><span class="cos">0.18 · drift</span></div>
+        <div class="lab-row selected">
+          <span class="lab-name">A</span>
+          <span class="lab-text">3NF with a denormalized read model</span>
+          <span class="vec" data-vec="a"></span>
+          <span class="cos">0.74</span><span class="pick">✓</span>
+        </div>
+        <div class="lab-row selected" data-lab-row="ad">
+          <span class="lab-name">A + D</span>
+          <span class="lab-text" data-lab-text>… soft deletes via deleted_at</span>
+          <span class="vec" data-vec="ad"></span>
+          <span class="cos">0.91</span><span class="pick">✓</span>
+        </div>
+        <div class="lab-row">
+          <span class="lab-name">B</span>
+          <span class="lab-text">indexes on (customer_id, created_at)</span>
+          <span class="vec" data-vec="b"></span>
+          <span class="cos">0.22</span><span class="pick">—</span>
+        </div>
+        <div class="lab-row">
+          <span class="lab-name">C</span>
+          <span class="lab-text">Alembic, forward-only</span>
+          <span class="vec" data-vec="c"></span>
+          <span class="cos">0.18</span><span class="pick">—</span>
+        </div>
+        <div class="lab-row dim">
+          <span class="lab-name">K</span>
+          <span class="lab-text">Kubernetes sidecar :8765</span>
+          <span class="vec" data-vec="k"></span>
+          <span class="cos">0.05</span><span class="pick">—</span>
+        </div>
         <p class="lab-decision" data-lab-decision></p>
       </div>
       <div>
-        <div class="small">the assembled context</div>
-        <div class="facts">
-          <span class="fact">A</span><span class="fact">B</span><span class="fact">C</span>
-          <span class="fact" data-fact="D">D · soft deletes</span>
+        <div class="small">the prompt's context</div>
+        <div class="context-box">
+          <div class="ctx-item">A · 3NF with a denormalized read model</div>
+          <div class="ctx-item" data-ctx-d>D · soft deletes via deleted_at</div>
         </div>
         <div class="budget"><i data-lab-budget></i></div>
         <p class="small" data-lab-context></p>
@@ -584,10 +624,13 @@ PANEL_MEMORY = """
       decisions on every turn: <strong>dedup</strong> (is this chunk already
       said?) and <strong>drift</strong> (did the topic change?), and the
       assembler keeps the context under budget.</p>
-    <p>The stage above is the argument for the conservative dedup. At 0.92
-      both schema chunks survive and the soft-delete fact survives with them.
-      At 0.67 the near-duplicate merges and the fact goes. The drift chunk
-      dims in both states: it is only penalised, never deleted.</p>
+    <p>The stage above is the argument for the conservative dedup, on a prompt
+      that asks <strong>how order deletions are handled</strong>. At 0.92 the
+      two schema chunks are both selected - one of them carries the
+      <code>deleted_at</code> fact - and the prompt can answer. At 0.67 the
+      near-duplicate merges before selection, and the only evidence for deletes
+      goes with it. The drift chunk dims in both states: it is only penalised,
+      never deleted.</p>
     <div class="grid">
       <div class="card"><h3>The shipped point</h3><p><strong>60.51%</strong> of
         the facts kept in <strong>374</strong> tokens. Precision 1.00: it never
@@ -795,26 +838,32 @@ JS = """
     const out = stage.querySelector("[data-lab-value]");
     if (out) out.textContent = value.toFixed(2);
     const row = stage.querySelector('[data-lab-row="ad"]');
-    if (row) row.classList.toggle("merge", merge);
-    const d = stage.querySelector('[data-fact="D"]');
-    if (d) {
-      d.classList.toggle("lost", merge);
-      d.textContent = merge ? "D - lost" : "D - soft deletes";
+    if (row) {
+      row.classList.toggle("merge", merge);
+      row.classList.toggle("selected", !merge);
+      const pick = row.querySelector(".pick");
+      if (pick) pick.textContent = merge ? "—" : "✓";
     }
+    const rowText = stage.querySelector("[data-lab-text]");
+    if (rowText) rowText.textContent = merge
+      ? "merged into A - the fact is gone"
+      : "… soft deletes via deleted_at";
+    const d = stage.querySelector("[data-ctx-d]");
+    if (d) d.classList.toggle("lost", merge);
     const bar = stage.querySelector("[data-lab-budget]");
     if (bar) bar.style.width = merge ? "55%" : "100%";
     const dec = stage.querySelector("[data-lab-decision]");
     if (dec) dec.innerHTML = merge
-      ? "<strong>Merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D collapses into A; the soft-delete fact goes with it."
-      : "<strong>Distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are kept, and the soft-delete fact survives.";
+      ? "<strong>Merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D merges into A; the delete question can no longer be answered."
+      : "<strong>Distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are selected, and the context can answer the delete question.";
     const ctx = stage.querySelector("[data-lab-context]");
     if (ctx) ctx.textContent = merge
-      ? "3 facts kept. The delete question cannot be answered."
-      : "4 facts kept. The delete question can be answered.";
+      ? "1 chunk selected. The delete question is unanswerable."
+      : "2 chunks selected. The delete question can be answered.";
     const cap = stage.querySelector("[data-lab-caption]");
     if (cap) cap.innerHTML = merge
-      ? "At <strong>" + value.toFixed(2) + "</strong> the pair merges: the context is smaller, and D is gone. This is the mechanism behind the measured 60.51% &rarr; 32.66%."
-      : "The drone scores the pair at <strong>0.89</strong>. At <strong>" + value.toFixed(2) + "</strong> they stay apart, and the context keeps all four facts.";
+      ? "The merge removes A+D before it can be selected: the prompt's only evidence for deletes is gone. The mechanism behind 60.51% &rarr; 32.66%."
+      : "The query selects A (0.74) and A+D (0.91); the budget keeps both. The prompt's context contains the soft-delete fact.";
   }
 
   // ---- hero: the process strip (driven by the example on the controller tab)
