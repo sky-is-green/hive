@@ -157,6 +157,8 @@ not an F1.
 
 ### 2C-bis. The hinge at the operating point: it moves the point, and it breaks the other decision
 
+> **Correction (2C-septies): the drift figures in this section are invalid.** The corpus was 79% ingested documents, so the drift cases were short queries against an attachment; the dedup figures are affected by the same corpus. The replay consequences stand.
+
 The hinge was the log's own next step, so it was run
 (`--hinge-margin 0.92`, on the same held-out split, 12 epochs at
 lr 5e-5 - the contrastive arm's 42 steps were far too few to say
@@ -209,6 +211,8 @@ the cheaper one to move, because its threshold is free (hypothesis H
 falsified it: the drift threshold buys nothing and the fact recall pays).
 
 ### 2C-ter. Our own Qwen-family bi-encoder
+
+> **Correction (2C-septies): the drift figures in this section are invalid.** The corpus was 79% ingested documents, so the drift cases were short queries against an attachment; the dedup figures are affected by the same corpus. The replay consequences stand.
 
 The hinge above was run on the stock MiniLM, and the campaign's open item
 was the *Qwen family*: "make our own qwen-family bi-encoder, we'll need
@@ -363,6 +367,8 @@ table, not across the two sections.
 
 ### 2C-quinquies. Why the student inverts on the drift decision
 
+> **Correction (2C-septies): the drift figures in this section are invalid.** The corpus was 79% ingested documents, so the drift cases were short queries against an attachment; the dedup figures are affected by the same corpus. The replay consequences stand.
+
 The 4-layer student's drift AUC is 0.457 - below chance - while the stock
 L3-v2 is 0.957. Capacity is not the story: the 8-layer student is 0.226,
 the 28-layer 0.444. The diagnostic separates pooling, truncation and the
@@ -459,6 +465,49 @@ held-out period, which has not been measured.
 
 `experiments/drift_encoder.py`; the artifact is
 `experiments/encoder-suite/results/drift-encoder/drift-encoder.json`.
+
+### 2C-septies. **Correction:** the drift corpus was measuring the attachment
+
+**The drift numbers in 2C through 2C-sexies are invalid.** This section
+says why, and what replaces them. Two corpus bugs, both in
+`load_conversations`:
+
+1. **The ingested attachments were loaded as conversations.** 17 of the
+   82 `conv-*.json` files are a knowledge-base attachment chunked into
+   `[block n/328]` pieces - 5,531 of the 6,977 stored chunks. The drift
+   builder compares a "recent window" against the first half of the
+   file, so its cases are short user *queries* against a 5 MB
+   *document*. The label (Jaccard < 0.05) then says "drift" whenever the
+   recent window is a query: **45.7% of the shortest length decile, 0%
+   of the seven longest.** The stock's 0.957 was detecting that; the
+   head's 0.994 was learning the window length; the student's 0.457 was
+   failing to reproduce the artifact.
+2. **The same conversation id was loaded twice.** Both state
+   directories hold `conv-*.json` with the same ids (a 29-chunk copy and
+   a 244-chunk copy) and the loader did not dedupe - so one conversation
+   could sit in both the train and the hold-out half.
+
+After the fix (the longer copy wins; files that are mostly `[block
+n/m]` are dropped), the corpus is **64 conversations and 1,417
+chunks** - and it cannot support a drift measurement: the split gives
+**2 drift cases in train** and **176 in the hold-out, 144 of them from
+one conversation**. The clean pooled AUC is 0.109 (below chance) and
+the head's cross-validation is undefined: there is nothing to train on.
+
+**So the drift decision is unmeasured.** Not 0.957, not 0.457, not
+0.277, not 0.994. The dedup column of the same tables is affected too -
+the attachment's repeated headers are template duplicates - though the
+*replay* (the consequence, on `tests/fixtures/generated`) is a separate
+corpus and stands. The cascade results (1B through 1B-sexies) are
+unaffected: they never used this corpus.
+
+**What replaces it.** A drift benchmark with (a) **size-matched
+windows**, so Jaccard is not a length proxy, (b) a
+**conversation-disjoint** split, and (c) enough conversations that one
+cannot dominate. J-Bench is the closest labelled artifact on disk (the
+decision-head study scored 0.9524 on it); a purpose-built set from the
+fixtures is the alternative. The `drift_head.py` instrument (a head on
+frozen stock pair embeddings) is ready for whichever lands first.
 
 ---
 
