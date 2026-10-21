@@ -1,0 +1,81 @@
+{
+ "the_seed": 20261020,
+ "the_rows": {
+  "the stock L3-v2": {
+   "the_auc": 0.957,
+   "the_auc_train_calibrated": {
+    "the_threshold": 0.824,
+    "the_precision": 0.8913,
+    "the_recall": 0.2384,
+    "the_f1": 0.3761,
+    "the_fires": 0.013
+   },
+   "the_oracle_best": {
+    "the_threshold": 0.734,
+    "the_precision": 0.5474,
+    "the_recall": 0.7384,
+    "the_f1": 0.6287,
+    "the_fires": 0.065
+   },
+   "the_at_0_6": {
+    "the_threshold": 0.6,
+    "the_precision": 0.1142,
+    "the_recall": 0.9767,
+    "the_f1": 0.2045,
+    "the_fires": 0.411
+   },
+   "the_signal_p50": 0.5813,
+   "the_cost_ms": 1.03,
+   "the_threshold_from": "the train split's best F1",
+   "the_calibration_best": {
+    "the_threshold": 0.824,
+    "the_precision": 0.6944,
+    "the_recall": 0.431,
+    "the_f1": 0.5319,
+    "the_fires": 0.012
+   },
+   "the_info": {}
+  },
+  "the drift encoder": {
+   "the_auc": 0.2774,
+   "the_auc_train_calibrated": {
+    "the_threshold": 0.998,
+    "the_precision": 0.0301,
+    "the_recall": 0.1279,
+    "the_f1": 0.0488,
+    "the_fires": 0.204
+   },
+   "the_oracle_best": {
+    "the_threshold": 0.49,
+    "the_precision": 0.0489,
+    "the_recall": 0.9884,
+    "the_f1": 0.0933,
+    "the_fires": 0.971
+   },
+   "the_at_0_6": {
+    "the_threshold": 0.6,
+    "the_precision": 0.0424,
+    "the_recall": 0.814,
+    "the_f1": 0.0806,
+    "the_fires": 0.924
+   },
+   "the_signal_p50": 0.8513,
+   "the_cost_ms": 1.19,
+   "the_threshold_from": "the train split's best F1",
+   "the_calibration_best": {
+    "the_threshold": 0.998,
+    "the_precision": 0.0376,
+    "the_recall": 0.3621,
+    "the_f1": 0.0682,
+    "the_fires": 0.189
+   },
+   "the_info": {}
+  }
+ },
+ "the_verdict": {
+  "the_auc_not_worse": false,
+  "the_f1_at_calibrated_not_worse": false,
+  "the_cost_not_worse": false,
+  "passes": false
+ }
+}

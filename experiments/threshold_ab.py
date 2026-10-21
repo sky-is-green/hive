@@ -93,8 +93,15 @@ def answer_map(conversations: list[dict]) -> dict[str, dict[str, str]]:
 
 def replay(conversations: list[dict], answers: dict, points: dict,
            encoder: str = "sentence-transformers/paraphrase-MiniLM-L3-v2",
-           max_turns: int = 0) -> list[dict]:
-    """Replay the corpus through the real pipeline at one threshold set."""
+           max_turns: int = 0, drift_encoder: str = "") -> list[dict]:
+    """Replay the corpus through the real pipeline at one threshold set.
+
+    ``drift_encoder`` gives the topic-change decision its own encoder (a
+    name in the suite's vocabulary, e.g. ``checkpoint:<path>``); the
+    store and the dedup keep ``encoder``.  That is the two-encoder
+    design the results log's 2C sections point at: one model for the
+    duplicate decision, another for the topic change.
+    """
     from focal.budget import AdaptiveBudget
     from cortex.routing import DroneRouter, EscalationHandler
     from focal.assembly import ContextAssembler
@@ -110,7 +117,15 @@ def replay(conversations: list[dict], answers: dict, points: dict,
     assembler = ContextAssembler()
     escalation = EscalationHandler()
     dedup = ContextDeduplicator(threshold=points["dedup"])
-    drift = TopicDriftDetector(threshold=points["drift"])
+    if drift_encoder:
+        from experiments.encoder_suite import make_encoder
+
+        drift_embed, _ = make_encoder(drift_encoder)
+        drift = TopicDriftDetector(
+            threshold=points["drift"],
+            embed_fn=lambda text: drift_embed([text])[0])
+    else:
+        drift = TopicDriftDetector(threshold=points["drift"])
 
     records: list[dict] = []
     for conv in conversations:
@@ -211,6 +226,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--max-turns", type=int, default=0,
                         help="cap the turns per conversation (0 = all)")
     parser.add_argument("--encoder", default="sentence-transformers/paraphrase-MiniLM-L3-v2")
+    parser.add_argument("--drift-encoder", default="",
+                        help="the encoder for the topic-change decision only "
+                             "(a suite name: l3, checkpoint:<path>); empty = the "
+                             "same encoder as the store and the dedup")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -222,6 +241,7 @@ def main(argv: Optional[list[str]] = None) -> int:
           f"{sum(1 for c in conversations for t in c.get('turns', []) if t.get('role') == 'user')} turns")
 
     results: dict = {"fixtures": args.fixtures, "encoder": args.encoder,
+                     "drift_encoder": args.drift_encoder or args.encoder,
                      "arms": {}}
     for name, points in (("shipped", SHIPPED), ("dedup_only", DEDUP_ONLY),
                          ("drift_only", DRIFT_ONLY),
@@ -230,7 +250,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"\n=== {name} (dedup {points['dedup']}, drift {points['drift']})",
               flush=True)
         records = replay(conversations, answers, points,
-                         encoder=args.encoder, max_turns=args.max_turns)
+                         encoder=args.encoder, max_turns=args.max_turns,
+                         drift_encoder=args.drift_encoder)
         summary = score(records)
         results["arms"][name] = {"points": points, "summary": summary,
                                   "records": records}

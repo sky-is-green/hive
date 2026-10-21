@@ -114,7 +114,9 @@ So Option A stays a teacher, Option B stays a ceiling, and the shipped
 drone does not change on the strength of what has been measured. The
 **drift** decision is the one that is *free* to move - its threshold
 costs no facts - but no candidate beats the stock's drift AUC (0.957;
-the teacher ties it, the hinge and the student lose it badly), so there
-is nothing to swap in. The remaining question in this path is the
+the teacher ties it, the hinge and the student lose it badly), and the
+drift-only fine-tune (2C-sexies) loses it outright at 0.277. There is
+nothing to swap in. The remaining question in this path is the
 answer-level price of moving the drift threshold, which the replay
-cannot see.
+cannot see - and the table now says that is where the drift value is:
+at 0.734 the stock's F1 is 0.629 against 0.205 at the shipped 0.6.
