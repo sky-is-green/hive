@@ -88,11 +88,29 @@ separate experiment, after the quality question is settled.
 ## The order
 
 1. **Measure** the Qwen-family bi-encoder on the three jobs and in the
-   paired A/B (running).
+   paired A/B. *Done - results log 2B, 2A.2, 2C.*
 2. **If the architecture matters**, train the student with the
    relation-KD objective on the harness's own data, with the hinge at the
-   operating point.
+   operating point. *Done - the 4-layer student, results log 2C-ter.*
 3. **Gate it** on the held-out split, and measure the *decision at the
    shipped threshold* - the thing the first fine-tune got wrong.
+   *Done - and then the decision was priced on the curation itself
+   (results log 2C-quater): moving it deletes facts.*
 4. **Only then** look at quantising it, and only if the quality is there
-   to keep.
+   to keep. *Not reached: nothing wins both jobs at the shipped cost, so
+   there is no quality to keep.*
+
+## What the measurement decided
+
+The family-match is real: the teacher is the same family as the
+generator, and a student trained on our data with the decision as the
+objective beats it at that decision by 9.4x. But the decision is not the
+product. The replay closed it: **no measured candidate improves the
+fact-per-token trade-off at a calibrated point**, and the reason is that
+a false merge deletes a fact. A better ranker moves along that frontier,
+not off it.
+
+So Option A stays a teacher, Option B stays a ceiling, and the only
+shippable move in this path is the one the replay leaves open: give the
+**drift** decision its own encoder, because its threshold is free. The
+shipped drone does not change on the strength of what has been measured.
