@@ -469,6 +469,14 @@ STAGE_CONTROLLER = """
     <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
       27B 8.92 s. The checker is unmeasured, so it is not in the 18.1 s
       total.</p>
+    <p class="timing-note"><strong>It is conditional.</strong> This is the
+      escalated path, not the normal one. On the 28-task run the 35B answered
+      all 28; the judge sent up <strong>3</strong> - all of them errors, and
+      <strong>0 of the 21 correct</strong> - and the 27B ran on those 3. The
+      other 25 never left the first tier. The mean over the run was
+      <strong>10.2 s</strong> per task (35B and judge on every task, the 27B on
+      three); the expensive tier is the exception, and the gate is what keeps
+      it one.</p>
   </div>
 """
 
