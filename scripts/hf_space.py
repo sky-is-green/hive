@@ -429,7 +429,7 @@ STAGE_MEMORY = """
           <div class="ctx-item">A · 3NF with a denormalized read model</div>
           <div class="ctx-item" data-ctx-d>D · soft deletes via deleted_at</div>
         </div>
-        <div class="budget"><i data-lab-budget></i></div>
+        <div class="budget" title="context budget: 2 of 2 chunks" aria-label="context budget used"><i data-lab-budget></i></div>
         <p class="small" data-lab-context></p>
       </div>
     </div>
@@ -847,7 +847,13 @@ JS = """
     const d = stage.querySelector("[data-ctx-d]");
     if (d) d.classList.toggle("lost", merge);
     const bar = stage.querySelector("[data-lab-budget]");
-    if (bar) bar.style.width = merge ? "55%" : "100%";
+    if (bar) {
+      bar.style.width = merge ? "55%" : "100%";
+      bar.style.background = merge ? "var(--bad)" : "var(--accent2)";
+      const budget = bar.parentElement;
+      budget.title = merge ? "context budget: 1 of 2 chunks" : "context budget: 2 of 2 chunks";
+      budget.setAttribute("aria-label", budget.title);
+    }
     const mem = stage.querySelector("[data-lab-membrane]");
     if (mem) mem.textContent = merge ? "1" : "2";
     const cc = stage.querySelector("[data-lab-context-count]");
@@ -858,8 +864,8 @@ JS = """
       : "<strong>Distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are selected, and the context can answer the delete question.";
     const ctx = stage.querySelector("[data-lab-context]");
     if (ctx) ctx.textContent = merge
-      ? "1 chunk selected. The delete question is unanswerable."
-      : "2 chunks selected. The delete question can be answered.";
+      ? "1 of 2 chunks. The delete question is unanswerable."
+      : "2 of 2 chunks. The delete question can be answered.";
     const cap = stage.querySelector("[data-lab-caption]");
     if (cap) cap.innerHTML = merge
       ? "The merge removes A+D before it can be selected: the prompt's only evidence for deletes is gone. The mechanism behind 60.51% &rarr; 32.66%."
