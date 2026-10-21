@@ -148,6 +148,31 @@ button { font: inherit; font-size: .78rem; padding: .25rem .65rem; border-radius
 button:hover { border-color: var(--accent); color: var(--accent); }
 .caption { min-height: 2.9em; margin: .7rem 0 0; font-size: .88rem; color: var(--muted); }
 .caption strong { color: var(--fg); }
+.labflow { margin-top: 6px; }
+.labflow.running .link:nth-of-type(2) i { animation: travel 1s linear; }
+.labflow.running .link:nth-of-type(4) i { animation: travel 1s linear .7s; }
+.labflow.running .link:nth-of-type(6) i { animation: travel 1s linear 1.4s; }
+.labflow.running .link:nth-of-type(8) i { animation: travel 1s linear 2.1s; }
+.lab { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-top: 12px; }
+@media (max-width: 760px) { .lab { grid-template-columns: 1fr; } }
+.lab-row { display: grid; grid-template-columns: 48px 1fr 62px; gap: 8px;
+  align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line);
+  font-size: .8rem; }
+.lab-row .lab-name { font-family: ui-monospace, monospace; color: var(--muted); }
+.lab-row .cos { text-align: right; font-family: ui-monospace, monospace;
+  color: var(--muted); font-size: .74rem; }
+.lab-row.merge .lab-name, .lab-row.merge .cos { color: var(--bad); }
+.lab-row.dim { opacity: .45; }
+.vec { display: flex; gap: 2px; align-items: flex-end; height: 20px; }
+.vec i { flex: 1; background: var(--c-mem); border-radius: 2px 2px 0 0;
+  opacity: .8; min-height: 1px; }
+.lab-decision { min-height: 3em; font-size: .84rem; margin: .6rem 0 0; color: var(--muted); }
+.lab-decision strong { color: var(--fg); }
+.slider { display: flex; align-items: center; gap: 10px; margin-top: 12px;
+  font-size: .82rem; color: var(--muted); }
+.slider input { flex: 1; accent-color: var(--accent); }
+.slider output { font-family: ui-monospace, monospace; color: var(--fg);
+  min-width: 3.2em; text-align: right; }
 .chunks { display: grid; gap: 6px; margin-top: 10px; }
 .chunk { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: .84rem;
@@ -289,26 +314,39 @@ STAGE_OPEN = """
 
 STAGE_MEMORY = """
   <div class="stage-panel" data-stage="memory">
-    <div class="demo-head"><h3>The same pair, two thresholds</h3>
-      <div class="seg" role="group" aria-label="dedup threshold">
-        <button type="button" data-threshold="0.92" aria-pressed="true">shipped 0.92</button>
-        <button type="button" data-threshold="0.67" aria-pressed="false">tuned 0.67</button>
-      </div></div>
-    <div class="chunks">
-      <div class="chunk" data-near="keep"><span>Order schema: 3NF with a denormalized read model.</span><span class="tag">fact A</span></div>
-      <div class="chunk" data-near="merge"><span>Order schema: 3NF with a denormalized read model, soft deletes via deleted_at.</span><span class="tag">fact A + fact D</span></div>
-      <div class="chunk"><span>Indexes: composite on (customer_id, created_at).</span><span class="tag">fact B</span></div>
-      <div class="chunk"><span>Migrations: Alembic, forward-only.</span><span class="tag">fact C</span></div>
-      <div class="chunk dimmed"><span>Kubernetes deploys the sidecar on port 8765.</span><span class="tag">other topic — penalised, never deleted</span></div>
+    <div class="demo-head"><h3>The drone at work</h3>
+      <button type="button" data-lab-run>Run</button></div>
+    <div class="flow labflow" data-labflow aria-hidden="true">
+      <span class="node" data-lab-node="store">store · 5</span><span class="link"><i></i></span>
+      <span class="node" data-lab-node="drone">drone · 17M</span><span class="link"><i></i></span>
+      <span class="node" data-lab-node="cosine">cosine</span><span class="link"><i></i></span>
+      <span class="node" data-lab-node="membrane">membrane</span><span class="link"><i></i></span>
+      <span class="node" data-lab-node="context">context</span>
     </div>
-    <div class="ledger" aria-label="facts kept">
-      <span class="fact" data-fact="A">A</span>
-      <span class="fact" data-fact="B">B</span>
-      <span class="fact" data-fact="C">C</span>
-      <span class="fact" data-fact="D">D · soft deletes</span>
+    <div class="lab">
+      <div>
+        <div class="lab-row"><span class="lab-name">A</span><span class="vec" data-vec="a"></span><span class="cos">—</span></div>
+        <div class="lab-row" data-lab-row="ad"><span class="lab-name">A + D</span><span class="vec" data-vec="ad"></span><span class="cos">0.89</span></div>
+        <div class="lab-row"><span class="lab-name">B</span><span class="vec" data-vec="b"></span><span class="cos">0.24</span></div>
+        <div class="lab-row"><span class="lab-name">C</span><span class="vec" data-vec="c"></span><span class="cos">0.31</span></div>
+        <div class="lab-row dim"><span class="lab-name">K</span><span class="vec" data-vec="k"></span><span class="cos">0.18 · drift</span></div>
+        <p class="lab-decision" data-lab-decision></p>
+      </div>
+      <div>
+        <div class="small">the assembled context</div>
+        <div class="facts">
+          <span class="fact">A</span><span class="fact">B</span><span class="fact">C</span>
+          <span class="fact" data-fact="D">D · soft deletes</span>
+        </div>
+        <div class="budget"><i data-lab-budget></i></div>
+        <p class="small" data-lab-context></p>
+      </div>
     </div>
-    <div class="budget" title="context budget"><i></i></div>
-    <p class="caption" aria-live="polite"></p>
+    <label class="slider">dedup threshold
+      <input type="range" min="0.60" max="0.95" step="0.01" value="0.92" data-lab-threshold>
+      <output data-lab-value>0.92</output>
+    </label>
+    <p class="caption" data-lab-caption aria-live="polite"></p>
   </div>
 """
 
@@ -602,30 +640,50 @@ JS = """
                  measured: "what is measured", checker: "the checker", paper: "the paper"};
   let moveTimer = null, routeTimer = null;
 
-  // ---- memory: the threshold toggle
-  const CURATION = {
-    "0.92": "<strong>0.92:</strong> both stay. The pair is close but not the same fact, so the context can still say how deletes work.",
-    "0.67": "<strong>0.67:</strong> the near-duplicate merges into fact A. <strong>D is gone</strong> - the context shrinks and can no longer answer the delete question. This is the mechanism behind the 60.51% -> 32.66% result."
+  // ---- memory: the drone lab
+  const VECTORS = {
+    a:  [.95, .80, .70, .40, .25, .15, .35, .60],
+    ad: [.95, .80, .70, .40, .25, .15, .35, .90],
+    b:  [.20, .35, .80, .15, .40, .60, .20, .30],
+    c:  [.30, .15, .20, .70, .50, .30, .75, .20],
+    k:  [.15, .60, .20, .10, .85, .30, .15, .25]
   };
-  function setCuration(demo, threshold) {
-    const merge = threshold === "0.67";
-    demo.dataset.threshold = threshold;
-    demo.querySelectorAll("[data-near]").forEach(function (el) {
-      el.classList.toggle("merged", merge && el.dataset.near === "merge");
-      el.classList.toggle("kept", !merge && el.dataset.near === "keep");
-      const tag = el.querySelector(".tag");
-      if (tag && el.dataset.near === "merge")
-        tag.textContent = merge ? "merged - fact D lost" : "fact A + fact D";
+  function renderVectors() {
+    document.querySelectorAll("[data-vec]").forEach(function (el) {
+      const vals = VECTORS[el.dataset.vec] || [];
+      el.innerHTML = vals.map(function (v) {
+        return '<i style="height:' + Math.round(v * 100) + '%"></i>';
+      }).join("");
     });
-    const d = demo.querySelector('[data-fact="D"]');
-    if (d) { d.classList.toggle("lost", merge); d.textContent = merge ? "D - lost" : "D - soft deletes"; }
-    const bar = demo.querySelector(".budget i");
+  }
+  function setMemory(threshold) {
+    const stage = document.querySelector("[data-stage='memory']");
+    if (!stage) return;
+    const value = Number(threshold);
+    const merge = 0.89 >= value;
+    const out = stage.querySelector("[data-lab-value]");
+    if (out) out.textContent = value.toFixed(2);
+    const row = stage.querySelector('[data-lab-row="ad"]');
+    if (row) row.classList.toggle("merge", merge);
+    const d = stage.querySelector('[data-fact="D"]');
+    if (d) {
+      d.classList.toggle("lost", merge);
+      d.textContent = merge ? "D - lost" : "D - soft deletes";
+    }
+    const bar = stage.querySelector("[data-lab-budget]");
     if (bar) bar.style.width = merge ? "55%" : "100%";
-    const cap = demo.querySelector(".caption");
-    if (cap) cap.innerHTML = CURATION[threshold];
-    demo.querySelectorAll(".seg button").forEach(function (b) {
-      b.setAttribute("aria-pressed", String(b.dataset.threshold === threshold));
-    });
+    const dec = stage.querySelector("[data-lab-decision]");
+    if (dec) dec.innerHTML = merge
+      ? "<strong>merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D collapses into A; the soft-delete fact goes with it."
+      : "<strong>distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are kept, and the soft-delete fact survives.";
+    const ctx = stage.querySelector("[data-lab-context]");
+    if (ctx) ctx.textContent = merge
+      ? "3 facts kept. The delete question cannot be answered."
+      : "4 facts kept. The delete question can be answered.";
+    const cap = stage.querySelector("[data-lab-caption]");
+    if (cap) cap.innerHTML = merge
+      ? "At <strong>" + value.toFixed(2) + "</strong> the pair merges: the context is smaller, and D is gone. This is the mechanism behind the measured 60.51% &rarr; 32.66%."
+      : "The drone scores the pair at <strong>0.89</strong>. At <strong>" + value.toFixed(2) + "</strong> they stay apart, and the context keeps all four facts.";
   }
 
   // ---- hero: the process strip (driven by the example on the controller tab)
@@ -861,11 +919,21 @@ JS = """
   }
 
   // ---- wire
-  const curation = document.querySelector("[data-demo='curation'], [data-stage='memory']");
-  if (curation) {
-    setCuration(curation, "0.92");
-    curation.querySelectorAll(".seg button").forEach(function (b) {
-      b.addEventListener("click", function () { setCuration(curation, b.dataset.threshold); });
+  renderVectors();
+  setMemory(0.92);
+  const labSlider = document.querySelector("[data-lab-threshold]");
+  if (labSlider) {
+    labSlider.addEventListener("input", function () { setMemory(labSlider.value); });
+  }
+  const labRun = document.querySelector("[data-lab-run]");
+  if (labRun) {
+    labRun.addEventListener("click", function () {
+      const labflow = document.querySelector("[data-labflow]");
+      if (!labflow || reduced) return;
+      labflow.classList.remove("running");
+      void labflow.offsetWidth;
+      labflow.classList.add("running");
+      setTimeout(function () { labflow.classList.remove("running"); }, 4200);
     });
   }
   document.querySelectorAll(".seg button[data-check]").forEach(function (b) {
