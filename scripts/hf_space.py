@@ -446,7 +446,7 @@ STAGE_CONTROLLER = """
       <g class="node" data-node="verify"><rect x="610" y="180" width="140" height="70" rx="8"/><text x="680" y="205">verify</text><text class="val" x="680" y="226" data-val="verify">—</text><rect x="635" y="255" width="90" height="24" rx="6" fill="none" stroke-dasharray="3 3"/><text class="sub" x="680" y="271">sandbox</text></g>
       <g class="node" data-node="27b"><rect x="590" y="305" width="120" height="54" rx="8"/><text x="650" y="328">27B</text><text class="val" x="650" y="345" data-val="27b">245</text></g>
       <g class="node" data-node="answer"><rect x="170" y="290" width="130" height="54" rx="8"/><text x="235" y="313">answer</text><text class="val pass" x="235" y="330" data-val="answer">accepted</text></g>
-      <g class="node" data-node="api"><rect x="770" y="300" width="90" height="38" rx="8"/><text x="815" y="323">API</text></g>
+      <g class="node" data-node="api"><rect x="770" y="296" width="90" height="44" rx="8"/><text x="815" y="316">API</text><text class="sub" x="815" y="330">the slot</text></g>
     </svg>
     <div class="legend" aria-hidden="true">
       <span><i style="background: var(--c-prompt)"></i>prompt</span>
@@ -477,6 +477,13 @@ STAGE_CONTROLLER = """
       <strong>10.2 s</strong> per task (35B and judge on every task, the 27B on
       three); the expensive tier is the exception, and the gate is what keeps
       it one.</p>
+    <p class="timing-note"><strong>The 27B is a slot, not a requirement.</strong>
+      It can be the API: swap it for one API call and the loop is unchanged.
+      Or keep it and put the API <em>behind</em> it - escalate locally first,
+      and call the API only on the case the 27B cannot settle. The controller's
+      table decides which; the diagram draws the API as the residue because
+      that is its role. The 27B is the measured tier (<strong>+5 net</strong>);
+      the API arm is the unmeasured one (the key is expired).</p>
   </div>
 """
 
