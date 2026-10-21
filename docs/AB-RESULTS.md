@@ -208,6 +208,78 @@ configuration change, not a new mechanism - and the drift decision is
 the cheaper one to move, because its threshold is free (hypothesis H
 falsified it: the drift threshold buys nothing and the fact recall pays).
 
+### 2C-ter. Our own Qwen-family bi-encoder
+
+The hinge above was run on the stock MiniLM, and the campaign's open item
+was the *Qwen family*: "make our own qwen-family bi-encoder, we'll need
+this regardless of whichever direction we make."
+
+**What it is.** A Qwen3 decoder (`Qwen/Qwen3-0.6B`) with the
+Qwen3-Embedding pooling (the last real token, unit length), trained on
+the harness's own conversations with two terms: the **hard labels as a
+hinge at the shipped operating point** (the duplicates' cosine above
+0.92, the distinct pairs' below it) and the **Qwen teacher's relation
+structure** as the soft target (`Qwen/Qwen3-Embedding-0.6B`'s cosines on
+the same pairs - the student reproduces the teacher's *judgements*, so it
+inherits the generator-family semantics rather than the teacher's own
+quirks). `experiments/qwen_encoder.py`; the gate is the held-out split,
+and the depth is a free parameter the measurements choose.
+
+**The held-out numbers** (the train half / the holdout half of the
+conversations; the dedup and the drift jobs, the shipped thresholds):
+
+| the encoder | the dedup f1 at 0.92 | the precision | the recall | the best F1 | **the drift's AUC** | the cost a chunk |
+|---|---|---|---|---|---|---|
+| the stock MiniLM-L3-v2 | 0.090 | 1.000 | 0.047 | 0.713 | **0.957** | **2.7 ms** |
+| **our 4-layer student** | **0.842** | 0.903 | **0.789** | 0.842 | 0.457 | 29.4 ms |
+| our 8-layer student | 0.700 | 0.952 | 0.554 | 0.809 | 0.226 | 59.3 ms |
+| our 28-layer student | 0.620 | 0.833 | 0.493 | 0.879 | 0.444 | 206.1 ms |
+
+**The hinge works, and it works better the shallower the model.** The
+4-layer student's **recall at the shipped threshold is 0.789 against the
+stock's 0.047 - seventeen times** - at a precision of 0.903, and the
+decision's F1 at 0.92 goes **0.090 to 0.842**. This is the first thing
+in the whole campaign that moved the *decision* rather than the ranking,
+and it moved it by using the objective the decision uses.
+
+**And the depth is a free parameter the measurements chose.** The 4-layer
+student beats the 28-layer one *at the operating point* (0.842 against
+0.620) at **one seventh the cost**. The shallow model is the better
+encoder here, and it is also the cheap one.
+
+**But the drift decision is destroyed, and it is not a length artefact.**
+Every student's drift AUC collapses (0.957 to 0.457, 0.226, 0.444). The
+obvious excuse is that the drift cases are long windows (a mean of
+**7,103 characters**) and the student was trained on single chunks. The
+measurement says otherwise: on the *same* cases truncated to 200
+characters, the 4-layer student's AUC is **0.198** - worse, not better
+(the stock's is 0.964 on the same truncation, so it was never
+length-sensitive). The student's geometry has **no topical signal at
+all**: the hinge taught it "these specific pairs are duplicates" and the
+pairwise distillation never constrained the window geometry. The two
+membrane decisions want opposite things from one encoder, now confirmed
+three independent ways (the MiniLM hinge 0.731, the MiniLM hinge with
+the drift task 0.420, and the Qwen students 0.226-0.457).
+
+**And the cost is 11x the drone's budget.** The 4-layer student is
+**29.4 ms a chunk** against the stock's 2.7 ms, so at the store size the
+stability run measured (1,612 chunks) the curation's cost goes from
+157 ms a turn to **1.8 s**. The depth is not the wall - the 4-layer
+student is 218M parameters and the *embedding table* is 155M of them: the
+cost floor is the Qwen vocabulary and the 1024-wide residual stream, not
+the layers. **Narrowing the hidden size is the remaining lever**, and it
+is a surgery on the residual stream rather than a training run.
+
+**What this settles, and what it does not.** It settles that the
+family-match is not a myth: a Qwen-family encoder, trained on our data
+with the decision as the objective, is **nine times better at the
+dedup decision** than the shipped one. It does not settle the drone:
+the shipped thresholds stay (the student loses the drift job), and the
+11x cost keeps it a ceiling rather than a citizen. The two decisions
+need two encoders - which the Global tab can already do - and the
+shipped drone stays the MiniLM until something wins *both* jobs at the
+shipped cost.
+
 ---
 
 ## 3A-3E. The cascade's own arms, measured on the 35B

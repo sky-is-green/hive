@@ -1,0 +1,46 @@
+{
+ "the_info": {
+  "the_model": "experiments/encoder-suite/results/qwen/L4/qwen-bi-encoder",
+  "the_pooling": "last token",
+  "the_normalised": true,
+  "the_device": "cuda",
+  "the_params": 218507264
+ },
+ "dedup": {
+  "n": 976,
+  "positives": 213,
+  "at_0.92": {
+   "precision": 0.9032,
+   "recall": 0.7887,
+   "f1": 0.8421
+  },
+  "pos_p50": 0.9923,
+  "neg_p50": 0.4394,
+  "separation": 0.5529,
+  "best": {
+   "f1": 0.8421,
+   "precision": 0.9032,
+   "recall": 0.7887,
+   "threshold": 0.92
+  }
+ },
+ "drift": {
+  "n": 3575,
+  "positives": 172,
+  "auc": 0.4565,
+  "at_0.6": {
+   "precision": 0.0391,
+   "recall": 0.4186,
+   "f1": 0.0715
+  },
+  "best": {
+   "f1": 0.1119,
+   "precision": 0.0601,
+   "recall": 0.814,
+   "threshold": 0.565
+  },
+  "signal_p50": 0.6025,
+  "signal_min": 0.0017,
+  "signal_max": 0.7915
+ }
+}
