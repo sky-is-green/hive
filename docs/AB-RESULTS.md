@@ -349,8 +349,13 @@ reading is not "the threshold was calibrated for the wrong encoder"; it
 is that the fact-preservation constraint dominates *both* dials, the
 threshold and the model. The one decision that remains free is the
 **drift** decision: its threshold costs no facts (the drift-only arm
-keeps 60.51% exactly), and its encoder can be swapped independently.
-That is the only door left in this path.
+keeps 60.51% exactly), and its encoder can be swapped independently. But
+*free* is not *better*: no candidate measured beats the stock's drift
+AUC of 0.957 - the teacher ties it (0.952 on its own split), the hinge
+falls to 0.731, our student collapses to 0.457 - so the door is open and
+currently leads nowhere. What the replay cannot see is the drift
+*threshold*'s answer-level price (it is neutral on facts); that needs the
+expensive half of the A/B, not another encoder.
 
 One caveat on the numbers: this corpus is `tests/fixtures/generated`, not
 the `harness_state` corpus behind 2C's 50.55%; compare *within* the

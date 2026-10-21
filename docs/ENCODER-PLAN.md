@@ -110,7 +110,11 @@ fact-per-token trade-off at a calibrated point**, and the reason is that
 a false merge deletes a fact. A better ranker moves along that frontier,
 not off it.
 
-So Option A stays a teacher, Option B stays a ceiling, and the only
-shippable move in this path is the one the replay leaves open: give the
-**drift** decision its own encoder, because its threshold is free. The
-shipped drone does not change on the strength of what has been measured.
+So Option A stays a teacher, Option B stays a ceiling, and the shipped
+drone does not change on the strength of what has been measured. The
+**drift** decision is the one that is *free* to move - its threshold
+costs no facts - but no candidate beats the stock's drift AUC (0.957;
+the teacher ties it, the hinge and the student lose it badly), so there
+is nothing to swap in. The remaining question in this path is the
+answer-level price of moving the drift threshold, which the replay
+cannot see.
