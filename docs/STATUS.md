@@ -66,7 +66,7 @@ one tier with no measurement.
 
 | the artifact | where | the state |
 |---|---|---|
-| **the paper** | `huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper` | public, a static Space: seven tabs (premise, memory, move, controller, measured, checker, paper) with a per-tab example stage - the drone lab (vectors, cosines, a live dedup threshold), the moving colour-coded process diagram (prompt to execution to the answer), and the hero strip that echoes it, including the memory/prompt packet exchange, the score bars, the mutation test - the four tools, the measured table, and the paper. Built by `scripts/hf_space.py`; the Blog Article format needs PRO |
+| **the paper** | `huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper` | public, a static Space: seven tabs (premise, memory, move, controller, measured, checker, paper) with a per-tab example stage - the drone lab (vectors, cosines, a live dedup threshold), the moving colour-coded process diagram (prompt to execution to the answer, with small packets in both directions), and the hero strip that echoes it, including the memory/prompt packet exchange, the score bars, the mutation test - the four tools, the measured table, and the paper. Built by `scripts/hf_space.py`; the Blog Article format needs PRO |
 | the memory system card | `huggingface.co/SkyIsNotGreen/splinter-memory` | public |
 | the encoder checkpoint | `huggingface.co/SkyIsNotGreen/splinter-encoder` | public, **research checkpoint** |
 | the task sets | `huggingface.co/datasets/SkyIsNotGreen/hive-cascade` | public; a **dataset card** (the two sets, fields, sources), not the paper |

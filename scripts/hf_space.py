@@ -423,6 +423,7 @@ STAGE_CONTROLLER = """
       <path id="e-27b-verify2" class="edge" d="M600,218 L660,218"/>
       <path id="e-verify2-answer" class="edge" d="M770,200 C800,160 795,100 785,75"/>
       <circle id="packet" r="6" fill="#3b82f6" opacity="0"/>
+      <g id="packets"></g>
       <g class="node" data-node="mem"><rect x="10" y="20" width="110" height="38" rx="8"/><text x="65" y="43">memory</text></g>
       <g class="node" data-node="prompt"><rect x="10" y="140" width="110" height="44" rx="8"/><text x="65" y="167">prompt</text></g>
       <g class="node" data-node="35b"><rect x="165" y="115" width="110" height="64" rx="8"/><text x="220" y="140">35B</text><text class="val" x="220" y="160" data-val="35b">24.50</text></g>
@@ -881,6 +882,8 @@ JS = """
     stage.querySelectorAll(".node .val").forEach(function (v) { v.style.opacity = ""; });
     const packet = document.getElementById("packet");
     if (packet) { packet.style.opacity = "0"; }
+    const group = document.getElementById("packets");
+    if (group) group.replaceChildren();
   }
 
   function travel(path, color, duration) {
@@ -902,6 +905,52 @@ JS = """
     }
     packetFrame = requestAnimationFrame(frame);
   }
+
+  function spawnParticle(path, color, reverse, delay) {
+    const group = document.getElementById("packets");
+    if (!group || reduced) return;
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("r", "3");
+    dot.setAttribute("fill", color);
+    dot.setAttribute("opacity", "0");
+    group.appendChild(dot);
+    const len = path.getTotalLength();
+    const t0 = performance.now() + delay;
+    function frame(now) {
+      if (now < t0) { requestAnimationFrame(frame); return; }
+      const p = Math.min((now - t0) / 950, 1);
+      const pt = path.getPointAtLength(len * (reverse ? 1 - p : p));
+      dot.setAttribute("cx", pt.x);
+      dot.setAttribute("cy", pt.y);
+      dot.setAttribute("opacity", p > 0.05 && p < 0.95 ? "0.9" : "0");
+      if (p < 1) requestAnimationFrame(frame); else dot.remove();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function burst(specs) {
+    const group = document.getElementById("packets");
+    if (group) group.replaceChildren();
+    (specs || []).forEach(function (spec) {
+      const path = document.getElementById(spec.edge);
+      if (!path) return;
+      for (let k = 0; k < (spec.count || 2); k++) {
+        spawnParticle(path, spec.color, !!spec.reverse, 120 + k * 170);
+      }
+    });
+  }
+
+  const BURSTS = [
+    [{edge: "e-prompt", color: "var(--c-prompt)", count: 3},
+     {edge: "e-mem", color: "var(--c-mem)", count: 2}],
+    [{edge: "e-35b-judge", color: "var(--c-model)", count: 2},
+     {edge: "e-35b-judge", color: "var(--c-judge)", reverse: true, count: 2}],
+    [{edge: "e-verify-loop", color: "var(--c-exec)", count: 2},
+     {edge: "e-verify-loop", color: "var(--bad)", reverse: true, count: 2}],
+    [{edge: "e-verify-27b", color: "var(--bad)", count: 3}],
+    [{edge: "e-27b-verify2", color: "var(--c-model)", count: 3}],
+    [{edge: "e-verify2-answer", color: "var(--good)", count: 3}]
+  ];
 
   function setRouteStep(i) {
     const stage = document.querySelector("[data-stage='controller']");
@@ -944,6 +993,7 @@ JS = """
     const cap = document.querySelector("[data-route-caption]");
     if (cap) cap.innerHTML = step.caption;
     if (i === 0) heroExchange(2800);
+    burst(BURSTS[i]);
     const hero = [["35b", "var(--c-model)"], ["judge", "var(--c-judge)"],
                   ["verify", "var(--bad)"], ["27b", "var(--c-model)"],
                   ["verify", "var(--good)"], ["answer", "var(--good)"]][i];
