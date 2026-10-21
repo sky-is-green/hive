@@ -616,7 +616,7 @@ PANEL_MEMORY = """
   <div class="wrap">
     <h2>The memory: what the drone learned</h2>
     <p>The first harness curated <em>within</em> a conversation. A 17M
-      encoder - the drone - scores every stored chunk; the membrane makes two
+      encoder, “the drone”, scores every stored chunk; the membrane makes two
       decisions on every turn: <strong>dedup</strong> (is this chunk already
       said?) and <strong>drift</strong> (did the topic change?), and the
       assembler keeps the context under budget.</p>
