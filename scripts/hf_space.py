@@ -820,7 +820,7 @@ LINKS = """
 """
 
 FOOT = """
-<footer><div class="wrap">HiveBench Studio contributors · MIT · The paper is
+<footer><div class="wrap"><a href="https://github.com/sky-is-green">sky-is-green</a> · MIT · The paper is
   also in the repository at <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
 </div></footer>
 """
