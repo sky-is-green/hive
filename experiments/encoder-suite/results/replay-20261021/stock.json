@@ -1,0 +1,93 @@
+{
+ "the_encoder": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+ "the_fixtures": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/tests/fixtures/generated",
+ "the_arms": {
+  "shipped": {
+   "the_points": {
+    "dedup": 0.92,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 60.51,
+    "recall_median": 100.0,
+    "precision": 13.67,
+    "mean_tokens": 374.2
+   }
+  },
+  "dedup_only": {
+   "the_points": {
+    "dedup": 0.57,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 47.18,
+    "recall_median": 40.0,
+    "precision": 14.29,
+    "mean_tokens": 167.4
+   }
+  },
+  "drift_only": {
+   "the_points": {
+    "dedup": 0.92,
+    "drift": 0.77
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 60.51,
+    "recall_median": 100.0,
+    "precision": 13.67,
+    "mean_tokens": 376.3
+   }
+  },
+  "recalibrated": {
+   "the_points": {
+    "dedup": 0.57,
+    "drift": 0.77
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 47.18,
+    "recall_median": 40.0,
+    "precision": 14.29,
+    "mean_tokens": 167.4
+   }
+  },
+  "tuned_point": {
+   "the_points": {
+    "dedup": 0.67,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 57.31,
+    "recall_median": 100.0,
+    "precision": 13.71,
+    "mean_tokens": 235.0
+   }
+  }
+ },
+ "the_verdict": {
+  "dedup_only": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  },
+  "drift_only": {
+   "recall_kept": true,
+   "context_not_inflated": true,
+   "h_survives": true
+  },
+  "recalibrated": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  },
+  "tuned_point": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  }
+ }
+}

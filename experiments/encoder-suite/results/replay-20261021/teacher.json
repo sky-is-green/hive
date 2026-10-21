@@ -1,0 +1,93 @@
+{
+ "the_encoder": "Qwen/Qwen3-Embedding-0.6B",
+ "the_fixtures": "/run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/hivebench/tests/fixtures/generated",
+ "the_arms": {
+  "shipped": {
+   "the_points": {
+    "dedup": 0.92,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 64.47,
+    "recall_median": 100.0,
+    "precision": 8.68,
+    "mean_tokens": 614.8
+   }
+  },
+  "dedup_only": {
+   "the_points": {
+    "dedup": 0.57,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 33.81,
+    "recall_median": 0.0,
+    "precision": 9.44,
+    "mean_tokens": 141.9
+   }
+  },
+  "drift_only": {
+   "the_points": {
+    "dedup": 0.92,
+    "drift": 0.77
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 64.5,
+    "recall_median": 100.0,
+    "precision": 8.66,
+    "mean_tokens": 619.1
+   }
+  },
+  "recalibrated": {
+   "the_points": {
+    "dedup": 0.57,
+    "drift": 0.77
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 33.81,
+    "recall_median": 0.0,
+    "precision": 9.44,
+    "mean_tokens": 141.9
+   }
+  },
+  "tuned_point": {
+   "the_points": {
+    "dedup": 0.67,
+    "drift": 0.6
+   },
+   "the_summary": {
+    "measurable_turns": 1187,
+    "recall": 48.87,
+    "recall_median": 50.0,
+    "precision": 9.13,
+    "mean_tokens": 244.1
+   }
+  }
+ },
+ "the_verdict": {
+  "dedup_only": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  },
+  "drift_only": {
+   "recall_kept": true,
+   "context_not_inflated": true,
+   "h_survives": true
+  },
+  "recalibrated": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  },
+  "tuned_point": {
+   "recall_kept": false,
+   "context_not_inflated": true,
+   "h_survives": false
+  }
+ }
+}

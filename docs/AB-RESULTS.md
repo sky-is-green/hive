@@ -239,7 +239,9 @@ conversations; the dedup and the drift jobs, the shipped thresholds):
 \* the teacher's drift AUC is the decision-head study's own number on its
 frozen J-Bench split (0.9524), not a re-measurement on this holdout: the
 teacher's own arm over these 3,575 cases is ~35 minutes on the CPU (the
-windows average 7,103 characters).
+windows average 7,103 characters), and a 600-case subsample run was
+killed at its 25-minute wall before it wrote a number. The cell is not
+load-bearing - the teacher is not a shipping candidate.
 
 **The teacher and the shipped encoder are *identical* at the operating
 point** - both 0.0897, both a recall of 0.047 - and they differ only in
@@ -296,6 +298,63 @@ the shipped thresholds stay (the student loses the drift job), and the
 need two encoders - which the Global tab can already do - and the
 shipped drone stays the MiniLM until something wins *both* jobs at the
 shipped cost.
+
+### 2C-quater. The replay prices the decision: a true duplicate merged is a fact deleted
+
+2C-ter stopped at the *job*: the 4-layer student makes the dedup decision
+nine times better at the shipped threshold. The job is not the product.
+The product is the curation - the context the next turn is written from -
+so every candidate was replayed through the real pipeline (the same
+instrument as hypothesis H: the real router, the real assembly, the real
+dedup, the real drift detector, the real store) on the fixture corpus,
+50 conversations and 1,187 measurable turns:
+
+| the encoder | at the shipped 0.92 / 0.6 | at its own tuned point | at the recalibrated 0.57 / 0.77 |
+|---|---|---|---|
+| the stock L3-v2 | **60.51% / 374 tok** | 57.31% / 235 tok | 47.18% / 167 tok |
+| the hinged L3-v2 | **32.66% / 139 tok** | 13.67% / 51 tok | 13.67% / 51 tok |
+| the Qwen teacher | 64.47% / 615 tok | 48.87% / 244 tok | 33.81% / 142 tok |
+
+(the fact recall / the mean assembled context; `experiments/threshold_ab.py`,
+the artifacts under `experiments/encoder-suite/results/replay-20261021/`.)
+
+**Two things are now measured, and both are negative.**
+
+*The decision and the curation pull opposite ways.* The hinge makes the
+dedup decision 0.047 -> 0.986 at the shipped threshold - and it nearly
+halves the facts (60.51% -> 32.66%) while shrinking the context 2.7x.
+The reason is structural: a true duplicate merged is not a scoring error,
+it is **a fact deleted from the context**. So improving the decision is
+improving the deletion. The shipped 0.92 is not a miscalibration; it is
+where the fact-preservation constraint puts the curve.
+
+*A better ranker does not cross the frontier, it moves along it.* The
+teacher beats the stock on the dedup ranking (the best F1 0.855 against
+0.713), and on the replay it **loses at the two comparable operating
+points**: at its own best threshold it keeps 48.87% of the facts in 244
+tokens where the stock keeps 57.31% in 235 - worse curation, more
+context; at the recalibrated point it is 33.81% against 47.18%. Its one
+win is at the shipped threshold: 64.47% against 60.51%, for **615 tokens
+against 374**. The campaign's answer-level noise is ~3 points, so that
++4 is not distinguishable from zero - and it is paid in every turn's
+prompt. (The stock at a *looser* threshold than 0.92 - the direction that
+buys facts by buying tokens - was not measured; the frontier above 0.92
+is open, though it is not the direction the shipped point moves in.)
+
+**So the encoder path's dedup decision is closed, and it closes in the
+shipped configuration's favour.** No candidate measured improves the
+fact-per-token trade-off at a calibrated point: the hinge halves the
+facts, the teacher buys 4 points with two thirds more context. The honest
+reading is not "the threshold was calibrated for the wrong encoder"; it
+is that the fact-preservation constraint dominates *both* dials, the
+threshold and the model. The one decision that remains free is the
+**drift** decision: its threshold costs no facts (the drift-only arm
+keeps 60.51% exactly), and its encoder can be swapped independently.
+That is the only door left in this path.
+
+One caveat on the numbers: this corpus is `tests/fixtures/generated`, not
+the `harness_state` corpus behind 2C's 50.55%; compare *within* the
+table, not across the two sections.
 
 ---
 
