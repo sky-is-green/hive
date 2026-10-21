@@ -264,6 +264,7 @@ button:hover { border-color: var(--accent); color: var(--accent); }
   border-radius: 999px; transition: width .85s ease; }
 .bars.animate .bar i { width: var(--v); }
 .bar-val { font-family: ui-monospace, monospace; color: var(--muted); font-size: .78rem; }
+.check-code { margin: 8px 0 2px; }
 .runs { display: grid; gap: 5px; margin: 9px 0; }
 .run { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line);
   border-radius: 7px; padding: 6px 10px; font-size: .83rem; }
@@ -555,14 +556,15 @@ STAGE_CHECKER = """
   <div class="stage-panel" data-stage="checker" hidden>
     <div class="demo-head"><h3>Is the check falsifiable?</h3>
       <div class="seg" role="group" aria-label="check quality">
-        <button type="button" data-check="real" aria-pressed="true">a real check</button>
-        <button type="button" data-check="vacuous" aria-pressed="false">print("PASS")</button>
+        <button type="button" data-check="real" aria-pressed="true">A real check</button>
+        <button type="button" data-check="vacuous" aria-pressed="false">A vacuous check</button>
       </div></div>
+    <pre class="check-code"><code data-check-code>assert float(answer) == (700*5 + 1400*15) / 100</code></pre>
     <div class="runs">
-      <div class="run"><span>on the candidate <code>245</code></span><span class="verdict pass" data-run-a>PASS</span></div>
-      <div class="run"><span>on the mutation <code>246</code></span><span class="verdict fail" data-run-b>FAIL</span></div>
+      <div class="run"><span>On the candidate <code>245</code></span><span class="verdict pass" data-run-a>PASS</span></div>
+      <div class="run"><span>On the mutation <code>246</code></span><span class="verdict fail" data-run-b>FAIL</span></div>
     </div>
-    <div class="outcome" data-outcome>accepted — the check discriminates between the answer and its mutation</div>
+    <div class="outcome" data-outcome>Accepted - the check discriminates between the answer and its mutation</div>
     <p class="caption">A check that passes the mutation is not evidence. It is
       <code>unknown</code>, and the controller must not accept on it.</p>
   </div>
@@ -776,12 +778,14 @@ PANEL_CHECKER = """
       <div class="card"><h3>Grounding</h3><p>For the factual remainder,
         decompose the answer into claims and check each against the store.
         A check that cannot cite is <code>unknown</code>.</p></div>
-      <div class="card"><h3>The cost</h3><p>A sandbox call, not a model
-        verdict. The check runs once per answer and once per mutation; the
-        decoder is only paid on the repair.</p></div>
+      <div class="card"><h3>The status</h3><p><strong>Unmeasured.</strong> The
+        sandbox, the check-writer and the grounding verifier are the current
+        build. The check runs once per answer and once per mutation; a decoder
+        is paid only on the repair. Its time is the one row missing from the
+        controller total.</p></div>
     </div>
-    <p class="small">This is the last unmeasured tier. The contract and the
-      prior art are in <code>docs/HARNESS-CONTROLLER.md</code> and
+    <p class="small">The contract and the prior art are in
+      <code>docs/HARNESS-CONTROLLER.md</code> and
       <code>docs/CONTROLLER-PRIOR-ART.md</code>.</p>
   </div>
 </section>
@@ -1202,6 +1206,10 @@ JS = """
     stage.querySelectorAll(".seg button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.check === kind));
     });
+    const code = stage.querySelector("[data-check-code]");
+    if (code) code.textContent = real
+      ? "assert float(answer) == (700*5 + 1400*15) / 100"
+      : 'print("PASS")';
     const a = stage.querySelector("[data-run-a]");
     const b = stage.querySelector("[data-run-b]");
     if (a) { a.textContent = "PASS"; a.className = "verdict pass"; }
@@ -1211,8 +1219,8 @@ JS = """
     }
     const out = stage.querySelector("[data-outcome]");
     if (out) out.textContent = real
-      ? "accepted - the check discriminates between the answer and its mutation"
-      : "unknown - the check passes the mutation, so it is not evidence";
+      ? "Accepted - the check discriminates between the answer and its mutation"
+      : "Unknown - the check passes the mutation, so it is not evidence";
   }
 
   // ---- tabs
