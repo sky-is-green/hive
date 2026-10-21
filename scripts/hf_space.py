@@ -29,12 +29,16 @@ CSS = """
   --bg: #fbfaf8; --fg: #171614; --muted: #6b675f; --line: #e4e0d8;
   --card: #ffffff; --accent: #b45309; --accent2: #0f766e; --code: #f3efe7;
   --bad: #b91c1c; --good: #15803d; --hero: linear-gradient(160deg, #fef3c7 0%, #fbfaf8 70%);
+  --c-prompt: #2563eb; --c-model: #b45309; --c-judge: #7c3aed;
+  --c-mem: #0f766e; --c-exec: #64748b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #12110f; --fg: #ece8e1; --muted: #a29c90; --line: #2c2a26;
     --card: #1a1815; --accent: #fbbf24; --accent2: #5eead4; --code: #22201c;
     --bad: #f87171; --good: #4ade80; --hero: linear-gradient(160deg, #2a2113 0%, #12110f 70%);
+    --c-prompt: #60a5fa; --c-model: #fbbf24; --c-judge: #c084fc;
+    --c-mem: #5eead4; --c-exec: #94a3b8;
   }
 }
 * { box-sizing: border-box; }
@@ -188,6 +192,34 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .verdict { font-family: ui-monospace, monospace; }
 .verdict.pass { color: var(--good); } .verdict.fail { color: var(--bad); }
 .outcome { font-size: .86rem; padding: .55rem .75rem; border-radius: 7px; background: var(--code); }
+.flowmap { width: 100%; height: auto; display: block; margin: 4px 0 2px; }
+.flowmap .edge { fill: none; stroke: var(--line); stroke-width: 2;
+  transition: stroke .25s, opacity .25s; }
+.flowmap .edge.dashed { stroke-dasharray: 5 5; }
+.flowmap .edge.active { stroke-width: 3; }
+.flowmap .edge.struck { stroke: var(--bad) !important; opacity: .3; }
+.flowmap .node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.4;
+  transition: stroke .25s, stroke-width .25s; }
+.flowmap .node text { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-anchor: middle; fill: var(--fg); }
+.flowmap .node .val { font-size: 11px; font-weight: 500; fill: var(--muted);
+  opacity: .2; transition: opacity .3s; }
+.flowmap .node.revealed .val { opacity: 1; }
+.flowmap .node .val.fail { fill: var(--bad); }
+.flowmap .node .val.pass { fill: var(--good); }
+.flowmap .node.active rect { stroke: var(--accent); stroke-width: 2.4; }
+.flowmap .node.fail rect { stroke: var(--bad); }
+.flowmap .node.pass rect { stroke: var(--good); }
+.flowmap .node[data-node="mem"] text { fill: var(--c-mem); }
+.flowmap .node[data-node="prompt"] text { fill: var(--c-prompt); }
+.flowmap .node[data-node="35b"] text,
+.flowmap .node[data-node="27b"] text { fill: var(--c-model); }
+.flowmap .node[data-node="judge"] text { fill: var(--c-judge); }
+.flowmap .node[data-node="sandbox"] text { fill: var(--c-exec); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem;
+  color: var(--muted); margin-top: 4px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .paper-card { border-left: 3px solid var(--accent); padding: .1rem 0 .1rem 1rem; }
 .paper-card h3 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .paper-card p { color: var(--muted); }
@@ -272,16 +304,38 @@ STAGE_MOVE = """
 
 STAGE_CONTROLLER = """
   <div class="stage-panel" data-stage="controller" hidden>
-    <div class="demo-head"><h3>A routed task, from the measured run</h3>
+    <div class="demo-head"><h3>Prompt to execution, one task</h3>
       <button type="button" data-route-play>Play</button></div>
-    <p class="q">Anthony sends 700 small coupons at 5&cent; and twice as many
-      big ones at 15&cent;. What is the total postage?</p>
-    <div class="route">
-      <div class="station" data-station="0"><div class="name">35B</div><div class="val">24.50</div></div>
-      <div class="station" data-station="1"><div class="name">judge</div><div class="val">p = 0.973</div></div>
-      <div class="station" data-station="2"><div class="name">verify</div><div class="val">FAIL</div></div>
-      <div class="station" data-station="3"><div class="name">27B</div><div class="val">245</div></div>
-      <div class="station" data-station="4"><div class="name">verify</div><div class="val">PASS</div></div>
+    <svg class="flowmap" viewBox="0 0 880 330" role="img"
+         aria-label="The routed task: prompt and memory into the 35B, the candidate to the judge and to execution, the failure to the 27B, the new candidate to the checker, the answer.">
+      <path id="e-mem" class="edge dashed" d="M120,45 C150,60 150,110 165,130"/>
+      <path id="e-prompt" class="edge" d="M120,162 L165,162"/>
+      <path id="e-35b-judge" class="edge" d="M275,135 C300,120 310,70 330,55"/>
+      <path id="e-35b-verify" class="edge" d="M275,160 C300,175 310,205 330,215"/>
+      <path id="e-judge-answer" class="edge dashed" d="M440,50 L720,50"/>
+      <path id="e-verify-loop" class="edge dashed" d="M391,246 L391,294 L379,294 L379,246"/>
+      <path id="e-verify-27b" class="edge" d="M440,218 L500,218"/>
+      <path id="e-27b-verify2" class="edge" d="M600,218 L660,218"/>
+      <path id="e-verify2-answer" class="edge" d="M770,200 C800,160 795,100 785,75"/>
+      <circle id="packet" r="6" fill="#3b82f6" opacity="0"/>
+      <g class="node" data-node="mem"><rect x="10" y="20" width="110" height="38" rx="8"/><text x="65" y="43">memory</text></g>
+      <g class="node" data-node="prompt"><rect x="10" y="140" width="110" height="44" rx="8"/><text x="65" y="167">prompt</text></g>
+      <g class="node" data-node="35b"><rect x="165" y="115" width="110" height="64" rx="8"/><text x="220" y="140">35B</text><text class="val" x="220" y="160" data-val="35b">24.50</text></g>
+      <g class="node" data-node="judge"><rect x="330" y="25" width="110" height="50" rx="8"/><text x="385" y="45">judge</text><text class="val" x="385" y="62" data-val="judge">p = 0.973</text></g>
+      <g class="node" data-node="answer"><rect x="720" y="25" width="130" height="50" rx="8"/><text x="785" y="45">answer</text><text class="val pass" x="785" y="62" data-val="answer">accepted</text></g>
+      <g class="node" data-node="verify1"><rect x="330" y="190" width="110" height="56" rx="8"/><text x="385" y="211">verify</text><text class="val fail" x="385" y="230" data-val="verify1">FAIL</text></g>
+      <g class="node" data-node="sandbox"><rect x="330" y="275" width="110" height="38" rx="8"/><text x="385" y="298">execution</text></g>
+      <g class="node" data-node="27b"><rect x="500" y="190" width="100" height="56" rx="8"/><text x="550" y="211">27B</text><text class="val" x="550" y="230" data-val="27b">245</text></g>
+      <g class="node" data-node="verify2"><rect x="660" y="190" width="110" height="56" rx="8"/><text x="715" y="211">verify</text><text class="val pass" x="715" y="230" data-val="verify2">PASS</text></g>
+    </svg>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background: var(--c-prompt)"></i>prompt</span>
+      <span><i style="background: var(--c-model)"></i>model output</span>
+      <span><i style="background: var(--c-judge)"></i>judgement</span>
+      <span><i style="background: var(--bad)"></i>failed check</span>
+      <span><i style="background: var(--good)"></i>passed check</span>
+      <span><i style="background: var(--c-mem)"></i>memory / context</span>
+      <span><i style="background: var(--c-exec)"></i>execution</span>
     </div>
     <p class="caption" data-route-caption aria-live="polite"></p>
   </div>
@@ -577,38 +631,118 @@ JS = """
   }
   function stopMove() { if (moveTimer) { clearInterval(moveTimer); moveTimer = null; } }
 
-  // ---- controller: the routed task
-  const ROUTING = [
-    "The 35B answers <strong>24.50</strong>. The task looks settled.",
-    "The judge reads it: <strong>p = 0.973</strong>. Plausible - so it keeps it. This is one of the four errors at p &ge; 0.97.",
-    "The checker computes 700&times;5 + 1,400&times;15 = <strong>24,500&cent; = $245</strong>. The candidate says 24.50: <strong>FAIL</strong>.",
-    "The 27B answers <strong>245</strong>.",
-    "The checker recomputes: <strong>PASS</strong>. Two tiers, one verdict, and the judge never had the last word."
+  // ---- controller: the moving diagram
+  const STEPS = [
+    {edge: "e-prompt", color: "var(--c-prompt)", node: "35b", reveal: "35b",
+     caption: "The prompt enters the 35B. The memory (teal) has already chosen the context."},
+    {edge: "e-35b-judge", color: "var(--c-model)", node: "judge", reveal: "judge",
+     keep: "e-judge-answer",
+     caption: "The candidate <strong>24.50</strong> reaches the judge: <strong>p = 0.973</strong>. The plausible answer would be kept (purple, dashed)."},
+    {edge: "e-verify-loop", color: "var(--c-exec)", node: "verify1", reveal: "verify1",
+     state: "fail", strikeKeep: true, sandbox: true,
+     caption: "The candidate also reaches execution: 700&times;5 + 1,400&times;15 = <strong>24,500&cent; = $245</strong>. 24.50 &ne; 245: <strong>FAIL</strong>. The judge's keep is overridden."},
+    {edge: "e-verify-27b", color: "var(--bad)", node: "27b",
+     caption: "The failure and the evidence go to the 27B: escalate with the check, not just the answer."},
+    {edge: "e-27b-verify2", color: "var(--c-model)", node: "verify2", reveal: "27b",
+     caption: "The 27B answers <strong>245</strong>."},
+    {edge: "e-verify2-answer", color: "var(--good)", node: "answer", reveal: "verify2",
+     state: "pass", answer: true,
+     caption: "The checker passes <strong>245</strong>: <strong>accepted</strong>. The judge never had the last word."}
   ];
-  function setRoute(step) {
-    document.querySelectorAll("[data-stage='controller'] .station").forEach(function (el) {
-      const i = Number(el.dataset.station);
-      el.classList.toggle("active", i === step);
-      el.classList.remove("pass", "fail");
-      if (step >= 2 && i === 2) el.classList.add("fail");
-      if (step >= 4 && i === 4) el.classList.add("pass");
-      if (step >= 4 && i === 2) el.classList.remove("fail");
-    });
-    const cap = document.querySelector("[data-route-caption]");
-    if (cap) cap.innerHTML = ROUTING[step];
+  let packetFrame = null;
+
+  function resetRoute() {
     const stage = document.querySelector("[data-stage='controller']");
-    if (stage) stage.dataset.step = String(step);
+    if (!stage) return;
+    stage.querySelectorAll(".node").forEach(function (n) {
+      n.classList.remove("active", "revealed", "fail", "pass");
+    });
+    stage.querySelectorAll(".edge").forEach(function (e) {
+      e.classList.remove("active", "struck");
+      e.style.stroke = "";
+    });
+    stage.querySelectorAll(".node .val").forEach(function (v) { v.style.opacity = ""; });
+    const packet = document.getElementById("packet");
+    if (packet) { packet.style.opacity = "0"; }
   }
-  function stopRoute() { if (routeTimer) { clearInterval(routeTimer); routeTimer = null; } }
+
+  function travel(path, color, duration) {
+    const packet = document.getElementById("packet");
+    if (!packet) return;
+    if (reduced) { packet.style.opacity = "0"; return; }
+    if (packetFrame) cancelAnimationFrame(packetFrame);
+    const len = path.getTotalLength();
+    const t0 = performance.now();
+    packet.style.fill = color;
+    packet.style.opacity = "1";
+    function frame(now) {
+      const p = Math.min((now - t0) / duration, 1);
+      const pt = path.getPointAtLength(len * p);
+      packet.setAttribute("cx", pt.x);
+      packet.setAttribute("cy", pt.y);
+      if (p < 1) { packetFrame = requestAnimationFrame(frame); }
+      else { packet.style.opacity = "0"; packetFrame = null; }
+    }
+    packetFrame = requestAnimationFrame(frame);
+  }
+
+  function setRouteStep(i) {
+    const stage = document.querySelector("[data-stage='controller']");
+    if (!stage) return;
+    const step = STEPS[i];
+    if (!step) return;
+    stage.querySelectorAll(".node").forEach(function (n) { n.classList.remove("active"); });
+    stage.querySelectorAll(".edge").forEach(function (e) {
+      if (!e.classList.contains("struck")) e.classList.remove("active");
+    });
+    const node = stage.querySelector('[data-node="' + step.node + '"]');
+    if (node) {
+      node.classList.add("active");
+      if (step.reveal) node.classList.add("revealed");
+    }
+    const edge = document.getElementById(step.edge);
+    if (edge) {
+      edge.classList.add("active");
+      edge.style.stroke = step.color;
+      travel(edge, step.color, step.sandbox ? 1250 : 750);
+    }
+    if (step.keep) {
+      const keep = document.getElementById(step.keep);
+      if (keep) { keep.classList.add("active"); keep.style.stroke = "var(--c-judge)"; }
+    }
+    if (step.strikeKeep) {
+      const keep = document.getElementById("e-judge-answer");
+      if (keep) { keep.classList.remove("active"); keep.classList.add("struck"); keep.style.stroke = ""; }
+    }
+    if (step.state === "fail") {
+      const v = stage.querySelector('[data-node="verify1"]');
+      if (v) v.classList.add("fail");
+    }
+    if (step.state === "pass") {
+      const v = stage.querySelector('[data-node="verify2"]');
+      if (v) v.classList.add("pass");
+      const a = stage.querySelector('[data-node="answer"]');
+      if (a) { a.classList.add("revealed"); }
+    }
+    const cap = document.querySelector("[data-route-caption]");
+    if (cap) cap.innerHTML = step.caption;
+  }
+
+  function stopRoute() {
+    if (routeTimer) { clearInterval(routeTimer); routeTimer = null; }
+  }
+
   function playRoute() {
     stopRoute();
+    resetRoute();
     let i = 0;
-    setRoute(0);
+    setRouteStep(0);
+    if (reduced) { setRouteStep(STEPS.length - 1); return; }
     routeTimer = setInterval(function () {
       i += 1;
-      if (i >= ROUTING.length) { i = ROUTING.length - 1; clearInterval(routeTimer); routeTimer = null; return; }
-      setRoute(i);
-    }, 2100);
+      if (i >= STEPS.length) { stopRoute(); return; }
+      setRouteStep(i);
+    }, 2600);
   }
 
   // ---- measured: animate the bars
@@ -690,7 +824,7 @@ JS = """
   if (reduced) {
     document.querySelectorAll("[data-route-play]").forEach(function (b) { b.hidden = true; });
     stopRoute();
-    setRoute(ROUTING.length - 1);
+    setRouteStep(STEPS.length - 1);
   }
 })();
 </script>
