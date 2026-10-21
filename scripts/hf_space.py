@@ -140,6 +140,17 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 2.2rem 0; }
 .pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px;
   padding: .08rem .5rem; font-size: .74rem; color: var(--muted); margin-right: .3rem; }
 
+.lead { font-size: 1.12rem; }
+.thesis-q { font-size: 1.4rem; letter-spacing: -.01em; margin: 0 0 .3rem; }
+.path { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; margin-top: 14px; }
+.path button { flex: 1 1 150px; text-align: left; border: 1px solid var(--line);
+  border-radius: 9px; padding: 10px 12px; background: var(--bg); cursor: pointer;
+  font: inherit; font-size: .9rem; color: var(--fg); }
+.path button small { display: block; color: var(--muted); font-size: .74rem;
+  margin-top: 2px; }
+.path button:hover { border-color: var(--accent); }
+.path .arrow { align-self: center; color: var(--muted); }
+@media (max-width: 700px) { .path .arrow { display: none; } }
 /* stage demos */
 .demo-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .demo-head h3 { margin: 0; }
@@ -298,7 +309,8 @@ HERO = """
 
 TABS = """
 <nav class="tabs" aria-label="sections"><div class="wrap" role="tablist">
-  <a role="tab" href="#memory" data-tab="memory" aria-selected="true">the memory</a>
+  <a role="tab" href="#premise" data-tab="premise" aria-selected="true">the premise</a>
+  <a role="tab" href="#memory" data-tab="memory" aria-selected="false">the memory</a>
   <a role="tab" href="#move" data-tab="move" aria-selected="false">the move</a>
   <a role="tab" href="#controller" data-tab="controller" aria-selected="false">the controller</a>
   <a role="tab" href="#measured" data-tab="measured" aria-selected="false">what is measured</a>
@@ -309,11 +321,32 @@ TABS = """
 
 STAGE_OPEN = """
 <section class="stage-wrap"><div class="wrap"><div class="stage">
-  <div class="stage-head">example · <strong id="stage-name">the memory</strong></div>
+  <div class="stage-head">stage · <strong id="stage-name">the premise</strong></div>
 """
 
+STAGE_PREMISE = """
+  <div class="stage-panel" data-stage="premise">
+    <div class="thesis">
+      <p class="thesis-q">A model that is wrong is rarely uncertain.</p>
+      <p>The 176B's judge gave the 35B's wrong answer <strong>p = 0.973</strong>.
+        Its mean confidence on the 21 correct answers was <strong>0.988</strong>.
+        Confidence does not separate them; execution does.</p>
+    </div>
+    <div class="path" aria-label="the research path">
+      <button type="button" data-goto="memory">the memory<small>curate the context</small></button>
+      <span class="arrow">→</span>
+      <button type="button" data-goto="controller">the controller<small>route and verify</small></button>
+      <span class="arrow">→</span>
+      <button type="button" data-goto="checker">the checker<small>the last tier</small></button>
+      <span class="arrow">→</span>
+      <button type="button" data-goto="measured">the evidence<small>28 tasks</small></button>
+    </div>
+  </div>
+"""
+
+
 STAGE_MEMORY = """
-  <div class="stage-panel" data-stage="memory">
+  <div class="stage-panel" data-stage="memory" hidden>
     <div class="demo-head"><h3>The drone at work</h3>
       <button type="button" data-lab-run>Run</button></div>
     <div class="flow labflow" data-labflow aria-hidden="true">
@@ -444,6 +477,50 @@ STAGE_PAPER = """
 """
 
 STAGE_CLOSE = "</div></div></section>\n"
+
+PANEL_PREMISE = """
+<section class="tab-panel" data-panel="premise" id="premise" role="tabpanel">
+  <div class="wrap">
+    <h2>Why we did this</h2>
+    <p class="lead">A local model is cheap, private, and wrong in ways that
+      look exactly like being right. The question is not whether the model is
+      good; it is whether the system around it can tell.</p>
+    <p>The research began with a memory system: a 17M encoder curating a long
+      conversation into a bounded context. It became a study of
+      <em>consequences</em> - which decision, when wrong, actually costs
+      something. That thread runs through every tab here: a false merge deletes
+      a fact; a false accept ships a wrong answer.</p>
+
+    <h3>The hypotheses that drove it</h3>
+    <div class="grid">
+      <div class="card"><h3>H1 · the harness is the lever</h3>
+        <p>A small model with verification can beat a bigger model alone. The
+          27B reaches <strong>26/28</strong> against the 35B's 21/28; the
+          176B's own generation is net zero. Supported - for the harness, not
+          for "bigger".</p></div>
+      <div class="card"><h3>H2 · consequence, not accuracy</h3>
+        <p>Optimise what a wrong decision costs. A better dedup decision at
+          0.67 halves the facts (<strong>60.51% &rarr; 32.66%</strong>); the
+          judge's four misses at <code>p &ge; 0.97</code> are plausible
+          answers. Supported.</p></div>
+      <div class="card"><h3>H3 · execution, not judgement</h3>
+        <p>A reader cannot see a plausible wrong answer; a check can. The
+          checker is the last unmeasured tier. Supported by the failures, not
+          yet by the fix.</p></div>
+      <div class="card"><h3>H4 · one loop, two levels</h3>
+        <p>The membrane and the controller make the same trade - what to keep,
+          what to check, when to stop. The mapping is measured; the controller
+          is the current work.</p></div>
+    </div>
+
+    <p class="note"><strong>What follows.</strong> The next tabs are the
+      evidence: the memory's encoder at work, the mapping, the controller's
+      loop, the measured table, the missing checker, and the paper. The first
+      one is interactive.</p>
+  </div>
+</section>
+"""
+
 
 PANEL_MEMORY = """
 <section class="tab-panel" data-panel="memory" id="memory" role="tabpanel">
@@ -636,7 +713,8 @@ JS = """
 <script>
 (function () {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const NAMES = {memory: "the memory", move: "the move", controller: "the controller",
+  const NAMES = {premise: "the premise", memory: "the memory", move: "the move",
+                 controller: "the controller",
                  measured: "what is measured", checker: "the checker", paper: "the paper"};
   let moveTimer = null, routeTimer = null;
 
@@ -897,7 +975,7 @@ JS = """
 
   // ---- tabs
   function activate(name, push) {
-    if (!NAMES[name]) name = "memory";
+    if (!NAMES[name]) name = "premise";
     document.querySelectorAll(".tabs a").forEach(function (a) {
       a.setAttribute("aria-selected", String(a.dataset.tab === name));
     });
@@ -950,9 +1028,15 @@ JS = """
       document.querySelector(".tabs").scrollIntoView({ block: "start" });
     });
   });
+  document.querySelectorAll("[data-goto]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      activate(b.dataset.goto);
+      document.querySelector(".tabs").scrollIntoView({ block: "start" });
+    });
+  });
 
-  const start = (location.hash || "#memory").slice(1);
-  activate(NAMES[start] ? start : "memory", false);
+  const start = (location.hash || "#premise").slice(1);
+  activate(NAMES[start] ? start : "premise", false);
   if (reduced) {
     document.querySelectorAll("[data-route-play]").forEach(function (b) { b.hidden = true; });
     stopRoute();
@@ -1010,9 +1094,9 @@ def build() -> tuple[str, str]:
         "<title>The Hive Cascade - from memory to a global controller</title>\n"
         '<meta name="description" content="A gold-free verification loop for local language models: the memory, the move to a global controller, and what is measured.">\n'
         '<link rel="stylesheet" href="style.css">\n</head>\n<body>\n'
-        + HERO + TABS + STAGE_OPEN + STAGE_MEMORY + STAGE_MOVE + STAGE_CONTROLLER
+        + HERO + TABS + STAGE_OPEN + STAGE_PREMISE + STAGE_MEMORY + STAGE_MOVE + STAGE_CONTROLLER
         + STAGE_MEASURED + STAGE_CHECKER + STAGE_PAPER + STAGE_CLOSE
-        + "<main>\n" + PANEL_MEMORY + PANEL_MOVE + PANEL_CONTROLLER
+        + "<main>\n" + PANEL_PREMISE + PANEL_MEMORY + PANEL_MOVE + PANEL_CONTROLLER
         + PANEL_MEASURED + PANEL_CHECKER + PANEL_PAPER_OPEN + body_html
         + PANEL_PAPER_CLOSE + "</main>\n" + LINKS + FOOT + JS
         + "\n</body>\n</html>\n"
