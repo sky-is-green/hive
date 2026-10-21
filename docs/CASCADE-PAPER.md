@@ -311,7 +311,7 @@ inherit the other's expert cache:
 tasks' own checkers, the 176B's fresh answer fixes 2 of the 35B's 7
 errors and breaks 2 of its 21 correct ones: net zero, at 20.68 s an item.
 
-**Correction (2026-10-21): the generator, not the tier.** The same
+**The generator, not the tier.** The same
 generate arm on a 27B dense model (Bonsai 2, ternary, 7.2 GB) fixes 6 of
 the 7 errors and breaks 1 of the 21 correct: **net +5 at 8.92 s an
 item**, against the 176B's net zero at 20.68 s. The 176B is a judgement

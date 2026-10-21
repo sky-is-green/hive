@@ -219,12 +219,10 @@ MEMORY = """
       curve, and the constraint fixes where the system sits.</p></div>
   </div>
 
-  <p class="note bad"><strong>Correction, kept in the record.</strong> The
-    drift numbers from the encoder sweep were measured on a corpus that
-    included an ingested knowledge-base attachment (79% of its chunks); the
-    drift column is withdrawn. The drift <em>threshold</em> is the free dial
-    - it only penalises, it never deletes - but the benchmark behind it is
-    being rebuilt. See <code>docs/STATUS.md</code>.</p>
+  <p>The drift threshold is the free dial: it only penalises, it never
+    deletes. The dedup threshold is the constrained one, because a false
+    merge deletes a fact - and that is what fixes where the system sits on
+    the curve.</p>
 </div></section>
 """
 
