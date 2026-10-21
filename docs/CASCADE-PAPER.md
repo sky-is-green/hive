@@ -23,7 +23,7 @@ served, repairs what can be repaired, and escalates what cannot - using
 **verifiers that never see the answer key**.
 
 This card is the paper: the method, the protocol, the measured results, and
-the negative results we kept.
+the negative results I kept.
 
 ---
 
@@ -324,7 +324,7 @@ plausible answers at `p >= 0.97`, which is why the next tier is a
 
 **The judge arm is the same model, reading itself.** The 176B has a
 decision head - the last prompt token's hidden state, read through the
-engine's `emb=` as a *prefill* - and the head is in our own published
+engine's `emb=` as a *prefill* - and the head is in my own published
 dataset (`SkyIsNotGreen/decision-heads`). It was re-verified before use:
 the AUC on its own frozen test split recomputes to 0.9941 (the published
 0.9941), and the live engine agrees with the stored states to within
@@ -351,7 +351,7 @@ should beat the frozen one on this body; on this task set it does not
 replaced. It is now a 4.64 s judgement, and the runner carries the
 option (`--verdict-url`).
 
-## 5. The learned gate: a negative result we kept
+## 5. The learned gate: a negative result I kept
 
 The deterministic detectors have a measured blind spot: answers that are
 *internally consistent and wrong*. A third trigger - a small learned head
