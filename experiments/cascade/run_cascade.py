@@ -248,6 +248,50 @@ class Frontier:
                 "finish_reason": "length", "tag": tag}
 
 
+class Verdict:
+    """A decision head's readout: the model's own verdict on a candidate answer.
+
+    The escalation tier's expensive arm is a *generation*: the big model
+    answers again.  A model with a decision head can instead *judge* the
+    small tier's answer, and a judgement is a prefill - measured at 4.6 s
+    against 20.7 s for the generation on the same 28 tasks
+    (``experiments/escalation_arms.py``).
+
+    The endpoint is the engine's ``POST /v1/verdict``: it runs one judge
+    pass through the model and applies the head, so the answer is the
+    model's own hidden state, not a prompted self-assessment.
+    """
+
+    def __init__(self, base_url: str, *, threshold: float = 0.5,
+                 timeout: float = API_TIMEOUT) -> None:
+        self.base_url = base_url.rstrip("/")
+        if self.base_url.endswith("/v1"):
+            self.base_url = self.base_url[:-3]
+        self.threshold = float(threshold)
+        self.timeout = float(timeout)
+
+    def judge(self, task: str, candidate: str) -> dict:
+        """-> {"p_correct", "accept", "ms"}; a 503 is retried (the serve's
+        single slot is busy with the previous request)."""
+        payload = {"task": task, "candidate": candidate}
+        headers = {"content-type": "application/json"}
+        last: Optional[Exception] = None
+        for attempt in range(3):
+            try:
+                data, ms = _post(f"{self.base_url}/v1/verdict", payload, headers,
+                                 timeout=self.timeout)
+                p = float(data["p_correct"])
+                return {"p_correct": p, "accept": p >= self.threshold,
+                        "threshold": self.threshold, "latency_ms": ms}
+            except Exception as exc:  # noqa: BLE001 - retry the busy serve
+                last = exc
+                text = str(exc)
+                if "503" not in text and "Service Unavailable" not in text:
+                    raise
+                time.sleep(2.0 * (attempt + 1))
+        raise RuntimeError(f"the verdict call failed: {last}")
+
+
 class HumanGate:
     """The last checkpoint before a paid API call.
 
@@ -1034,6 +1078,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--api-fallback-key", default="",
                         help="bearer key for the fallback (default: CASCADE_API_KEY)")
     parser.add_argument(
+        "--verdict-url", default="",
+        help="a decision head's endpoint (the engine's POST /v1/verdict, e.g. "
+             "http://127.0.0.1:8081).  With it the escalation tier asks the "
+             "big model to JUDGE the small tier's answer before it is sent up: "
+             "a judgement is a prefill, measured at 4.6 s against 20.7 s for a "
+             "generation on the same 28 tasks",
+    )
+    parser.add_argument(
+        "--verdict-threshold", type=float, default=0.5,
+        help="the p_correct under which the answer is sent up (default 0.5)",
+    )
+    parser.add_argument(
         "--human-gate", choices=("auto", "on", "off"), default="auto",
         help="ask a human before the API fallback: auto (default) is on only "
              "when stdin is a TTY and --api-fallback is configured; on forces "
@@ -1108,6 +1164,8 @@ def main() -> int:
             key=args.api_fallback_key or None,
         )
     human_gate: Optional[HumanGate] = None
+    verdict_client = Verdict(args.verdict_url, threshold=args.verdict_threshold) \
+        if args.verdict_url else None
     if args.human_gate == "on" or (
         args.human_gate == "auto" and sys.stdin.isatty()
     ):
@@ -1543,6 +1601,24 @@ def main() -> int:
             # fallback unset (the default), a reject is recorded and the local
             # answer is returned; measure mode uses the measurement API instead.
             escalate = rejected and (measure or fallback is not None)
+            # The verdict tier: with a decision head's endpoint, the big model
+            # is asked to JUDGE the small tier's answer before anything is
+            # sent up.  A judgement is a prefill (4.6 s measured) where a
+            # generation is 20.7 s, and on the 28 organic tasks the
+            # generation arm was net zero (2 errors fixed, 2 correct answers
+            # broken) while the judge arm found 2 of 7 errors and broke none
+            # of the 21 correct ones.  A confident verdict keeps the local
+            # answer and skips the escalation entirely.
+            verdict_read = None
+            if verdict_client is not None and not measure:
+                try:
+                    verdict_read = verdict_client.judge(
+                        task.get("prompt") or task.get("question") or "", local["content"])
+                except Exception as exc:  # noqa: BLE001 - a failed judgement is not a failure
+                    verdict_read = {"error": str(exc)[:160]}
+                if verdict_read and verdict_read.get("accept"):
+                    escalate = False
+                    rejected = False
             human_decision: Optional[dict[str, Any]] = None
             human_attempts = 0
             human_gate_first = False
@@ -1714,6 +1790,7 @@ def main() -> int:
                     "findings": list((verdict.payload or {}).get("findings") or []),
                     "escalated": escalate,
                     "gated": False,
+                    "head_verdict": verdict_read,
                     "api_ok": api_ok,
                     "api_answer": (api_direct["content"][:4000] if api_direct else None),
                     "api_finish": (api_direct.get("finish_reason") if api_direct else None),
@@ -1816,6 +1893,20 @@ def main() -> int:
         },
         "usage": usage.summary(),
         "telemetry": telemetry.summary(),
+        "the_verdict_tier": {
+            "the_endpoint": args.verdict_url or None,
+            "the_threshold": args.verdict_threshold,
+            "the_judged": sum(1 for r in records if r.get("head_verdict")),
+            "the_kept": sum(1 for r in records
+                            if (r.get("head_verdict") or {}).get("accept")),
+            "the_sent_up": sum(1 for r in records
+                               if r.get("head_verdict") and
+                               not (r.get("head_verdict") or {}).get("accept")),
+            "the_mean_ms": (round(sum((r.get("head_verdict") or {}).get("latency_ms", 0.0)
+                                      for r in records) /
+                                  max(1, sum(1 for r in records if r.get("head_verdict"))), 1)
+                            if any(r.get("head_verdict") for r in records) else None),
+        },
     }
 
     report = {

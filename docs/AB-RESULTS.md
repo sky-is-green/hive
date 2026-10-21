@@ -697,10 +697,52 @@ generation - was paying 20.68 s (and 230 s co-sited) for nothing.
 7 errors, not 7. The remaining 5 are the escalation the tier still has
 to pay for. The right shape is the two together - judge first, generate
 only for what the judge sends up - which on this set is 2 generations
-out of 28. The head is also the *frozen* J-Bench one; the dataset's own
-community head (per-sample AUC 0.852, within-pool 0.965) and its
-in-domain refit are the next thing to measure, on the 28-task set and
-then on the community set.
+out of 28.
+
+**And the dataset's own caveat, checked.** The dataset's port report
+says the *in-domain* community head beats the frozen J-Bench head on
+this body ("their own 'validate per model' caveat, in action"). That was
+on the community task set. On the cascade's organic set, with both heads
+applied to the *same* live readouts
+(`experiments/heads_on_the_cascade.py`), it does not hold:
+
+| | the J-Bench head | the community head |
+|---|---|---|
+| the AUC on the 35B's answers | **0.864** | 0.782 |
+| the mean p on the correct | 0.988 | 0.885 |
+| the mean p on the wrong | 0.777 | 0.720 |
+| at 0.50: caught / kept | 2/7 and **21/21** | 2/7 and 19/21 |
+| at 0.90: caught / kept | 3/7 and 20/21 | **4/7** and 16/21 |
+
+The community head catches one more error at 0.90 and keeps five fewer
+correct answers doing it. At 0.50 the frozen head is strictly better:
+the same errors caught, four more correct answers kept. So the head to
+ship for this class is the **frozen J-Bench one** - the opposite of the
+dataset's own recommendation, on a different task set, and the reason
+the dataset says to validate per model.
+
+**Two things had to be right for a head to read anything at all**, and
+both were wrong at first:
+
+- **The prompt must be the model's own template, with thinking off.** The
+  template injects *"Reasoning effort is set to xhigh..."* into the
+  system turn and a `<think>` block before the answer; the head was
+  fitted on a clean prompt. With the default template the head reads
+  **nothing**: p was 0.0238 for every item, correct and wrong alike
+  (an AUC of 0.497, a coin). `enable_thinking: false` is what the
+  engine's own `verdict()` uses.
+- **The vector must be raw.** `/v1/embeddings` L2-normalises by
+  default (the OpenAI shape); the head was fitted on the raw float32
+  vector. `/embedding` with `embd_normalize: -1` is the raw one.
+
+Both mistakes produced a *constant* p rather than a wrong one, which is
+what made them look like "the head does not work here" instead of "the
+readout is the wrong vector". The check that catches it: a head with no
+signal gives the same p for every item.
+
+**The cost of the corrected readout** is 3.19 s a mean (the same judge
+prompt the `/v1/verdict` route builds), so the tier's price stands.
+
 
 **What the tier was hiding.** The campaign's escalation arms never fired
 with the repair leg on (0 escalations) and the 176B's own generation
