@@ -3,8 +3,8 @@
 # string-sort misalignment, plus the non-linear / trajectory retest.
 #   systemd-run --user --unit=monitor-fix /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
 M=$W/experiments/cascade/streams/scion-bench-monitor
 R=$W/experiments/cascade/results/jev-readout-20261006
 cd "$W" || exit 1

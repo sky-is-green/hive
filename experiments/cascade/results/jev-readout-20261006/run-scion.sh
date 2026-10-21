@@ -5,8 +5,8 @@
 # --embd-normalize -1.  Run detached:
 #   systemd-run --user --unit=scion-session /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HF_HUB_OFFLINE=1
 cd "$W" || exit 1

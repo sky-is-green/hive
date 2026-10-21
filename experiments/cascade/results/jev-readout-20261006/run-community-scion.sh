@@ -5,10 +5,10 @@
 # fit the in-domain head and evaluate arms A/B/C/D on the held-out test tasks.
 #   systemd-run --user --unit=scion-community /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-T=/run/media/user/<drive-id>/work/scion
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-B=/home/user/llama.cpp/build/bin/llama-server
+W=<work>/hivebench
+T=<work>/scion
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
 M=$T/Scion-35B-A3B-PQ2_0-corr.gguf
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1

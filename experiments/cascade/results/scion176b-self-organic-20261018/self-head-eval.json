@@ -1,5 +1,5 @@
 {
- "window": "/run/media/user/<drive-id>/work/hivebench/experiments/cascade/results/scion176b-self-organic-20261018/probe-states-scion176b-transfer.npz",
+ "window": "<work>/hivebench/experiments/cascade/results/scion176b-self-organic-20261018/probe-states-scion176b-transfer.npz",
  "slices": {
   "organic-66": {
    "n": 66,

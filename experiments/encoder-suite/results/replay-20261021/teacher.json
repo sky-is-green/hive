@@ -1,6 +1,6 @@
 {
  "the_encoder": "Qwen/Qwen3-Embedding-0.6B",
- "the_fixtures": "/run/media/user/<drive-id>/work/hivebench/tests/fixtures/generated",
+ "the_fixtures": "<work>/hivebench/tests/fixtures/generated",
  "the_arms": {
   "shipped": {
    "the_points": {

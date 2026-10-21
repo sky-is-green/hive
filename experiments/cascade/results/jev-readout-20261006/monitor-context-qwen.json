@@ -1,5 +1,5 @@
 {
- "windows": "/run/media/user/<drive-id>/work/hivebench/experiments/cascade/streams/qwen-bench-monitor-ctx",
+ "windows": "<work>/hivebench/experiments/cascade/streams/qwen-bench-monitor-ctx",
  "positions": "trace-relative",
  "horizons": {
   "start64": {

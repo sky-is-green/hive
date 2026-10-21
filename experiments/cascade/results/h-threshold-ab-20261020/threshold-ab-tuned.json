@@ -1,5 +1,5 @@
 {
- "fixtures": "/run/media/user/<drive-id>/work/hivebench/tests/fixtures/generated",
+ "fixtures": "<work>/hivebench/tests/fixtures/generated",
  "encoder": "experiments/encoder-suite/results/20261020/l3-tuned-v6",
  "arms": {
   "shipped": {

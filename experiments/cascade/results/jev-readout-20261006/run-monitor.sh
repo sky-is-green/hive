@@ -4,11 +4,11 @@
 # Run after correction-run completes:
 #   systemd-run --user --unit=monitor-chain /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-T=/run/media/user/<drive-id>/work/scion
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-B=/home/user/llama.cpp/build/bin/llama-server
-P=/home/user/llama.cpp/build/bin/test-mtp-probe
+W=<work>/hivebench
+T=<work>/scion
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
+P=~/llama.cpp/build/bin/test-mtp-probe
 R=$W/experiments/cascade/results/jev-readout-20261006
 M=$W/experiments/cascade/streams/scion-bench-monitor
 cd "$W" || exit 1

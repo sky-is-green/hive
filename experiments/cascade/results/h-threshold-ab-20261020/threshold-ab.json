@@ -1,5 +1,5 @@
 {
- "fixtures": "/run/media/user/<drive-id>/work/hivebench/tests/fixtures/generated",
+ "fixtures": "<work>/hivebench/tests/fixtures/generated",
  "encoder": "sentence-transformers/paraphrase-MiniLM-L3-v2",
  "arms": {
   "shipped": {

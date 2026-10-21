@@ -2,8 +2,8 @@
 # T2 sweep: Qwen3-1.7B probe + label-budget curves on 0.8B / 4B.
 # Run detached: systemd-run --user --unit=jev-sweep /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1
 export HF_HUB_OFFLINE=1

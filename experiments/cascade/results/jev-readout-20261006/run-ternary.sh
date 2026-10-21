@@ -4,10 +4,10 @@
 # f16 reference.  Run detached:
 #   systemd-run --user --unit=clef-embed /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-T=/home/user/Desktop/work/models/clef-flash-ternary
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-B=/home/user/llama.cpp/build/bin/llama-server
+W=<work>/hivebench
+T=<work>/models/clef-flash-ternary
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1
 cd "$W" || exit 1

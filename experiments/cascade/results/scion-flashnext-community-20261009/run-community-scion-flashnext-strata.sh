@@ -8,8 +8,8 @@
 # corrections-off — numbers are a lower bound on the release.
 #   systemd-run --user --unit=scion-flashnext-community /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-PY=/run/media/user/<drive-id>/work/.venv-rocm/bin/python
+W=<work>/hivebench
+PY=<work>/.venv-rocm/bin/python
 R=$W/experiments/cascade/results/scion-flashnext-community-20261009
 export HF_HUB_OFFLINE=1
 mkdir -p "$R"

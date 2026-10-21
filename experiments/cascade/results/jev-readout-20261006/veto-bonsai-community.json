@@ -2,7 +2,7 @@
  "prefix": "bonsai-community",
  "head": "answer",
  "head_src": "experiments/cascade/results/jev-readout-20261006/bonsai-2-27b-decision-head.json",
- "states": "/run/media/user/<drive-id>/work/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-community-states.npz",
+ "states": "<work>/hivebench/experiments/cascade/results/jev-readout-20261006/bonsai-community-states.npz",
  "n_test": 199,
  "n_train": 465,
  "majority_test": 168,

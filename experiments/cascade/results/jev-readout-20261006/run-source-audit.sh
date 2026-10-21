@@ -3,10 +3,10 @@
 # answers with the frozen head, evaluate natural errors, stop the server.
 #   systemd-run --user --unit=source-audit /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-T=/run/media/user/<drive-id>/work/scion
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-B=/home/user/llama.cpp/build/bin/llama-server
+W=<work>/hivebench
+T=<work>/scion
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
 R=$W/experiments/cascade/results/jev-readout-20261006
 export HIP_VISIBLE_DEVICES=1
 export HF_HUB_OFFLINE=1

@@ -5,10 +5,10 @@
 # were off the served model.  Old artifacts are preserved with -noadapter.
 #   systemd-run --user --unit=monitor-redump --collect /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-M=/run/media/user/<drive-id>/work/scion/Scion-35B-A3B-PQ2_0-corr.gguf
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-P=/home/user/llama.cpp/build/bin/test-mtp-probe
+W=<work>/hivebench
+M=<work>/scion/Scion-35B-A3B-PQ2_0-corr.gguf
+PY=<work>/.venv-rocm/bin/python
+P=~/llama.cpp/build/bin/test-mtp-probe
 R=$W/experiments/cascade/results/jev-readout-20261006
 RB=$W/experiments/cascade/streams/scion-bench-monitor
 CTX=$W/experiments/cascade/streams/scion-bench-monitor-ctx

@@ -93,7 +93,7 @@ harness venv; `florence-2-base` in the pinned side env.
 
 ## Environment
 
-- Host: `Penis-machine`, all candidates CPU-only (torch CPU builds;
+- Host: `<host>`, all candidates CPU-only (torch CPU builds;
   no ROCm context beside the serve — see module docstring for why).
 - Florence-2-base ran in the pinned side env `.envs/florence-legacy` (transformers 4.46.3): its remote code does not
   import under the harness venv's transformers 5.x (flash-attn rewrite

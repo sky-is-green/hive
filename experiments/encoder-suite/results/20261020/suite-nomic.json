@@ -1,8 +1,8 @@
 {
  "corpus": {
   "dirs": [
-   "/run/media/user/<drive-id>/work/hivebench/harness_state",
-   "/run/media/user/<drive-id>/work/splinter-memory/harness_state"
+   "<work>/hivebench/harness_state",
+   "<work>/splinter-memory/harness_state"
   ],
   "conversations": 82,
   "chunks": 6977

@@ -5,11 +5,11 @@
 # dumps per-position hidden states (GPU) and evaluates trace-relative readouts.
 #   systemd-run --user --unit=scion-ctx --collect /bin/sh <this>
 set -u
-W=/run/media/user/<drive-id>/work/hivebench
-M=/run/media/user/<drive-id>/work/scion/Scion-35B-A3B-PQ2_0-corr.gguf
-PY=/home/user/Desktop/work/.venv-rocm/bin/python
-B=/home/user/llama.cpp/build/bin/llama-server
-P=/home/user/llama.cpp/build/bin/test-mtp-probe
+W=<work>/hivebench
+M=<work>/scion/Scion-35B-A3B-PQ2_0-corr.gguf
+PY=<work>/.venv-rocm/bin/python
+B=~/llama.cpp/build/bin/llama-server
+P=~/llama.cpp/build/bin/test-mtp-probe
 R=$W/experiments/cascade/results/jev-readout-20261006
 D=$W/experiments/cascade/streams/scion-bench-monitor-ctx
 cd "$W" || exit 1
