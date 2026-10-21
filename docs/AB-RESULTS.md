@@ -231,21 +231,38 @@ conversations; the dedup and the drift jobs, the shipped thresholds):
 | the encoder | the dedup f1 at 0.92 | the precision | the recall | the best F1 | **the drift's AUC** | the cost a chunk |
 |---|---|---|---|---|---|---|
 | the stock MiniLM-L3-v2 | 0.090 | 1.000 | 0.047 | 0.713 | **0.957** | **2.7 ms** |
+| the Qwen teacher (0.6B) | **0.090** | 1.000 | 0.047 | 0.855 | 0.952* | 19.6 ms |
 | **our 4-layer student** | **0.842** | 0.903 | **0.789** | 0.842 | 0.457 | 29.4 ms |
 | our 8-layer student | 0.700 | 0.952 | 0.554 | 0.809 | 0.226 | 59.3 ms |
-| our 28-layer student | 0.620 | 0.833 | 0.493 | 0.879 | 0.444 | 206.1 ms |
+| our 28-layer student | 0.620 | 0.833 | 0.493 | **0.879** | 0.444 | 206.1 ms |
 
-**The hinge works, and it works better the shallower the model.** The
-4-layer student's **recall at the shipped threshold is 0.789 against the
-stock's 0.047 - seventeen times** - at a precision of 0.903, and the
-decision's F1 at 0.92 goes **0.090 to 0.842**. This is the first thing
-in the whole campaign that moved the *decision* rather than the ranking,
-and it moved it by using the objective the decision uses.
+\* the teacher's drift AUC is the decision-head study's own number on its
+frozen J-Bench split (0.9524), not a re-measurement on this holdout: the
+teacher's own arm over these 3,575 cases is ~35 minutes on the CPU (the
+windows average 7,103 characters).
 
-**And the depth is a free parameter the measurements chose.** The 4-layer
-student beats the 28-layer one *at the operating point* (0.842 against
-0.620) at **one seventh the cost**. The shallow model is the better
-encoder here, and it is also the cheap one.
+**The teacher and the shipped encoder are *identical* at the operating
+point** - both 0.0897, both a recall of 0.047 - and they differ only in
+the ranking (the best F1 0.855 against 0.713). **So the family-match
+buys a better ranker and nothing else**, which is the campaign's
+central claim about the threshold, now measured on the teacher itself
+and not just argued.
+
+**And our student beats its own teacher at the teacher's own task, by
+9.4x** (0.842 against 0.090 at the shipped threshold). The teacher was
+never trained for the decision; the student was. The 28-layer student
+even beats the teacher's *ranking* (a best F1 of 0.879 against 0.855).
+**The teacher's quality does not transfer as a decision - the training
+objective does.** That is the sharpest form of the campaign's "the model
+is the lever, not the threshold" finding: you can beat the teacher at
+the teacher's task by training for the decision, and the family-match is
+what gives you a teacher worth beating.
+
+**And the depth is a free parameter the measurements chose.** The
+4-layer student beats the 28-layer one *at the operating point* (0.842
+against 0.620) at **one seventh the cost**. The shallow model is the
+better encoder here, and it is also the cheap one.
+
 
 **But the drift decision is destroyed, and it is not a length artefact.**
 Every student's drift AUC collapses (0.957 to 0.457, 0.226, 0.444). The
