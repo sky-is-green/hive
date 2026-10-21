@@ -49,6 +49,9 @@ body { margin: 0; background: var(--bg); color: var(--fg);
 .hero { background: var(--hero); border-bottom: 1px solid var(--line); padding: 64px 0 40px; }
 .eyebrow { color: var(--accent); font-size: 13px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase; }
+.eyebrow a { color: inherit; text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 55%, transparent); }
+.eyebrow a:hover { border-bottom-style: solid; }
 .hero h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.08;
   letter-spacing: -.03em; margin: .35em 0 .25em; }
 .lede { font-size: 1.22rem; max-width: 46ch; color: var(--muted); margin: 0; }
@@ -169,7 +172,7 @@ footer a { color: inherit; }
 
 HERO = """
 <header class="hero"><div class="wrap">
-  <div class="eyebrow">HiveBench Studio · research preview</div>
+  <div class="eyebrow"><a href="https://github.com/sky-is-green/hivebench">HiveBench Studio</a> · research preview</div>
   <h1>The Hive Cascade</h1>
   <p class="lede">One loop, two levels: curate the memory, and route the
     harness. The controller is the current work.</p>
