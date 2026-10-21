@@ -466,3 +466,227 @@ models:
 tokens thinking and 42.5x the seconds getting there. On this class the
 small tier is not a compromise - it is the same answer, faster and twelve
 times lighter.
+
+---
+
+## 1B-bis. Where the 176B's "minutes of work" actually goes
+
+The 229.7 s per item above is real, and it is **not** a property of the
+model. The engine's own log says the 176B decodes at **67.7 tok/s** over
+the 4,424 generations it has served, with 4,095 of them above 20 tok/s.
+The 3 tok/s in the campaign was a *state*, and the state has two names.
+
+**The bimodality, measured on the same engine, the same request:**
+
+| | the request | wall | the rate |
+|---|---|---|---|
+| the first (cold) | 103 tokens | 29.8 s | 3.5 tok/s |
+| the second | 103 tokens | 3.8 s | 27.9 tok/s |
+| the third | 103 tokens | 2.1 s | 51.1 tok/s |
+| **8 in a row, steady state** | 256 tokens each | **4.0 s each** | **60-73 tok/s** |
+
+The engine's own line for each request separates the two phases:
+
+```
+prompt 70 tokens =  0 reused + 70 read in 14029 ms (5.0 tok/s)   <- cold
+prompt 70 tokens = 65 reused +  5 read in    71 ms (70.6 tok/s)   <- warm
+```
+
+A **fresh prompt read costs 5 tok/s; a reused prefix costs 71 tok/s.**
+The 13x is the whole difference. The cold phase is the OS pulling the
+model's expert weights off the NVMe: the engine reports *"the OS read
+96842 MB from storage"* on one cold request and *"7633 MB"* on the next.
+That is the "minutes of work" - not the arithmetic.
+
+**The two levers, and one falsified hypothesis.**
+
+- **Keep the engine warm.** An unload/reload costs the whole cold phase
+  again. This is the single largest factor in the campaign's 229.7 s.
+- **Do not co-site.** The 35B on the same cards halves the 176B's expert
+  cache (8.55 GiB -> 4.11 GiB) and evicts its page cache. The engine's
+  own readout: *"decode expert cache hit rate: 96.5%"* alone, *"89.8%"*
+  with the second engine resident. Measured end to end, co-siting costs
+  **2.6x**.
+- **Falsified: `--ple-io mmap`.** The engine's own source flags the
+  default as the suspect: *"`--ple-io direct` (the default) does
+  unbuffered random reads of the n-gram table; on some drives they run at
+  34 MB/s or 4-8 tok/s and a prompt reads layer 1 for minutes"*
+  (`strata/src/program/generate.cpp:1775`). The symptom matched - our
+  cold prompt read was 3.5-5.0 tok/s, right in the documented band. But
+  switching the PLE table to `mmap` did **not** help: the cold prompt
+  read was 21.3 s under `mmap` against 17.2 s under `direct`, and the
+  dominant I/O is the **96.9 GB of expert weights**, not the 2.1 GB
+  n-gram table. The source's warning was about a *different* drive's
+  unbuffered I/O; on this box the PLE table is not the bottleneck. The
+  hypothesis is dead and the engine keeps `direct`.
+
+**Why it cannot be fully cached.** The 176B's Q6_K file is 60.2 GB; the
+box has 30 GB of RAM, of which ~13 GB is available for the page cache.
+The kernel's own answer (`mincore`, through
+`harness/models.py::page_cache_share`): the 176B's file is **20.8%
+cached**, the 35B's is **0%**. A cold request must therefore stream from
+the NVMe, and no scheduling trick changes that - only a smaller model, a
+bigger box, or not asking the 176B in the first place.
+
+**Falsified: a whole-file page-cache prefetch.** The obvious fix - ask
+the kernel to read the 60 GB into the page cache before the engine
+starts - does not work, and the reason is arithmetic rather than
+subtle. `posix_fadvise(WILLNEED)` over the whole file, then polling
+`mincore` for 80 s: the file stayed at **0.0% cached** the entire time.
+A 13 GB page cache cannot hold a 60 GB file, and the kernel's readahead
+has nothing to keep. The controlled A/B agrees: with the prefetch the
+first request was 36.9 s, without it 33.6 s - no difference, both at
+~7 tok/s. The launch path's prefetch (for the 35B, which *does* fit) is
+untouched; the Strata path never gets one.
+
+**The lever that does work: the engine's resident tier.** Strata can
+keep the experts its VRAM cache cannot hold **in ordinary RAM**
+(`--resident-budget-gib N`), so they are never re-read from the file.
+With an 8 GiB budget the engine's own tier readout changes character:
+
+| | the stock engine | the resident tier |
+|---|---|---|
+| the blobs served from RAM | 0 | **19,178** |
+| the blobs served from the file | 3,246 | 3,164 (and falling) |
+| the storage read, the first request | 67,301 MB | 71,026 MB (it has to fill once) |
+| the storage read, the next | 1,415 MB | **204 MB** |
+| the storage read, the third | 462 MB | **93 MB** |
+
+The engine's own line: *"resident RAM: 8.00 GiB of experts in RAM,
+2112 exchanged with the VRAM tier"*.
+
+**The controlled A/B**, both arms from the same cold state (the file's
+pages evicted with `fadvise(DONTNEED)`, then the engine restarted, the
+same 256-token probe - `experiments/coldstart_prefetch.py`):
+
+| | the first (cold) request | the warm rate |
+|---|---|---|
+| the stock engine | 33.8 s (7.6 tok/s) | 63-74 tok/s |
+| **the resident tier, 8 GiB** | **17.3 s (14.8 tok/s)** | 74 tok/s |
+
+**1.9x on the cold request, and the warm rate is unchanged.** The
+resident tier cannot be free: it holds 8 GiB of the box's 30 GB, and it
+takes a first request to fill (the engine's 71 GB first read is the
+arena filling itself). What it buys is that every request *after* that
+one reads 100-200 MB from storage instead of 1.4 GB.
+
+This is the DeepInfer idea, already implemented in our engine:
+DeepInfer's **EPLB** (Expert Parallel Load Balancer) re-places experts
+by their measured routing counts, and Strata's **adaptive tier** does
+the same for its own cache - `--expert-profile-save` writes out what
+the engine learned, and `--expert-profile` reads it back at the next
+start. The profile the engine already loads (ranked by routing
+frequency, 8,538 pairs pre-filled at 971 MB/s) is that ranking.
+
+
+---
+
+## 1B-ter. The 176B's own head: a verdict costs 2.4 s, a generation 27 s
+
+The escalation tier asks the 176B to *answer* again. But the 176B has
+a **decision head** - and reading it needs only the model's *last
+prompt token's hidden state*, which is a **prefill**, not a generation.
+The head is in our own published dataset
+(`SkyIsNotGreen/decision-heads`, `scion-176b-a6b-decision-head.json`),
+and it was fitted on this engine, on this body, through the engine's
+`emb=` readout.
+
+**The head, re-verified here.** The stored states the head was fitted
+on (`probe-states-main176b.npz`, 378 items) reproduce its published
+numbers exactly:
+
+| | the head's own | recomputed from the stored states |
+|---|---|---|
+| the AUC (the 116-item test split) | 0.9941 | **0.9941** |
+| the mean p on a correct answer | - | 0.9945 |
+| the mean p on a wrong answer | - | 0.1370 |
+
+**The live engine agrees with the stored states.** Running the real
+`POST /v1/verdict` on the frozen judge bench's own items, the live
+p_correct tracks the stored one to within **0.027** (0.9969 vs 0.9977 on
+a correct answer; 0.1517 vs 0.1760 on a wrong one), and the separation
+is total: every correct answer above 0.99, every wrong one below 0.16.
+
+**What it costs.** A verdict is a judge prompt (170-184 tokens) and
+nothing else:
+
+| | the time |
+|---|---|
+| **a verdict (the prefill)** | **2.4 s** |
+| a generation (the warm engine) | 27 s |
+| a generation (the campaign's co-sited engine) | 230 s |
+
+**What it buys, on the campaign's own 28 tasks and the 35B's own
+answers to them** (`experiments/verdict_tier.py`):
+
+| | |
+|---|---|
+| the head's AUC on the 35B's answers | **0.871** |
+| the mean p where the 35B was right | 0.988 |
+| the mean p where the 35B was wrong | 0.750 |
+| the errors caught at p < 0.5 | **2 of 7** |
+| the correct answers kept at p >= 0.5 | **21 of 21** |
+| the mean verdict | **2.69 s** against the 35B's 6.68 s |
+
+So the 176B's head is a *cheap* judge: it never rejects a correct
+answer, it catches about a third of the errors, and it costs 2.7 s
+where a generation costs 27 s and the campaign's engine cost 230 s.
+
+**And the thing it is competing with is worth less than it looks.**
+Comparing the two models on the same 28 tasks, the 176B's *generation*
+fixed 6 of the 35B's errors and **broke 8** - net zero, at 40x the
+latency. A 2.4 s verdict that catches a third of the errors and breaks
+none of the correct answers is a better use of the 176B than a 27 s
+generation that breaks more than it fixes.
+
+**The honest limit.** The head's AUC on the 35B's answers (0.871) is
+well below its AUC on its own model's answers (0.994) - it is reading a
+*different* model's output. It is a **filter, not a replacement**: a
+gate that lets a correct answer through untouched and flags a third of
+the wrong ones, so the expensive generation is spent on a third of the
+cases instead of all of them. That is a 3x cut in the escalation tier's
+cost, not a 10x. The dataset's own community head reaches 0.852
+per-sample (0.965 within-pool) and says the same thing: *"the in-domain
+refit beats the frozen J-Bench head ... validate per model"*.
+
+**What this changes in the design.** The escalation tier has two
+options, and the campaign only measured one:
+
+1. **generate** with the 176B (what the campaign did): 27 s warm, 230 s
+   co-sited, and on this class it fixed 6 and broke 8.
+2. **judge** with the 176B's head (what the dataset already supports and
+   what this measures): 2.4 s, catches a third of the errors, breaks
+   none of the correct answers.
+
+Option 2 is 11x cheaper than option 1 warm and 96x cheaper than the
+campaign's engine, and it is the only one of the two with a positive
+expected value on the errors. The campaign's escalation arms should be
+re-run against it.
+
+
+**The honest summary of the levers**, in the order they pay:
+
+1. **Ask the 35B.** Identical quality (0.800 vs 0.800), 42.5x faster.
+   The 176B is for the escalation set, not the bulk.
+2. **Keep the 176B resident** between the tasks that need it, so the
+   cold phase is paid once per session rather than once per request.
+3. **Run it alone.** Co-siting costs 2.6x, and it is the one lever that
+   also *hurts* the small tier.
+4. **Let the resident tier hold what the VRAM cache cannot** - 1.9x on
+   the cold request, 10x less storage traffic after it, at the price of
+   8 GiB of the box's 30 GB.
+5. **Shrink the working set** - the Q4X160 build (57.6 GB) is the only
+   smaller native on disk, and it is 4% smaller, which the cache
+   arithmetic makes worth little.
+
+**What the levers are worth, measured warm** (the same 28 organic tasks,
+the 176B alone, the engine warm):
+
+| | the campaign (co-sited) | warm and alone |
+|---|---|---|
+| the mean per item | 229.7 s | **26.9 s** |
+| the decode rate | 3 tok/s | **60-73 tok/s** |
+
+The 42.5x gap against the 35B was **~7x contention and cold cache, and
+~6x the model**. Both are real; only the second one is the price of the
+tier.
