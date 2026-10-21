@@ -307,7 +307,7 @@ HERO = """
   <h1>The Hive Cascade</h1>
   <p class="lede">One loop, two levels: curate the memory, and route the
     harness. The controller is the current work.</p>
-  <p class="meta"><span class="dot"></span>not a product yet ·
+  <p class="meta"><span class="dot"></span>Not a product yet ·
     <span class="pill">MIT</span><span class="pill">updated 2026-10-21</span></p>
   <div class="flow" data-flow aria-hidden="true">
     <span class="node" data-flow-node="memory">memory</span>
@@ -534,7 +534,7 @@ STAGE_CLOSE = "</div></div></section>\n"
 PANEL_PREMISE = """
 <section class="tab-panel" data-panel="premise" id="premise" role="tabpanel">
   <div class="wrap">
-    <h2>Why we did this</h2>
+    <h2>Why I did this</h2>
     <p class="lead">A local model is cheap, private, and wrong in ways that
       look exactly like being right. The question is not whether the model is
       good; it is whether the system around it can tell.</p>
@@ -546,21 +546,21 @@ PANEL_PREMISE = """
 
     <h3>The hypotheses that drove it</h3>
     <div class="grid">
-      <div class="card"><h3>H1 · the harness is the lever</h3>
+      <div class="card"><h3>H1 · The harness is the lever</h3>
         <p>A small model with verification can beat a bigger model alone. The
           27B reaches <strong>26/28</strong> against the 35B's 21/28; the
           176B's own generation is net zero. Supported - for the harness, not
           for "bigger".</p></div>
-      <div class="card"><h3>H2 · consequence, not accuracy</h3>
+      <div class="card"><h3>H2 · Consequence, not accuracy</h3>
         <p>Optimise what a wrong decision costs. A better dedup decision at
           0.67 halves the facts (<strong>60.51% &rarr; 32.66%</strong>); the
           judge's four misses at <code>p &ge; 0.97</code> are plausible
           answers. Supported.</p></div>
-      <div class="card"><h3>H3 · execution, not judgement</h3>
+      <div class="card"><h3>H3 · Execution, not judgement</h3>
         <p>A reader cannot see a plausible wrong answer; a check can. The
           checker is the last unmeasured tier. Supported by the failures, not
           yet by the fix.</p></div>
-      <div class="card"><h3>H4 · one loop, two levels</h3>
+      <div class="card"><h3>H4 · One loop, two levels</h3>
         <p>The membrane and the controller make the same trade - what to keep,
           what to check, when to stop. The mapping is measured; the controller
           is the current work.</p></div>
@@ -589,13 +589,13 @@ PANEL_MEMORY = """
       At 0.67 the near-duplicate merges and the fact goes. The drift chunk
       dims in both states: it is only penalised, never deleted.</p>
     <div class="grid">
-      <div class="card"><h3>the shipped point</h3><p><strong>60.51%</strong> of
+      <div class="card"><h3>The shipped point</h3><p><strong>60.51%</strong> of
         the facts kept in <strong>374</strong> tokens. Precision 1.00: it never
         deletes a fact.</p></div>
-      <div class="card"><h3>the tuned dedup at 0.67</h3><p><strong>32.66%</strong>
+      <div class="card"><h3>The tuned dedup at 0.67</h3><p><strong>32.66%</strong>
         of the facts in <strong>139</strong> tokens. The decision improved; the
         curation nearly halved.</p></div>
-      <div class="card"><h3>the lesson</h3><p>A true duplicate merged is a fact
+      <div class="card"><h3>The lesson</h3><p>A true duplicate merged is a fact
         <em>deleted</em>. The threshold and the model are two dials on the same
         curve, and the constraint fixes where the system sits.</p></div>
     </div>
@@ -711,13 +711,13 @@ PANEL_CHECKER = """
       <code>print("PASS")</code> - and it must be <code>unknown</code>, or a
       small checker is worse than none.</p>
     <div class="grid">
-      <div class="card"><h3>the false-positive bar</h3><p>The 176B head set it:
+      <div class="card"><h3>The false-positive bar</h3><p>The 176B head set it:
         <strong>0 of 21</strong> correct answers rejected. The checker is
         scored on the 21 correct first, then on the 7 errors.</p></div>
-      <div class="card"><h3>grounding</h3><p>For the factual remainder,
+      <div class="card"><h3>Grounding</h3><p>For the factual remainder,
         decompose the answer into claims and check each against the store.
         A check that cannot cite is <code>unknown</code>.</p></div>
-      <div class="card"><h3>the cost</h3><p>A sandbox call, not a model
+      <div class="card"><h3>The cost</h3><p>A sandbox call, not a model
         verdict. The check runs once per answer and once per mutation; the
         decoder is only paid on the repair.</p></div>
     </div>
@@ -757,7 +757,7 @@ LINKS = """
 """
 
 FOOT = """
-<footer><div class="wrap">HiveBench Studio contributors · MIT · the paper is
+<footer><div class="wrap">HiveBench Studio contributors · MIT · The paper is
   also in the repository at <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
 </div></footer>
 """
@@ -805,8 +805,8 @@ JS = """
     if (bar) bar.style.width = merge ? "55%" : "100%";
     const dec = stage.querySelector("[data-lab-decision]");
     if (dec) dec.innerHTML = merge
-      ? "<strong>merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D collapses into A; the soft-delete fact goes with it."
-      : "<strong>distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are kept, and the soft-delete fact survives.";
+      ? "<strong>Merged.</strong> 0.89 &ge; " + value.toFixed(2) + ". A+D collapses into A; the soft-delete fact goes with it."
+      : "<strong>Distinct.</strong> 0.89 &lt; " + value.toFixed(2) + ". Both are kept, and the soft-delete fact survives.";
     const ctx = stage.querySelector("[data-lab-context]");
     if (ctx) ctx.textContent = merge
       ? "3 facts kept. The delete question cannot be answered."
