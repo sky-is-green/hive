@@ -268,6 +268,8 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .flowmap .node .val.fail { fill: var(--bad); }
 .flowmap .node .val.pass { fill: var(--good); }
 .flowmap .node.active rect { stroke: var(--accent); stroke-width: 2.4; }
+.flowmap .node.hub rect { stroke: var(--accent); stroke-width: 2; }
+.flowmap .node .sub { font-size: 10px; font-weight: 500; fill: var(--muted); }
 .flowmap .node.fail rect { stroke: var(--bad); }
 .flowmap .node.pass rect { stroke: var(--good); }
 .flowmap .node[data-node="mem"] text { fill: var(--c-mem); }
@@ -409,30 +411,34 @@ STAGE_MOVE = """
 
 STAGE_CONTROLLER = """
   <div class="stage-panel" data-stage="controller" hidden>
-    <div class="demo-head"><h3>Prompt to execution, one task</h3>
+    <div class="demo-head"><h3>The controller, calling its tools</h3>
       <button type="button" data-route-play>Play</button></div>
-    <svg class="flowmap" viewBox="0 0 880 330" role="img"
-         aria-label="The routed task: prompt and memory into the 35B, the candidate to the judge and to execution, the failure to the 27B, the new candidate to the checker, the answer.">
-      <path id="e-mem" class="edge dashed" d="M120,45 C150,60 150,110 165,130"/>
-      <path id="e-prompt" class="edge" d="M120,162 L165,162"/>
-      <path id="e-35b-judge" class="edge" d="M275,135 C300,120 310,70 330,55"/>
-      <path id="e-35b-verify" class="edge" d="M275,160 C300,175 310,205 330,215"/>
-      <path id="e-judge-answer" class="edge dashed" d="M440,50 L720,50"/>
-      <path id="e-verify-loop" class="edge dashed" d="M391,246 L391,294 L379,294 L379,246"/>
-      <path id="e-verify-27b" class="edge" d="M440,218 L500,218"/>
-      <path id="e-27b-verify2" class="edge" d="M600,218 L660,218"/>
-      <path id="e-verify2-answer" class="edge" d="M770,200 C800,160 795,100 785,75"/>
+    <svg class="flowmap" viewBox="0 0 880 380" role="img"
+         aria-label="The controller at the centre: it calls the 35B, the judge, execution and the 27B, and receives each result back. The models never talk to each other.">
+      <path id="e-prompt-ctl" class="edge" d="M130,142 C210,142 280,175 340,185"/>
+      <path id="e-mem-ctl" class="edge dashed" d="M130,270 C220,270 280,230 340,215"/>
+      <path id="e-ctl-35b" class="edge" d="M390,165 C360,130 320,100 290,94"/>
+      <path id="e-35b-ctl" class="edge" d="M290,94 C330,115 370,150 395,168"/>
+      <path id="e-ctl-judge" class="edge" d="M490,165 C530,130 570,100 590,94"/>
+      <path id="e-judge-ctl" class="edge" d="M590,100 C555,115 525,145 495,168"/>
+      <path id="e-ctl-verify" class="edge" d="M540,200 C565,200 585,208 610,210"/>
+      <path id="e-verify-ctl" class="edge" d="M610,222 C585,222 560,212 540,212"/>
+      <path id="e-ctl-27b" class="edge" d="M500,240 C540,275 570,305 590,315"/>
+      <path id="e-27b-ctl" class="edge" d="M590,340 C555,320 520,270 505,245"/>
+      <path id="e-ctl-answer" class="edge" d="M340,240 C300,265 280,295 300,305"/>
+      <path id="e-ctl-answer-keep" class="edge dashed" d="M350,225 C285,235 260,285 295,300"/>
+      <path id="e-ctl-api" class="edge dashed" d="M540,230 C620,265 700,305 770,315"/>
       <circle id="packet" r="6" fill="#3b82f6" opacity="0"/>
       <g id="packets"></g>
-      <g class="node" data-node="mem"><rect x="10" y="20" width="110" height="38" rx="8"/><text x="65" y="43">memory</text></g>
-      <g class="node" data-node="prompt"><rect x="10" y="140" width="110" height="44" rx="8"/><text x="65" y="167">prompt</text></g>
-      <g class="node" data-node="35b"><rect x="165" y="115" width="110" height="64" rx="8"/><text x="220" y="140">35B</text><text class="val" x="220" y="160" data-val="35b">24.50</text></g>
-      <g class="node" data-node="judge"><rect x="330" y="25" width="110" height="50" rx="8"/><text x="385" y="45">judge</text><text class="val" x="385" y="62" data-val="judge">p = 0.973</text></g>
-      <g class="node" data-node="answer"><rect x="720" y="25" width="130" height="50" rx="8"/><text x="785" y="45">answer</text><text class="val pass" x="785" y="62" data-val="answer">accepted</text></g>
-      <g class="node" data-node="verify1"><rect x="330" y="190" width="110" height="56" rx="8"/><text x="385" y="211">verify</text><text class="val fail" x="385" y="230" data-val="verify1">FAIL</text></g>
-      <g class="node" data-node="sandbox"><rect x="330" y="275" width="110" height="38" rx="8"/><text x="385" y="298">execution</text></g>
-      <g class="node" data-node="27b"><rect x="500" y="190" width="100" height="56" rx="8"/><text x="550" y="211">27B</text><text class="val" x="550" y="230" data-val="27b">245</text></g>
-      <g class="node" data-node="verify2"><rect x="660" y="190" width="110" height="56" rx="8"/><text x="715" y="211">verify</text><text class="val pass" x="715" y="230" data-val="verify2">PASS</text></g>
+      <g class="node" data-node="prompt"><rect x="30" y="120" width="100" height="44" rx="8"/><text x="80" y="147">prompt</text></g>
+      <g class="node" data-node="memory"><rect x="30" y="250" width="100" height="40" rx="8"/><text x="80" y="274">memory</text></g>
+      <g class="node hub" data-node="controller"><rect x="340" y="165" width="200" height="80" rx="10"/><text x="440" y="200">controller</text><text class="sub" x="440" y="220">the loop</text></g>
+      <g class="node" data-node="35b"><rect x="170" y="40" width="120" height="54" rx="8"/><text x="230" y="63">35B</text><text class="val" x="230" y="80" data-val="35b">24.50</text></g>
+      <g class="node" data-node="judge"><rect x="590" y="40" width="120" height="54" rx="8"/><text x="650" y="63">judge</text><text class="val" x="650" y="80" data-val="judge">p = 0.973</text></g>
+      <g class="node" data-node="verify"><rect x="610" y="180" width="140" height="70" rx="8"/><text x="680" y="205">verify</text><text class="val" x="680" y="226" data-val="verify">—</text><rect x="635" y="255" width="90" height="24" rx="6" fill="none" stroke-dasharray="3 3"/><text class="sub" x="680" y="271">sandbox</text></g>
+      <g class="node" data-node="27b"><rect x="590" y="305" width="120" height="54" rx="8"/><text x="650" y="328">27B</text><text class="val" x="650" y="345" data-val="27b">245</text></g>
+      <g class="node" data-node="answer"><rect x="170" y="290" width="130" height="54" rx="8"/><text x="235" y="313">answer</text><text class="val pass" x="235" y="330" data-val="answer">accepted</text></g>
+      <g class="node" data-node="api"><rect x="770" y="300" width="90" height="38" rx="8"/><text x="815" y="323">API</text></g>
     </svg>
     <div class="legend" aria-hidden="true">
       <span><i style="background: var(--c-prompt)"></i>prompt</span>
@@ -849,23 +855,26 @@ JS = """
   }
   function stopMove() { if (moveTimer) { clearInterval(moveTimer); moveTimer = null; } }
 
-  // ---- controller: the moving diagram
+  // ---- controller: the hub and its tool calls
   const STEPS = [
-    {edge: "e-prompt", color: "var(--c-prompt)", node: "35b", reveal: "35b",
-     caption: "The prompt enters the 35B. The memory (teal) has already chosen the context."},
-    {edge: "e-35b-judge", color: "var(--c-model)", node: "judge", reveal: "judge",
-     keep: "e-judge-answer",
-     caption: "The candidate <strong>24.50</strong> reaches the judge: <strong>p = 0.973</strong>. The plausible answer would be kept (purple, dashed)."},
-    {edge: "e-verify-loop", color: "var(--c-exec)", node: "verify1", reveal: "verify1",
-     state: "fail", strikeKeep: true, sandbox: true,
-     caption: "The candidate also reaches execution: 700&times;5 + 1,400&times;15 = <strong>24,500&cent; = $245</strong>. 24.50 &ne; 245: <strong>FAIL</strong>. The judge's keep is overridden."},
-    {edge: "e-verify-27b", color: "var(--bad)", node: "27b",
-     caption: "The failure and the evidence go to the 27B: escalate with the check, not just the answer."},
-    {edge: "e-27b-verify2", color: "var(--c-model)", node: "verify2", reveal: "27b",
-     caption: "The 27B answers <strong>245</strong>."},
-    {edge: "e-verify2-answer", color: "var(--good)", node: "answer", reveal: "verify2",
-     state: "pass", answer: true,
-     caption: "The checker passes <strong>245</strong>: <strong>accepted</strong>. The judge never had the last word."}
+    {ins: [["e-prompt-ctl", "var(--c-prompt)"], ["e-mem-ctl", "var(--c-mem)"]],
+     node: "controller",
+     caption: "The controller takes the prompt and the memory context. Every call below starts and ends here - the models never talk to each other."},
+    {out: "e-ctl-35b", back: "e-35b-ctl", color: "var(--c-model)", reply: "var(--c-model)",
+     node: "35b", reveal: "35b",
+     caption: "It calls the 35B with the task and the context. The candidate comes back: <strong>24.50</strong>."},
+    {out: "e-ctl-judge", back: "e-judge-ctl", color: "var(--c-model)", reply: "var(--c-judge)",
+     node: "judge", reveal: "judge", keep: true,
+     caption: "It calls the judge. The score comes back: <strong>p = 0.973</strong>. The judge would keep it (dashed)."},
+    {out: "e-ctl-verify", back: "e-verify-ctl", color: "var(--c-exec)", reply: "var(--bad)",
+     node: "verify", reveal: "verify", state: "fail", strikeKeep: true,
+     caption: "It calls execution. 700&times;5 + 1,400&times;15 = <strong>24,500&cent; = $245</strong>; 24.50 fails. The keep path is struck."},
+    {out: "e-ctl-27b", back: "e-27b-ctl", color: "var(--c-model)", reply: "var(--c-model)",
+     node: "27b", reveal: "27b",
+     caption: "It escalates: the task, the answer and the failure go to the 27B. <strong>245</strong> comes back."},
+    {out: "e-ctl-verify", back: "e-verify-ctl", color: "var(--c-exec)", reply: "var(--good)",
+     node: "verify", reveal: "verify", state: "pass", accept: true,
+     caption: "It calls execution again: 245 passes. The controller accepts - the judge never had the last word."}
   ];
   let packetFrame = null;
 
@@ -879,9 +888,10 @@ JS = """
       e.classList.remove("active", "struck");
       e.style.stroke = "";
     });
-    stage.querySelectorAll(".node .val").forEach(function (v) { v.style.opacity = ""; });
+    const val = stage.querySelector('[data-val="verify"]');
+    if (val) { val.textContent = "\u2014"; val.classList.remove("fail", "pass"); }
     const packet = document.getElementById("packet");
-    if (packet) { packet.style.opacity = "0"; }
+    if (packet) packet.style.opacity = "0";
     const group = document.getElementById("packets");
     if (group) group.replaceChildren();
   }
@@ -940,18 +950,6 @@ JS = """
     });
   }
 
-  const BURSTS = [
-    [{edge: "e-prompt", color: "var(--c-prompt)", count: 3},
-     {edge: "e-mem", color: "var(--c-mem)", count: 2}],
-    [{edge: "e-35b-judge", color: "var(--c-model)", count: 2},
-     {edge: "e-35b-judge", color: "var(--c-judge)", reverse: true, count: 2}],
-    [{edge: "e-verify-loop", color: "var(--c-exec)", count: 2},
-     {edge: "e-verify-loop", color: "var(--bad)", reverse: true, count: 2}],
-    [{edge: "e-verify-27b", color: "var(--bad)", count: 3}],
-    [{edge: "e-27b-verify2", color: "var(--c-model)", count: 3}],
-    [{edge: "e-verify2-answer", color: "var(--good)", count: 3}]
-  ];
-
   function setRouteStep(i) {
     const stage = document.querySelector("[data-stage='controller']");
     if (!stage) return;
@@ -961,43 +959,77 @@ JS = """
     stage.querySelectorAll(".edge").forEach(function (e) {
       if (!e.classList.contains("struck")) e.classList.remove("active");
     });
+    const hub = stage.querySelector('[data-node="controller"]');
+    if (hub) hub.classList.add("active");
     const node = stage.querySelector('[data-node="' + step.node + '"]');
     if (node) {
       node.classList.add("active");
       if (step.reveal) node.classList.add("revealed");
     }
-    const edge = document.getElementById(step.edge);
-    if (edge) {
-      edge.classList.add("active");
-      edge.style.stroke = step.color;
-      travel(edge, step.color, step.sandbox ? 1250 : 750);
+    if (step.ins) {
+      step.ins.forEach(function (pair) {
+        const e = document.getElementById(pair[0]);
+        if (e) { e.classList.add("active"); e.style.stroke = pair[1]; }
+      });
+      const first = document.getElementById(step.ins[0][0]);
+      if (first) travel(first, step.ins[0][1], 850);
+      burst(step.ins.map(function (pair) {
+        return {edge: pair[0], color: pair[1], count: 2};
+      }));
+    }
+    if (step.out) {
+      const out = document.getElementById(step.out);
+      if (out) {
+        out.classList.add("active");
+        out.style.stroke = step.color;
+        travel(out, step.color, 850);
+      }
+      burst([{edge: step.out, color: step.color, count: 2},
+             {edge: step.back, color: step.reply, count: 2}]);
     }
     if (step.keep) {
-      const keep = document.getElementById(step.keep);
+      const keep = document.getElementById("e-ctl-answer-keep");
       if (keep) { keep.classList.add("active"); keep.style.stroke = "var(--c-judge)"; }
     }
     if (step.strikeKeep) {
-      const keep = document.getElementById("e-judge-answer");
+      const keep = document.getElementById("e-ctl-answer-keep");
       if (keep) { keep.classList.remove("active"); keep.classList.add("struck"); keep.style.stroke = ""; }
     }
     if (step.state === "fail") {
-      const v = stage.querySelector('[data-node="verify1"]');
-      if (v) v.classList.add("fail");
+      const v = stage.querySelector('[data-node="verify"]');
+      if (v) {
+        v.classList.add("fail");
+        const val = v.querySelector(".val");
+        if (val) { val.textContent = "FAIL"; val.classList.add("fail"); }
+      }
     }
     if (step.state === "pass") {
-      const v = stage.querySelector('[data-node="verify2"]');
-      if (v) v.classList.add("pass");
+      const v = stage.querySelector('[data-node="verify"]');
+      if (v) {
+        v.classList.remove("fail");
+        v.classList.add("pass");
+        const val = v.querySelector(".val");
+        if (val) { val.textContent = "PASS"; val.classList.remove("fail"); val.classList.add("pass"); }
+      }
+    }
+    if (step.accept) {
       const a = stage.querySelector('[data-node="answer"]');
-      if (a) { a.classList.add("revealed"); }
+      if (a) { a.classList.add("revealed"); a.classList.add("pass"); }
+      const e = document.getElementById("e-ctl-answer");
+      if (e) {
+        e.classList.add("active");
+        e.style.stroke = "var(--good)";
+        travel(e, "var(--good)", 850);
+      }
+      burst([{edge: "e-ctl-answer", color: "var(--good)", count: 3}]);
     }
     const cap = document.querySelector("[data-route-caption]");
     if (cap) cap.innerHTML = step.caption;
-    if (i === 0) heroExchange(2800);
-    burst(BURSTS[i]);
-    const hero = [["35b", "var(--c-model)"], ["judge", "var(--c-judge)"],
-                  ["verify", "var(--bad)"], ["27b", "var(--c-model)"],
-                  ["verify", "var(--good)"], ["answer", "var(--good)"]][i];
-    if (hero) heroSet(hero[0], hero[1]);
+    const heroMap = [["prompt", "var(--c-prompt)"], ["35b", "var(--c-model)"],
+                     ["judge", "var(--c-judge)"], ["verify", "var(--bad)"],
+                     ["27b", "var(--c-model)"], ["answer", "var(--good)"]];
+    const h = heroMap[i];
+    if (h) heroSet(h[0], h[1]);
   }
 
   function stopRoute() {
@@ -1014,7 +1046,7 @@ JS = """
       i += 1;
       if (i >= STEPS.length) { stopRoute(); return; }
       setRouteStep(i);
-    }, 2600);
+    }, 2800);
   }
 
   // ---- measured: animate the bars
