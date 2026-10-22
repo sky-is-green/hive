@@ -634,8 +634,8 @@ PANEL_PREMISE = """
         <p>A reader cannot see a plausible wrong answer; a check can. The
           execution checker is measured: <strong>6/7 errors, 4/4 at
           p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median. Supported
-          by the failures and the fix; the grounding path and the controller
-          loop are next.</p></div>
+          by the failures and the fix. The controller loop is measured; the
+          API-driven controller is next. Grounding is not pursued.</p></div>
       <div class="card"><h3>H4 · One loop, two levels</h3>
         <p>The membrane and the controller make the same trade - what to keep,
           what to check, when to stop. The memory level and the scripted
@@ -725,9 +725,9 @@ PANEL_CONTROLLER = """
     <div class="grid">
       <div class="card"><h3><code>ask(model, prompt)</code></h3><p>Route the
         task to a tier: the 35B (bulk), the 27B (repair), the API (residue).</p></div>
-      <div class="card"><h3><code>verify(task, answer)</code></h3><p>Execution or
-        claim-level grounding. <code>pass / fail / unknown</code>; a check that
-        cannot fail a mutation is <code>unknown</code>.</p></div>
+      <div class="card"><h3><code>verify(task, answer)</code></h3><p>Execution
+        only. <code>pass / fail / unknown</code>; a check that cannot fail a
+        mutation is <code>unknown</code>. Grounding is not pursued.</p></div>
       <div class="card"><h3><code>score(task, answer)</code></h3><p>The judge's
         <code>p(correct)</code>. Only when <code>verify</code> is unknown; it
         never overrides a check.</p></div>
@@ -811,11 +811,12 @@ PANEL_MEASURED = """
 PANEL_CHECKER = """
 <section class="tab-panel" data-panel="checker" id="checker" role="tabpanel">
   <div class="wrap">
-    <h2>The checker: two verifiers, one verdict</h2>
+    <h2>The checker: execution, measured</h2>
     <p><strong>Execution</strong> where a program can settle it (run the code,
-      recompute the arithmetic); <strong>grounding</strong> where only evidence
-      can (claims against the retrieved context, each cited). They sit behind
-      one <code>verify</code>; the log records the method.</p>
+      recompute the arithmetic). Grounding is not pursued; a claim/citation
+      verifier would duplicate the memory bench's fidelity/recall and still
+      pass wrong retrieved facts. The execution checker sits behind one
+      <code>verify</code>; the log records the method.</p>
     <p>The stage above is the falsifiability rule. A check that passes the
       candidate and fails the mutation is evidence. A check that passes both is
       <code>print("PASS")</code> - and it must be <code>unknown</code>, or a
@@ -824,14 +825,15 @@ PANEL_CHECKER = """
       <div class="card"><h3>The false-positive bar</h3><p>The 176B head set it:
         <strong>0 of 21</strong> correct answers sent up. The checker is
         scored on the 21 correct first, then on the 7 errors.</p></div>
-      <div class="card"><h3>Grounding</h3><p>For the factual remainder,
-        decompose the answer into claims and check each against the store.
-        A check that cannot cite is <code>unknown</code>.</p></div>
+      <div class="card"><h3>Attribution, not a new tier</h3><p>The memory
+        bench already has context fidelity and recall. A cheap attribution
+        check belongs there. A claim/citation verifier is not pursued.</p></div>
       <div class="card"><h3>The status</h3><p><strong>Execution: measured.</strong>
         17 pass, 6 fail, 5 unknown on the 28 tasks; the four errors at
         <code>p &ge; 0.97</code> all fail; <strong>0 of 21</strong> correct
-        answers are rejected; every pass survives a mutation. The grounding
-        verifier is implemented but not measured; the controller loop is next.</p></div>
+        answers are rejected; every pass survives a mutation. Grounding is
+        not pursued; the controller loop is measured; the API-driven controller
+        is next.</p></div>
     </div>
     <p class="small">The contract and the prior art are in
       <code>cascade/HARNESS-CONTROLLER.md</code> and

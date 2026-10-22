@@ -23,8 +23,8 @@ API tier, the scripted controller and the API-in-the-27B-slot path are measured
 (checker: 6/7 errors, 4/4 at `p >= 0.97`, 0/21 false rejects, 0.23 ms median;
 API: 28/28, 2.6 s median; scripted controller: 28/28, 7 escalations, 0/21
 correct sent up, 9.24 s mean / 17.22 s conditional; API in the 27B slot:
-28/28, 7 API escalations, 8.57 s / 14.54 s). The grounding path and the
-API-driven controller are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
+28/28, 7 API escalations, 8.57 s / 14.54 s). The API-driven controller is
+unmeasured; grounding is not pursued. The live status is in the [STATUS document](../docs/STATUS.md).
 
 **Contents**
 
@@ -77,8 +77,9 @@ Three results carry the paper:
    at 0.23 ms a verdict.
 
 What is not claimed: that this generalises beyond this class, or that the
-grounding path and the API-driven controller have been measured. They have
-not; the execution checker, the API tier and the scripted controller have.
+API-driven controller has been measured. It has not; the execution checker,
+the API tier, the scripted controller and the API slot have. Grounding is not
+pursued.
 
 ---
 
@@ -648,7 +649,6 @@ flowchart TB
     head -->|confident| serve["serve the 35B answer"]
     head -->|uncertain| kind{"what kind of error?"}
     kind -->|executable| sandbox["checker<br/>run the code or arithmetic"]
-    kind -->|grounding| ground["checker<br/>check the claims"]
     kind -->|residue| api["API<br/>the residue"]
     sandbox -->|fails| repair["27B<br/>repair with the finding"]
     ground -->|unsupported| repair
@@ -664,10 +664,9 @@ flowchart TB
     class serve ok
     class head,kind warn
     class task,small,repair,sandbox,api neutral
-    class ground design
 ```
 
-*Figure 6. The routing map. The head, the execution checker, the API tier and the scripted loop are measured; the grounding verifier and the API-driven controller are designs, not runs.*
+*Figure 6. The routing map. The head, the execution checker, the API tier and the scripted loop are measured; the API-driven controller is a design, not a run. Grounding is not pursued.*
 
 ### The two drivers
 
@@ -694,10 +693,10 @@ API-in-the-27B-slot path are measured on the 28 tasks (checker: 6/7, 4/4 at
 `p >= 0.97`, 0/21, 0.23 ms; API: 28/28, 2.6 s; scripted loop: 28/28, 7
 escalations, 0/21, 9.24 s mean / 17.22 s conditional; API slot: 28/28, 7 API,
 0/21, 8.57 s / 14.54 s; the head-only path is 24/28, 3 escalations, 10.21 s /
-17.81 s). The grounding path and the API-driven controller are not. The paid
-tier's key is expired, so the paid cost is unmeasured. The table's local rows,
-the execution checker, the API tier, the scripted controller and the API slot
-are measured; grounding and the API-driven controller are the programme.
+17.81 s). The API-driven controller is not; grounding is not pursued. The
+paid tier's key is expired, so the paid cost is unmeasured. The table's local
+rows, the execution checker, the API tier, the scripted controller and the API
+slot are measured; the API-driven controller is the programme.
 
 ## 9. What is not claimed
 
