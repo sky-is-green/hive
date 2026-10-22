@@ -59,7 +59,7 @@ one tier with no measurement.
 | [`cascade/CASCADE-PAPER.md`](../cascade/CASCADE-PAPER.md) | the method and the measured tier results |
 | [`cascade/HARNESS-CONTROLLER.md`](../cascade/HARNESS-CONTROLLER.md) | the drop-in controller contract: four tools, four invariants, the bounded loop |
 | [`cascade/CONTROLLER-PRIOR-ART.md`](../cascade/CONTROLLER-PRIOR-ART.md) | what other harnesses do for verification and routing |
-| [`splinter/SPLINTER-MEMORY.md`](../splinter/SPLINTER-MEMORY.md) | the memory system, its limits and the correction |
+| [the memory card](https://huggingface.co/SkyIsNotGreen/splinter-memory) | the memory system, its limits and the correction |
 | [`splinter/docs/ENCODER-PLAN.md`](../splinter/docs/ENCODER-PLAN.md) / [`splinter/docs/ENCODER-CARD.md`](../splinter/docs/ENCODER-CARD.md) | the encoder programme and the research checkpoint |
 
 ## The published artifacts
