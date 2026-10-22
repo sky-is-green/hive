@@ -630,7 +630,8 @@ a third order returned provider failures with zero tokens, not answers.
 Architecture alone does not explain it: the Qwen-based 35B also chose B, while
 the 27B and DeepSeek chose A. The split is choice calibration and order
 sensitivity, not a code or arithmetic gap; the six executable API tasks are
-correct and the 4/4 and 0/21 stand.
+correct and the 4/4 and 0/21 stand. The API-slot rows are one sample per
+task; the five-run stability repeat is not claimed.
 
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`
