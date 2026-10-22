@@ -1546,6 +1546,44 @@ choice the checker cannot execute, so the API-slot model decides it. Both API
 arms keep 0/21 correct sent up and 4/4 at `p >= 0.97`; the difference is one
 unverifiable choice, not an arithmetic or code difference.
 
+### Why GLM is 27/28
+
+The miss is a sampling outcome, not a stable architecture verdict. Ten
+original-order samples:
+
+| model | A (ambiguous, gold) | B (no cost) | C | D | E | empty/failed |
+|---|---|---|---|---|---|---|
+| DeepSeek V4.1 Flash Free | **10** | 0 | 0 | 0 | 0 | 0 |
+| GLM 5.3 Flash Free | 4 | 5 | 0 | 0 | 1 | 0 |
+
+The 27/28 API-slot run was one of GLM's five B samples. The checker cannot
+execute a choice, so it accepted that sample. DeepSeek is 10/10 A on the
+same wording.
+
+The choice follows content and order, not a fixed letter:
+
+| model | order | A | B | C | D | E | content note |
+|---|---|---|---|---|---|---|---|
+| DeepSeek | no-cost at A, ambiguous at B | 7 | 3 | 0 | 0 | 0 | no-cost 7; ambiguous 3 |
+| GLM | no-cost at A, ambiguous at B | 8 | 1 | 1 | 0 | 0 | no-cost 8 |
+| DeepSeek | ambiguous at C, $1000 at A | 0 | 10 | 0 | 0 | 0 | no-cost 10 |
+| GLM | ambiguous at C, $1000 at A | 0 | 0 | 0 | 0 | 0 | 10 provider failures |
+
+The last row is not a model choice: every GLM call returned
+`outcome=failed` with zero input and output tokens and no assistant content.
+The API helper now rejects an empty or failed session instead of accepting
+empty text.
+
+**What this says about architecture.** DeepSeek is Qwen-derived; the 27B is
+not, and the Qwen-based 35B also chose B on this item. Architecture alone
+does not explain the split. The usable difference is choice calibration and
+order sensitivity on an ambiguous question: DeepSeek is stable A in the
+original order; GLM prefers the literal no-cost content and is not stable;
+the 27B answers A. The six executable API tasks are correct for both models,
+and the checker's 4/4 and 0/21 are unchanged. Treat the API-slot choice as a
+sample; for unverifiable choices, aggregate over option orders or route to
+the stable local tier or a human.
+
 The DeepSeek API path serves 17 35B answers, four head-accepted unknowns,
 and seven API answers. The seven API calls are `gsm8k-0015`, `gsm8k-0033`,
 `gsm8k-0038`, `math-0016`, `humaneval-0003`, `humaneval-0015` and

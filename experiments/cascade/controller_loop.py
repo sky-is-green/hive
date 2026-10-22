@@ -96,6 +96,12 @@ def ask_api(prompt: str, model: dict[str, str] | None = None) -> dict[str, Any]:
             if part.get("type") == "text"
         ).strip()
         info = session.get(OPENCODE + f"/api/session/{sid}", timeout=30).json()["data"]
+        if info.get("outcome") != "succeeded" or not text.strip():
+            raise RuntimeError(
+                f"API session produced no answer (outcome={info.get('outcome')}, "
+                f"input={info.get('tokens', {}).get('input')}, "
+                f"output={info.get('tokens', {}).get('output')})"
+            )
         return {"text": text, "seconds": time.perf_counter() - started,
                 "tokens": info.get("tokens"), "cost": info.get("cost"),
                 "outcome": info.get("outcome")}

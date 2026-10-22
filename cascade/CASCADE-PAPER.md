@@ -623,6 +623,15 @@ throughout:
 | the API in the 27B slot (DeepSeek V4.1 Flash Free) | the whole task | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
 | the API in the 27B slot (GLM 5.3 Flash Free) | the whole task | 27/28 (0.964); 7 API escalations; **0/21** correct sent up | 7.80 s mean; 11.45 s conditional |
 
+The GLM row is one sample of an unverifiable choice. On ten original-order
+runs of `truthfulqa-0015`, DeepSeek chose A (ambiguous) 10/10; GLM chose A
+4, B (no cost) 5, E 1. A swapped order moved GLM to the no-cost option 8/10;
+a third order returned provider failures with zero tokens, not answers.
+Architecture alone does not explain it: the Qwen-based 35B also chose B, while
+the 27B and DeepSeek chose A. The split is choice calibration and order
+sensitivity, not a code or arithmetic gap; the six executable API tasks are
+correct and the 4/4 and 0/21 stand.
+
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`
 were arithmetic and code answers - a better *reader* cannot see them, and
