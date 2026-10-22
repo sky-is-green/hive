@@ -22,3 +22,9 @@ def test_number_uses_the_last_final_answer_marker():
         "the raw number of cents, it would be 24500. Final answer: 245"
     )
     assert check(task, answer)
+
+
+def test_boxed_exact_value_before_an_approximation():
+    task = {"checker": {"type": "boxed", "expect": "40/243"}}
+    answer = r"\boxed{\frac{40}{243}\approx 0.1646}"
+    assert check(task, answer)

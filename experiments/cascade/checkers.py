@@ -121,6 +121,9 @@ def check(task: dict, answer: str) -> bool:
         got = _boxed(answer)
         if got is None:
             return False
+        # An exact value followed by an approximation is still that value:
+        # \boxed{\frac{40}{243}\approx 0.1646} must compare as 40/243.
+        got = re.split(r"\\approx|≈", got)[0].strip()
         return _math_equal(got, str(spec["expect"]))
     if kind == "code":
         code = _code_block(answer)

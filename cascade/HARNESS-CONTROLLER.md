@@ -124,6 +124,7 @@ cannot do at all, and neither is a sentence in a prompt.)
 | the checker (execution + arithmetic) | the executable errors | **6/7 errors; 4/4 at p >= 0.97; 0/21 false rejects; 17/17 mutations** | **0.23 ms median; 30 ms p95** |
 | the API (free OpenCode) | what nothing local settles | 28/28 (1.000) on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 | **the scripted loop** (checker + head + 27B + API) | the whole task | **28/28; 7 escalations (5 27B, 2 API); 0/21 correct sent up** | **9.24 s mean; 17.22 s conditional** |
+| the API in the 27B slot | the whole task | **28/28; 7 API escalations; 0/21 correct sent up** | **8.57 s mean; 14.54 s conditional** |
 
 The memory decisions (dedup, drift) are a **separate lane**: the
 controller does not choose them per task, the membrane does. Their
