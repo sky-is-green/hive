@@ -123,6 +123,7 @@ cannot do at all, and neither is a sentence in a prompt.)
 | the judge (176B head) | the plausible errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
 | the checker (execution + arithmetic) | the executable errors | **6/7 errors; 4/4 at p >= 0.97; 0/21 false rejects; 17/17 mutations** | **0.23 ms median; 30 ms p95** |
 | the API (free OpenCode) | what nothing local settles | 28/28 (1.000) on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
+| **the scripted loop** (checker + head + 27B + API) | the whole task | **28/28; 7 escalations (5 27B, 2 API); 0/21 correct sent up** | **9.24 s mean; 17.22 s conditional** |
 
 The memory decisions (dedup, drift) are a **separate lane**: the
 controller does not choose them per task, the membrane does. Their
@@ -226,9 +227,8 @@ this controller on their tiers.
 - The **model-written checker branch** (a small model that writes its
   own tests) and the **grounding verifier**. The execution checker is
   built and measured; its mutation self-test is part of `verify`.
-- The **controller model** itself. The loop is written and the tools are
-  specified; the first controller can be a 4B with the tool schema, or a
-  frontier API.
+- The **controller model** itself. The scripted loop is measured; the
+  first model driver can be a 4B with the tool schema, or a frontier API.
 - The **API driver** (the paid key is expired; the API tier itself is
   measured on the free OpenCode tier).
 - The **distilled judge**: the 176B's judgements are portable in

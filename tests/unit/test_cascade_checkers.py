@@ -13,3 +13,12 @@ def test_boxed_fraction_is_unchanged():
     task = {"checker": {"type": "boxed", "expect": "-40/153"}}
     answer = r"\[\boxed{-\frac{40}{153}}\]"
     assert check(task, answer)
+
+
+def test_number_uses_the_last_final_answer_marker():
+    task = {"checker": {"type": "number", "expect": 245.0}}
+    answer = (
+        "The final answer is expected in dollars. If the question implies "
+        "the raw number of cents, it would be 24500. Final answer: 245"
+    )
+    assert check(task, answer)

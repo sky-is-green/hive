@@ -36,10 +36,10 @@
     "mutation_trials": 17,
     "mutation_caught": 17,
     "mutation_rate": 1.0,
-    "latency_median_ms": 0.225,
-    "latency_mean_ms": 5.486,
-    "latency_p95_ms": 29.568,
-    "latency_max_ms": 30.459,
+    "latency_median_ms": 0.231,
+    "latency_mean_ms": 5.479,
+    "latency_p95_ms": 29.442,
+    "latency_max_ms": 29.707,
     "head_mean_ms": 2520.0,
     "head_errors_caught": 3,
     "head_correct_sent_up": 0
@@ -56,7 +56,7 @@
       "check": "arithmetic",
       "evidence": "2 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 2.011,
+      "latency_ms": 2.234,
       "kind": "number",
       "detail": {
         "frame": {
@@ -87,7 +87,7 @@
       "check": "arithmetic",
       "evidence": "3 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.216,
+      "latency_ms": 0.221,
       "kind": "number",
       "detail": {
         "frame": {
@@ -118,7 +118,7 @@
       "check": "arithmetic",
       "evidence": "1 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.141,
+      "latency_ms": 0.155,
       "kind": "number",
       "detail": {
         "frame": {
@@ -149,7 +149,7 @@
       "check": "arithmetic",
       "evidence": "5 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.294,
+      "latency_ms": 0.295,
       "kind": "number",
       "detail": {
         "frame": {
@@ -180,7 +180,7 @@
       "check": "arithmetic",
       "evidence": "2 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.109,
+      "latency_ms": 0.11,
       "kind": "number",
       "detail": {
         "frame": {
@@ -211,7 +211,7 @@
       "check": "arithmetic",
       "evidence": "50 + 0 + 120 + 20 + 90 = 270 birds is false: 280 != 270",
       "mutated_ok": null,
-      "latency_ms": 0.108,
+      "latency_ms": 0.112,
       "kind": "number",
       "detail": {
         "frame": {
@@ -244,7 +244,7 @@
       "check": "arithmetic",
       "evidence": "5 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.224,
+      "latency_ms": 0.225,
       "kind": "number",
       "detail": {
         "frame": {
@@ -275,7 +275,7 @@
       "check": "arithmetic",
       "evidence": "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes is false: 65/2 != 32",
       "mutated_ok": null,
-      "latency_ms": 0.226,
+      "latency_ms": 0.237,
       "kind": "number",
       "detail": {
         "frame": {
@@ -308,7 +308,7 @@
       "check": "arithmetic",
       "evidence": "2 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.335,
+      "latency_ms": 0.34,
       "kind": "number",
       "detail": {
         "frame": {
@@ -339,7 +339,7 @@
       "check": "arithmetic",
       "evidence": "3 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.162,
+      "latency_ms": 0.164,
       "kind": "number",
       "detail": {
         "frame": {
@@ -370,7 +370,7 @@
       "check": "arithmetic",
       "evidence": "3 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.17,
+      "latency_ms": 0.177,
       "kind": "number",
       "detail": {
         "frame": {
@@ -401,7 +401,7 @@
       "check": "arithmetic",
       "evidence": "24500 cents = $24.50 is false: 24500 != 49/2",
       "mutated_ok": null,
-      "latency_ms": 0.175,
+      "latency_ms": 0.183,
       "kind": "number",
       "detail": {
         "frame": {
@@ -434,7 +434,7 @@
       "check": "arithmetic",
       "evidence": "2 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.266,
+      "latency_ms": 0.288,
       "kind": "boxed",
       "detail": {
         "frame": {
@@ -465,7 +465,7 @@
       "check": "arithmetic",
       "evidence": "2 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.243,
+      "latency_ms": 0.241,
       "kind": "boxed",
       "detail": {
         "frame": {
@@ -496,7 +496,7 @@
       "check": "arithmetic",
       "evidence": "1 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.18,
+      "latency_ms": 0.187,
       "kind": "boxed",
       "detail": {
         "frame": {
@@ -527,7 +527,7 @@
       "check": "arithmetic",
       "evidence": "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81} is false: 40/243 != 40/81",
       "mutated_ok": null,
-      "latency_ms": 0.464,
+      "latency_ms": 0.478,
       "kind": "boxed",
       "detail": {
         "frame": {
@@ -591,7 +591,7 @@
       "check": "arithmetic",
       "evidence": "4 equation(s) check; corrupting the first one fails it",
       "mutated_ok": true,
-      "latency_ms": 0.335,
+      "latency_ms": 0.332,
       "kind": "boxed",
       "detail": {
         "frame": {
@@ -622,7 +622,7 @@
       "check": "code_exec",
       "evidence": "tests pass; corrupting the returns fails them",
       "mutated_ok": true,
-      "latency_ms": 30.459,
+      "latency_ms": 29.458,
       "kind": "code",
       "detail": {
         "frame": {
@@ -634,7 +634,7 @@
         "sandbox": {
           "available": true,
           "rc": 0,
-          "seconds": 0.015,
+          "seconds": 0.014,
           "timeout": false
         },
         "mutation": {
@@ -660,7 +660,7 @@
       "check": "code_exec",
       "evidence": "tests pass; corrupting the returns fails them",
       "mutated_ok": true,
-      "latency_ms": 29.176,
+      "latency_ms": 29.279,
       "kind": "code",
       "detail": {
         "frame": {
@@ -698,7 +698,7 @@
       "check": "code_exec",
       "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 46, in <module>\n    check(even_odd_count)\n  File \"/tmp/work.py\", line 33, in check\n    assert candidate(-78) == (1, 1)\n           ^^^^^^^^^^^^^^\n  File \"/tmp/work.py\", line 22, in even_odd_count\n    if int(digit) % 2 == 0:\n       ^^^^^^^^^^\nValueError: invalid literal for int() with base 10: '-'",
       "mutated_ok": null,
-      "latency_ms": 14.559,
+      "latency_ms": 14.962,
       "kind": "code",
       "detail": {
         "frame": {
@@ -710,7 +710,7 @@
         "sandbox": {
           "available": true,
           "rc": 1,
-          "seconds": 0.014,
+          "seconds": 0.015,
           "timeout": false
         }
       },
@@ -731,7 +731,7 @@
       "check": "code_exec",
       "evidence": "tests pass; corrupting the returns fails them",
       "mutated_ok": true,
-      "latency_ms": 29.568,
+      "latency_ms": 29.442,
       "kind": "code",
       "detail": {
         "frame": {
@@ -769,7 +769,7 @@
       "check": "code_exec",
       "evidence": "tests pass; corrupting the returns fails them",
       "mutated_ok": true,
-      "latency_ms": 29.631,
+      "latency_ms": 29.707,
       "kind": "code",
       "detail": {
         "frame": {
@@ -781,7 +781,7 @@
         "sandbox": {
           "available": true,
           "rc": 0,
-          "seconds": 0.015,
+          "seconds": 0.014,
           "timeout": false
         },
         "mutation": {
@@ -807,7 +807,7 @@
       "check": "code_exec",
       "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 54, in <module>\n    check(make_palindrome)\n  File \"/tmp/work.py\", line 51, in check\n    assert candidate('xyx') == 'xyx'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
       "mutated_ok": null,
-      "latency_ms": 14.417,
+      "latency_ms": 14.461,
       "kind": "code",
       "detail": {
         "frame": {
@@ -840,7 +840,7 @@
       "check": "frame",
       "evidence": "choice is well formed; correctness is not executable",
       "mutated_ok": null,
-      "latency_ms": 0.111,
+      "latency_ms": 0.112,
       "kind": "choice",
       "detail": {
         "frame": {

@@ -103,12 +103,12 @@ def check(task: dict, answer: str) -> bool:
         normalized = _normalize(answer)
         return any(_normalize(e) in normalized for e in spec["expect"])
     if kind == "number":
-        marker = re.search(
+        markers = re.findall(
             r"final answer[^0-9\-+]*([-+]?\d[\d,]*(?:\.\d+)?)", answer, re.I | re.S
         )
         got = (
-            float(marker.group(1).replace(",", ""))
-            if marker
+            float(markers[-1].replace(",", ""))
+            if markers
             else _last_number(answer)
         )
         if got is None:

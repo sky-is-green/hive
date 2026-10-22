@@ -128,6 +128,7 @@ def _clean_math(text: str) -> str:
     text = re.sub(r"\\cdot|\\times", "*", text)
     text = re.sub(r"\\div", "/", text)
     text = re.sub(r"\\text\{([^{}]*)\}", r" \1 ", text)
+    text = text.replace("\\$", "$")  # escaped currency, common in display math
     return text.replace("✓", " ").replace("✔", " ").replace("…", "...")
 
 
@@ -139,6 +140,7 @@ def _side(raw: str) -> tuple[str, str | None, bool] | None:
     value = value.rstrip(" .;:,")
     value = re.sub(r"\\left|\\right", "", value)
     value = re.sub(r"\\dfrac|\\tfrac", r"\\frac", value)
+    value = value.replace("\\$", "$")
     value = re.sub(r"\\frac\{([^{}]*)\}\{([^{}]*)\}", r"((\1)/(\2))", value)
 
     unit: str | None = None

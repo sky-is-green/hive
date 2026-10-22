@@ -1422,7 +1422,7 @@ the verdict. Two executable methods ship:
 | all seven 35B errors | **6/7 fail; 1 unknown** (`truthfulqa-0015`) |
 | wrong answers passed | **0** |
 | mutation self-test | **17/17 pass verdicts caught** |
-| latency | **0.225 ms median; 5.486 ms mean; 29.568 ms p95; 30.459 ms max** |
+| latency | **0.231 ms median; 5.479 ms mean; 29.442 ms p95; 29.707 ms max** |
 | the head, for comparison | 2.52 s/verdict; 3/7 errors; 0/21 correct sent up |
 
 The checker passes 17, fails 6 and returns `unknown` for 5. The five
@@ -1440,13 +1440,76 @@ The failures are concrete. `gsm8k-0038` writes `24500 cents = $24.50`
 also catches `gsm8k-0015` and `gsm8k-0033`, the two head-caught errors,
 without being told the gold.
 
-The checker is 11,200x cheaper a verdict than the 2.52 s head on the
-median, and the expensive tail is the sandbox (30 ms p95); the arithmetic
+The checker is 10,900x cheaper a verdict than the 2.52 s head on the
+median, and the expensive tail is the sandbox (29 ms p95); the arithmetic
 path is sub-millisecond. `grounding` is implemented as a separate citation
 path (`check_grounding`) but is not measured here: these 28 tasks have no
-claim/citation surface. The controller loop is the next measurement.
+claim/citation surface. The scripted controller is §1B-nonies.
 
 Code and artifacts: `experiments/cascade/verifier.py`,
 `experiments/cascade/measure_checker.py`, and
 `experiments/cascade/results/checker-v0-20261022/report.json`; the tests are
 `tests/unit/test_cascade_verifier.py`.
+
+
+## 1B-nonies. The scripted controller: 28/28 (2026-10-22)
+
+The loop is the four-tool contract on the measured 35B/head arms, with the
+27B and API live:
+
+1. ask the 35B (the measured answer), verify it;
+2. `fail` -> 27B; `unknown` -> head `p`; if unconvincing -> 27B;
+3. verify the 27B answer; if it still fails or is unknown -> API;
+4. accept, logging every `pass` / `fail` / `unknown`, every score and every
+   escalation.
+
+The 35B and head are the campaign's measured arms, so the four `p >= 0.97`
+misses and the 0/21 correct set stay paired. The 27B is the live
+`Ternary-Bonsai-2-27B-PQ2_0` on `:8897`; the API is the free OpenCode
+DeepSeek V4.1 Flash session. Gold is applied after each decision.
+
+| the path | served | escalations | correct sent up | mean | conditional |
+|---|---|---|---|---|---|
+| the head only + live 27B/API | 24/28 (0.857) | 3: 1 27B, 2 API | **0/21** | 10.208 s | 17.810 s |
+| **the scripted checker + head + 27B + API** | **28/28 (1.000)** | **7: 5 27B, 2 API** | **0/21** | **9.238 s** | **17.217 s** |
+
+The scripted path is **+4 answers** over the head-only path, with four more
+escalations, and is **0.97 s cheaper a task on the mean** (9.24 s vs 10.21 s)
+and 0.59 s cheaper on the conditional path (17.22 s vs 17.81 s), because it
+does not run the 2.52 s head on the 17 checker passes or the six direct fails.
+The old 18.1 s figure is the head path with the recorded 27B; the live 27B/API
+head path is 17.81 s.
+
+**The checker path, item by item.** 17 35B answers pass and are served. Four
+of the five `unknown` answers are correct and the head accepts them
+(`p` 0.962-0.996); the fifth is `truthfulqa-0015` (`p = 0.4215`), the wrong
+choice. The six checker failures are all errors. The live 27B serves five of
+the seven: `gsm8k-0015`, `gsm8k-0038`, `math-0016`, `humaneval-0003`,
+`humaneval-0015`; the API serves `gsm8k-0033` (the live 27B got confused about
+the sixth side) and `truthfulqa-0015` (a choice the checker cannot execute).
+Both API answers are correct. The 0/21 holds: no correct 35B answer leaves the
+first tier.
+
+**The head-only path** sends `gsm8k-0015`, `gsm8k-0033` and
+`truthfulqa-0015` up; the live 27B fixes `gsm8k-0015`, the API fixes the other
+two; the four `p >= 0.97` errors (`gsm8k-0038`, `math-0016`,
+`humaneval-0003`, `humaneval-0015`) are accepted wrong. That is 24/28,
+3 escalations, 0/21. The 3/28 escalation target belongs to this path; the
+checker path pays four more escalations to catch those four errors and
+reaches 28/28.
+
+**Two scorer fixes found by the live run.** The live 27B writes currency as
+`\$`, which the arithmetic checker treated as unknown; normalizing escaped
+currency lets its `gsm8k-0038` answer pass. The number gold checker also took
+the *first* `Final answer` marker; the 27B answer has the phrase "the final
+answer is expected…" before the actual `Final answer: 245`, so a correct 27B
+answer was scored false. The checker now uses the **last** marker; the same
+run re-scores 28/28. The checker's own verdicts were unchanged: 4/4 at
+`p >= 0.97`, 0/21 false rejects, 17/17 mutations.
+
+Artifacts: `experiments/cascade/controller_loop.py`,
+`experiments/cascade/results/controller-20261022/report.json` and
+`steps.jsonl`; the task-checker fix is in `experiments/cascade/checkers.py`
+with tests in `tests/unit/test_cascade_checkers.py`. The scripted loop is
+measured; the **API-driven controller** (a frontier model calling the four
+tools) is not.

@@ -525,8 +525,9 @@ STAGE_CONTROLLER = """
     </div>
     <p class="caption" data-route-caption aria-live="polite"></p>
     <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
-      27B 8.92 s. The checker is measured separately at 0.23 ms median
-      (30 ms p95); the 18.1 s total is the head's path.</p>
+      27B 8.92 s. The checker is 0.23 ms median (30 ms p95). The head path is
+      18.1 s conditional; the scripted controller is 9.24 s mean / 17.22 s
+      conditional, the head-only live path 10.21 s / 17.81 s.</p>
     <p class="timing-note"><strong>It is conditional.</strong> This is the
       escalated path, not the normal one. On the 28-task run the 35B answered
       all 28; the judge sent up <strong>3</strong> - all of them errors, and
@@ -534,7 +535,9 @@ STAGE_CONTROLLER = """
       other 25 never left the first tier. The mean over the run was
       <strong>10.2 s</strong> per task (35B and judge on every task, the 27B on
       three); the expensive tier is the exception, and the gate is what keeps
-      it one.</p>
+      it one. The scripted checker path escalates <strong>7</strong>, all
+      errors, and serves <strong>28/28</strong>; the head-only path escalates
+      3 and serves 24/28.</p>
     <p class="timing-note"><strong>The 27B is a slot, not a requirement.</strong>
       It can be the API: swap it for one API call and the loop is unchanged.
       Or keep it and put the API <em>behind</em> it - escalate locally first,
@@ -542,8 +545,10 @@ STAGE_CONTROLLER = """
       table decides which; the diagram draws the API as the residue because
       that is its role. The 27B is the measured tier (<strong>+5 net</strong>).
       The execution checker is measured too: <strong>6/7 errors, 4/4 at
-      p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median. The controller
-      loop and the API-driven controller are the unmeasured parts.</p>
+      p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median, and the
+      scripted loop serves <strong>28/28</strong> with 7 escalations
+      (5 27B, 2 API), 0/21 correct sent up, 9.24 s mean / 17.22 s conditional.
+      The API-driven controller is the unmeasured part.</p>
   </div>
 """
 
@@ -626,14 +631,14 @@ PANEL_PREMISE = """
           loop are next.</p></div>
       <div class="card"><h3>H4 · One loop, two levels</h3>
         <p>The membrane and the controller make the same trade - what to keep,
-          what to check, when to stop. The memory level is measured; the controller
-          is the current work.</p></div>
+          what to check, when to stop. The memory level and the scripted
+          controller are measured; the API-driven controller is next.</p></div>
     </div>
 
     <p class="note"><strong>What follows.</strong> The next tabs are the
       evidence: the memory's encoder at work, the routing, the controller's
-      loop, the measured table, the measured checker, and the paper. The first
-      one is interactive.</p>
+      measured controller, the measured table, the measured checker, and the
+      paper. The first one is interactive.</p>
   </div>
 </section>
 """
@@ -729,7 +734,8 @@ PANEL_CONTROLLER = """
       the checker does not. This is one of the four errors at
       <code>p &ge; 0.97</code>. On the 28 tasks the checker catches 6 of 7
       errors, all 4 at that confidence, with <strong>0 of 21</strong> false
-      rejects, at 0.23 ms median.</p>
+      rejects, at 0.23 ms median. The scripted loop serves 28/28 with 7
+      escalations and 0/21 correct sent up.</p>
     <p class="note good"><strong>The loop is bounded.</strong> After a configured
       number of steps the harness removes the tools and requires a final answer:
       <code>accepted</code>, <code>escalated</code> or <code>rejected</code>. The
@@ -760,9 +766,16 @@ PANEL_MEASURED = """
         <tr><td>judge gate + 27B</td><td>23/28 (0.821); 3 escalations, all errors</td>
             <td>3 escalations</td></tr>
         <tr><td>oracle gate + 27B</td><td>27/28 (0.964)</td><td>7 escalations</td></tr>
+        <tr><td>the head + live 27B/API</td><td>24/28 (0.857); 3 escalations;
+            <strong>0/21</strong> correct sent up</td>
+            <td>10.21 s mean; 17.81 s conditional</td></tr>
         <tr><td><strong>the API (free OpenCode)</strong></td>
             <td><strong>28/28 (1.000)</strong></td>
             <td>2.6 s median; free tier</td></tr>
+        <tr><td><strong>the scripted controller (checker + head + 27B + API)</strong></td>
+            <td><strong>28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21</strong>
+            correct sent up</td>
+            <td><strong>9.24 s mean; 17.22 s conditional</strong></td></tr>
         <tr><td><strong>the checker (execution + arithmetic)</strong></td>
             <td><strong>6/7 errors; 4/4 at p &ge; 0.97; 0/21 false rejects;
             17/17 mutations</strong></td>
@@ -772,7 +785,8 @@ PANEL_MEASURED = """
     <p class="small">The 176B is the wrong shape for escalation: it is a
       judgement model, and its generation is no better than the 35B's. A 27B
       dense one is +5 net. The judge is the 176B's head; the execution checker
-      is measured. The controller loop is the missing part.</p>
+      and the scripted controller are measured. The API-driven controller is
+      the missing part.</p>
   </div>
 </section>
 """
