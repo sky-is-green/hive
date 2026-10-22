@@ -552,8 +552,10 @@ STAGE_CONTROLLER = """
       The API in the 27B slot is measured as well: DeepSeek V4.1 Flash Free is
       <strong>28/28</strong>, 7 API, 0/21, 8.57 s / 14.54 s; GLM 5.3 Flash
       Free is 27/28, 7 API, 0/21, 7.80 s / 11.45 s, missing only the
-      unverifiable `truthfulqa-0015` choice. The API-driven controller is the
-      unmeasured part.</p>
+      unverifiable `truthfulqa-0015` choice. In ten original-order samples GLM
+      chose A 4, B 5, E 1; DeepSeek chose A 10/10, so the miss is choice
+      calibration and order sensitivity, not code or arithmetic. The
+      API-driven controller is the unmeasured part.</p>
   </div>
 """
 
@@ -787,7 +789,7 @@ PANEL_MEASURED = """
             <td><strong>8.57 s mean; 14.54 s conditional</strong></td></tr>
         <tr><td>the API in the 27B slot (GLM 5.3 Flash Free)</td>
             <td>27/28 (0.964); 7 API escalations; <strong>0/21</strong>
-            correct sent up</td>
+            correct sent up; one unverifiable choice</td>
             <td>7.80 s mean; 11.45 s conditional</td></tr>
         <tr><td><strong>the checker (execution + arithmetic)</strong></td>
             <td><strong>6/7 errors; 4/4 at p &ge; 0.97; 0/21 false rejects;

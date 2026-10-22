@@ -23,6 +23,11 @@ contracts the next phase is built against.
 | **the API in the 27B slot (DeepSeek V4.1 Flash Free)** | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
 | the API in the 27B slot (GLM 5.3 Flash Free) | 27/28 (0.964); 7 API escalations; **0/21** correct sent up | 7.80 s mean; 11.45 s conditional |
 
+The GLM row is a single sample of an unverifiable multiple-choice item:
+ten original-order runs gave A 4, B 5, E 1, against DeepSeek's A 10/10. The
+miss is choice calibration and order sensitivity, not code or arithmetic;
+see `AB-RESULTS.md` §1B-decies.
+
 The latency decomposition and the resident tier are in
 `docs/AB-RESULTS.md` §1B and §1B-bis: cold 33.8 s vs 17.3 s, warm
 84.7-94.3 → 93.3-101.9 tok/s, storage traffic 54-261 MB → 0.6-2.4 MB.
