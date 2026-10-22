@@ -7,7 +7,7 @@ two papers, the systems they describe, and the harness that measures them.
 
 | the paper | what it is |
 |---|---|
-| **[Splinter Memory](splinter/SPLINTER-WHITE-PAPER.md)** | managed-decay context curation for long-horizon conversations: a bounded context, a membrane for dedup and drift, and a small encoder fleet. The [HF edition](splinter/SPLINTER-MEMORY.md) is the card; the [project](splinter/README.md) has the code. |
+| **[Splinter Memory](splinter/SPLINTER-WHITE-PAPER.md)** | managed-decay context curation for long-horizon conversations: a bounded context, a membrane for dedup and drift, and a small encoder fleet. The [HF card](https://huggingface.co/SkyIsNotGreen/splinter-memory) is the Hub edition; the [project](splinter/README.md) has the code. |
 | **[The Hive Cascade](cascade/CASCADE-PAPER.md)** | a gold-free verification-and-repair loop: solve, detect, repair, escalate. It carries the role taxonomy, the controller contract, the measured tier results, and the negative results I kept. The [visual companion](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper) walks through it. |
 
 **Two papers, one stack.** The memory decides what the model sees; the cascade

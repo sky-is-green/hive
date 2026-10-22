@@ -275,7 +275,7 @@ a single hive theme (yellow/black) across every page.
 
 | Paper | What it is |
 |---|---|
-| [`splinter/SPLINTER-MEMORY.md`](../splinter/SPLINTER-MEMORY.md) | **Long-Context Memory Curation Management** — the Splinter Memory white paper in the form the Hub reads it: the card is the paper |
+| [the Hub card](https://huggingface.co/SkyIsNotGreen/splinter-memory) | **Long-Context Memory Curation Management** — the Splinter Memory white paper in the form the Hub reads it; the long-form paper is [`splinter/SPLINTER-WHITE-PAPER.md`](../splinter/SPLINTER-WHITE-PAPER.md) |
 | [`cascade/CASCADE-PAPER.md`](../cascade/CASCADE-PAPER.md) | **The Hive Cascade** — detect → repair → escalate: the gold-free runtime contract, the role taxonomy, the measured results and the pre-registered negative result |
 
 ### The A/B campaign
