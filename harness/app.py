@@ -3868,6 +3868,12 @@ def create_app(
         from harness.stack.schema import Tier
         from harness.stack.strata import StrataLauncher
 
+        # The config is required regardless of the host's checkout, so reject
+        # its absence first; otherwise this answer depends on whether the
+        # machine happens to have a Strata sibling.
+        config = (req.config or "").strip()
+        if not config:
+            raise HTTPException(400, "a strata config profile is required")
         repo = (req.repo or _strata_repo()).strip()
         if not repo:
             raise HTTPException(400, "no strata checkout: set strata_repo in the "
@@ -3879,9 +3885,6 @@ def create_app(
             # the running engine instead of an error.
             raise HTTPException(400, f"no strata checkout at {repo!r}: the "
                                        "path must be the strata repository")
-        config = (req.config or "").strip()
-        if not config:
-            raise HTTPException(400, "a strata config profile is required")
         port = int(req.port or 8081)
         endpoint = f"http://127.0.0.1:{port}"
         # The launch baseline's resident budget: the Strata engine's resident
