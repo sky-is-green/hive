@@ -780,7 +780,7 @@ PANEL_CHECKER = """
       small checker is worse than none.</p>
     <div class="grid">
       <div class="card"><h3>The false-positive bar</h3><p>The 176B head set it:
-        <strong>0 of 21</strong> correct answers rejected. The checker is
+        <strong>0 of 21</strong> correct answers sent up. The checker is
         scored on the 21 correct first, then on the 7 errors.</p></div>
       <div class="card"><h3>Grounding</h3><p>For the factual remainder,
         decompose the answer into claims and check each against the store.
