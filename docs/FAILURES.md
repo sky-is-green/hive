@@ -298,6 +298,9 @@ entries are never rewritten — corrections are appended as `[rev <date>]` notes
 
 ## F11 — Sibling `splinter-memory` drift blocks live harness import
 
+**Update 2026-10-22:** the memory project now lives in `splinter/` in this
+repository; this entry records the sibling era.
+
 - **Category:** (c)/(d) resolved incident + open durable fix.
 - **Claim/hypothesis:** hivebench's live harness can import the sibling
   `splinter-memory` package against current `main`.

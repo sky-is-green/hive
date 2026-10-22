@@ -1,4 +1,4 @@
-# Status — 2026-10-21
+# Status — 2026-10-22
 
 **This is a research harness, not a usable product yet.** The reference
 serves are down or reserved for engine work, and the paid tier's key is
@@ -55,12 +55,12 @@ one tier with no measurement.
 
 | the document | what it is |
 |---|---|
-| `docs/AB-RESULTS.md` | the campaign's log, with the corrections and the negative results |
-| `cascade/CASCADE-PAPER.md` | the method and the measured tier results |
-| `cascade/HARNESS-CONTROLLER.md` | the drop-in controller contract: four tools, four invariants, the bounded loop |
-| `cascade/CONTROLLER-PRIOR-ART.md` | what other harnesses do for verification and routing |
-| `splinter/SPLINTER-MEMORY.md` | the memory system, its limits and the correction |
-| `splinter/docs/ENCODER-PLAN.md` / `splinter/docs/ENCODER-CARD.md` | the encoder programme and the research checkpoint |
+| [`AB-RESULTS.md`](AB-RESULTS.md) | the campaign's log, with the corrections and the negative results |
+| [`cascade/CASCADE-PAPER.md`](../cascade/CASCADE-PAPER.md) | the method and the measured tier results |
+| [`cascade/HARNESS-CONTROLLER.md`](../cascade/HARNESS-CONTROLLER.md) | the drop-in controller contract: four tools, four invariants, the bounded loop |
+| [`cascade/CONTROLLER-PRIOR-ART.md`](../cascade/CONTROLLER-PRIOR-ART.md) | what other harnesses do for verification and routing |
+| [`splinter/SPLINTER-MEMORY.md`](../splinter/SPLINTER-MEMORY.md) | the memory system, its limits and the correction |
+| [`splinter/docs/ENCODER-PLAN.md`](../splinter/docs/ENCODER-PLAN.md) / [`splinter/docs/ENCODER-CARD.md`](../splinter/docs/ENCODER-CARD.md) | the encoder programme and the research checkpoint |
 
 ## The published artifacts
 

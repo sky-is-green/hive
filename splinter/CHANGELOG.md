@@ -54,4 +54,4 @@ Initial public architecture and measurement protocol.
 ### Changed
 
 - Extracted the evaluation suite and Studio sidecar into the sibling
-  [hivebench](https://github.com/sky-is-green/hivebench) repository.
+  [Hive](https://github.com/sky-is-green/hive) repository.

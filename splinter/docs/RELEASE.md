@@ -13,7 +13,7 @@ venv/bin/python -c "import splinter"                 # facade imports clean
 venv/bin/python -m pytest <owned tests> -q           # owned tests exit 0
 ```
 
-And, from the sibling `hivebench` checkout, the offline suite:
+And, from the repository root, the offline suite:
 
 ```bash
 pytest tests/unit tests/integration -q
@@ -98,6 +98,6 @@ These are not done by the release commit; track them explicitly:
 - Rename the CI branch (`StrataMemory-test` → `SplinterMemory-test`) and update
   the `on.push.branches` filter in `.github/workflows/ci.yml` — the CI config
   and the branch must change together.
-- Rename the checkout directory and the sibling env var
-  (`STRATA_HOME` → `SPLINTER_HOME`) in the hivebench conftest once both
+- Rename the checkout directory and the env var
+  (`STRATA_HOME` → `SPLINTER_HOME`) in the root conftest once both
   checkouts move together.

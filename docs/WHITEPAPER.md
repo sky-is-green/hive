@@ -1,5 +1,9 @@
 # Ternary Bonsai Replication (TBR) — White Paper
 
+> This is the TBR/Bonsai programme white paper. The stack's two main papers
+> are [Splinter Memory](../splinter/SPLINTER-WHITE-PAPER.md) and
+> [The Hive Cascade](../cascade/CASCADE-PAPER.md).
+
 > **Status:** source of truth for the TBR programme, as of 2026-09-20.
 > **Companion:** [`docs/FAILURES.md`](FAILURES.md) — the failure register. Every
 > falsified route named here is stated in one line and carries an `F<n>` pointer

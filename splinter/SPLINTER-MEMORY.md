@@ -487,7 +487,7 @@ MIT. See `LICENSE` and `CITATION.cff` in this repository.
 @misc{splinter-memory-2026,
   title  = {Splinter Memory: A Managed-Decay Context Curation Architecture
             for Long-Horizon LLM Conversations},
-  author = {{HiveBench Studio contributors}},
+  author = {sky-is-green},
   year   = {2026},
   url    = {https://github.com/sky-is-green/hive/tree/main/splinter}
 }
