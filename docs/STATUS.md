@@ -2,8 +2,9 @@
 
 **This is a research harness, not a usable product yet.** The reference
 serves are down or reserved for engine work, and the paid tier's key is
-expired. What is published is the measurement record, the code that
-produced it and the contracts the next phase is built against.
+expired. The free OpenCode API tier is measured separately. What is
+published is the measurement record, the code that produced it and the
+contracts the next phase is built against.
 
 ## Measured (the same 28 organic tasks unless stated)
 
@@ -15,6 +16,7 @@ produced it and the contracts the next phase is built against.
 | the 176B head judging the 35B | AUC 0.864; 3 of 7 errors, **0 of 21** correct sent up | 2.52 s/verdict |
 | the judge + Bonsai | 23/28 (0.821); 3 escalations, all errors | - |
 | the oracle gate + Bonsai | 27/28 (0.964) | - |
+| **the API (free OpenCode tier)** | **28/28 (1.000)** | 2.608 s median; free tier, not a paid cost |
 
 The latency decomposition and the resident tier are in
 `docs/AB-RESULTS.md` §1B and §1B-bis: cold 33.8 s vs 17.3 s, warm
@@ -43,13 +45,15 @@ dedup decision cannot be moved; the drift threshold is the free dial.
   seven errors at `p >= 0.97`; those errors are executable.
 - the **controller loop**: the four tools, the bounded loop, the log.
   The contract is [`cascade/HARNESS-CONTROLLER.md`](../cascade/HARNESS-CONTROLLER.md).
-- the **API driver** (blocked on the key) and the **drift benchmark**
-  (being rebuilt: size-matched windows, conversation-disjoint split).
+- the **API-driven controller** (the API tier itself is measured) and the
+  **drift benchmark** (being rebuilt: size-matched windows,
+  conversation-disjoint split).
 
 ## Blocked
 
-The paid tier: the `opencode-go` key is expired, so the API arm is the
-one tier with no measurement.
+The paid tier: the `opencode-go` key is expired, so the paid API cost is
+unmeasured. The free OpenCode tier is measured at 28/28; it is not a paid
+cost measurement.
 
 ## Where to start
 

@@ -1,0 +1,616 @@
+{
+  "name": "api-frontier-opencode-free-20261022",
+  "model": "opencode/deepseek-v4.1-flash-free",
+  "agent": "build",
+  "tasks": "experiments/cascade/tasks-organic-28.json",
+  "protocol": "one fresh OpenCode session per task; the task prompt exactly; the build agent; the task checker only after the answer is fixed; sessions deleted after collection",
+  "started": "2026-10-22T02:35:36Z",
+  "results": [
+    {
+      "id": "gsm8k-0005",
+      "bucket": "reasoning",
+      "expect": 10.0,
+      "answer": "**Let the second set be \\(x\\) balls.**\n\n- First set: \\(x + 4\\)\n- Second set: \\(x\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal:\n\n\\[\nx + 4 + x + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the second set had 6 balls, and the first set had:\n\n\\[\n6 + 4 = 10\n\\]\n\n**Check:** \\(10 + 6 + 3 = 19\\) \u2713\n\nFinal answer: 10",
+      "correct": true,
+      "elapsed_s": 2.297,
+      "total_s": 2.321,
+      "tokens": {
+        "input": 77,
+        "output": 133,
+        "reasoning": 63,
+        "cache": {
+          "read": 6528,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0006",
+      "bucket": "reasoning",
+      "expect": 12.0,
+      "answer": "**Work:**\n\n- Cost of trousers: **$30**\n- Mother gave: **$6**\n- Father gave twice as much: 2 \u00d7 $6 = **$12**\n- Total received from parents: $6 + $12 = **$18**\n- Adam's contribution from savings: $30 \u2212 $18 = **$12**\n\nFinal answer: 12",
+      "correct": true,
+      "elapsed_s": 2.303,
+      "total_s": 2.364,
+      "tokens": {
+        "input": 172,
+        "output": 76,
+        "reasoning": 34,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0008",
+      "bucket": "reasoning",
+      "expect": 3000.0,
+      "answer": "**Work it out step by step:**\n\n1. Sessions per week: 2\n2. Total sessions over 6 weeks: 6 \u00d7 2 = 12 sessions\n3. Hours per session: 2\n4. Total hours: 12 \u00d7 2 = 24 hours\n5. Cost per hour: $125\n6. Total cost: 24 \u00d7 $125 = $3,000\n\nFinal answer: 3000",
+      "correct": true,
+      "elapsed_s": 2.181,
+      "total_s": 2.19,
+      "tokens": {
+        "input": 185,
+        "output": 92,
+        "reasoning": 27,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0009",
+      "bucket": "reasoning",
+      "expect": 540.0,
+      "answer": "**Step 1 \u2014 Sunday's gingerbread**\nSaturday gingerbread = 10 boxes. Sunday sold 5 more, so Sunday gingerbread = 10 + 5 = **15 boxes**.\n\n**Step 2 \u2014 Saturday's apple pie**\nSunday apple pie = 15 boxes. Saturday sold 4 fewer, so Saturday apple pie = 15 \u2212 4 = **11 boxes**.\n\n**Step 3 \u2014 Saturday's earnings**\n- Gingerbread: 10 \u00d7 $6 = $60\n- Apple pie: 11 \u00d7 $15 = $165\n- Saturday total = $225\n\n**Step 4 \u2014 Sunday's earnings**\n- Gingerbread: 15 \u00d7 $6 = $90\n- Apple pie: 15 \u00d7 $15 = $225\n- Sunday total = $315\n\n**Step 5 \u2014 Two-day total**\n$225 + $315 = $540\n\nFinal answer: 540",
+      "correct": true,
+      "elapsed_s": 2.667,
+      "total_s": 2.68,
+      "tokens": {
+        "input": 215,
+        "output": 186,
+        "reasoning": 94,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0014",
+      "bucket": "reasoning",
+      "expect": 21.0,
+      "answer": "**Work:**\n- Ann's age now: 9\n- Brother is twice her age now: 2 \u00d7 9 = 18\n- In 3 years: 18 + 3 = 21\n\nFinal answer: 21",
+      "correct": true,
+      "elapsed_s": 1.943,
+      "total_s": 1.955,
+      "tokens": {
+        "input": 235,
+        "output": 58,
+        "reasoning": 93,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0015",
+      "bucket": "reasoning",
+      "expect": 40.0,
+      "answer": "**Work:**\n\n| Day | Birds |\n|-----|-------|\n| 1\u20132 | 50 |\n| 3 | 0 |\n| 4\u20135 | 120 |\n| 6 | 20 |\n| 7 | 90 |\n\nTotal birds: 50 + 0 + 120 + 20 + 90 = **280**\n\nNumber of days: **7**\n\nAverage = 280 \u00f7 7 = **40**\n\nFinal answer: 40",
+      "correct": true,
+      "elapsed_s": 2.031,
+      "total_s": 2.04,
+      "tokens": {
+        "input": 217,
+        "output": 97,
+        "reasoning": 41,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0020",
+      "bucket": "reasoning",
+      "expect": 72.0,
+      "answer": "First child: 6 feet = 72 inches.\n\n- Second child: 72 + 2 = 74 inches\n- Third child: 74 \u2212 5 = 69 inches\n- Fourth child: 69 + 3 = 72 inches\n\nFinal answer: 72",
+      "correct": true,
+      "elapsed_s": 1.457,
+      "total_s": 1.464,
+      "tokens": {
+        "input": 6601,
+        "output": 59,
+        "reasoning": 22,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0033",
+      "bucket": "reasoning",
+      "expect": 30.0,
+      "answer": "- First side: **5 minutes**\n- Second side: \\(2 \\times 5 = 10\\) minutes\n- Third side: \\(2 \\times 5 = 10\\) minutes\n- Fourth side: \\(\\frac{1}{2} \\times 5 = 2.5\\) minutes\n- Fifth side: \\(\\frac{1}{2} \\times 5 = 2.5\\) minutes\n\nOnce the fifth side is completed, all six sides are solved, so there is no additional time for a sixth side.\n\n\\[\n5 + 10 + 10 + 2.5 + 2.5 = 30 \\text{ minutes}\n\\]\n\nFinal answer: 30 minutes",
+      "correct": true,
+      "elapsed_s": 3.849,
+      "total_s": 3.883,
+      "tokens": {
+        "input": 7242,
+        "output": 153,
+        "reasoning": 924,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0035",
+      "bucket": "reasoning",
+      "expect": 40.0,
+      "answer": "Let Peter's locker be 5 cubic inches.\n\n1. **Peter's locker is 1/4 of Zack's locker:**  \n   \\(5 = \\frac{1}{4} \\times \\text{Zack}\\)  \n   \\(\\text{Zack} = 5 \\times 4 = 20\\) cubic inches\n\n2. **Zack's locker is half of Timothy's locker:**  \n   \\(20 = \\frac{1}{2} \\times \\text{Timothy}\\)  \n   \\(\\text{Timothy} = 20 \\times 2 = 40\\) cubic inches\n\nFinal answer: 40",
+      "correct": true,
+      "elapsed_s": 2.55,
+      "total_s": 2.59,
+      "tokens": {
+        "input": 7192,
+        "output": 134,
+        "reasoning": 240,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0036",
+      "bucket": "reasoning",
+      "expect": 96.0,
+      "answer": "- Usable wood: \\(80 \\times 0.80 = 64\\) feet\n- Number of 4-foot logs: \\(64 \\div 4 = 16\\) logs\n- Number of planks: \\(16 \\times 5 = 80\\) planks\n- Money earned: \\(80 \\times \\$1.20 = \\$96\\)\n\nFinal answer: 96",
+      "correct": true,
+      "elapsed_s": 3.005,
+      "total_s": 3.024,
+      "tokens": {
+        "input": 7224,
+        "output": 86,
+        "reasoning": 417,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0037",
+      "bucket": "reasoning",
+      "expect": 10.0,
+      "answer": "Tim starts with:\n\n- Blue shoe boxes: 7\n- Red shoe boxes: 9\n\nHe uses:\n\n- 3 blue boxes, so blue boxes left: \\(7 - 3 = 4\\)\n- \\(\\frac{1}{3}\\) of the 9 red boxes: \\(\\frac{1}{3} \\times 9 = 3\\) red boxes used, so red boxes left: \\(9 - 3 = 6\\)\n\nTotal shoe boxes left:\n\n\\[\n4 + 6 = 10\n\\]\n\nFinal answer: 10",
+      "correct": true,
+      "elapsed_s": 2.339,
+      "total_s": 2.399,
+      "tokens": {
+        "input": 7210,
+        "output": 206,
+        "reasoning": 222,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "gsm8k-0038",
+      "bucket": "reasoning",
+      "expect": 245.0,
+      "answer": "**Work through the problem:**\n\n- Small coupons: 700\n- Big coupons: twice as many = 2 \u00d7 700 = 1,400\n- Postage for small coupons: 700 \u00d7 $0.05 = $35.00\n- Postage for big coupons: 1,400 \u00d7 $0.15 = $210.00\n- Total: $35.00 + $210.00 = $245.00\n\nFinal answer: 245",
+      "correct": true,
+      "elapsed_s": 2.025,
+      "total_s": 2.127,
+      "tokens": {
+        "input": 6591,
+        "output": 98,
+        "reasoning": 38,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0002",
+      "bucket": "reasoning",
+      "expect": "3600",
+      "answer": "Arrange all 8 people around a circular table first. Since rotations are considered the same, the total number of seatings is\n\n\\[\n(8-1)! = 7! = 5040.\n\\]\n\nNow count the arrangements where Alice and Bob **do** sit next to each other. Treat Alice and Bob as one block. Then we are arranging 7 units around the circle, which can be done in\n\n\\[\n(7-1)! = 6!\n\\]\n\nways. Alice and Bob can also switch places within their block in \\(2\\) ways, giving\n\n\\[\n6! \\cdot 2 = 720 \\cdot 2 = 1440.\n\\]\n\nTherefore, the number of seatings where Alice and Bob are **not** next to each other is\n\n\\[\n5040 - 1440 = 3600.\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+      "correct": true,
+      "elapsed_s": 3.613,
+      "total_s": 3.649,
+      "tokens": {
+        "input": 263,
+        "output": 194,
+        "reasoning": 144,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0006",
+      "bucket": "reasoning",
+      "expect": "-\\frac{40}{153}",
+      "answer": "\\[\n\\frac{-5}{9}\\cdot\\frac{8}{17}=\\frac{-5\\cdot 8}{9\\cdot 17}=\\frac{-40}{153}=-\\frac{40}{153}\n\\]\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+      "correct": true,
+      "elapsed_s": 1.729,
+      "total_s": 1.774,
+      "tokens": {
+        "input": 7128,
+        "output": 69,
+        "reasoning": 73,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0013",
+      "bucket": "reasoning",
+      "expect": "2",
+      "answer": "\\[\n\\frac17 = 0.\\overline{142857}\n\\]\n\nThe repeating block \\(142857\\) has length \\(6\\). Divide the position by \\(6\\):\n\n\\[\n2007 = 6\\cdot 334 + 3\n\\]\n\nSo the \\(2007^{\\text{th}}\\) digit is the same as the \\(3^{\\text{rd}}\\) digit of the repeating block.\n\nThe third digit of \\(142857\\) is \\(2\\).\n\n\\[\n\\boxed{2}\n\\]",
+      "correct": true,
+      "elapsed_s": 15.209,
+      "total_s": 15.219,
+      "tokens": {
+        "input": 6320,
+        "output": 311,
+        "reasoning": 0,
+        "cache": {
+          "read": 896,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0016",
+      "bucket": "reasoning",
+      "expect": "\\dfrac{40}{243}",
+      "answer": "We use the binomial probability formula:\n\n\\[\nP(X=k)=\\binom{n}{k}p^k(1-p)^{n-k}\n\\]\n\nHere:\n\n- \\(n=5\\) flips\n- \\(k=2\\) heads\n- \\(p=\\frac{2}{3}\\)\n- \\(1-p=\\frac{1}{3}\\)\n\nSo,\n\n\\[\nP(X=2)=\\binom{5}{2}\\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^3\n\\]\n\nCompute each part:\n\n\\[\n\\binom{5}{2}=10\n\\]\n\n\\[\n\\left(\\frac{2}{3}\\right)^2=\\frac{4}{9}\n\\]\n\n\\[\n\\left(\\frac{1}{3}\\right)^3=\\frac{1}{27}\n\\]\n\nThus,\n\n\\[\nP(X=2)=10\\cdot \\frac{4}{9}\\cdot \\frac{1}{27}\n=10\\cdot \\frac{4}{243}\n=\\frac{40}{243}\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]\n\nNumerically, this is approximately \\(0.1646\\), or about \\(16.46\\%\\).",
+      "correct": true,
+      "elapsed_s": 4.341,
+      "total_s": 4.349,
+      "tokens": {
+        "input": 257,
+        "output": 254,
+        "reasoning": 153,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0020",
+      "bucket": "reasoning",
+      "expect": "6290000",
+      "answer": "To round \\(6{,}287{,}215\\) to the nearest ten thousand, look at the thousands digit.\n\n- The ten-thousands digit is \\(8\\).\n- The thousands digit is \\(7\\), which is \\(5\\) or greater, so round up.\n\n\\[\n6{,}287{,}215 \\approx 6{,}290{,}000\n\\]\n\n\\[\n\\boxed{6{,}290{,}000}\n\\]",
+      "correct": true,
+      "elapsed_s": 4.068,
+      "total_s": 4.362,
+      "tokens": {
+        "input": 141,
+        "output": 91,
+        "reasoning": 167,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "math-0023",
+      "bucket": "reasoning",
+      "expect": "50",
+      "answer": "**Step 1 \u2014 Count all distinct arrangements of BANANA**\n\nThe word has 6 letters: B (1), A (3), N (2). Dividing by the repeated-letter permutations:\n\n\\[\n\\frac{6!}{1!\\,3!\\,2!}=\\frac{720}{6\\cdot 2}=60\n\\]\n\n**Step 2 \u2014 Count arrangements that *do* begin with B**\n\nFix B in the first position. The remaining 5 slots hold A, A, A, N, N:\n\n\\[\n\\frac{5!}{3!\\,2!}=\\frac{120}{6\\cdot 2}=10\n\\]\n\n**Step 3 \u2014 Subtract**\n\n\\[\n60-10=50\n\\]\n\nEquivalently: the first letter must be A or N. If A: \\(\\frac{5!}{2!2!}=30\\) (remaining A,A,N,N,B); if N: \\(\\frac{5!}{3!}=20\\) (remaining A,A,A,N,B). Total \\(30+20=50\\). \u2713\n\n\\[\n\\boxed{50}\n\\]",
+      "correct": true,
+      "elapsed_s": 4.495,
+      "total_s": 4.504,
+      "tokens": {
+        "input": 235,
+        "output": 235,
+        "reasoning": 127,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0001",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    \"\"\"\n    product = 1\n    found_odd = False\n\n    for digit in str(n):\n        value = int(digit)\n        if value % 2 == 1:\n            product *= value\n            found_odd = True\n\n    return product if found_odd else 0\n```",
+      "correct": true,
+      "elapsed_s": 4.332,
+      "total_s": 4.428,
+      "tokens": {
+        "input": 199,
+        "output": 97,
+        "reasoning": 177,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0002",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n    if len(s) < 3:\n        return False\n    for i in range(len(s) - 2):\n        if len({s[i], s[i + 1], s[i + 2]}) < 3:\n            return False\n    return True\n```",
+      "correct": true,
+      "elapsed_s": 4.233,
+      "total_s": 4.253,
+      "tokens": {
+        "input": 293,
+        "output": 186,
+        "reasoning": 223,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0003",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    even = 0\n    odd = 0\n    for digit in str(abs(num)):\n        if int(digit) % 2 == 0:\n            even += 1\n        else:\n            odd += 1\n    return (even, odd)\n```",
+      "correct": true,
+      "elapsed_s": 2.546,
+      "total_s": 2.574,
+      "tokens": {
+        "input": 185,
+        "output": 244,
+        "reasoning": 119,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0004",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"n must be non-negative\")\n    if n < 2:\n        return 0\n    if n == 2:\n        return 1\n\n    a, b, c = 0, 0, 1  # fibfib(0), fibfib(1), fibfib(2)\n    for _ in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n    return c\n```",
+      "correct": true,
+      "elapsed_s": 9.823,
+      "total_s": 9.844,
+      "tokens": {
+        "input": 339,
+        "output": 258,
+        "reasoning": 81,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0007",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef add_elements(arr, k):\n    return sum(x for x in arr[:k] if -99 <= x <= 99)\n```",
+      "correct": true,
+      "elapsed_s": 44.04,
+      "total_s": 44.063,
+      "tokens": {
+        "input": 6636,
+        "output": 524,
+        "reasoning": 0,
+        "cache": {
+          "read": 768,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "humaneval-0015",
+      "bucket": "code",
+      "expect": null,
+      "answer": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return string\n\n    for index in range(len(string)):\n        suffix = string[index:]\n        if is_palindrome(suffix):\n            return string + string[:index][::-1]\n\n    return string\n```",
+      "correct": true,
+      "elapsed_s": 3.424,
+      "total_s": 3.447,
+      "tokens": {
+        "input": 146,
+        "output": 192,
+        "reasoning": 204,
+        "cache": {
+          "read": 6528,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "truthfulqa-0008",
+      "bucket": "qa",
+      "expect": "A",
+      "answer": "A",
+      "correct": true,
+      "elapsed_s": 2.075,
+      "total_s": 2.082,
+      "tokens": {
+        "input": 329,
+        "output": 9,
+        "reasoning": 145,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "truthfulqa-0011",
+      "bucket": "qa",
+      "expect": "A",
+      "answer": "A",
+      "correct": true,
+      "elapsed_s": 2.867,
+      "total_s": 2.875,
+      "tokens": {
+        "input": 309,
+        "output": 11,
+        "reasoning": 230,
+        "cache": {
+          "read": 6912,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "truthfulqa-0013",
+      "bucket": "qa",
+      "expect": "A",
+      "answer": "A",
+      "correct": true,
+      "elapsed_s": 1.921,
+      "total_s": 1.929,
+      "tokens": {
+        "input": 179,
+        "output": 2,
+        "reasoning": 51,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    },
+    {
+      "id": "truthfulqa-0015",
+      "bucket": "qa",
+      "expect": "A",
+      "answer": "A",
+      "correct": true,
+      "elapsed_s": 1.809,
+      "total_s": 1.816,
+      "tokens": {
+        "input": 187,
+        "output": 2,
+        "reasoning": 32,
+        "cache": {
+          "read": 6400,
+          "write": 0
+        }
+      },
+      "cost": 0,
+      "outcome": "succeeded",
+      "error": null
+    }
+  ],
+  "summary": {
+    "n": 28,
+    "correct": 28,
+    "accuracy": 1.0,
+    "median_s": 2.608,
+    "mean_s": 4.97,
+    "max_s": 44.04,
+    "tokens_input": 66307,
+    "tokens_output": 4057,
+    "cost_usd": 0
+  },
+  "checker_correction": "math-0020 was first scored false because the boxed answer used LaTeX thousands separators: \\boxed{6{,}290{,}000}. The checker now strips {,} and commas; rescored, it is correct. The API arm is 28/28.",
+  "caveats": [
+    "Free OpenCode tier, not a paid API; it is only available inside OpenCode.",
+    "The build agent and its system prompt/tools were used; this is not a raw chat-completion endpoint.",
+    "One sample per task, default agent sampling, not the local arms T=0.7.",
+    "The API-driven controller is not measured; this is the API tier alone."
+  ]
+}

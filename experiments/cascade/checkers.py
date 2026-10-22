@@ -65,6 +65,7 @@ def _norm_math(text: str) -> str:
         ("\\left", ""), ("\\right", ""), ("\\dfrac", "\\frac"),
         ("\\tfrac", "\\frac"), ("\\,", ""), ("\\!", ""), ("\\;", ""),
         ("\\ ", ""), ("~", ""), (" ", ""), ("%", ""), ("\\%", ""),
+        ("{,}", ""), (",", ""),
     ):
         value = value.replace(source, target)
     value = re.sub(r"\\text\{([^{}]*)\}", r"\1", value)

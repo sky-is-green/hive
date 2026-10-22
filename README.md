@@ -71,8 +71,9 @@ The suite's grouped runs and the Studio are in
 The short version, from [`docs/STATUS.md`](docs/STATUS.md): the 35B and 27B
 tiers are measured; the 176B's generation is net zero; the memory's dedup
 decision is measured, and the drift benchmark is invalid and being rebuilt. The
-checker and the API driver are unmeasured. This is a research harness, not a
-product.
+API tier is measured (28/28 on the 28 tasks, 2.6 s median, free OpenCode);
+the checker and the API-driven controller are unmeasured. This is a research
+harness, not a product.
 
 ## Engine notes
 
