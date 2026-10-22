@@ -7,7 +7,7 @@ dependency-free, respect ``prefers-reduced-motion``, and the page works
 without JavaScript (all panels are present, the tabs are anchors).
 
 A static Space serves ``index.html``; the ``README.md`` is only the repo
-card. The paper itself lives in the repository (``docs/CASCADE-PAPER.md``);
+card. The paper itself lives in the repository (``cascade/CASCADE-PAPER.md``);
 this script builds the page and the card, and points at it.
 
     python scripts/hf_space.py            # render to /tmp/opencode/hf-space
@@ -21,7 +21,7 @@ from pathlib import Path
 
 SPACE = "SkyIsNotGreen/hive-cascade-paper"
 OUT = Path("/tmp/opencode/hf-space")
-GH = "https://github.com/sky-is-green/hivebench"
+GH = "https://github.com/sky-is-green/hive"
 
 CSS = """
 :root {
@@ -328,7 +328,7 @@ footer a { color: inherit; }
 
 HERO = """
 <header class="hero"><div class="wrap">
-  <div class="eyebrow"><a href="https://github.com/sky-is-green/hivebench">HiveBench Studio</a> · research preview</div>
+  <div class="eyebrow"><a href="https://github.com/sky-is-green/hive">HiveBench Studio</a> · research preview</div>
   <h1>The Hive Cascade</h1>
   <p class="lede">One loop, two levels: curate the memory, and route the
     harness. The controller is the current work.</p>
@@ -585,7 +585,7 @@ STAGE_PAPER = f"""
         bundles.</p>
     </div>
     <p class="caption">The paper is the record.
-      <a href="{GH}/blob/main/docs/CASCADE-PAPER.md">Read it on GitHub.</a></p>
+      <a href="{GH}/blob/main/cascade/CASCADE-PAPER.md">Read it on GitHub.</a></p>
   </div>
 """
 
@@ -792,8 +792,8 @@ PANEL_CHECKER = """
         controller total.</p></div>
     </div>
     <p class="small">The contract and the prior art are in
-      <code>docs/HARNESS-CONTROLLER.md</code> and
-      <code>docs/CONTROLLER-PRIOR-ART.md</code>.</p>
+      <code>cascade/HARNESS-CONTROLLER.md</code> and
+      <code>cascade/CONTROLLER-PRIOR-ART.md</code>.</p>
   </div>
 </section>
 """
@@ -808,8 +808,8 @@ PANEL_PAPER = f"""
       method, the gold-free contract, the measured tier results and their
       corrections, the negative results I kept, and the controller table.</p>
     <p class="paper-actions">
-      <a class="cta" href="{GH}/blob/main/docs/CASCADE-PAPER.md">Read the paper on GitHub</a>
-      <a class="cta ghost" href="https://raw.githubusercontent.com/sky-is-green/hivebench/main/docs/CASCADE-PAPER.md">Raw markdown</a>
+      <a class="cta" href="{GH}/blob/main/cascade/CASCADE-PAPER.md">Read the paper on GitHub</a>
+      <a class="cta ghost" href="https://raw.githubusercontent.com/sky-is-green/hive/main/cascade/CASCADE-PAPER.md">Raw markdown</a>
     </p>
     <div class="grid">
       <div class="card"><h3>The claim</h3><p>On this class, a 35B with a
@@ -836,11 +836,11 @@ LINKS = """
   <h2>Where the rest is</h2>
   <table>
     <tr><td>the code, the full results log and the corrections</td>
-        <td><a href="https://github.com/sky-is-green/hivebench">github.com/sky-is-green/hivebench</a></td></tr>
+        <td><a href="https://github.com/sky-is-green/hive">github.com/sky-is-green/hive</a></td></tr>
     <tr><td>the status: measured / invalid / unmeasured / blocked</td>
-        <td><a href="https://github.com/sky-is-green/hivebench/blob/main/docs/STATUS.md">docs/STATUS.md</a></td></tr>
+        <td><a href="https://github.com/sky-is-green/hive/blob/main/docs/STATUS.md">docs/STATUS.md</a></td></tr>
     <tr><td>the controller contract</td>
-        <td><a href="https://github.com/sky-is-green/hivebench/blob/main/docs/HARNESS-CONTROLLER.md">docs/HARNESS-CONTROLLER.md</a></td></tr>
+        <td><a href="https://github.com/sky-is-green/hive/blob/main/cascade/HARNESS-CONTROLLER.md">cascade/HARNESS-CONTROLLER.md</a></td></tr>
     <tr><td>the task sets (100 bench + 664 community)</td>
         <td><a href="https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade">SkyIsNotGreen/hive-cascade</a></td></tr>
     <tr><td>the memory system</td>
@@ -853,7 +853,7 @@ LINKS = """
 
 FOOT = f"""
 <footer><div class="wrap"><a href="https://github.com/sky-is-green">sky-is-green</a> · MIT · The paper lives at
-  <a class="ref" href="{GH}/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
+  <a class="ref" href="{GH}/blob/main/cascade/CASCADE-PAPER.md"><code>cascade/CASCADE-PAPER.md</code></a>.
 </div></footer>
 """
 
@@ -869,7 +869,7 @@ license: mit
 **A gold-free verification-and-repair loop for local language models.**
 
 This Space is the visual companion. **The paper lives in the repository:**
-[docs/CASCADE-PAPER.md]({GH}/blob/main/docs/CASCADE-PAPER.md).
+[cascade/CASCADE-PAPER.md]({GH}/blob/main/cascade/CASCADE-PAPER.md).
 
 - [The page](https://skyisnotgreen-hive-cascade-paper.static.hf.space/)
 - [The code and the results]({GH})

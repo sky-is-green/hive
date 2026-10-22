@@ -6,7 +6,7 @@ instead of the shipped 0.92 and 0.6 - keeps the same facts in the
 assembled context, at the same context size, while the two *decisions*
 the membrane makes stop being near-dead.
 
-The measurements behind the hypothesis (``docs/ENCODER-NOTES.md``): at
+The measurements behind the hypothesis (``splinter/docs/ENCODER-NOTES.md``): at
 the shipped points the duplicate test catches 4.6% of the duplicate pairs
 it should, and the topic-change test fires on almost every turn.  At the
 encoder's own best points the same decisions are 8.6x and 3.7x better.

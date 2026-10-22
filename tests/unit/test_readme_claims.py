@@ -2,7 +2,7 @@
 
 A README that says "97 operations" when the app serves 95 is a small lie
 that ages badly, and nobody notices until someone builds against it.  These
-tests read the claims out of the README and check them against the running
+tests read the claims out of the HiveBench README and check them against the running
 app: the endpoint counts, the settings index, and the command list.
 
 They fail with a message that says what to change.
@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 from harness.app import create_app
 from harness.reports import SETTINGS_INDEX
 
-README = Path(__file__).resolve().parents[2] / "README.md"
+README = Path(__file__).resolve().parents[2] / "hivebench" / "README.md"
 METHODS = ("GET", "POST", "PUT", "DELETE", "PATCH")
 
 

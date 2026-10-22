@@ -6,7 +6,7 @@ The Qwen-family encoder closest to "the generator's own space" is
 It is also 22x the drone's cost (19.6 ms a chunk against the stock
 MiniLM's 0.9 ms), so it is a quality ceiling and not a shippable drone.
 
-This is Option B of ``docs/ENCODER-PLAN.md``: **our own** Qwen-family
+This is Option B of ``splinter/docs/ENCODER-PLAN.md``: **our own** Qwen-family
 bi-encoder, trained on the harness's own traffic, with the Qwen teacher
 supplying the judgements.
 

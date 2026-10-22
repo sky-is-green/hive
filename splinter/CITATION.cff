@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software or its measurements, cite it as below."
+title: "Splinter-Memory"
+abstract: >-
+  An external, managed-decay context-curation layer for long-horizon LLM
+  conversations. Small CPU "drone" encoders score, filter, and reassemble
+  stored history into a bounded, high-relevance window per turn, so a
+  generative model performs over arbitrarily long conversations on consumer
+  hardware. Claims are stated as falsifiable predictions (P1-P11) with measured
+  verdicts and a published failure register.
+type: software
+authors:
+  - name: "sky-is-green"
+    alias: "sky-is-green"
+version: "0.1.0"
+date-released: "2026-09-22"
+license: MIT
+repository-code: "https://github.com/sky-is-green/hive/tree/main/splinter"
+url: "https://github.com/sky-is-green/hive/tree/main/splinter"
+keywords:
+  - context-management
+  - memory-management
+  - long-context
+  - retrieval
+  - llm
+  - local-inference

@@ -13,13 +13,13 @@ served, repairs what can be repaired, and escalates what cannot - using
 
 This is the paper: the method, the protocol, the measured results, and the
 negative results I kept. The code is in
-[the repository](https://github.com/sky-is-green/hivebench); the task sets and
+[the repository](https://github.com/sky-is-green/hive); the task sets and
 the run reports are in the
 [hive-cascade dataset](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade);
 the visual companion is
 [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
 The measurements are current to October 2026; the checker and the API driver
-are unmeasured. The live status is in the [STATUS document](STATUS.md).
+are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
 
 **Contents**
 
@@ -288,7 +288,7 @@ in both.
 
 The 2026-10-18 numbers above come from the 176B alone. The question the
 tiered design actually poses is *which tier does the work*, so both
-[Scion models](AB-RESULTS.md#1a-the-two-scions-head-to-head) were served at
+[Scion models](../docs/AB-RESULTS.md#1a-the-two-scions-head-to-head) were served at
 once - on one card, sharing it - and run over the same
 [28 organic tasks](../experiments/cascade/tasks-organic-28.json).
 
@@ -342,7 +342,7 @@ a single draw is a direction and not a measurement:
 
 ![The A/B arms: no verifier 64/84, the verifier alone 63/84, the verifier with repair 67/84, and the learned gate 70/84](figures/arms.svg)
 
-*Figure 3. The A/B arms. The verifier alone is a tax; the repair leg pays. The learned gate improves the number but stays off by its pre-registered rule. The full table is [`AB-RESULTS.md` §3A-3E](AB-RESULTS.md#3a-3e-the-cascades-own-arms-measured-on-the-35b).*
+*Figure 3. The A/B arms. The verifier alone is a tax; the repair leg pays. The learned gate improves the number but stays off by its pre-registered rule. The full table is [`AB-RESULTS.md` §3A-3E](../docs/AB-RESULTS.md#3a-3e-the-cascades-own-arms-measured-on-the-35b).*
 
 **A verifier on its own is a tax: -1.2 points.** It catches the wrong
 answers and, with no repair leg, they are simply not served. **The repair
@@ -372,7 +372,7 @@ same cascade, the same verifiers, the two models:
 
 ![The same answer, 42.5x the wall clock: the 35B 5.36 seconds an item, the 176B 229.67 seconds](figures/latency.svg)
 
-*Figure 4. The same answer, 42.5× the wall clock. The 35B and the 176B serve the same 0.800 on the 10 tasks; the 176B spends 42.5× the seconds. The table is [`AB-RESULTS.md` §2B](AB-RESULTS.md#2b-the-membranes-operating-points-hypothesis-h).*
+*Figure 4. The same answer, 42.5× the wall clock. The 35B and the 176B serve the same 0.800 on the 10 tasks; the 176B spends 42.5× the seconds. The table is [`AB-RESULTS.md` §2B](../docs/AB-RESULTS.md#2b-the-membranes-operating-points-hypothesis-h).*
 
 **Identical outcomes, 42.5x the wall clock.** The same served-correct
 (0.800 both), the same ledger false rejects (0 both), the same wrong-accepted (2
@@ -437,7 +437,7 @@ head at its best threshold, the same loop reaches 23/28 (3 escalations, all
 errors, none correct) against the oracle gate's 27/28; the head's four
 misses are plausible answers at `p >= 0.97`, which is why the next tier is a
 *checker*, not a better judge
-([`AB-RESULTS.md` §1B-sexies](AB-RESULTS.md#1b-sexies-the-escalation-generator-a-27b-dense-not-the-176b)).
+([`AB-RESULTS.md` §1B-sexies](../docs/AB-RESULTS.md#1b-sexies-the-escalation-generator-a-27b-dense-not-the-176b)).
 
 ![The 28-task tier results: the 176B alone 19/28, the 35B alone 21/28, the 176B head to Bonsai 23/28, the 27B alone 26/28, and the oracle to Bonsai 27/28](figures/tiers.svg)
 
@@ -503,7 +503,7 @@ off. **A negative result, pre-registered, is a result.**
 
 ### The later measurement
 
-The [A/B campaign](AB-RESULTS.md#3c-the-learned-gate-on-the-35b) (2026-10-20;
+The [A/B campaign](../docs/AB-RESULTS.md#3c-the-learned-gate-on-the-35b) (2026-10-20;
 the 35B-A3B, the same 28 organic tasks, three draws each, 84 items per arm)
 confirms it:
 
@@ -661,9 +661,9 @@ tool schema over the existing endpoints, and a sandbox the checker can
 call. Neither is a new model. The `--verdict-url` tier is already a
 judge as a service; the checker is the same shape with an executor
 behind it. The contract for the four tools, the invariants and the
-bounded loop is in [`docs/HARNESS-CONTROLLER.md`](HARNESS-CONTROLLER.md);
+bounded loop is in [`cascade/HARNESS-CONTROLLER.md`](HARNESS-CONTROLLER.md);
 the survey of what other harnesses do is in
-[`docs/CONTROLLER-PRIOR-ART.md`](CONTROLLER-PRIOR-ART.md).
+[`cascade/CONTROLLER-PRIOR-ART.md`](CONTROLLER-PRIOR-ART.md).
 
 ### What is not yet claimed
 
@@ -692,8 +692,9 @@ rows are the programme.
 ## 10. Reproduce
 
 ```bash
-git clone https://github.com/sky-is-green/hivebench
-cd hivebench && python -m pip install -r requirements-dev.txt
+git clone https://github.com/sky-is-green/hive
+cd hive && python -m pip install -r requirements-dev.txt
+python -m pip install -e splinter
 
 # the deterministic parts, no model needed
 pytest tests/unit tests/integration -q
@@ -729,8 +730,8 @@ MIT.
             verification-and-repair loop for local language models},
   author = {sky-is-green},
   year   = {2026},
-  url    = {https://github.com/sky-is-green/hivebench},
-  note   = {Paper: https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md}
+  url    = {https://github.com/sky-is-green/hive},
+  note   = {Paper: https://github.com/sky-is-green/hive/blob/main/cascade/CASCADE-PAPER.md}
 }
 ```
 
@@ -738,4 +739,4 @@ MIT.
 verdicts, the budgets and the pre-registration rules are all in the
 repository, including the ones that failed. If your hardware produces a
 different number, that is a result - open an
-[issue](https://github.com/sky-is-green/hivebench/issues) with the run bundle.
+[issue](https://github.com/sky-is-green/hive/issues) with the run bundle.

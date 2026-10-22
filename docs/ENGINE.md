@@ -158,7 +158,7 @@ Published Q2_0 numbers on a 12 GB RTX 5070 / 64 GB PC: 87.3 t/s at 1K context,
 gap is speculation (1.6-1.8x alone), CPU co-execution, prefill chunking, and
 the dispatch floor noted below. Their design validates the slot-cache thesis; the
 unshelve decision is open. Full comparison and borrow list:
-`docs/CASCADE-PILOT.md` ("Strata — the local Flash-Next engine").
+`../cascade/CASCADE-PILOT.md` ("Strata — the local Flash-Next engine").
 
 ### Strata on this box — feasibility measured (2026-10-02)
 

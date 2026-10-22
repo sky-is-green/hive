@@ -2,7 +2,7 @@
 
 The role this document is about is **not generation**. It is the layer that
 decides *who answers, what counts as done, and when to stop*: the
-controller in `docs/HARNESS-CONTROLLER.md`. The field builds this under
+controller in `HARNESS-CONTROLLER.md`. The field builds this under
 several names, and the names hide the same four-part loop.
 
 ## What the field calls the role

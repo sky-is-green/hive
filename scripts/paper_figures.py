@@ -16,7 +16,7 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[1] / "docs" / "figures"
+OUT = Path(__file__).resolve().parents[1] / "cascade" / "figures"
 
 BG = "#fbfaf8"
 INK = "#171614"

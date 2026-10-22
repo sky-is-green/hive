@@ -5,7 +5,7 @@ logic (split, summarize, checkpoint; probe, gate, commit).  This module
 supplies the Studio's side of the contract: the summarizer, the engine
 probe, the canary gate, and the switch itself.
 
-The docs (`docs/COMPACTION.md`) are explicit that the *measurement* which
+The docs (`splinter/docs/COMPACTION.md`) are explicit that the *measurement* which
 makes the gate meaningful — the mid-conversation hand-off between engines —
 is still open.  The gate implemented here is the conservative one: a
 candidate must reproduce the current engine's answer on the canary before

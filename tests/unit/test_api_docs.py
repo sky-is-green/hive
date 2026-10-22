@@ -1,4 +1,4 @@
-"""``docs/API.md`` must describe the API the Studio actually serves.
+"""``hivebench/API.md`` must describe the API the Studio actually serves.
 
 The endpoint map is hand-maintained, which means it drifts the moment an
 endpoint is added or removed.  This test walks the real app's routes and
@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 
 from harness.app import create_app
 
-DOC = Path(__file__).resolve().parents[2] / "docs" / "API.md"
+DOC = Path(__file__).resolve().parents[2] / "hivebench" / "API.md"
 ROW = re.compile(r"^\| `([A-Z]+)` \| `([^`]+)` \|", re.M)
 #: the methods the map lists
 METHODS = ("GET", "POST", "PUT", "DELETE", "PATCH")
@@ -58,7 +58,7 @@ def test_api_doc_covers_every_endpoint(routes):
     doc = _doc_map()
     missing = sorted(p for p in routes if p not in doc)
     assert not missing, (
-        "docs/API.md is missing endpoints the Studio serves: "
+        "hivebench/API.md is missing endpoints the Studio serves: "
         + ", ".join(missing)
         + " — add a row for each (or the map is a lie)"
     )
@@ -68,7 +68,7 @@ def test_api_doc_has_no_stale_endpoints(routes):
     doc = _doc_map()
     stale = sorted(p for p in doc if p not in routes)
     assert not stale, (
-        "docs/API.md documents endpoints that no longer exist: "
+        "hivebench/API.md documents endpoints that no longer exist: "
         + ", ".join(stale)
         + " — delete those rows"
     )
@@ -82,7 +82,7 @@ def test_api_doc_methods_match(routes):
         if routes[p] != doc[p]
     }
     assert not wrong, (
-        "docs/API.md has the wrong method for some endpoints "
+        "hivebench/API.md has the wrong method for some endpoints "
         "(live vs documented): " + repr(wrong)
     )
 

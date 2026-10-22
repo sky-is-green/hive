@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "splinter-memory"
+version = "0.1.0"
+description = "Splinter Memory — an external, multi-agent context-curation layer for long-horizon LLM conversations (part of the Hive stack; HiveBench evaluation suite in the parent repo)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "scikit-learn>=1.3.0",
+    "requests>=2.31.0",
+    "psutil>=5.9.0",
+    "huggingface_hub>=0.23",
+    "zstandard>=0.22",
+    "tiktoken>=0.7.0",
+    "sentence-transformers>=2.2.0",
+    "transformers>=4.36.0",
+    "torch>=2.1.0",
+]
+
+[project.optional-dependencies]
+# The standalone server (splinter/server.py): conversation loop + curated
+# OpenAI passthrough. Core library stays HTTP-free without this extra.
+serve = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+]
+
+[project.scripts]
+splinter-serve = "splinter.server:main"
+
+# Package layout: single root, flat import names preserved —
+#   splinter/ -> cortex, sieve, membrane, retention, focal, backend, auditor,
+#             locations, logs, server (splinter.__init__ is the public facade).
+# Splinter is self-contained: `pip install .[serve]` + `splinter-serve` runs the
+# full conversation loop with no host app. Host apps (hivebench/Studio, DSH)
+# plug in via splinter.server.create_app or the HTTP contract.
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["splinter*"]

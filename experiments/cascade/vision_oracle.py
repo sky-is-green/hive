@@ -28,7 +28,7 @@ Usage, from the repo root:
     .venv/bin/python experiments/cascade/vision_oracle.py --aggregate
 
 CPU-only by design.  A torch ROCm context next to Strata's HIP context has
-hard-reset this host twice (docs/CASCADE-PILOT.md), and the dGPUs' free VRAM
+hard-reset this host twice (cascade/CASCADE-PILOT.md), and the dGPUs' free VRAM
 is the 176B's resident reserve (see experiments/flashnext-perf-2026-10-17/README.md).
 
 Florence-2's remote code does not import under transformers >= 4.50 — the

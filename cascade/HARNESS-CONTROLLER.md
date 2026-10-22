@@ -9,8 +9,8 @@ same. What changes is the driver, not the system.
 
 This document is the **drop-in contract**: the tools, the invariants,
 the table and the log. Anyone can point their own controller at these
-tools, and the measurements in `docs/AB-RESULTS.md` remain the reference
-for what each tier is worth. `docs/CONTROLLER-PRIOR-ART.md` is the survey
+tools, and the measurements in `../docs/AB-RESULTS.md` remain the reference
+for what each tier is worth. `CONTROLLER-PRIOR-ART.md` is the survey
 of how other harnesses implement the same role, and which of their
 patterns this contract borrows.
 
@@ -126,7 +126,7 @@ cannot do at all, and neither is a sentence in a prompt.)
 
 The memory decisions (dedup, drift) are a **separate lane**: the
 controller does not choose them per task, the membrane does. Their
-numbers are in `docs/AB-RESULTS.md`; the drift corpus is being rebuilt
+numbers are in `../docs/AB-RESULTS.md`; the drift corpus is being rebuilt
 (2C-septies) and is not part of this table.
 
 ## The loop

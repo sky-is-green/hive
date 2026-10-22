@@ -1560,11 +1560,11 @@ so you can read and drive it through its own HTTP API:
   GET  /v1/sandbox/status     docker availability
 
 Read one with e.g. `curl -s http://127.0.0.1:8765/v1/server/status | head -c 2000`.
-To change something, POST to the matching endpoint (see docs/API.md).
+To change something, POST to the matching endpoint (see hivebench/API.md).
 
 Rules: answer from what the API actually returned - never guess the user's
 hardware, models, or settings. If an endpoint is not in the list above, say
-so and point at docs/API.md. Keep answers short and concrete.
+so and point at hivebench/API.md. Keep answers short and concrete.
 """
 
 
