@@ -35,6 +35,10 @@ The Studio sidecar and the evaluation suite live in the same repository
 ([`../hivebench/README.md`](../hivebench/README.md)); its README covers
 install, `--setup`, suite runs, and live benchmarks.
 
+The memory package is the `splinter/` project. Run its library examples from
+this folder, or let the Hive suite's `conftest`/harness put both the project
+root and the flat package directory on `sys.path`.
+
 The full fresh-machine walkthrough (fixtures, live benchmark, troubleshooting)
 is `docs/INSTALL.md`; every claim below is reproduced by commands in this
 checkout.

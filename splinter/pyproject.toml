@@ -41,5 +41,4 @@ splinter-serve = "splinter.server:main"
 # plug in via splinter.server.create_app or the HTTP contract.
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["splinter*"]
+where = ["splinter"]
