@@ -541,9 +541,8 @@ STAGE_CONTROLLER = """
       and call the API only on the case the 27B cannot settle. The controller's
       table decides which; the diagram draws the API as the residue because
       that is its role. The 27B is the measured tier (<strong>+5 net</strong>).
-      The API tier is measured too, on the free OpenCode tier:
-      <strong>28/28</strong>, 2.6 s median. The API-driven controller and the
-      paid API cost are the unmeasured parts.</p>
+      The API tier is measured too: <strong>28/28</strong>, 2.6 s median.
+      The API-driven controller is the unmeasured part.</p>
   </div>
 """
 
