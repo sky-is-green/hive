@@ -19,11 +19,12 @@ the run reports are in the
 the visual companion is
 [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
 The measurements are current to October 2026; the execution checker, the
-API tier and the scripted controller are measured (checker: 6/7 errors, 4/4 at
-`p >= 0.97`, 0/21 false rejects, 0.23 ms median; API: 28/28, 2.6 s median;
-scripted controller: 28/28, 7 escalations, 0/21 correct sent up, 9.24 s mean /
-17.22 s conditional). The grounding path and the API-driven controller are
-unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
+API tier, the scripted controller and the API-in-the-27B-slot path are measured
+(checker: 6/7 errors, 4/4 at `p >= 0.97`, 0/21 false rejects, 0.23 ms median;
+API: 28/28, 2.6 s median; scripted controller: 28/28, 7 escalations, 0/21
+correct sent up, 9.24 s mean / 17.22 s conditional; API in the 27B slot:
+28/28, 7 API escalations, 8.57 s / 14.54 s). The grounding path and the
+API-driven controller are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
 
 **Contents**
 
@@ -619,6 +620,7 @@ throughout:
 | the API (free OpenCode) | what nothing local settles | **28/28 (1.000)** on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 | the head only + live 27B/API | the whole task | 24/28; 3 escalations; **0/21** correct sent up | 10.21 s mean; 17.81 s conditional |
 | **the scripted controller** (checker + head + 27B + API) | the whole task | **28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21** correct sent up | **9.24 s mean; 17.22 s conditional** |
+| the API in the 27B slot | the whole task | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
 
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`
@@ -676,13 +678,14 @@ the survey of what other harnesses do is in
 
 ### What is not yet claimed
 
-The execution checker, the API tier and the scripted controller are measured
-on the 28 tasks (checker: 6/7, 4/4 at `p >= 0.97`, 0/21, 0.23 ms; API:
-28/28, 2.6 s; scripted loop: 28/28, 7 escalations, 0/21, 9.24 s mean /
-17.22 s conditional; the head-only path is 24/28, 3 escalations, 10.21 s /
-17.81 s). The grounding path and the API-driven controller are not. The
-paid tier's key is expired, so the paid cost is unmeasured. The table's
-local rows, the execution checker, the API tier and the scripted controller
+The execution checker, the API tier, the scripted controller and the
+API-in-the-27B-slot path are measured on the 28 tasks (checker: 6/7, 4/4 at
+`p >= 0.97`, 0/21, 0.23 ms; API: 28/28, 2.6 s; scripted loop: 28/28, 7
+escalations, 0/21, 9.24 s mean / 17.22 s conditional; API slot: 28/28, 7 API,
+0/21, 8.57 s / 14.54 s; the head-only path is 24/28, 3 escalations, 10.21 s /
+17.81 s). The grounding path and the API-driven controller are not. The paid
+tier's key is expired, so the paid cost is unmeasured. The table's local rows,
+the execution checker, the API tier, the scripted controller and the API slot
 are measured; grounding and the API-driven controller are the programme.
 
 ## 9. What is not claimed

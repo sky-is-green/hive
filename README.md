@@ -74,9 +74,10 @@ decision is measured, and the drift benchmark is invalid and being rebuilt. The
 API tier is measured (28/28 on the 28 tasks, 2.6 s median, free OpenCode), so
 is the execution checker (6/7 errors, 4/4 at p >= 0.97, 0/21 false rejects,
 0.23 ms median), and so is the scripted controller (28/28, 7 escalations,
-0/21 correct sent up, 9.24 s mean / 17.22 s conditional). The grounding path
-and the API-driven controller are unmeasured. This is a research harness, not
-a product.
+0/21 correct sent up, 9.24 s mean / 17.22 s conditional), and the
+API-in-the-27B-slot path (28/28, 7 API escalations, 0/21, 8.57 s / 14.54 s).
+The grounding path and the API-driven controller are unmeasured. This is a
+research harness, not a product.
 
 ## Engine notes
 

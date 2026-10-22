@@ -527,7 +527,8 @@ STAGE_CONTROLLER = """
     <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
       27B 8.92 s. The checker is 0.23 ms median (30 ms p95). The head path is
       18.1 s conditional; the scripted controller is 9.24 s mean / 17.22 s
-      conditional, the head-only live path 10.21 s / 17.81 s.</p>
+      conditional, the API-in-the-27B-slot 8.57 s / 14.54 s, the head-only
+      live path 10.21 s / 17.81 s.</p>
     <p class="timing-note"><strong>It is conditional.</strong> This is the
       escalated path, not the normal one. On the 28-task run the 35B answered
       all 28; the judge sent up <strong>3</strong> - all of them errors, and
@@ -548,7 +549,9 @@ STAGE_CONTROLLER = """
       p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median, and the
       scripted loop serves <strong>28/28</strong> with 7 escalations
       (5 27B, 2 API), 0/21 correct sent up, 9.24 s mean / 17.22 s conditional.
-      The API-driven controller is the unmeasured part.</p>
+      The API in the 27B slot is measured as well: <strong>28/28</strong>,
+      7 API escalations, 0/21, 8.57 s / 14.54 s. The API-driven controller is
+      the unmeasured part.</p>
   </div>
 """
 
@@ -776,6 +779,10 @@ PANEL_MEASURED = """
             <td><strong>28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21</strong>
             correct sent up</td>
             <td><strong>9.24 s mean; 17.22 s conditional</strong></td></tr>
+        <tr><td><strong>the API in the 27B slot</strong></td>
+            <td><strong>28/28 (1.000); 7 API escalations; 0/21</strong>
+            correct sent up</td>
+            <td><strong>8.57 s mean; 14.54 s conditional</strong></td></tr>
         <tr><td><strong>the checker (execution + arithmetic)</strong></td>
             <td><strong>6/7 errors; 4/4 at p &ge; 0.97; 0/21 false rejects;
             17/17 mutations</strong></td>

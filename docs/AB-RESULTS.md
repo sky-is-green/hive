@@ -1513,3 +1513,39 @@ Artifacts: `experiments/cascade/controller_loop.py`,
 with tests in `tests/unit/test_cascade_checkers.py`. The scripted loop is
 measured; the **API-driven controller** (a frontier model calling the four
 tools) is not.
+
+## 1B-decies. The API in the 27B slot (2026-10-22)
+
+The same scripted controller, with the escalation slot changed: the six
+checker failures and the one head-rejected choice go straight to the live
+free OpenCode API. No local 27B is loaded. The 35B and head remain the
+measured campaign arms; gold is applied after each decision.
+
+| the 27B slot | served | escalations | correct sent up | mean | conditional | total |
+|---|---|---|---|---|---|---|
+| Bonsai 27B + API | **28/28** | 7: 5 27B, 2 API | **0/21** | **9.238 s** | **17.217 s** | 258.67 s |
+| **API only** | **28/28** | **7 API** | **0/21** | **8.570 s** | **14.542 s** | **239.96 s** |
+
+The API path is **0.67 s cheaper a task on the mean**, **2.68 s cheaper on
+the conditional path**, and **18.7 s cheaper over the run**. It is also one
+less moving part locally: no 27B, no second model to keep warm. The price is
+seven API calls instead of two; the free tier is $0 here, and the paid cost
+is not measured.
+
+The API path serves 17 35B answers, four head-accepted unknowns, and seven
+API answers. The seven API calls are `gsm8k-0015`, `gsm8k-0033`,
+`gsm8k-0038`, `math-0016`, `humaneval-0003`, `humaneval-0015` and
+`truthfulqa-0015`; all seven are correct. The 0/21 holds, and the checker's
+4/4 and 0/21 false rejects are unchanged.
+
+**One more scoring edge.** The API's `math-0016` ends
+`\boxed{\frac{40}{243}\approx 0.1646}`. The value is exact before the
+approximation, but the boxed checker compared the whole string. It now splits
+on `\approx` and compares `40/243`; the API path is 28/28. The controller's
+execution verdict was already `pass`; this was a gold-scoring bug, not a
+checker miss.
+
+Artifacts: `experiments/cascade/api_replaces_27b.py` and
+`experiments/cascade/results/controller-20261022/api-replaces-27b.json`; the
+boxed fix is in `experiments/cascade/checkers.py` with
+`tests/unit/test_cascade_checkers.py`.

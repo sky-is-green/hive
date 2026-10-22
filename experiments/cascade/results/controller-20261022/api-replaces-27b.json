@@ -1,0 +1,1994 @@
+{
+  "name": "api-replaces-27b-20261022",
+  "protocol": "same measured 35B/head arms and checker; checker fail or unconvincing head score goes directly to the live free OpenCode API; no 27B; gold post hoc",
+  "threshold": 0.65,
+  "summary": {
+    "policy": "checker-api (API replaces 27B)",
+    "n": 28,
+    "correct": 28,
+    "accuracy": 1.0,
+    "correct_35b": 21,
+    "escalations": 7,
+    "api_calls": 7,
+    "api_ids": [
+      "gsm8k-0015",
+      "gsm8k-0033",
+      "gsm8k-0038",
+      "math-0016",
+      "humaneval-0003",
+      "humaneval-0015",
+      "truthfulqa-0015"
+    ],
+    "served_by": {
+      "35B": 17,
+      "API": 7,
+      "35B+head": 4
+    },
+    "correct_sent_up": 0,
+    "correct_sent_up_ids": [],
+    "p97_total": 4,
+    "p97_caught": 4,
+    "p97_ids": [
+      "gsm8k-0038",
+      "math-0016",
+      "humaneval-0003",
+      "humaneval-0015"
+    ],
+    "false_rejects": 0,
+    "wrong_served_by_35b": 0,
+    "mean_ms": 8570.022,
+    "median_ms": 7989.292,
+    "p95_ms": 15220.745,
+    "conditional_ms": 14541.683,
+    "total_s": 239.96
+  },
+  "rows": [
+    {
+      "id": "gsm8k-0005",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.99957,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 1.868,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "10",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 8165.9,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 8167.768
+    },
+    {
+      "id": "gsm8k-0006",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.996643,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "3 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.272,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "12",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 3,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 3009.6,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 3009.872
+    },
+    {
+      "id": "gsm8k-0008",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.993213,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "1 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.146,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "3000",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 1,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 3866.5,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 3866.646
+    },
+    {
+      "id": "gsm8k-0009",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.87308,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "5 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.298,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "540",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 5,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5861.5,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 5861.798
+    },
+    {
+      "id": "gsm8k-0014",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.993479,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.111,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "21",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 2372.9,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 2373.011
+    },
+    {
+      "id": "gsm8k-0015",
+      "bucket": "reasoning",
+      "gold35": false,
+      "head_p": 0.644506,
+      "p97": false,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "50 + 0 + 120 + 20 + 90 = 270 birds is false: 280 != 270",
+        "mutated_ok": null,
+        "latency_ms": 0.114,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "38.57",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 1,
+            "bad": [
+              "50 + 0 + 120 + 20 + 90 = 270 birds"
+            ]
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.307,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "40",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "**Step 1 \u2014 Add up all the birds Mack saw:**\n\n- Days 1\u20132: 50\n- Day 3: 0\n- Days 4\u20135: 120\n- Day 6: 20\n- Day 7: 90\n\nTotal = 50 + 0 + 120 + 20 + 90 = **280 birds**\n\n**Step 2 \u2014 Count the days:** 7 days\n\n**Step 3 \u2014 Divide the total by the number of days:**\n\n280 \u00f7 7 = **40**\n\nMack saw an average of 40 birds per day.\n\nFinal answer: 40",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 8530.2,
+      "t_head_ms": 0.0,
+      "t_api_ms": 2330.48,
+      "total_ms": 10860.794
+    },
+    {
+      "id": "gsm8k-0020",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.998871,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "5 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.315,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "72",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 5,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 3449.3,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 3449.615
+    },
+    {
+      "id": "gsm8k-0033",
+      "bucket": "reasoning",
+      "gold35": false,
+      "head_p": 0.444093,
+      "p97": false,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes is false: 65/2 != 32",
+        "mutated_ok": null,
+        "latency_ms": 0.301,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "32",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 5,
+            "bad": [
+              "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes"
+            ]
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "1 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.28,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "30",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 1,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "- First side: 5 minutes\n- Second and third sides: \\(2 \\times 5 = 10\\) minutes each, so \\(10 + 10 = 20\\) minutes\n- The last two sides needed are the 4th and 5th sides; the 6th is automatically solved once the 5th is done. Each takes half as long as the first: \\(5 \\div 2 = 2.5\\) minutes each, so \\(2.5 + 2.5 = 5\\) minutes\n\nTotal:\n\n\\[\n5 + 10 + 10 + 2.5 + 2.5 = 30\n\\]\n\nFinal answer: 30",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5687.5,
+      "t_head_ms": 0.0,
+      "t_api_ms": 6501.662,
+      "total_ms": 12189.463
+    },
+    {
+      "id": "gsm8k-0035",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.998881,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.354,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "40",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5706.8,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 5707.154
+    },
+    {
+      "id": "gsm8k-0036",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.998998,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "3 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.171,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "96",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 3,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5404.1,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 5404.271
+    },
+    {
+      "id": "gsm8k-0037",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.982621,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "3 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.184,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "10",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 3,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 4163.6,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 4163.784
+    },
+    {
+      "id": "gsm8k-0038",
+      "bucket": "reasoning",
+      "gold35": false,
+      "head_p": 0.9728,
+      "p97": true,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "24500 cents = $24.50 is false: 24500 != 49/2",
+        "mutated_ok": null,
+        "latency_ms": 0.189,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "24.50",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 5,
+            "bad": [
+              "24500 cents = $24.50"
+            ]
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "4 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.357,
+        "kind": "number",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "number",
+            "value": "245",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 4,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "**Work:**\n\n- Small coupons: 700\n- Big coupons: twice as many = 2 \u00d7 700 = 1,400\n- Postage for small coupons: 700 \u00d7 $0.05 = $35\n- Postage for big coupons: 1,400 \u00d7 $0.15 = $210\n- Total: $35 + $210 = $245\n\nFinal answer: 245",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 6262.8,
+      "t_head_ms": 0.0,
+      "t_api_ms": 2942.353,
+      "total_ms": 9205.342
+    },
+    {
+      "id": "math-0002",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.996054,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.3,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "3600",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 9774.4,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 9774.7
+    },
+    {
+      "id": "math-0006",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.988087,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.258,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "\\dfrac{-40}{153}",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5354.4,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 5354.658
+    },
+    {
+      "id": "math-0013",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.998371,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "1 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.267,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "2",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 1,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 6074.6,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 6074.867
+    },
+    {
+      "id": "math-0016",
+      "bucket": "reasoning",
+      "gold35": false,
+      "head_p": 0.989653,
+      "p97": true,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81} is false: 40/243 != 40/81",
+        "mutated_ok": null,
+        "latency_ms": 0.529,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "\\dfrac{40}{81}",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 4,
+            "bad": [
+              "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81}"
+            ]
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "2 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.603,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "\\frac{40}{243}\\approx 0.1646",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 2,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "This is a binomial probability problem with:\n\n- Number of trials: \\(n=5\\)\n- Number of successes (heads): \\(k=2\\)\n- Probability of heads: \\(p=\\frac{2}{3}\\)\n- Probability of tails: \\(1-p=\\frac{1}{3}\\)\n\nThe binomial probability formula is\n\n\\[\nP(X=k)=\\binom{n}{k}p^k(1-p)^{n-k}.\n\\]\n\nSubstitute the values:\n\n\\[\nP(X=2)=\\binom{5}{2}\\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^{5-2}.\n\\]\n\nCompute each part:\n\n\\[\n\\binom{5}{2}=\\frac{5!}{2!\\,3!}=10,\n\\]\n\n\\[\n\\left(\\frac{2}{3}\\right)^2=\\frac{4}{9},\n\\qquad\n\\left(\\frac{1}{3}\\right)^3=\\frac{1}{27}.\n\\]\n\nThus,\n\n\\[\nP(X=2)=10\\cdot \\frac{4}{9}\\cdot \\frac{1}{27}\n=10\\cdot \\frac{4}{243}\n=\\frac{40}{243}.\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}\\approx 0.1646}\n\\]\n\nSo the probability of getting exactly two heads is approximately \\(16.46\\%\\).",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 8328.2,
+      "t_head_ms": 0.0,
+      "t_api_ms": 7154.375,
+      "total_ms": 15483.104
+    },
+    {
+      "id": "math-0020",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.962175,
+      "p97": false,
+      "v35": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "no checkable arithmetic equation in the answer",
+        "mutated_ok": null,
+        "latency_ms": 0.016,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "6290000",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 0,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B+head",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5290.8,
+      "t_head_ms": 2520.0,
+      "t_api_ms": 0.0,
+      "total_ms": 7810.816
+    },
+    {
+      "id": "math-0023",
+      "bucket": "reasoning",
+      "gold35": true,
+      "head_p": 0.998721,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "arithmetic",
+        "evidence": "4 equation(s) check; corrupting the first one fails it",
+        "mutated_ok": true,
+        "latency_ms": 0.392,
+        "kind": "boxed",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "boxed",
+            "value": "50",
+            "reason": ""
+          },
+          "equations": {
+            "checked": 4,
+            "bad": []
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 9307.6,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 9307.992
+    },
+    {
+      "id": "humaneval-0001",
+      "bucket": "code",
+      "gold35": true,
+      "head_p": 0.998959,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 32.627,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    digits_str = str(n)\n    odd_digits = [int(d) for d in digits_str if int(d) % 2 == 1]\n    if not odd_digits:\n        return 0\n    result = 1\n    for d in odd_digits:\n        result *= d\n    return result",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.016,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 4225.6,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 4258.227
+    },
+    {
+      "id": "humaneval-0002",
+      "bucket": "code",
+      "gold35": true,
+      "head_p": 0.997821,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 30.362,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n    if len(s) < 3:\n        return False\n    for i in range(len(s) - 2):\n        if s[i] == s[i+1] or s[i] == s[i+2] or s[i+1] == s[i+2]:\n            return False\n    return True",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.015,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 4498.7,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 4529.062
+    },
+    {
+      "id": "humaneval-0003",
+      "bucket": "code",
+      "gold35": false,
+      "head_p": 0.970232,
+      "p97": true,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 46, in <module>\n    check(even_odd_count)\n  File \"/tmp/work.py\", line 33, in check\n    assert candidate(-78) == (1, 1)\n           ^^^^^^^^^^^^^^\n  File \"/tmp/work.py\", line 22, in even_odd_count\n    if int(digit) % 2 == 0:\n       ^^^^^^^^^^\nValueError: invalid literal for int() with base 10: '-'",
+        "mutated_ok": null,
+        "latency_ms": 15.453,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    digits = str(num)\n    even_count = 0\n    odd_count = 0\n    \n    for digit in digits:\n        if int(digit) % 2 == 0:\n            even_count += 1\n        else:\n            odd_count += 1\n    \n    return (even_count, odd_count)",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 1,
+            "seconds": 0.015,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 32.429,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    even = odd = 0\n\n    for digit in str(abs(num)):\n        if int(digit) % 2 == 0:\n            even += 1\n        else:\n            odd += 1\n\n    return even, odd",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.016,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "```python\ndef even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    even = odd = 0\n\n    for digit in str(abs(num)):\n        if int(digit) % 2 == 0:\n            even += 1\n        else:\n            odd += 1\n\n    return even, odd\n```",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5470.0,
+      "t_head_ms": 0.0,
+      "t_api_ms": 9735.292,
+      "total_ms": 15220.745
+    },
+    {
+      "id": "humaneval-0004",
+      "bucket": "code",
+      "gold35": true,
+      "head_p": 0.99228,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 30.88,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n <= 0:\n        return 0\n    if n == 1:\n        return 0\n    if n == 2:\n        return 1\n    # Build the sequence iteratively up to n\n    fibfib_seq = [0, 0, 1]  # fibfib(0), fibfib(1), fibfib(2)\n    for i in range(3, n + 1):\n        fibfib_seq.append(fibfib_seq[i - 1] + fibfib_seq[i - 2] + fibfib_seq[i - 3])\n    return fibfib_seq[n]",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.015,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 13355.9,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 13386.78
+    },
+    {
+      "id": "humaneval-0007",
+      "bucket": "code",
+      "gold35": true,
+      "head_p": 0.998851,
+      "p97": false,
+      "v35": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 31.182,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    total = 0\n    for i in range(k):\n        if len(str(arr[i])) <= 2:\n            total += arr[i]\n    return total",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.015,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 9890.2,
+      "t_head_ms": 0.0,
+      "t_api_ms": 0.0,
+      "total_ms": 9921.382
+    },
+    {
+      "id": "humaneval-0015",
+      "bucket": "code",
+      "gold35": false,
+      "head_p": 0.997934,
+      "p97": true,
+      "v35": {
+        "verdict": "fail",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 54, in <module>\n    check(make_palindrome)\n  File \"/tmp/work.py\", line 51, in check\n    assert candidate('xyx') == 'xyx'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+        "mutated_ok": null,
+        "latency_ms": 15.108,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return string\n    \n    n = len(string)\n    for i in range(n - 1, -1, -1):\n        suffix = string[i:]\n        if is_palindrome(suffix):\n            prefix = string[:i]\n            return string + prefix[::-1]\n    \n    return string + string[::-1]",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 1,
+            "seconds": 0.015,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "pass",
+        "method": "execution",
+        "check": "code_exec",
+        "evidence": "tests pass; corrupting the returns fails them",
+        "mutated_ok": true,
+        "latency_ms": 31.701,
+        "kind": "code",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "code",
+            "code": "def is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return string\n\n    for i in range(len(string)):\n        suffix = string[i:]\n        if is_palindrome(suffix):\n            return string + string[:i][::-1]\n\n    return string",
+            "reason": ""
+          },
+          "sandbox": {
+            "available": true,
+            "rc": 0,
+            "seconds": 0.016,
+            "timeout": false
+          },
+          "mutation": {
+            "available": true,
+            "rc": 1,
+            "timeout": false
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    if not string:\n        return string\n\n    for i in range(len(string)):\n        suffix = string[i:]\n        if is_palindrome(suffix):\n            return string + string[:i][::-1]\n\n    return string\n```",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 21219.2,
+      "t_head_ms": 0.0,
+      "t_api_ms": 9790.788,
+      "total_ms": 31025.096
+    },
+    {
+      "id": "truthfulqa-0008",
+      "bucket": "qa",
+      "gold35": true,
+      "head_p": 0.998659,
+      "p97": false,
+      "v35": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "frame",
+        "evidence": "choice is well formed; correctness is not executable",
+        "mutated_ok": null,
+        "latency_ms": 0.116,
+        "kind": "choice",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "choice",
+            "value": "A",
+            "reason": ""
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B+head",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 6345.5,
+      "t_head_ms": 2520.0,
+      "t_api_ms": 0.0,
+      "total_ms": 8865.616
+    },
+    {
+      "id": "truthfulqa-0011",
+      "bucket": "qa",
+      "gold35": true,
+      "head_p": 0.995425,
+      "p97": false,
+      "v35": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "frame",
+        "evidence": "choice is well formed; correctness is not executable",
+        "mutated_ok": null,
+        "latency_ms": 0.004,
+        "kind": "choice",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "choice",
+            "value": "A",
+            "reason": ""
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B+head",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 5797.8,
+      "t_head_ms": 2520.0,
+      "t_api_ms": 0.0,
+      "total_ms": 8317.804
+    },
+    {
+      "id": "truthfulqa-0013",
+      "bucket": "qa",
+      "gold35": true,
+      "head_p": 0.995987,
+      "p97": false,
+      "v35": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "frame",
+        "evidence": "choice is well formed; correctness is not executable",
+        "mutated_ok": null,
+        "latency_ms": 0.002,
+        "kind": "choice",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "choice",
+            "value": "A",
+            "reason": ""
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": null,
+      "a_api": null,
+      "routed": "35B+head",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 6043.0,
+      "t_head_ms": 2520.0,
+      "t_api_ms": 0.0,
+      "total_ms": 8563.002
+    },
+    {
+      "id": "truthfulqa-0015",
+      "bucket": "qa",
+      "gold35": false,
+      "head_p": 0.421515,
+      "p97": false,
+      "v35": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "frame",
+        "evidence": "choice is well formed; correctness is not executable",
+        "mutated_ok": null,
+        "latency_ms": 0.002,
+        "kind": "choice",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "choice",
+            "value": "B",
+            "reason": ""
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "v_api": {
+        "verdict": "unknown",
+        "method": "execution",
+        "check": "frame",
+        "evidence": "choice is well formed; correctness is not executable",
+        "mutated_ok": null,
+        "latency_ms": 0.009,
+        "kind": "choice",
+        "detail": {
+          "frame": {
+            "ok": true,
+            "kind": "choice",
+            "value": "A",
+            "reason": ""
+          }
+        },
+        "grounding": {
+          "verdict": "not_applicable",
+          "claims": 0,
+          "uncited": []
+        }
+      },
+      "a_api": "A",
+      "routed": "API",
+      "gold_final": true,
+      "correct_sent_up": false,
+      "t35_ms": 3491.0,
+      "t_head_ms": 2520.0,
+      "t_api_ms": 1796.238,
+      "total_ms": 7807.24
+    }
+  ],
+  "steps": [
+    {
+      "task": "gsm8k-0005",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0005",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0006",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "3 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0006",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0008",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "1 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0008",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0009",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "5 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0009",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0014",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0014",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0015",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "arithmetic",
+      "evidence": "50 + 0 + 120 + 20 + 90 = 270 birds is false: 280 != 270"
+    },
+    {
+      "task": "gsm8k-0015",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "gsm8k-0015",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it",
+      "seconds": 2.33,
+      "tokens": {
+        "input": 89,
+        "output": 131,
+        "reasoning": 33,
+        "cache": {
+          "read": 6528,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "gsm8k-0015",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0020",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "5 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0020",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0033",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "arithmetic",
+      "evidence": "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes is false: 65/2 != 32"
+    },
+    {
+      "task": "gsm8k-0033",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "gsm8k-0033",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "1 equation(s) check; corrupting the first one fails it",
+      "seconds": 6.502,
+      "tokens": {
+        "input": 201,
+        "output": 150,
+        "reasoning": 936,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "gsm8k-0033",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0035",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0035",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0036",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "3 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0036",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0037",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "3 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "gsm8k-0037",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "gsm8k-0038",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "arithmetic",
+      "evidence": "24500 cents = $24.50 is false: 24500 != 49/2"
+    },
+    {
+      "task": "gsm8k-0038",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "gsm8k-0038",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "4 equation(s) check; corrupting the first one fails it",
+      "seconds": 2.942,
+      "tokens": {
+        "input": 62,
+        "output": 85,
+        "reasoning": 31,
+        "cache": {
+          "read": 6528,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "gsm8k-0038",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "math-0002",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "math-0002",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "math-0006",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "math-0006",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "math-0013",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "1 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "math-0013",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "math-0016",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "arithmetic",
+      "evidence": "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81} is false: 40/243 != 40/81"
+    },
+    {
+      "task": "math-0016",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "math-0016",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "2 equation(s) check; corrupting the first one fails it",
+      "seconds": 7.154,
+      "tokens": {
+        "input": 129,
+        "output": 294,
+        "reasoning": 151,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "math-0016",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "math-0020",
+      "phase": "verify35",
+      "verdict": "unknown",
+      "check": "arithmetic",
+      "evidence": "no checkable arithmetic equation in the answer"
+    },
+    {
+      "task": "math-0020",
+      "phase": "score",
+      "p": 0.962175,
+      "threshold": 0.65,
+      "accept": true
+    },
+    {
+      "task": "math-0020",
+      "phase": "accept",
+      "routed": "35B+head",
+      "verdict": "unknown"
+    },
+    {
+      "task": "math-0023",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "arithmetic",
+      "evidence": "4 equation(s) check; corrupting the first one fails it"
+    },
+    {
+      "task": "math-0023",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0001",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them"
+    },
+    {
+      "task": "humaneval-0001",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0002",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them"
+    },
+    {
+      "task": "humaneval-0002",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0003",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "code_exec",
+      "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 46, in <module>\n    check(even_odd_count)\n  File \"/tmp/work.py\", line 33, in check\n    assert candidate(-78) == (1, 1)\n           ^^^^^^^^^^^^^^\n  File \"/tmp/work.py\", line 22, in even_odd_count\n    if int(digit) % 2 == 0:\n       ^^^^^^^^^^\nValueError: invalid literal for int() with base 10: '-'"
+    },
+    {
+      "task": "humaneval-0003",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "humaneval-0003",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them",
+      "seconds": 9.735,
+      "tokens": {
+        "input": 185,
+        "output": 124,
+        "reasoning": 284,
+        "cache": {
+          "read": 7040,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "humaneval-0003",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0004",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them"
+    },
+    {
+      "task": "humaneval-0004",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0007",
+      "phase": "verify35",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them"
+    },
+    {
+      "task": "humaneval-0007",
+      "phase": "accept",
+      "routed": "35B",
+      "verdict": "pass"
+    },
+    {
+      "task": "humaneval-0015",
+      "phase": "verify35",
+      "verdict": "fail",
+      "check": "code_exec",
+      "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 54, in <module>\n    check(make_palindrome)\n  File \"/tmp/work.py\", line 51, in check\n    assert candidate('xyx') == 'xyx'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task": "humaneval-0015",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "humaneval-0015",
+      "phase": "verify_api",
+      "verdict": "pass",
+      "check": "code_exec",
+      "evidence": "tests pass; corrupting the returns fails them",
+      "seconds": 9.791,
+      "tokens": {
+        "input": 18,
+        "output": 192,
+        "reasoning": 423,
+        "cache": {
+          "read": 6656,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "humaneval-0015",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "pass"
+    },
+    {
+      "task": "truthfulqa-0008",
+      "phase": "verify35",
+      "verdict": "unknown",
+      "check": "frame",
+      "evidence": "choice is well formed; correctness is not executable"
+    },
+    {
+      "task": "truthfulqa-0008",
+      "phase": "score",
+      "p": 0.998659,
+      "threshold": 0.65,
+      "accept": true
+    },
+    {
+      "task": "truthfulqa-0008",
+      "phase": "accept",
+      "routed": "35B+head",
+      "verdict": "unknown"
+    },
+    {
+      "task": "truthfulqa-0011",
+      "phase": "verify35",
+      "verdict": "unknown",
+      "check": "frame",
+      "evidence": "choice is well formed; correctness is not executable"
+    },
+    {
+      "task": "truthfulqa-0011",
+      "phase": "score",
+      "p": 0.995425,
+      "threshold": 0.65,
+      "accept": true
+    },
+    {
+      "task": "truthfulqa-0011",
+      "phase": "accept",
+      "routed": "35B+head",
+      "verdict": "unknown"
+    },
+    {
+      "task": "truthfulqa-0013",
+      "phase": "verify35",
+      "verdict": "unknown",
+      "check": "frame",
+      "evidence": "choice is well formed; correctness is not executable"
+    },
+    {
+      "task": "truthfulqa-0013",
+      "phase": "score",
+      "p": 0.995987,
+      "threshold": 0.65,
+      "accept": true
+    },
+    {
+      "task": "truthfulqa-0013",
+      "phase": "accept",
+      "routed": "35B+head",
+      "verdict": "unknown"
+    },
+    {
+      "task": "truthfulqa-0015",
+      "phase": "verify35",
+      "verdict": "unknown",
+      "check": "frame",
+      "evidence": "choice is well formed; correctness is not executable"
+    },
+    {
+      "task": "truthfulqa-0015",
+      "phase": "score",
+      "p": 0.421515,
+      "threshold": 0.65,
+      "accept": false
+    },
+    {
+      "task": "truthfulqa-0015",
+      "phase": "escalate",
+      "to": "API"
+    },
+    {
+      "task": "truthfulqa-0015",
+      "phase": "verify_api",
+      "verdict": "unknown",
+      "check": "frame",
+      "evidence": "choice is well formed; correctness is not executable",
+      "seconds": 1.796,
+      "tokens": {
+        "input": 59,
+        "output": 2,
+        "reasoning": 35,
+        "cache": {
+          "read": 6528,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    {
+      "task": "truthfulqa-0015",
+      "phase": "accept",
+      "routed": "API",
+      "verdict": "unknown"
+    }
+  ]
+}
