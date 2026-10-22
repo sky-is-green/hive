@@ -1,14 +1,3 @@
----
-license: mit
-tags:
-  - llm
-  - self-verification
-  - cascade
-  - inference
-  - research-paper
-  - local-first
----
-
 # The Hive Cascade: detect → repair → escalate
 
 **A gold-free verification-and-repair loop for local language models.**
@@ -339,7 +328,8 @@ not - which is what an arbiter would be for, and not what a bigger model
 is for. The tiering design says exactly this: the small tier takes the
 work, and the large one is the exception, not the default.
 
-**What this does and does not say.** One draw per task, 28 tasks, one
+**What this does and does not say.** The tier comparison is one draw per
+task and 28 tasks; the multi-sample arms above are three draws each. One
 class (arithmetic, code, multiple choice), and the latencies are measured
 under co-hosting - so they are the numbers a tiered deployment sees, not
 the isolated ones. The tiering claim that survives this measurement is
