@@ -33,7 +33,7 @@ entries are never rewritten — corrections are appended as `[rev <date>]` notes
 | F8 | (a)/(b) | Entropy/excess-loss selection lost to random: 172.3 vs 115.9 PPL | Falsified (pilot) | closed | Yes — larger pool/seeds |
 | F9 | (b)/(c) | 27B full-model offload swap-thrashes (55.6 GB vs 40 GB VRAM + ~20 GB RAM) | Mitigated | resolved | No |
 | F10 | (c) | `-ngl 99` on one 20 GB card fails to allocate; fixed by auto-fit | Resolved | resolved | No |
-| F11 | (c)/(d) | Sibling drift blocks harness import; F6 pin is interim | Mitigated | resolved (fix pending) | Yes — T23 |
+| F11 | (c)/(d) | Sibling drift blocks harness import; F6 pin is interim | Historical | resolved by absorption (2026-10-22) | Yes — T23 |
 | F12 | (c)/(d) | Two ROCm contexts hang GPU1 at firmware level | Mitigated | resolved (policy) | If driver changes |
 | F13 | (d) | `oracle.decode_q2_0_g64` (type 42) decodes garbage | Open | open | Yes — cheap fix |
 
