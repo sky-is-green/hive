@@ -801,7 +801,9 @@ PANEL_MEASURED = """
       judgement model, and its generation is no better than the 35B's. A 27B
       dense one is +5 net. The judge is the 176B's head; the execution checker
       and the scripted controller are measured. The API-driven controller is
-      the missing part.</p>
+      the missing part. The API-slot rows are one sample per task; the
+      five-run repeat was blocked when the free tier returned zero-token
+      failures for every call. The ten-sample choice probe is in the record.</p>
   </div>
 </section>
 """

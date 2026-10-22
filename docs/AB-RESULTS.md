@@ -1602,3 +1602,15 @@ Artifacts: `experiments/cascade/api_replaces_27b.py` and
 `experiments/cascade/results/controller-20261022/api-replaces-27b.json`; the
 boxed fix is in `experiments/cascade/checkers.py` with
 `tests/unit/test_cascade_checkers.py`.
+
+
+**Stability repeat blocked (2026-10-22).** I attempted five full API-slot runs
+per model, 70 API calls total, with the fixed measured 35B/head/checker and
+the seven API escalations. After the earlier samples, the free OpenCode tier
+returned `outcome=failed` with zero input and output tokens for every
+stability call, for both DeepSeek and GLM. The resulting 21/28 is the fixed
+35B/head-only baseline, not a model result; the run is marked invalid in
+`stability-api-slot.json`. The one-sample API rows (DeepSeek 28/28, GLM 27/28)
+and the ten-sample `truthfulqa-0015` probe stand. The six executable API
+answers are still only one sample each. Repeating them needs a reset or paid
+API route; the local 27B path remains a stable control.
