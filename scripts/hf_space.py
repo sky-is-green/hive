@@ -540,8 +540,10 @@ STAGE_CONTROLLER = """
       Or keep it and put the API <em>behind</em> it - escalate locally first,
       and call the API only on the case the 27B cannot settle. The controller's
       table decides which; the diagram draws the API as the residue because
-      that is its role. The 27B is the measured tier (<strong>+5 net</strong>);
-      the API arm is the unmeasured one (the key is expired).</p>
+      that is its role. The 27B is the measured tier (<strong>+5 net</strong>).
+      The API tier is measured too, on the free OpenCode tier:
+      <strong>28/28</strong>, 2.6 s median. The API-driven controller and the
+      paid API cost are the unmeasured parts.</p>
   </div>
 """
 
@@ -754,6 +756,9 @@ PANEL_MEASURED = """
         <tr><td>judge gate + 27B</td><td>23/28 (0.821); 3 escalations, all errors</td>
             <td>3 escalations</td></tr>
         <tr><td>oracle gate + 27B</td><td>27/28 (0.964)</td><td>7 escalations</td></tr>
+        <tr><td><strong>the API (free OpenCode)</strong></td>
+            <td><strong>28/28 (1.000)</strong></td>
+            <td>2.6 s median; free tier</td></tr>
         <tr><td>the checker (execution + grounding)</td>
             <td><em>unmeasured: the current build</em></td><td>a sandbox call</td></tr>
       </tbody>

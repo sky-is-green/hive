@@ -14,6 +14,8 @@
     "splinter/**",
     "docs/**",
     ".github/**",
+    "experiments/**",
+    "tests/**",
     "experiments/cascade/NEXT-PLAN.md",
     "experiments/cascade/vision_oracle.py",
     "experiments/qwen_encoder.py",

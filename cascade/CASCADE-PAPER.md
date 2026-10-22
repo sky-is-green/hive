@@ -18,8 +18,9 @@ the run reports are in the
 [hive-cascade dataset](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade);
 the visual companion is
 [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
-The measurements are current to October 2026; the checker and the API driver
-are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
+The measurements are current to October 2026; the API tier is measured
+(28/28 on the 28 tasks, 2.6 s median, free OpenCode), while the checker and the
+API-driven controller are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
 
 **Contents**
 
@@ -71,7 +72,8 @@ Three results carry the paper:
    yet measured.
 
 What is not claimed: that this generalises beyond this class, or that the
-checker and the API driver have been measured. They have not.
+checker and the API-driven controller have been measured. They have not; the
+API tier itself has.
 
 ---
 
@@ -610,7 +612,7 @@ throughout:
 | the 27B ([Bonsai 2](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
 | the 176B [head](https://huggingface.co/datasets/SkyIsNotGreen/decision-heads) | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
 | the [checker](HARNESS-CONTROLLER.md) | the *executable* errors | **not yet measured** | a sandbox call |
-| the API | what nothing local settles | not yet measured (the key is expired) | per token |
+| the API (free OpenCode) | what nothing local settles | **28/28 (1.000)** on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`
@@ -626,7 +628,7 @@ flowchart TB
     head -->|uncertain| kind{"what kind of error?"}
     kind -->|executable| sandbox["checker<br/>run the code or arithmetic"]
     kind -->|grounding| ground["checker<br/>check the claims"]
-    kind -->|residue| api["API<br/>if the key exists"]
+    kind -->|residue| api["API<br/>the residue"]
     sandbox -->|fails| repair["27B<br/>repair with the finding"]
     ground -->|unsupported| repair
     sandbox -->|passes| serve
@@ -640,11 +642,11 @@ flowchart TB
     classDef design fill:#f8fafc,stroke:#64748b,stroke-dasharray:4 3,color:#334155
     class serve ok
     class head,kind warn
-    class task,small,repair neutral
-    class sandbox,ground,api design
+    class task,small,repair,api neutral
+    class sandbox,ground design
 ```
 
-*Figure 6. The routing map. The head is measured; the checker and the API lane are designs, not runs.*
+*Figure 6. The routing map. The head and the API tier are measured; the checker is a design, and the API-driven controller is not a run.*
 
 ### The two drivers
 
@@ -667,10 +669,11 @@ the survey of what other harnesses do is in
 
 ### What is not yet claimed
 
-The API-driven direction has not been
-measured at all: the paid tier's key is expired, and the checker is a
-design, not a run. The table's local rows are measured; the two bottom
-rows are the programme.
+The API tier is measured on the 28 tasks (28/28, 2.6 s median, free
+OpenCode); the API-driven controller direction is not. The paid tier's key
+is expired, so the paid cost is unmeasured, and the checker is a design,
+not a run. The table's local rows and the API tier are measured; the
+checker and the API-driven controller are the programme.
 
 ## 9. What is not claimed
 

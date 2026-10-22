@@ -122,7 +122,7 @@ cannot do at all, and neither is a sentence in a prompt.)
 | t1 - Bonsai 2 27B | the repairable errors | 26/28 (0.929); **+5 net** over the 35B | 8.9 s/item |
 | the judge (176B head) | the plausible errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
 | the checker (4-9B + sandbox) | the executable errors | **not yet measured** | a sandbox call |
-| the API | what nothing local settles | not yet measured (the key is expired) | per token |
+| the API (free OpenCode) | what nothing local settles | 28/28 (1.000) on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 
 The memory decisions (dedup, drift) are a **separate lane**: the
 controller does not choose them per task, the membrane does. Their
@@ -228,7 +228,8 @@ this controller on their tiers.
 - The **controller model** itself. The loop is written and the tools are
   specified; the first controller can be a 4B with the tool schema, or a
   frontier API.
-- The **API driver** (the paid key is expired).
+- The **API driver** (the paid key is expired; the API tier itself is
+  measured on the free OpenCode tier).
 - The **distilled judge**: the 176B's judgements are portable in
   principle; the head's blind spot (plausible answers) is inherited, so
   it stays a tool for the `unknown` branch, never the gate.
