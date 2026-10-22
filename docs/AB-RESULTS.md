@@ -1366,7 +1366,7 @@ production checker is a sandbox the harness does not have yet.
 
 `experiments/cascade/bonsai_arm.py`, the artifact in
 `experiments/cascade/results/bonsai-escalation-20261021/` (the rows and
-the serve recipe are in `docs/BONSAI-RUNTIME.md`).
+the serve recipe are in [`cascade/BONSAI-RUNTIME.md`](../cascade/BONSAI-RUNTIME.md)).
 
 ## 1B-septies. The API tier, measured (2026-10-22)
 
