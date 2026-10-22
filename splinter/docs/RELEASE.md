@@ -1,5 +1,9 @@
 # Release process
 
+> This checklist documents the standalone splinter-memory release. The
+> project now lives in `splinter/` of Hive; the commands below run from the
+> repository root unless noted.
+
 A release is a **citable, immutable** point. The goal is that a stranger can
 point at a tag or a DOI and get the same bytes, the same contract, and the same
 numbers later. Keep releases boring.
