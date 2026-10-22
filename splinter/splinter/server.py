@@ -22,7 +22,7 @@ Run standalone::
 
     python -m splinter.server --port 8765 --state-dir harness_state
     # or after `pip install .[serve]`:
-    splinter-serve --port 8765
+    python -m splinter.server --port 8765  # from the splinter/ project root
 
 Embed in a host application (the hivebench / DSH plug-in seam)::
 
@@ -1084,11 +1084,11 @@ def create_app(
 
 
 def main() -> None:
-    """CLI entry point (console script: splinter-serve)."""
+    """CLI entry point (``python -m splinter.server``)."""
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="splinter-serve",
+        prog="python -m splinter.server",
         description="Standalone Splinter server (conversation loop + curated "
                     "OpenAI passthrough), independent of any host app.",
     )
