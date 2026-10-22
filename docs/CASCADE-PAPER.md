@@ -372,7 +372,7 @@ same cascade, the same verifiers, the two models:
 
 ![The same answer, 42.5x the wall clock: the 35B 5.36 seconds an item, the 176B 229.67 seconds](figures/latency.svg)
 
-*Figure 4. The same answer, 42.5× the wall clock. The 35B and the 176B serve the same 0.800 on the 10 tasks; the 176B spends 42.5× the seconds.*
+*Figure 4. The same answer, 42.5× the wall clock. The 35B and the 176B serve the same 0.800 on the 10 tasks; the 176B spends 42.5× the seconds. The table is [`AB-RESULTS.md` §2B](AB-RESULTS.md#2b-the-membranes-operating-points-hypothesis-h).*
 
 **Identical outcomes, 42.5x the wall clock.** The same served-correct
 (0.800 both), the same ledger false rejects (0 both), the same wrong-accepted (2
