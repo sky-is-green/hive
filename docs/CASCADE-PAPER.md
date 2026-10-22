@@ -12,10 +12,14 @@ served, repairs what can be repaired, and escalates what cannot - using
 **verifiers that never see the answer key**.
 
 This is the paper: the method, the protocol, the measured results, and the
-negative results I kept. It is versioned with the code; the visual companion
-is [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
+negative results I kept. The code is in
+[the repository](https://github.com/sky-is-green/hivebench); the task sets and
+the run reports are in the
+[hive-cascade dataset](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade);
+the visual companion is
+[the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
 The measurements are current to October 2026; the checker and the API driver
-are unmeasured.
+are unmeasured. The live status is in the [STATUS document](STATUS.md).
 
 **Contents**
 
@@ -96,9 +100,29 @@ The cascade is built around those two facts.
 
 Per item, the loop is four stages:
 
+```mermaid
+flowchart TB
+    solve["solve<br/>one sample at T"] --> detect{"detect<br/>gold-free"}
+    detect -->|clean| accept["accept"]
+    detect -->|finding| repair["repair<br/>T=0, finding quoted"]
+    repair --> recheck{"detect"}
+    recheck -->|clean| repaired["accept repaired"]
+    recheck -->|still flagged| escalate["escalate"]
+    escalate --> human["human gate"]
+    escalate --> api["API tier<br/>only if named"]
+    escalate --> error["error / persistent flag"]
+
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef warn fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef neutral fill:#f3efe7,stroke:#a8a29e,color:#171614
+    class accept,repaired ok
+    class detect,recheck,escalate warn
+    class error bad
+    class solve,repair,human,api neutral
 ```
-solve  →  detect  →  repair  →  escalate
-```
+
+*Figure 1. The loop. Detect and repair are the local path; escalation is the exception, not the default.*
 
 **solve.** One request to the local model at the run's temperature. A draft
 that hits the token cap is **not an answer**: it retries once at double the
@@ -157,10 +181,29 @@ def runtime_spec(spec: dict) -> dict:
     return rs
 ```
 
-`expect` is dropped here, and the function raises if a gold-shaped key ever
+The implementation is [`runtime_spec` in `experiments/cascade/cascade.py`](../experiments/cascade/cascade.py). `expect` is dropped here, and the function raises if a gold-shaped key ever
 reaches the loop. So no stage - detect, repair, canonicalise, gate - can
 read the answer key even by accident. Gold-based scoring is a **separate
-post-loop step** (`--score`), never consulted by the loop.
+post-loop step** ([`--score`](../experiments/cascade/run_cascade.py)), never
+consulted by the loop.
+
+```mermaid
+flowchart LR
+    spec["task spec<br/>+ answer key"] --> gate{"runtime_spec()"}
+    gate -->|tests| serving["loop<br/>no key"]
+    gate -.->|expect| score["score<br/>--score"]
+    serving --> answer["answer"]
+    answer --> score
+
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef warn fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef neutral fill:#f3efe7,stroke:#a8a29e,color:#171614
+    class serving,answer ok
+    class spec,score neutral
+    class gate warn
+```
+
+*Figure 2. The gold-free contract. The loop gets the frame and the tests; only the post-loop score sees `expect`.*
 
 The consequence: the loop is the same code on a task whose answer key you
 have and on one you do not, and the measured improvement is a property of
@@ -169,7 +212,8 @@ the serving loop, not of the benchmark.
 ## 3. The taxonomy: what a hive is made of
 
 A serving system for local models is a set of *roles* and the *paths* between
-them. The cascade ships the taxonomy explicitly (22 roles, A1-H1):
+them. The cascade ships the taxonomy explicitly (22 roles, A1-H1) in
+[`harness/cascade/roles.py`](../harness/cascade/roles.py):
 
 | group | roles | what they do |
 |---|---|---|
@@ -180,7 +224,8 @@ them. The cascade ships the taxonomy explicitly (22 roles, A1-H1):
 | **E** - generation | E1-E4, by size | write the answer |
 | **F/G/H** - escalation, latency, audit | the ladder, the budgets, the trail | keep the record |
 
-and seven **paths** (P0-P6) that compose them:
+and the seven **paths** (P0-P6) in
+[`harness/cascade/paths.py`](../harness/cascade/paths.py) that compose them:
 
 | path | trigger | shape |
 |---|---|---|
@@ -202,8 +247,10 @@ consistency check are async in P2).
 ### The 66-item organic set
 
 The organic set: 66 items, sampled at T=0.7, live against the local 176B
-(A6B ternary, MoE). The bench: GSM8K-style arithmetic, HumanEval-style code,
-and a multiple-choice set.
+(A6B ternary, MoE); the run bundle is in
+[`experiments/cascade/results/cascade-e2e-sampled-20261018/`](../experiments/cascade/results/cascade-e2e-sampled-20261018/).
+The bench: GSM8K-style arithmetic, HumanEval-style code, and a multiple-choice
+set.
 
 | | items | served-correct | false rejects (ledger) | note |
 |---|---|---|---|---|
@@ -223,29 +270,32 @@ one reported first.
 record no false reject in the runner's ledger: the `false_reject` field only
 exists once something escalates, and nothing did. That is not the verifier's
 own rate - a rejected answer that was right - which the later three-draw
-campaign measures at 1, 1 and 3 across its arms (§5). The trade is still
-worth making: the verifier catches 8 wrong answers for every 1 correct
-answer it drops.
+campaign measures at 1, 1 and 3 across its arms
+([§5](#5-the-learned-gate-a-negative-result-i-kept)). The trade is still worth
+making: the verifier catches 8 wrong answers for every 1 correct answer it
+drops.
 
 **Repairs do not harm correct answers.** The repair leg is only entered on a
 rejection, and a cleared attempt is re-framed, never rewritten.
 
-**Truncation is caught by the ladder.** The runner's own re-runs
-(`results/runner-cascade-sampled-20261018/`,
-`results/runner-cascade-sampled-nothink-20261018/`) reported 3 truncations
-caught and flagged, and 0 ledger false rejects in both.
+**Truncation is caught by the ladder.** The runner's own
+[sampled](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade/blob/main/results/runner-cascade-sampled-20261018-report.json)
+and [nothink](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade/blob/main/results/runner-cascade-sampled-nothink-20261018-report.json)
+reports recorded 3 truncations caught and flagged, and 0 ledger false rejects
+in both.
 
 ### 4.1 The tiered refresh: the two Scions, measured side by side
 
 The 2026-10-18 numbers above come from the 176B alone. The question the
 tiered design actually poses is *which tier does the work*, so both
-Scion models were served at once - on one card, sharing it - and run over
-the same 28 organic tasks.
+[Scion models](AB-RESULTS.md#1a-the-two-scions-head-to-head) were served at
+once - on one card, sharing it - and run over the same
+[28 organic tasks](../experiments/cascade/tasks-organic-28.json).
 
 #### The head-to-head
 
 The two models, one draw each (T=0.7, 640 tokens, 62 minutes wall, 0 errors;
-`experiments/cascade/results/dual-scion-20261020/full28/`):
+[`experiments/cascade/results/dual-scion-20261020/full28/`](../experiments/cascade/results/dual-scion-20261020/full28/)):
 
 | | the 35B-A3B | the 176B-A6B |
 |---|---|---|
@@ -290,20 +340,25 @@ a single draw is a direction and not a measurement:
 | the verifier + the repair leg | 67/84 (79.8%) | 9 | 1 | 8/9 cleared |
 | + the learned gate | 70/84 (83.3%) | 12 | 3 | 8/11 |
 
+![The A/B arms: no verifier 64/84, the verifier alone 63/84, the verifier with repair 67/84, and the learned gate 70/84](figures/arms.svg)
+
+*Figure 3. The A/B arms. The verifier alone is a tax; the repair leg pays. The learned gate improves the number but stays off by its pre-registered rule. The full table is [`AB-RESULTS.md` §3A-3E](AB-RESULTS.md#3a-3e-the-cascades-own-arms-measured-on-the-35b).*
+
 **A verifier on its own is a tax: -1.2 points.** It catches the wrong
 answers and, with no repair leg, they are simply not served. **The repair
 leg is what makes verification pay: +4.8 points over the verifier alone,
 +3.6 over no verification at all** - 8 of the 9 catches cleared. The gate
 adds +3.5 more, at the cost of 3 false flags against its pre-registered
-budget of 2 (so it stays off - see §5).
+budget of 2 (so it stays off - see
+[§5](#5-the-learned-gate-a-negative-result-i-kept)).
 
 And the trade is worth making: the verifier catches **8 wrong answers for
 every 1 correct answer it drops**.
 
 #### The comparable pair
 
-The same 10 organic tasks, the same cascade, the same verifiers, the two
-models:
+The same [10 organic tasks](../experiments/cascade/tasks-organic-10.json), the
+same cascade, the same verifiers, the two models:
 
 | | the 35B-A3B | the 176B-A6B |
 |---|---|---|
@@ -314,6 +369,10 @@ models:
 | the repairs | 0 | 0 |
 | **the mean per-item latency** | **5.36 s** | **229.67 s** |
 | the mean tokens | 329 | 745 |
+
+![The same answer, 42.5x the wall clock: the 35B 5.36 seconds an item, the 176B 229.67 seconds](figures/latency.svg)
+
+*Figure 4. The same answer, 42.5× the wall clock. The 35B and the 176B serve the same 0.800 on the 10 tasks; the 176B spends 42.5× the seconds.*
 
 **Identical outcomes, 42.5x the wall clock.** The same served-correct
 (0.800 both), the same ledger false rejects (0 both), the same wrong-accepted (2
@@ -368,20 +427,28 @@ inherit the other's expert cache:
 tasks' own checkers, the 176B's fresh answer fixes 2 of the 35B's 7
 errors and breaks 2 of its 21 correct ones: net zero, at 20.68 s an item.
 
-**The generator, not the tier.** The same generate arm on a 27B dense model (Bonsai 2, ternary, 7.2 GB) fixes 6 of
-the 7 errors and breaks 1 of the 21 correct: **net +5 at 8.92 s an
-item**, against the 176B's net zero at 20.68 s. The 176B is a judgement
-model; its generation is not better than the 35B's. The tier was never
-worthless - the 176B was the wrong occupant. Gated by the head at its
-best threshold, the same loop reaches 23/28 (3 escalations, all errors,
-none correct) against the oracle gate's 27/28; the head's four misses are
-plausible answers at `p >= 0.97`, which is why the next tier is a
-*checker*, not a better judge. (`AB-RESULTS.md` §1B-sexies.)
+**The generator, not the tier.** The same generate arm on a 27B dense model
+([Bonsai 2](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf),
+ternary, 7.2 GB) fixes 6 of the 7 errors and breaks 1 of the 21 correct:
+**net +5 at 8.92 s an item**, against the 176B's net zero at 20.68 s. The
+176B is a judgement model; its generation is not better than the 35B's. The
+tier was never worthless - the 176B was the wrong occupant. Gated by the
+head at its best threshold, the same loop reaches 23/28 (3 escalations, all
+errors, none correct) against the oracle gate's 27/28; the head's four
+misses are plausible answers at `p >= 0.97`, which is why the next tier is a
+*checker*, not a better judge
+([`AB-RESULTS.md` §1B-sexies](AB-RESULTS.md#1b-sexies-the-escalation-generator-a-27b-dense-not-the-176b)).
+
+![The 28-task tier results: the 176B alone 19/28, the 35B alone 21/28, the 176B head to Bonsai 23/28, the 27B alone 26/28, and the oracle to Bonsai 27/28](figures/tiers.svg)
+
+*Figure 5. The tier results. The 27B is the generator; the head is the gate. The 176B alone is the head-to-head; its generation arm is net zero.*
 
 **The judge arm is the same model, reading itself.** The 176B has a
 decision head - the last prompt token's hidden state, read through the
 engine's `emb=` as a *prefill* - and the head is in my own published
-dataset (`SkyIsNotGreen/decision-heads`). It was re-verified before use:
+dataset
+([`SkyIsNotGreen/decision-heads`](https://huggingface.co/datasets/SkyIsNotGreen/decision-heads)).
+It was re-verified before use:
 the AUC on its own frozen test split recomputes to 0.9941 (the published
 0.9941), and the live engine agrees with the stored states to within
 0.027. On the 35B's answers the head reads at AUC 0.864, and at p < 0.5
@@ -404,15 +471,15 @@ should beat the frozen one on this body; on this task set it does not
 
 **What this changes.** The cascade's escalation tier was paying 20.68 s
 (230 s co-sited) for an answer that was no better than the one it
-replaced. It is now a 4.64 s judgement, and the runner carries the
-option (`--verdict-url`).
+replaced. It is now a 4.64 s judgement, and the runner carries the option
+([`--verdict-url`](../experiments/cascade/run_cascade.py)).
 
 ## 5. The learned gate: a negative result I kept
 
 The deterministic detectors have a measured blind spot: answers that are
 *internally consistent and wrong*. A third trigger - a small learned head
 over the draft - was built, fitted, wired and measured
-(`harness/cascade/learned_gate.py`).
+([`harness/cascade/learned_gate.py`](../harness/cascade/learned_gate.py)).
 
 It works: the intern-decision-0.8B readout on the CPU reproduces the stored
 fitted probability exactly from the committed states/heads, and the live
@@ -430,13 +497,15 @@ And it **stays off by default**, by its own pre-registered rule:
 Three independent measurements agreed that no 0.8B head separates on the
 silent distribution. A gate that fires more often than it should is a tax on
 every answer to catch one mistake; at this precision it is not worth it. The
-implementation is tested and available as `--gate intern-0.8b`, and the
-default is off. **A negative result, pre-registered, is a result.**
+implementation is tested and available as
+[`--gate intern-0.8b`](../harness/cascade/learned_gate.py), and the default is
+off. **A negative result, pre-registered, is a result.**
 
 ### The later measurement
 
-The A/B campaign (2026-10-20; the 35B-A3B, the same 28 organic tasks,
-three draws each, 84 items per arm) confirms it:
+The [A/B campaign](AB-RESULTS.md#3c-the-learned-gate-on-the-35b) (2026-10-20;
+the 35B-A3B, the same 28 organic tasks, three draws each, 84 items per arm)
+confirms it:
 
 | arm | served-correct | the gate | the mean |
 |---|---|---|---|
@@ -456,7 +525,8 @@ separate well enough on this distribution to pay for itself.
 
 ### The correction to the zero
 
-The same campaign corrected the earlier claim in §4: the "0 false rejects"
+The same campaign corrected the earlier claim in
+[§4](#4-the-measured-results): the "0 false rejects"
 there is the *escalation's* bookkeeping, not the verifier's - the runner's
 `false_reject` field only exists once something escalates. The verifier's
 own false rejects (a rejected answer that was right) are **1, 1 and 3**
@@ -531,14 +601,15 @@ direction the requests flow.
 
 ### The measured table
 
-The same 28 organic tasks throughout:
+The same [28 organic tasks](../experiments/cascade/tasks-organic-28.json)
+throughout:
 
 | the tier | what it settles | the measured number | the cost |
 |---|---|---|---|
 | the 35B | the bulk | 21/28 (0.750) | the cheapest local |
-| the 27B (Bonsai 2) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
-| the 176B head | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
-| the checker | the *executable* errors | **not yet measured** | a sandbox call |
+| the 27B ([Bonsai 2](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
+| the 176B [head](https://huggingface.co/datasets/SkyIsNotGreen/decision-heads) | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
+| the [checker](HARNESS-CONTROLLER.md) | the *executable* errors | **not yet measured** | a sandbox call |
 | the API | what nothing local settles | not yet measured (the key is expired) | per token |
 
 The table says routing is not one axis. **Checkability comes before
@@ -546,6 +617,34 @@ competence**: four of the seven errors the 176B's head gave `p >= 0.97`
 were arithmetic and code answers - a better *reader* cannot see them, and
 a sandbox can. A router that sends every task to the strongest model is
 buying tokens to solve problems that a `python -c` would have settled.
+
+```mermaid
+flowchart TB
+    task["task"] --> small["35B<br/>the bulk"]
+    small --> head{"176B head<br/>is it plausible?"}
+    head -->|confident| serve["serve the 35B answer"]
+    head -->|uncertain| kind{"what kind of error?"}
+    kind -->|executable| sandbox["checker<br/>run the code or arithmetic"]
+    kind -->|grounding| ground["checker<br/>check the claims"]
+    kind -->|residue| api["API<br/>if the key exists"]
+    sandbox -->|fails| repair["27B<br/>repair with the finding"]
+    ground -->|unsupported| repair
+    sandbox -->|passes| serve
+    ground -->|supported| serve
+    repair --> serve
+    api --> serve
+
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef warn fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef neutral fill:#f3efe7,stroke:#a8a29e,color:#171614
+    classDef design fill:#f8fafc,stroke:#64748b,stroke-dasharray:4 3,color:#334155
+    class serve ok
+    class head,kind warn
+    class task,small,repair neutral
+    class sandbox,ground,api design
+```
+
+*Figure 6. The routing map. The head is measured; the checker and the API lane are designs, not runs.*
 
 ### The two drivers
 
@@ -561,7 +660,10 @@ The API driver needs exactly two things the local driver does not: a
 tool schema over the existing endpoints, and a sandbox the checker can
 call. Neither is a new model. The `--verdict-url` tier is already a
 judge as a service; the checker is the same shape with an executor
-behind it.
+behind it. The contract for the four tools, the invariants and the
+bounded loop is in [`docs/HARNESS-CONTROLLER.md`](HARNESS-CONTROLLER.md);
+the survey of what other harnesses do is in
+[`docs/CONTROLLER-PRIOR-ART.md`](CONTROLLER-PRIOR-ART.md).
 
 ### What is not yet claimed
 
@@ -606,7 +708,11 @@ pytest tests/unit tests/integration -q
 open http://127.0.0.1:8799/cascade
 ```
 
-Runs land under `experiments/cascade/results/<run>/`: `manifest.json`
+The runner is [`experiments/cascade/run_cascade.py`](../experiments/cascade/run_cascade.py);
+the bench is [`experiments/cascade/tasks-bench.json`](../experiments/cascade/tasks-bench.json).
+Runs land under
+[`experiments/cascade/results/<run>/`](../experiments/cascade/results/):
+`manifest.json`
 (provenance - model sha256, stack, git commit, task-set sha, decode
 settings - plus per-task and per-benchmark aggregates with sample-accuracy
 and task-macro), `streams.json` (the full traces, regenerable), and a
@@ -631,4 +737,5 @@ MIT.
 **Community invitation.** The protocol is written to be challenged: the
 verdicts, the budgets and the pre-registration rules are all in the
 repository, including the ones that failed. If your hardware produces a
-different number, that is a result - open an issue with the run bundle.
+different number, that is a result - open an
+[issue](https://github.com/sky-is-green/hivebench/issues) with the run bundle.
