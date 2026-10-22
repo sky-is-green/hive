@@ -1395,3 +1395,58 @@ normalizer now removes `{,}` and commas, with a regression test in
 measured — above the 35B (21/28), Bonsai 27B (26/28) and the judge+Bonsai
 route (23/28). The API-driven controller is not measured; that still needs
 the tool schema and a driver. The checker remains the missing local tier.
+
+## 1B-octies. The checker: execution first (2026-10-22)
+
+The checker is gold-free. It reads the runtime spec only (`kind`, the task's
+own tests, prelude/footer), never `checker.expect`; the 35B answers and the
+gold labels are the same as §1B-sexies, and the gold is applied only after
+the verdict. Two executable methods ship:
+
+- **code_exec** runs the candidate's last fenced block against the task's
+  tests in bwrap: network namespace off, read-only root, temp cwd, 5 s
+  timeout, 512 MB address-space cap, no in-process `eval`.
+- **arithmetic** re-evaluates every equation the answer asserts about itself,
+  including prose equations and unit conversions (cents/dollars,
+  inches/feet), with exact Fractions and an AST walker.
+- **mutation** corrupts every passing claim (the code's returns, or the
+  numeric right side of the first checked equation). A mutation that still
+  passes turns the verdict into `unknown`, never `pass`.
+- **unknown** is the answer for a choice, a missing frame, or a numeric
+  answer with no checkable equation. It is never a pass and never a fail.
+
+| the target | the result |
+|---|---|
+| the head's four `p >= 0.97` misses | **4/4 fail** (`gsm8k-0038`, `math-0016`, `humaneval-0003`, `humaneval-0015`) |
+| the 21 correct 35B answers | **0/21 false rejects** |
+| all seven 35B errors | **6/7 fail; 1 unknown** (`truthfulqa-0015`) |
+| wrong answers passed | **0** |
+| mutation self-test | **17/17 pass verdicts caught** |
+| latency | **0.225 ms median; 5.486 ms mean; 29.568 ms p95; 30.459 ms max** |
+| the head, for comparison | 2.52 s/verdict; 3/7 errors; 0/21 correct sent up |
+
+The checker passes 17, fails 6 and returns `unknown` for 5. The five
+unknowns are the three correct multiple-choice answers, the correct
+`math-0020` (a boxed value with no equation to recompute) and the wrong
+`truthfulqa-0015`. The four correct unknowns are not false rejects: the
+head accepts them (`p` 0.962-0.996); the wrong choice is the head's own
+low-confidence case (`p = 0.4215`), which it sends up, and Bonsai does not
+fix. So the **checker + head** union catches all 7 errors with 0 correct
+answers sent up; the checker alone is the 6/7 execution tier.
+
+The failures are concrete. `gsm8k-0038` writes `24500 cents = $24.50`
+(it is $245); `math-0016` writes `10 * 4/9 * 1/27 = 40/81` (it is
+`40/243`); both code answers fail their task tests. The arithmetic checker
+also catches `gsm8k-0015` and `gsm8k-0033`, the two head-caught errors,
+without being told the gold.
+
+The checker is 11,200x cheaper a verdict than the 2.52 s head on the
+median, and the expensive tail is the sandbox (30 ms p95); the arithmetic
+path is sub-millisecond. `grounding` is implemented as a separate citation
+path (`check_grounding`) but is not measured here: these 28 tasks have no
+claim/citation surface. The controller loop is the next measurement.
+
+Code and artifacts: `experiments/cascade/verifier.py`,
+`experiments/cascade/measure_checker.py`, and
+`experiments/cascade/results/checker-v0-20261022/report.json`; the tests are
+`tests/unit/test_cascade_verifier.py`.

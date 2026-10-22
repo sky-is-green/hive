@@ -14,6 +14,7 @@ contracts the next phase is built against.
 | **Bonsai 2 27B** | **26/28 (0.929); +5 net** (6 fixed, 1 broken) | 8.92 s/item |
 | the 176B generating | net 0 (2 fixed, 2 broken) | 20.68 s/item |
 | the 176B head judging the 35B | AUC 0.864; 3 of 7 errors, **0 of 21** correct sent up | 2.52 s/verdict |
+| **the checker (execution + arithmetic)** | **6/7 errors; 4/4 at p >= 0.97; 0/21 false rejects; 17/17 mutations** | **0.23 ms median; 30 ms p95** |
 | the judge + Bonsai | 23/28 (0.821); 3 escalations, all errors | - |
 | the oracle gate + Bonsai | 27/28 (0.964) | - |
 | **the API (free OpenCode tier)** | **28/28 (1.000)** | 2.608 s median; free tier, not a paid cost |
@@ -40,9 +41,9 @@ dedup decision cannot be moved; the drift threshold is the free dial.
 
 ## Unmeasured (the next phase)
 
-- the **checker**: execution (code and arithmetic) and grounding
-  (claim-level support). The measured need: the judge misses four of
-  seven errors at `p >= 0.97`; those errors are executable.
+- the **grounding verifier**: the execution checker is measured (6/7,
+  4/4 at `p >= 0.97`, 0/21, 0.23 ms); the citation path is implemented but
+  not measured on a corpus with claims.
 - the **controller loop**: the four tools, the bounded loop, the log.
   The contract is [`cascade/HARNESS-CONTROLLER.md`](../cascade/HARNESS-CONTROLLER.md).
 - the **API-driven controller** (the API tier itself is measured) and the

@@ -18,9 +18,10 @@ the run reports are in the
 [hive-cascade dataset](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade);
 the visual companion is
 [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
-The measurements are current to October 2026; the API tier is measured
-(28/28 on the 28 tasks, 2.6 s median, free OpenCode), while the checker and the
-API-driven controller are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
+The measurements are current to October 2026; the execution checker and the
+API tier are measured (checker: 6/7 errors, 4/4 at `p >= 0.97`, 0/21 false
+rejects, 0.23 ms median; API: 28/28, 2.6 s median, free OpenCode), while the
+grounding path and the API-driven controller are unmeasured. The live status is in the [STATUS document](../docs/STATUS.md).
 
 **Contents**
 
@@ -68,12 +69,13 @@ Three results carry the paper:
    correct answers sent up), and the 27B is the escalation generator.
 3. **Checkability comes before competence.** The head gives four of the
    seven errors `p >= 0.97`; they are arithmetic and code, which a sandbox
-   can settle and a reader cannot. The checker is the next build; it is not
-   yet measured.
+   can settle and a reader cannot. The execution checker is now measured: it
+   catches 6 of 7 errors, all 4 at `p >= 0.97`, with 0 of 21 false rejects,
+   at 0.23 ms a verdict.
 
 What is not claimed: that this generalises beyond this class, or that the
-checker and the API-driven controller have been measured. They have not; the
-API tier itself has.
+grounding path and the API-driven controller have been measured. They have
+not; the execution checker and the API tier have.
 
 ---
 
@@ -611,14 +613,16 @@ throughout:
 | the 35B | the bulk | 21/28 (0.750) | the cheapest local |
 | the 27B ([Bonsai 2](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
 | the 176B [head](https://huggingface.co/datasets/SkyIsNotGreen/decision-heads) | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
-| the [checker](HARNESS-CONTROLLER.md) | the *executable* errors | **not yet measured** | a sandbox call |
+| the [checker](HARNESS-CONTROLLER.md) (execution) | the *executable* errors | **6 of 7 errors; 4 of 4 at p >= 0.97; 0 of 21 false rejects** | **0.23 ms median; 30 ms p95** |
 | the API (free OpenCode) | what nothing local settles | **28/28 (1.000)** on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`
 were arithmetic and code answers - a better *reader* cannot see them, and
-a sandbox can. A router that sends every task to the strongest model is
-buying tokens to solve problems that a `python -c` would have settled.
+a sandbox can. The measured checker catches those four, and two more, at
+0.23 ms a verdict: 6 of 7 errors, 0 of 21 correct answers failed. A router
+that sends every task to the strongest model is buying tokens to solve
+problems that a `python -c` would have settled.
 
 ```mermaid
 flowchart TB
@@ -642,11 +646,11 @@ flowchart TB
     classDef design fill:#f8fafc,stroke:#64748b,stroke-dasharray:4 3,color:#334155
     class serve ok
     class head,kind warn
-    class task,small,repair,api neutral
-    class sandbox,ground design
+    class task,small,repair,sandbox,api neutral
+    class ground design
 ```
 
-*Figure 6. The routing map. The head and the API tier are measured; the checker is a design, and the API-driven controller is not a run.*
+*Figure 6. The routing map. The head, the execution checker and the API tier are measured; the grounding verifier and the API-driven controller are designs, not runs.*
 
 ### The two drivers
 
@@ -659,21 +663,21 @@ flowchart TB
   residue.
 
 The API driver needs exactly two things the local driver does not: a
-tool schema over the existing endpoints, and a sandbox the checker can
-call. Neither is a new model. The `--verdict-url` tier is already a
-judge as a service; the checker is the same shape with an executor
-behind it. The contract for the four tools, the invariants and the
+tool schema over the existing endpoints, and a controller that can call
+the checker. Neither is a new model. The execution checker exists now;
+the `--verdict-url` tier is already a judge as a service. The contract for the four tools, the invariants and the
 bounded loop is in [`cascade/HARNESS-CONTROLLER.md`](HARNESS-CONTROLLER.md);
 the survey of what other harnesses do is in
 [`cascade/CONTROLLER-PRIOR-ART.md`](CONTROLLER-PRIOR-ART.md).
 
 ### What is not yet claimed
 
-The API tier is measured on the 28 tasks (28/28, 2.6 s median, free
-OpenCode); the API-driven controller direction is not. The paid tier's key
-is expired, so the paid cost is unmeasured, and the checker is a design,
-not a run. The table's local rows and the API tier are measured; the
-checker and the API-driven controller are the programme.
+The execution checker and the API tier are measured on the 28 tasks
+(checker: 6/7, 4/4 at `p >= 0.97`, 0/21, 0.23 ms; API: 28/28, 2.6 s). The
+grounding path and the API-driven controller are not. The paid tier's key
+is expired, so the paid cost is unmeasured. The table's local rows, the
+execution checker and the API tier are measured; grounding and the
+API-driven controller are the programme.
 
 ## 9. What is not claimed
 
