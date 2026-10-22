@@ -1521,22 +1521,37 @@ checker failures and the one head-rejected choice go straight to the live
 free OpenCode API. No local 27B is loaded. The 35B and head remain the
 measured campaign arms; gold is applied after each decision.
 
+The API model in the first run is
+`opencode/deepseek-v4.1-flash-free` (DeepSeek V4.1 Flash Free), through the
+OpenCode build agent on the free tier. The second run replaces it with
+`opencode/glm-5.3-flash-free` (GLM 5.3 Flash Free), same agent and prompt
+surface.
+
 | the 27B slot | served | escalations | correct sent up | mean | conditional | total |
 |---|---|---|---|---|---|---|
 | Bonsai 27B + API | **28/28** | 7: 5 27B, 2 API | **0/21** | **9.238 s** | **17.217 s** | 258.67 s |
-| **API only** | **28/28** | **7 API** | **0/21** | **8.570 s** | **14.542 s** | **239.96 s** |
+| **API only, DeepSeek V4.1 Flash Free** | **28/28** | **7 API** | **0/21** | **8.570 s** | **14.542 s** | **239.96 s** |
+| API only, GLM 5.3 Flash Free | 27/28 | 7 API | **0/21** | 7.797 s | 11.450 s | 218.32 s |
 
-The API path is **0.67 s cheaper a task on the mean**, **2.68 s cheaper on
-the conditional path**, and **18.7 s cheaper over the run**. It is also one
-less moving part locally: no 27B, no second model to keep warm. The price is
-seven API calls instead of two; the free tier is $0 here, and the paid cost
-is not measured.
+The DeepSeek API path is **0.67 s cheaper a task on the mean**, **2.68 s
+cheaper on the conditional path**, and **18.7 s cheaper over the run**. It is
+also one less moving part locally: no 27B, no second model to keep warm. The
+price is seven API calls instead of two; the free tier is $0 here, and the
+paid cost is not measured.
 
-The API path serves 17 35B answers, four head-accepted unknowns, and seven
-API answers. The seven API calls are `gsm8k-0015`, `gsm8k-0033`,
+GLM is **0.77 s cheaper than DeepSeek on the mean** and **3.09 s cheaper on
+the conditional path**, but it is 27/28. The one miss is
+`truthfulqa-0015`: GLM answers B, DeepSeek and the 27B answer A. That is the
+choice the checker cannot execute, so the API-slot model decides it. Both API
+arms keep 0/21 correct sent up and 4/4 at `p >= 0.97`; the difference is one
+unverifiable choice, not an arithmetic or code difference.
+
+The DeepSeek API path serves 17 35B answers, four head-accepted unknowns,
+and seven API answers. The seven API calls are `gsm8k-0015`, `gsm8k-0033`,
 `gsm8k-0038`, `math-0016`, `humaneval-0003`, `humaneval-0015` and
-`truthfulqa-0015`; all seven are correct. The 0/21 holds, and the checker's
-4/4 and 0/21 false rejects are unchanged.
+`truthfulqa-0015`; all seven are correct. GLM gets the same first six right
+and misses only the choice. The 0/21 holds in both, and the checker's 4/4 and
+0/21 false rejects are unchanged.
 
 **One more scoring edge.** The API's `math-0016` ends
 `\boxed{\frac{40}{243}\approx 0.1646}`. The value is exact before the
