@@ -77,7 +77,7 @@ is the execution checker (6/7 errors, 4/4 at p >= 0.97, 0/21 false rejects,
 0/21 correct sent up, 9.24 s mean / 17.22 s conditional), and the
 API-in-the-27B-slot path (DeepSeek V4.1 Flash Free: 28/28, 7 API escalations,
 0/21, 8.57 s / 14.54 s; GLM 5.3 Flash Free: 27/28, 7 API, 0/21, 7.80 s /
-11.45 s). The grounding path and the API-driven controller are unmeasured.
+11.45 s). The API-driven controller is unmeasured; grounding is not pursued.
 This is a research harness, not a product.
 
 ## Engine notes

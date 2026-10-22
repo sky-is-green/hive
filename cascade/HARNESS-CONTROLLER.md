@@ -53,15 +53,14 @@ with the harness, whatever model it is.
   "arguments": { "task": "string", "answer": "string" }
 }
 // -> { "verdict": "pass | fail | unknown",
-//      "method": "execution | grounding | none",
+//      "method": "execution | none",
 //      "evidence": "stdout/exit | the cited sources | why-unknown",
-//      "check": "the program, or the claim set that was grounded",
+//      "check": "the program that was run",
 //      "mutated_ok": true }   // the check failed a corrupted answer
 //
 // execution: a program decides (run the code, recompute the arithmetic).
-// grounding: claim-level support against the retrieved context, each
-// claim cited; an uncited claim is not a pass.
-// The harness chooses; the controller never writes the verdict itself.
+// Grounding is not pursued; a cheap attribution check belongs in the memory
+// bench. The harness chooses; the controller never writes the verdict itself.
 
 // 3. score - the judge head (the 176B's judgements, or a distilled copy)
 {
@@ -94,13 +93,11 @@ cannot do at all, and neither is a sentence in a prompt.)
   evidence and re-checks once (a bad check is a real failure mode). A
   second `fail` rejects the answer.
 - **`unknown` is honest.** A check that cannot be *falsified against a
-  mutated answer* (`mutated_ok=false`) is `unknown`, never `pass`. A
-  grounding check that cannot cite is also `unknown`.
-- **Two verifiers, one interface.** `execution` for what a program can
-  settle (code, arithmetic); `grounding` for what only evidence can
-  settle (claims against sources). They are the same tool because the
-  controller should not have to know which one it needs - but the log
-  records the method, so the routing table can be measured per method.
+  mutated answer* (`mutated_ok=false`) is `unknown`, never `pass`.
+- **The execution verifier, one interface.** `execution` for what a program
+  can settle (code, arithmetic). Grounding is not pursued; a cheap
+  attribution check belongs in the memory bench. The log records the method,
+  so the routing table can be measured per method.
 - **`score` never overrides execution.** A high `p_correct` on a checked
   answer is ignored; a `score` is only consulted where `verify` is
   `unknown`.
@@ -227,8 +224,8 @@ this controller on their tiers.
 ## What is not built
 
 - The **model-written checker branch** (a small model that writes its
-  own tests) and the **grounding verifier**. The execution checker is
-  built and measured; its mutation self-test is part of `verify`.
+  own tests). The execution checker is built and measured; its mutation
+  self-test is part of `verify`. Grounding is not pursued.
 - The **controller model** itself. The scripted loop is measured; the
   first model driver can be a 4B with the tool schema, or a frontier API.
 - The **API driver** (the paid key is expired; the API tier itself is

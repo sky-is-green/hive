@@ -48,11 +48,15 @@ dedup decision cannot be moved; the drift threshold is the free dial.
   dedup threshold of 0.67; the replay prices that as a fact deletion.
   The checkpoint is public as a research record, marked not-a-release.
 
+## Not pursued
+
+- **Grounding / claim-level verification.** The execution checker is
+  measured; a citation verifier would duplicate the memory bench's
+  fidelity/recall and still pass wrong retrieved facts. A cheap attribution
+  check belongs in the memory bench, not in a new tier.
+
 ## Unmeasured (the next phase)
 
-- the **grounding verifier**: the execution checker is measured (6/7,
-  4/4 at `p >= 0.97`, 0/21, 0.23 ms); the citation path is implemented but
-  not measured on a corpus with claims.
 - the **API-driven controller** (the API tier and the scripted controller
   are measured; the frontier-driver direction is not) and the **drift
   benchmark** (being rebuilt: size-matched windows, conversation-disjoint

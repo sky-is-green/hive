@@ -1442,9 +1442,10 @@ without being told the gold.
 
 The checker is 10,900x cheaper a verdict than the 2.52 s head on the
 median, and the expensive tail is the sandbox (29 ms p95); the arithmetic
-path is sub-millisecond. `grounding` is implemented as a separate citation
-path (`check_grounding`) but is not measured here: these 28 tasks have no
-claim/citation surface. The scripted controller is §1B-nonies.
+path is sub-millisecond. Grounding is not pursued: a citation verifier would
+duplicate the memory bench's fidelity/recall and still pass wrong retrieved
+facts; a cheap attribution check belongs there. The scripted controller is
+§1B-nonies.
 
 Code and artifacts: `experiments/cascade/verifier.py`,
 `experiments/cascade/measure_checker.py`, and
