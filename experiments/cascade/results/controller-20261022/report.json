@@ -4350,5 +4350,10 @@
       "routed": "API",
       "verdict": "unknown"
     }
-  ]
+  ],
+  "api_model": {
+    "id": "deepseek-v4.1-flash-free",
+    "providerID": "opencode"
+  },
+  "api_model_label": "DeepSeek V4.1 Flash Free"
 }

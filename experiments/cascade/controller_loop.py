@@ -68,7 +68,8 @@ def ask_27b(prompt: str) -> dict[str, Any]:
     }
 
 
-def ask_api(prompt: str) -> dict[str, Any]:
+def ask_api(prompt: str, model: dict[str, str] | None = None) -> dict[str, Any]:
+    model = model or API_MODEL
     password = json.loads(OPENCODE_SERVICE.read_text())["password"]
     session = requests.Session()
     session.auth = ("opencode", password)
@@ -79,7 +80,7 @@ def ask_api(prompt: str) -> dict[str, Any]:
         created.raise_for_status()
         sid = created.json()["data"]["id"]
         session.post(OPENCODE + f"/api/session/{sid}/model",
-                     json={"model": API_MODEL}, timeout=30).raise_for_status()
+                     json={"model": model}, timeout=30).raise_for_status()
         session.post(OPENCODE + f"/api/session/{sid}/prompt",
                      json={"text": prompt, "resume": True}, timeout=30).raise_for_status()
         session.post(OPENCODE + f"/api/experimental/session/{sid}/wait",
@@ -290,6 +291,7 @@ def main() -> int:
         ),
         "bonsai": BONSAI_URL,
         "api": OPENCODE,
+        "api_model": API_MODEL,
         "threshold": threshold,
         "checker": checker,
         "head_only": head_only,

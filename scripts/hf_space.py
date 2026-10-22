@@ -527,8 +527,8 @@ STAGE_CONTROLLER = """
     <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
       27B 8.92 s. The checker is 0.23 ms median (30 ms p95). The head path is
       18.1 s conditional; the scripted controller is 9.24 s mean / 17.22 s
-      conditional, the API-in-the-27B-slot 8.57 s / 14.54 s, the head-only
-      live path 10.21 s / 17.81 s.</p>
+      conditional, the API-in-the-27B-slot with DeepSeek 8.57 s / 14.54 s and
+      with GLM 7.80 s / 11.45 s, the head-only live path 10.21 s / 17.81 s.</p>
     <p class="timing-note"><strong>It is conditional.</strong> This is the
       escalated path, not the normal one. On the 28-task run the 35B answered
       all 28; the judge sent up <strong>3</strong> - all of them errors, and
@@ -549,9 +549,11 @@ STAGE_CONTROLLER = """
       p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median, and the
       scripted loop serves <strong>28/28</strong> with 7 escalations
       (5 27B, 2 API), 0/21 correct sent up, 9.24 s mean / 17.22 s conditional.
-      The API in the 27B slot is measured as well: <strong>28/28</strong>,
-      7 API escalations, 0/21, 8.57 s / 14.54 s. The API-driven controller is
-      the unmeasured part.</p>
+      The API in the 27B slot is measured as well: DeepSeek V4.1 Flash Free is
+      <strong>28/28</strong>, 7 API, 0/21, 8.57 s / 14.54 s; GLM 5.3 Flash
+      Free is 27/28, 7 API, 0/21, 7.80 s / 11.45 s, missing only the
+      unverifiable `truthfulqa-0015` choice. The API-driven controller is the
+      unmeasured part.</p>
   </div>
 """
 
@@ -772,17 +774,21 @@ PANEL_MEASURED = """
         <tr><td>the head + live 27B/API</td><td>24/28 (0.857); 3 escalations;
             <strong>0/21</strong> correct sent up</td>
             <td>10.21 s mean; 17.81 s conditional</td></tr>
-        <tr><td><strong>the API (free OpenCode)</strong></td>
+        <tr><td><strong>the API (DeepSeek V4.1 Flash Free)</strong></td>
             <td><strong>28/28 (1.000)</strong></td>
             <td>2.6 s median; free tier</td></tr>
         <tr><td><strong>the scripted controller (checker + head + 27B + API)</strong></td>
             <td><strong>28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21</strong>
             correct sent up</td>
             <td><strong>9.24 s mean; 17.22 s conditional</strong></td></tr>
-        <tr><td><strong>the API in the 27B slot</strong></td>
+        <tr><td><strong>the API in the 27B slot (DeepSeek V4.1 Flash Free)</strong></td>
             <td><strong>28/28 (1.000); 7 API escalations; 0/21</strong>
             correct sent up</td>
             <td><strong>8.57 s mean; 14.54 s conditional</strong></td></tr>
+        <tr><td>the API in the 27B slot (GLM 5.3 Flash Free)</td>
+            <td>27/28 (0.964); 7 API escalations; <strong>0/21</strong>
+            correct sent up</td>
+            <td>7.80 s mean; 11.45 s conditional</td></tr>
         <tr><td><strong>the checker (execution + arithmetic)</strong></td>
             <td><strong>6/7 errors; 4/4 at p &ge; 0.97; 0/21 false rejects;
             17/17 mutations</strong></td>

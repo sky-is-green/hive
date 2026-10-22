@@ -18,9 +18,10 @@ contracts the next phase is built against.
 | the judge + Bonsai | 23/28 (0.821); 3 escalations, all errors | - |
 | the head + live 27B/API | 24/28 (0.857); 3 escalations; **0/21** correct sent up | 10.21 s mean; 17.81 s conditional |
 | the oracle gate + Bonsai | 27/28 (0.964) | - |
-| **the API (free OpenCode tier)** | **28/28 (1.000)** | 2.608 s median; free tier, not a paid cost |
+| **the API (DeepSeek V4.1 Flash Free)** | **28/28 (1.000)** | 2.608 s median; free tier, not a paid cost |
 | **the scripted controller (checker + head + 27B + API)** | **28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21** correct sent up | **9.24 s mean; 17.22 s conditional** |
-| **the API in the 27B slot** | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
+| **the API in the 27B slot (DeepSeek V4.1 Flash Free)** | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
+| the API in the 27B slot (GLM 5.3 Flash Free) | 27/28 (0.964); 7 API escalations; **0/21** correct sent up | 7.80 s mean; 11.45 s conditional |
 
 The latency decomposition and the resident tier are in
 `docs/AB-RESULTS.md` §1B and §1B-bis: cold 33.8 s vs 17.3 s, warm

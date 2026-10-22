@@ -617,10 +617,11 @@ throughout:
 | the 27B ([Bonsai 2](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
 | the 176B [head](https://huggingface.co/datasets/SkyIsNotGreen/decision-heads) | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
 | the [checker](HARNESS-CONTROLLER.md) (execution) | the *executable* errors | **6 of 7 errors; 4 of 4 at p >= 0.97; 0 of 21 false rejects** | **0.23 ms median; 30 ms p95** |
-| the API (free OpenCode) | what nothing local settles | **28/28 (1.000)** on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
+| the API (DeepSeek V4.1 Flash Free, free OpenCode) | what nothing local settles | **28/28 (1.000)** on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 | the head only + live 27B/API | the whole task | 24/28; 3 escalations; **0/21** correct sent up | 10.21 s mean; 17.81 s conditional |
 | **the scripted controller** (checker + head + 27B + API) | the whole task | **28/28 (1.000); 7 escalations (5 27B, 2 API); 0/21** correct sent up | **9.24 s mean; 17.22 s conditional** |
-| the API in the 27B slot | the whole task | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
+| the API in the 27B slot (DeepSeek V4.1 Flash Free) | the whole task | **28/28 (1.000); 7 API escalations; 0/21** correct sent up | **8.57 s mean; 14.54 s conditional** |
+| the API in the 27B slot (GLM 5.3 Flash Free) | the whole task | 27/28 (0.964); 7 API escalations; **0/21** correct sent up | 7.80 s mean; 11.45 s conditional |
 
 The table says routing is not one axis. **Checkability comes before
 competence**: four of the seven errors the 176B's head gave `p >= 0.97`

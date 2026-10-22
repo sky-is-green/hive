@@ -10,6 +10,7 @@ No local escalation model is loaded.  Gold is applied after each decision.
 
 from __future__ import annotations
 
+import argparse
 import json
 import statistics
 import sys
@@ -38,6 +39,14 @@ def percentile(values: list[float], q: float) -> float:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="API-in-the-27B-slot arm")
+    parser.add_argument("--model", default="deepseek-v4.1-flash-free")
+    parser.add_argument("--provider", default="opencode")
+    parser.add_argument("--label", default="DeepSeek V4.1 Flash Free")
+    parser.add_argument("--out", type=Path, default=OUT)
+    args = parser.parse_args()
+    api_model = {"id": args.model, "providerID": args.provider}
+
     tasks = {task["id"]: task for task in json.loads(TASKS.read_text())["tasks"]}
     answers = {row["id"]: row for row in json.loads(ANSWERS.read_text())["records"]}
     head = next(arm for arm in json.loads(GATE.read_text())["the_arms"]
@@ -78,7 +87,7 @@ def main() -> int:
                           "verdict": v35["verdict"]})
         else:
             steps.append({"task": task_id, "phase": "escalate", "to": "API"})
-            got = ask_api(task["prompt"])
+            got = ask_api(task["prompt"], api_model)
             a_api = got["text"]
             t_api = got["seconds"] * 1000.0
             v_api = verify(spec, a_api)
@@ -136,20 +145,22 @@ def main() -> int:
         "total_s": round(sum(times) / 1000.0, 2),
     }
     payload = {
-        "name": "api-replaces-27b-20261022",
+        "name": f"api-replaces-27b-20261022-{args.model}",
         "protocol": (
             "same measured 35B/head arms and checker; checker fail or "
             "unconvincing head score goes directly to the live free OpenCode "
             "API; no 27B; gold post hoc"
         ),
         "threshold": threshold,
+        "api_model": api_model,
+        "api_model_label": args.label,
         "summary": summary,
         "rows": rows,
         "steps": steps,
     }
-    OUT.write_text(json.dumps(payload, indent=2) + "\n")
+    args.out.write_text(json.dumps(payload, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
-    print(f"wrote {OUT}")
+    print(f"wrote {args.out}")
     return 0 if summary["correct_sent_up"] == 0 and summary["p97_caught"] == summary["p97_total"] else 1
 
 
