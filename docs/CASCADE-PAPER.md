@@ -22,8 +22,63 @@ The Hive Cascade is a serving loop that checks every answer before it is
 served, repairs what can be repaired, and escalates what cannot - using
 **verifiers that never see the answer key**.
 
-This card is the paper: the method, the protocol, the measured results, and
-the negative results I kept.
+This is the paper: the method, the protocol, the measured results, and the
+negative results I kept. It is versioned with the code; the visual companion
+is [the Space](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
+The measurements are current to October 2026; the checker and the API driver
+are unmeasured.
+
+**Contents**
+
+- [The claim in one page](#the-claim-in-one-page)
+- [1. The problem](#1-the-problem)
+- [2. The method](#2-the-method)
+  - [The gold-free runtime contract](#the-gold-free-runtime-contract)
+- [3. The taxonomy: what a hive is made of](#3-the-taxonomy-what-a-hive-is-made-of)
+- [4. The measured results](#4-the-measured-results)
+  - [4.1 The tiered refresh](#41-the-tiered-refresh-the-two-scions-measured-side-by-side)
+  - [4.2 The escalation tier](#42-the-escalation-tier-the-176b-buys-nothing-the-27b-buys-five)
+- [5. The learned gate: a negative result I kept](#5-the-learned-gate-a-negative-result-i-kept)
+- [6. The escalation lane: the harvest](#6-the-escalation-lane-the-harvest)
+- [7. The reporting](#7-the-reporting)
+- [8. The router is the product](#8-the-router-is-the-product-the-cascade-is-symmetric)
+- [9. What is not claimed](#9-what-is-not-claimed)
+- [10. Reproduce](#10-reproduce)
+- [11. License](#11-license)
+
+## The claim in one page
+
+The harness, not the model, is the lever on this class.
+
+| the measurement | what it compares | the result |
+|---|---|---|
+| the 35B, three draws (84 items per arm) | no verifier vs the verifier and the repair leg | 64/84 (76.2%) → **67/84 (79.8%)** |
+| the 35B, one draw (28 tasks) | the model vs the loop, same draw | 23/28 (82.1%) → **24/28 (85.7%)** |
+| the escalation candidate (28 tasks) | the 35B vs the 27B alone | 21/28 (75.0%) → **26/28 (92.9%)**, +5 net |
+| the generation arm (28 tasks) | the 35B vs the 176B answering again | 21/28 (75.0%) → 21/28 (75.0%), net 0 |
+
+The 23/28 and the 21/28 are different draws; the three-draw arms are the
+robust comparison. The 27B's +5 is 6 errors fixed and 1 correct answer
+broken. The generation arm's net 0 is 2 fixed and 2 broken on the 35B's
+answers; the 176B alone was 19/28 in the head-to-head.
+
+Three results carry the paper:
+
+1. **Verification needs repair.** A verifier alone is a tax: 63/84 against
+   64/84 without one. The repair leg makes verification pay: 67/84, +3.6
+   points over no verification, with 8 of the 9 catches cleared. It catches
+   8 wrong answers for every 1 correct answer it drops.
+2. **The tier is not the model.** The 176B's generation is net zero at
+   20.68 s an item. A 27B dense model fixes 6 of the 7 errors for +5 net at
+   8.92 s. The 176B's head is a cheap judge (2.52 s a verdict, 0 of 21
+   correct answers sent up), and the 27B is the escalation generator.
+3. **Checkability comes before competence.** The head gives four of the
+   seven errors `p >= 0.97`; they are arithmetic and code, which a sandbox
+   can settle and a reader cannot. The checker is the next build; it is not
+   yet measured.
+
+What is not claimed: that this generalises beyond this class, or that the
+checker and the API driver have been measured. They have not.
 
 ---
 
@@ -155,11 +210,13 @@ consistency check are async in P2).
 
 ## 4. The measured results
 
+### The 66-item organic set
+
 The organic set: 66 items, sampled at T=0.7, live against the local 176B
 (A6B ternary, MoE). The bench: GSM8K-style arithmetic, HumanEval-style code,
 and a multiple-choice set.
 
-| | items | served-correct | false rejects | note |
+| | items | served-correct | false rejects (ledger) | note |
 |---|---|---|---|---|
 | no cascade (sampled) | 66 | 58 | - | the baseline |
 | **+ detect + repair** | 66 | **62** | **0** | 6 of the 9 wrong answers detected; 4 of the 5 seen live repaired |
@@ -173,10 +230,13 @@ uncertain. A deployment that runs greedy gets nothing from this machinery -
 that is a result, not a failure, and it is why the sampled regime is the
 one reported first.
 
-**The false-reject budget is zero.** 57 correct answers, 0 false rejects.
-This is the number that matters most: a verifier that rejects correct
-answers is worse than no verifier, because it sends good work to the
-expensive lane.
+**The escalation ledger's false-reject count is zero.** The 66-item runs
+record no false reject in the runner's ledger: the `false_reject` field only
+exists once something escalates, and nothing did. That is not the verifier's
+own rate - a rejected answer that was right - which the later three-draw
+campaign measures at 1, 1 and 3 across its arms (§5). The trade is still
+worth making: the verifier catches 8 wrong answers for every 1 correct
+answer it drops.
 
 **Repairs do not harm correct answers.** The repair leg is only entered on a
 rejection, and a cleared attempt is re-framed, never rewritten.
@@ -184,7 +244,7 @@ rejection, and a cleared attempt is re-framed, never rewritten.
 **Truncation is caught by the ladder.** The runner's own re-runs
 (`results/runner-cascade-sampled-20261018/`,
 `results/runner-cascade-sampled-nothink-20261018/`) reported 3 truncations
-caught and flagged, and 0 false rejects in both.
+caught and flagged, and 0 ledger false rejects in both.
 
 ### 4.1 The tiered refresh: the two Scions, measured side by side
 
@@ -193,8 +253,10 @@ tiered design actually poses is *which tier does the work*, so both
 Scion models were served at once - on one card, sharing it - and run over
 the same 28 organic tasks.
 
-**The models, head to head** (one draw each, T=0.7, 640 tokens, 62 minutes
-wall, 0 errors; `experiments/cascade/results/dual-scion-20261020/full28/`):
+#### The head-to-head
+
+The two models, one draw each (T=0.7, 640 tokens, 62 minutes wall, 0 errors;
+`experiments/cascade/results/dual-scion-20261020/full28/`):
 
 | | the 35B-A3B | the 176B-A6B |
 |---|---|---|
@@ -209,25 +271,28 @@ also **disagree on 16 of 28**, so neither dominates: the disagreement is
 the raw material for an arbiter, and a router that knows *which* model to
 trust per item is worth more than either model alone.
 
-**The cascade over the 35B** (the same 28 tasks, the deterministic judge,
-the repair leg on, T=0.7):
+#### The cascade over the 35B
+
+The same 28 tasks, a fresh draw, the deterministic judge and the repair leg
+on (T=0.7):
 
 | | |
 |---|---|
 | the model's own accuracy | 0.821 (23/28) |
 | **the cascade's served-correct** | **0.857 (24/28)** |
 | the repair leg | 1 attempted, **1 cleared** |
-| **false rejects** | **0** |
+| **false rejects (ledger)** | **0** |
 | false accepts | 4 (0.143) |
 | the mean per-item latency | **6.9 s** |
 
 The loop does its job on the small tier: one wrong answer caught and
-repaired, nothing false-rejected, and the served answer is better than the
-model's own.
+repaired, nothing false-rejected in the ledger, and the served answer is
+better than the model's own.
 
-**The arms, in the multi-sample regime** (the same 28 tasks, the 35B,
-three draws each - 84 items per arm, because a single draw is a
-direction and not a measurement):
+#### The multi-sample arms
+
+The same 28 tasks and the 35B, three draws each - 84 items per arm, because
+a single draw is a direction and not a measurement:
 
 | arm | served-correct | the verifier rejected | of which false | the repair leg |
 |---|---|---|---|---|
@@ -246,21 +311,23 @@ budget of 2 (so it stays off - see §5).
 And the trade is worth making: the verifier catches **8 wrong answers for
 every 1 correct answer it drops**.
 
-**And the comparable pair** - the same 10 organic tasks, the same cascade,
-the same verifiers, the two models:
+#### The comparable pair
+
+The same 10 organic tasks, the same cascade, the same verifiers, the two
+models:
 
 | | the 35B-A3B | the 176B-A6B |
 |---|---|---|
 | the model's own accuracy | 0.800 | 0.800 |
 | **the cascade's served-correct** | **0.800** | **0.800** |
-| the false rejects | **0** | **0** |
+| the false rejects (ledger) | **0** | **0** |
 | the accepted-and-wrong | 2 | 2 |
 | the repairs | 0 | 0 |
 | **the mean per-item latency** | **5.36 s** | **229.67 s** |
 | the mean tokens | 329 | 745 |
 
 **Identical outcomes, 42.5x the wall clock.** The same served-correct
-(0.800 both), the same false rejects (0 both), the same wrong-accepted (2
+(0.800 both), the same ledger false rejects (0 both), the same wrong-accepted (2
 both), the same repairs (none needed in either) - and the 176B spends
 2.3x the tokens thinking and 42.5x the seconds getting there (5.4 s an
 item against 229.7 s).
@@ -281,7 +348,7 @@ the work outright**, and the value of the large tier is not accuracy but
 the 8 items where it was right and the small one was not - which is
 exactly what an arbiter would be for.
 
-## 4b. The escalation tier: the 176B's generation buys nothing; a 27B dense one buys five
+### 4.2 The escalation tier: the 176B buys nothing, the 27B buys five
 
 The 229.7 s above is not a property of the model. The same engine's log
 says the 176B decodes at **67.7 tok/s** over the 4,424 generations it has
@@ -289,8 +356,8 @@ served. It is bimodal, and the engine says which mode it is in: a fresh
 prompt read costs 5 tok/s, a reused prefix 71 tok/s, and the cold phase
 is the OS pulling the model's expert weights off the NVMe ("the OS read
 96842 MB from storage"). Warm and alone, the same 28 tasks cost **26.9 s
-an item** - so about 7x of the 42.5x was contention and a cold cache, and
-about 6x is the tier.
+an item** - so the 42.5x gap was about 7x contention and a cold cache and
+about 6x the tier (7 × 6 ≈ 42).
 
 That leaves the question the campaign never asked: **what is the
 escalation tier worth?** The tier asked the 176B to *answer again*. Both
@@ -311,8 +378,7 @@ inherit the other's expert cache:
 tasks' own checkers, the 176B's fresh answer fixes 2 of the 35B's 7
 errors and breaks 2 of its 21 correct ones: net zero, at 20.68 s an item.
 
-**The generator, not the tier.** The same
-generate arm on a 27B dense model (Bonsai 2, ternary, 7.2 GB) fixes 6 of
+**The generator, not the tier.** The same generate arm on a 27B dense model (Bonsai 2, ternary, 7.2 GB) fixes 6 of
 the 7 errors and breaks 1 of the 21 correct: **net +5 at 8.92 s an
 item**, against the 176B's net zero at 20.68 s. The 176B is a judgement
 model; its generation is not better than the 35B's. The tier was never
@@ -377,9 +443,10 @@ every answer to catch one mistake; at this precision it is not worth it. The
 implementation is tested and available as `--gate intern-0.8b`, and the
 default is off. **A negative result, pre-registered, is a result.**
 
-**And the later measurement confirms it** (the A/B campaign, 2026-10-20;
-the 35B-A3B, the same 28 organic tasks, three draws each, 84 items per
-arm):
+### The later measurement
+
+The A/B campaign (2026-10-20; the 35B-A3B, the same 28 organic tasks,
+three draws each, 84 items per arm) confirms it:
 
 | arm | served-correct | the gate | the mean |
 |---|---|---|---|
@@ -397,13 +464,15 @@ silent wrongs** (4 here, 1 there) and its false flags are exactly what
 the budget exists to bound. The mechanism works; the head does not
 separate well enough on this distribution to pay for itself.
 
-The same campaign corrected a claim in this paper's §8: the "0 false
-rejects" there is the *escalation's* bookkeeping, not the verifier's - the
-runner's `false_reject` field only exists once something escalates. The
-verifier's own false rejects (a rejected answer that was right) are **1,
-1 and 3** across the arms, and it catches **8 wrong answers for every 1
-correct answer it drops**. The trade is still worth making; the zero was
-never the verifier's number.
+### The correction to the zero
+
+The same campaign corrected the earlier claim in §4: the "0 false rejects"
+there is the *escalation's* bookkeeping, not the verifier's - the runner's
+`false_reject` field only exists once something escalates. The verifier's
+own false rejects (a rejected answer that was right) are **1, 1 and 3**
+across the arms, and it catches **8 wrong answers for every 1 correct
+answer it drops**. The trade is still worth making; the zero was never the
+verifier's number.
 
 ## 6. The escalation lane: the harvest
 
@@ -428,7 +497,8 @@ touching the runtime's contract.
 ## 7. The reporting
 
 A verdict nobody can trace is a rumour. Every run therefore leaves three
-artifacts, and they are published next to this card.
+run artifacts, plus a model card generated from the manifest. They are
+published in this repository.
 
 **`report.json`** - the per-item record. For every item: the verdict
 (`accepted`, `accepted_repaired`, `escalated`, `error`), the detector
@@ -443,13 +513,13 @@ and per-benchmark aggregates with both the sample-accuracy and the
 task-macro. A run can be reproduced because the manifest says what to
 reproduce.
 
-**`MODEL-CARD.md`** - generated from the manifest, for the model page.
-
 **`escalation.jsonl`** - the harvest: one line per item the ladder
 resolved, carrying the task, the full draft, the structured findings, the
 repair attempt and the resolution. The serving loop appends and forgets;
 nothing in the runtime reads it, so the gold-free contract is untouched
 while the lane feeds offline training.
+
+**`MODEL-CARD.md`** - generated from the manifest, for the model page.
 
 The point of the separation is that the *runtime* evidence (what the
 verifiers caught, what the repair fixed, what the ladder did) and the
@@ -458,7 +528,7 @@ first is produced by the serving path with no access to the answer key;
 the second is produced afterwards, with the key, and is never consulted
 by the loop.
 
-## 7b. The router is the product: the cascade is symmetric
+## 8. The router is the product: the cascade is symmetric
 
 The protocol above is written local-first - the local model answers, the
 judge gates, the API is the last resort - because that is the order the
@@ -469,12 +539,14 @@ is identical. What the system owns is the table - which tier can settle
 which kind of task, at what cost and with what measured error - not the
 direction the requests flow.
 
-**The measured table** (the same 28 organic tasks throughout):
+### The measured table
+
+The same 28 organic tasks throughout:
 
 | the tier | what it settles | the measured number | the cost |
 |---|---|---|---|
 | the 35B | the bulk | 21/28 (0.750) | the cheapest local |
-| the 27B (Bonsai 2) | the 35B's repairable errors | 26/28 (0.929); +5 net | 8.9 s/item |
+| the 27B (Bonsai 2) | the 35B's repairable errors | 26/28 alone (0.929); +5 net | 8.9 s/item |
 | the 176B head | the *plausible* errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
 | the checker | the *executable* errors | **not yet measured** | a sandbox call |
 | the API | what nothing local settles | not yet measured (the key is expired) | per token |
@@ -485,7 +557,7 @@ were arithmetic and code answers - a better *reader* cannot see them, and
 a sandbox can. A router that sends every task to the strongest model is
 buying tokens to solve problems that a `python -c` would have settled.
 
-**The two drivers, one table.**
+### The two drivers
 
 - *The local driver* (the human in the Studio, or the local judge): start
   at the 35B; send up when a check fails or the judge is uncertain; end
@@ -501,25 +573,31 @@ call. Neither is a new model. The `--verdict-url` tier is already a
 judge as a service; the checker is the same shape with an executor
 behind it.
 
-**What is not yet claimed.** The API-driven direction has not been
+### What is not yet claimed
+
+The API-driven direction has not been
 measured at all: the paid tier's key is expired, and the checker is a
 design, not a run. The table's local rows are measured; the two bottom
 rows are the programme.
 
-## 8. What is not claimed
+## 9. What is not claimed
 
-- **Not** that the cascade fixes most wrong answers. It caught 6 of 9 wrong
-  answers in one regime, and 0 in the greedy regime.
+- **Not** that the cascade fixes most wrong answers. In the 176B's
+  66-item sampled run it caught 6 of the 9 wrong answers; in the greedy
+  regime it caught 0.
 - **Not** that a learned gate is useless. It is off because of *this* head on
   *this* distribution, at a *pre-registered* false-flag budget.
-- **Not** that the measurements generalise. 66 organic items, one model, one
-  bench. The priority plan is an evaluation floor first - a held-out split
+- **Not** that the measurements generalise. The first campaign is 66 organic
+  items on the 176B; the tier campaign is 28 organic tasks on the 35B, the
+  176B and the 27B, with one draw per task for the tier comparison and
+  three draws per arm in the A/B. The task class is arithmetic, code and multiple
+  choice. The priority plan is an evaluation floor first - a held-out split
   plus a real benchmark slice (GSM8K / MATH / HumanEval / TruthfulQA, local)
   at 3-5 samples per task, thresholds fitted on train and reported on test.
 - **Not** that the taxonomy is complete. 22 roles is a map of what the
   measurements needed so far.
 
-## 9. Reproduce
+## 10. Reproduce
 
 ```bash
 git clone https://github.com/sky-is-green/hivebench
@@ -545,7 +623,7 @@ and task-macro), `streams.json` (the full traces, regenerable), and a
 generated `MODEL-CARD.md`. Manifests and cards are tracked in git; the large
 stream traces are ignored.
 
-## 10. License
+## 11. License
 
 MIT.
 
@@ -553,9 +631,10 @@ MIT.
 @misc{hive-cascade-2026,
   title  = {The Hive Cascade: detect, repair, escalate - a gold-free
             verification-and-repair loop for local language models},
-  author = {{HiveBench Studio contributors}},
+  author = {sky-is-green},
   year   = {2026},
-  url    = {https://github.com/sky-is-green/hivebench}
+  url    = {https://github.com/sky-is-green/hivebench},
+  note   = {Paper: https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md}
 }
 ```
 

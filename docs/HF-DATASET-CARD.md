@@ -25,9 +25,10 @@ checker and the checker's expected value. The runtime protocol never sees
 the checker; the evaluation pass reads it only after the answers are
 fixed (the gold-free contract).
 
-The paper is not this card. It is the static Space
-[`SkyIsNotGreen/hive-cascade-paper`](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper),
-mirrored from the repository's `docs/CASCADE-PAPER.md`.
+The paper is not this card. It lives in the repository:
+[`docs/CASCADE-PAPER.md`](https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md).
+The visual companion is the static Space
+[`SkyIsNotGreen/hive-cascade-paper`](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper).
 
 ## Contents
 
@@ -110,7 +111,8 @@ the task text.
 
 | | |
 |---|---|
-| the paper | [hive-cascade-paper](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper) |
+| the paper | [docs/CASCADE-PAPER.md](https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md) |
+| the visual companion | [hive-cascade-paper](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper) |
 | the code and the full results log | [github.com/sky-is-green/hivebench](https://github.com/sky-is-green/hivebench) |
 | the memory system | [SkyIsNotGreen/splinter-memory](https://huggingface.co/SkyIsNotGreen/splinter-memory) |
 | the encoder (research checkpoint) | [SkyIsNotGreen/splinter-encoder](https://huggingface.co/SkyIsNotGreen/splinter-encoder) |

@@ -1,13 +1,14 @@
 """Render and publish the HF Space page for the cascade paper.
 
-Six tabs (the memory, the routing, the controller, what is measured, the
+Seven tabs (the premise, the memory, the routing, the controller, what is measured, the
 checker, the paper). Above the tab's content sits a **stage**: the
 example for that tab, which changes with it. The demos are
 dependency-free, respect ``prefers-reduced-motion``, and the page works
 without JavaScript (all panels are present, the tabs are anchors).
 
 A static Space serves ``index.html``; the ``README.md`` is only the repo
-card. This builds both from ``docs/CASCADE-PAPER.md``.
+card. The paper itself lives in the repository (``docs/CASCADE-PAPER.md``);
+this script builds the page and the card, and points at it.
 
     python scripts/hf_space.py            # render to /tmp/opencode/hf-space
     python scripts/hf_space.py --upload   # publish to the Space
@@ -15,11 +16,9 @@ card. This builds both from ``docs/CASCADE-PAPER.md``.
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
 SPACE = "SkyIsNotGreen/hive-cascade-paper"
 OUT = Path("/tmp/opencode/hf-space")
 GH = "https://github.com/sky-is-green/hivebench"
@@ -310,6 +309,13 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 .timing .total { border-color: var(--accent); color: var(--accent); }
 .timing-note { font-size: .78rem; color: var(--muted); margin-top: 6px; }
 .paper-card { border-left: 3px solid var(--accent); padding: .1rem 0 .1rem 1rem; }
+.paper-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 1rem 0 1.25rem; }
+.cta { display: inline-block; background: var(--accent); color: var(--bg);
+  padding: 8px 14px; border-radius: 8px; text-decoration: none;
+  font-weight: 600; font-size: .9rem; }
+.cta:hover { filter: brightness(1.08); }
+.cta.ghost { background: transparent; color: var(--accent);
+  border: 1px solid var(--accent); }
 .paper-card h3 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .paper-card p { color: var(--muted); }
 footer { border-top: 1px solid var(--line); padding: 24px 0 44px; color: var(--muted);
@@ -570,15 +576,16 @@ STAGE_CHECKER = """
   </div>
 """
 
-STAGE_PAPER = """
+STAGE_PAPER = f"""
   <div class="stage-panel" data-stage="paper" hidden>
     <div class="paper-card">
       <h3>The Hive Cascade: detect → repair → escalate</h3>
       <p>A gold-free verification-and-repair loop for local language models.
-        A model that is wrong is rarely uncertain - it is confidently wrong,
-        and the confidence is indistinguishable from a right answer's.</p>
+        The full text lives in the repository, with the code and the run
+        bundles.</p>
     </div>
-    <p class="caption">The full text is below. <a href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md">Also in the repository.</a></p>
+    <p class="caption">The paper is the record.
+      <a href="{GH}/blob/main/docs/CASCADE-PAPER.md">Read it on GitHub.</a></p>
   </div>
 """
 
@@ -615,12 +622,12 @@ PANEL_PREMISE = """
           yet by the fix.</p></div>
       <div class="card"><h3>H4 · One loop, two levels</h3>
         <p>The membrane and the controller make the same trade - what to keep,
-          what to check, when to stop. The mapping is measured; the controller
+          what to check, when to stop. The memory level is measured; the controller
           is the current work.</p></div>
     </div>
 
     <p class="note"><strong>What follows.</strong> The next tabs are the
-      evidence: the memory's encoder at work, the mapping, the controller's
+      evidence: the memory's encoder at work, the routing, the controller's
       loop, the measured table, the missing checker, and the paper. The first
       one is interactive.</p>
   </div>
@@ -791,13 +798,38 @@ PANEL_CHECKER = """
 </section>
 """
 
-PANEL_PAPER_OPEN = """
+PANEL_PAPER = f"""
 <section class="tab-panel" data-panel="paper" id="paper" role="tabpanel">
   <div class="wrap">
     <h2>The paper</h2>
+    <p class="lead">The full paper lives in the repository, versioned with
+      the code and the results it describes.</p>
+    <p>This page is the shop window; the paper is the record. It carries the
+      method, the gold-free contract, the measured tier results and their
+      corrections, the negative results I kept, and the controller table.</p>
+    <p class="paper-actions">
+      <a class="cta" href="{GH}/blob/main/docs/CASCADE-PAPER.md">Read the paper on GitHub</a>
+      <a class="cta ghost" href="https://raw.githubusercontent.com/sky-is-green/hivebench/main/docs/CASCADE-PAPER.md">Raw markdown</a>
+    </p>
+    <div class="grid">
+      <div class="card"><h3>The claim</h3><p>On this class, a 35B with a
+        check-and-repair loop serves <strong>67/84</strong> over three draws
+        against <strong>64/84</strong> without it; a 27B escalation tier adds
+        <strong>+5 net</strong>; the 12&times; larger 176B's generation adds
+        nothing.</p></div>
+      <div class="card"><h3>What it covers</h3><p>The method and the
+        gold-free contract; the taxonomy; the measured tier results; the
+        learned gate's negative result; the harvest and the reporting; the
+        routing table; and what is not claimed.</p></div>
+      <div class="card"><h3>The record</h3><p>Every number has a run bundle,
+        and every correction stays in
+        <a href="{GH}/blob/main/docs/AB-RESULTS.md"><code>docs/AB-RESULTS.md</code></a>.
+        The current state is in
+        <a href="{GH}/blob/main/docs/STATUS.md"><code>docs/STATUS.md</code></a>.</p></div>
+    </div>
+  </div>
+</section>
 """
-
-PANEL_PAPER_CLOSE = "</div></section>\n"
 
 LINKS = """
 <section id="links"><div class="wrap">
@@ -819,11 +851,32 @@ LINKS = """
 </div></section>
 """
 
-FOOT = """
-<footer><div class="wrap"><a href="https://github.com/sky-is-green">sky-is-green</a> · MIT · The paper is
-  also in the repository at <a class="ref" href="https://github.com/sky-is-green/hivebench/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
+FOOT = f"""
+<footer><div class="wrap"><a href="https://github.com/sky-is-green">sky-is-green</a> · MIT · The paper lives at
+  <a class="ref" href="{GH}/blob/main/docs/CASCADE-PAPER.md"><code>docs/CASCADE-PAPER.md</code></a>.
 </div></footer>
 """
+
+README = f"""---
+title: "The Hive Cascade: detect -> repair -> escalate"
+emoji: "🐝"
+colorFrom: yellow
+colorTo: gray
+sdk: static
+pinned: false
+license: mit
+---
+**A gold-free verification-and-repair loop for local language models.**
+
+This Space is the visual companion. **The paper lives in the repository:**
+[docs/CASCADE-PAPER.md]({GH}/blob/main/docs/CASCADE-PAPER.md).
+
+- [The page](https://skyisnotgreen-hive-cascade-paper.static.hf.space/)
+- [The code and the results]({GH})
+- [The status]({GH}/blob/main/docs/STATUS.md)
+- [The task sets](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade)
+"""
+
 
 JS = """
 <script>
@@ -943,7 +996,7 @@ JS = """
     }, 1900);
   }
 
-  // ---- routing: highlight the mapping, one row at a time
+  // ---- routing: highlight the correspondence, one row at a time
   const MAP_CAPTIONS = [
     "The chunk router. The controller does the same, one level up.",
     "Dedup removes; drift only demotes. Verify rejects; score only advises. The hard side is the one whose threshold is constrained.",
@@ -1286,77 +1339,38 @@ JS = """
 """
 
 
-_REPO = "https://github.com/sky-is-green/hivebench"
-_REF = re.compile(
-    r"<code>((?:docs|experiments|harness|scripts|tests|tools|configs|stacks)/[A-Za-z0-9_./-]+)</code>")
-
-
-def link_refs(html: str) -> str:
-    """Link every inline code span that names a file that exists here."""
-    def repl(match):
-        path = match.group(1)
-        target = REPO / path
-        if not target.exists():
-            return match.group(0)
-        kind = "tree" if target.is_dir() else "blob"
-        url = f"{_REPO}/{kind}/main/{path}"
-        return f'<a class="ref" href="{url}"><code>{path}</code></a>'
-    html = _REF.sub(repl, html)
-    html = html.replace(
-        "<code>SkyIsNotGreen/decision-heads</code>",
-        '<a class="ref" href="https://huggingface.co/datasets/SkyIsNotGreen/decision-heads">'
-        "<code>SkyIsNotGreen/decision-heads</code></a>")
-    for name in ("results/runner-cascade-sampled-20261018/",
-                 "results/runner-cascade-sampled-nothink-20261018/"):
-        html = html.replace(
-            f"<code>{name}</code>",
-            f'<a class="ref" href="https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade/tree/main/results">'
-            f"<code>{name}</code></a>")
-    return html
-
-
-def build() -> tuple[str, str]:
-    import markdown
-
-    paper = (REPO / "docs" / "CASCADE-PAPER.md").read_text(encoding="utf-8")
-    parts = paper.split("---\n", 2)
-    body_md = parts[2] if len(parts) == 3 else paper
-    lines = body_md.lstrip().splitlines()
-    if lines and lines[0].startswith("# "):
-        lines = lines[1:]
-    body_md = "\n".join(lines)
-    body_html = link_refs(markdown.markdown(
-        body_md, extensions=["tables", "fenced_code", "sane_lists"]))
+def build() -> tuple[str, str, str]:
     html = (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         "<title>The Hive Cascade - from memory to a global controller</title>\n"
-        '<meta name="description" content="A gold-free verification loop for local language models: the memory, the move to a global controller, and what is measured.">\n'
+        '<meta name="description" content="A gold-free verification loop for local language models: the memory, the path to a global controller, and what is measured.">\n'
         '<link rel="stylesheet" href="style.css">\n</head>\n<body>\n'
         + HERO + TABS + STAGE_OPEN + STAGE_PREMISE + STAGE_MEMORY + STAGE_ROUTING + STAGE_CONTROLLER
         + STAGE_MEASURED + STAGE_CHECKER + STAGE_PAPER + STAGE_CLOSE
         + "<main>\n" + PANEL_PREMISE + PANEL_MEMORY + PANEL_ROUTING + PANEL_CONTROLLER
-        + PANEL_MEASURED + PANEL_CHECKER + PANEL_PAPER_OPEN + body_html
-        + PANEL_PAPER_CLOSE + "</main>\n" + LINKS + FOOT + JS
+        + PANEL_MEASURED + PANEL_CHECKER + PANEL_PAPER
+        + "</main>\n" + LINKS + FOOT + JS
         + "\n</body>\n</html>\n"
     )
-    return html, CSS
+    return html, CSS, README
 
 
 def main(argv: list[str]) -> int:
-    html, css = build()
+    html, css, readme = build()
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "index.html").write_text(html, encoding="utf-8")
     (OUT / "style.css").write_text(css, encoding="utf-8")
-    print(f"wrote {OUT/'index.html'} ({len(html)} chars) and style.css")
+    (OUT / "README.md").write_text(readme, encoding="utf-8")
+    print(f"wrote {OUT/'index.html'} ({len(html)} chars), style.css and README.md")
     if "--upload" in argv:
         from huggingface_hub import HfApi
 
         api = HfApi()
-        for name in ("index.html", "style.css"):
+        for name in ("index.html", "style.css", "README.md"):
             api.upload_file(path_or_fileobj=str(OUT / name), path_in_repo=name,
                             repo_id=SPACE, repo_type="space",
-                            commit_message="Tabs with a per-tab example stage")
+                            commit_message="The page; the paper lives in the repository")
         print(f"uploaded to https://huggingface.co/spaces/{SPACE}")
     return 0
 
