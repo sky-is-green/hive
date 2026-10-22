@@ -2,6 +2,7 @@
 
 The numbers are from ``docs/AB-RESULTS.md``:
 
+- §2B: the 10-task latency (35B 5.36 s, 176B 229.67 s).
 - §3A-3E: the 84-item A/B arms (64, 63, 67, 70 served-correct).
 - §1B-sexies: the 28-task tier results (35B 21, 176B 19, 27B 26,
   head -> Bonsai 23, oracle -> Bonsai 27).
