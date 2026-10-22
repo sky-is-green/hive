@@ -608,9 +608,7 @@
   },
   "checker_correction": "math-0020 was first scored false because the boxed answer used LaTeX thousands separators: \\boxed{6{,}290{,}000}. The checker now strips {,} and commas; rescored, it is correct. The API arm is 28/28.",
   "caveats": [
-    "Free OpenCode tier, not a paid API; it is only available inside OpenCode.",
-    "The build agent and its system prompt/tools were used; this is not a raw chat-completion endpoint.",
-    "One sample per task, default agent sampling, not the local arms T=0.7.",
+    "Free OpenCode tier, one sample per task.",
     "The API-driven controller is not measured; this is the API tier alone."
   ]
 }

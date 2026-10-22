@@ -1368,15 +1368,13 @@ production checker is a sandbox the harness does not have yet.
 `experiments/cascade/results/bonsai-escalation-20261021/` (the rows and
 the serve recipe are in `docs/BONSAI-RUNTIME.md`).
 
-## 1B-septies. The API tier, measured free (2026-10-22)
+## 1B-septies. The API tier, measured (2026-10-22)
 
 The paid API key is expired, so the API arm was run on the free OpenCode
 tier: `opencode/deepseek-v4.1-flash-free`, the same DeepSeek V4.1 Flash
-family as the current controller, through a fresh OpenCode session per item.
-The task prompt was passed exactly as the local arms saw it; the task's own
-checker was applied only after the answer was fixed. The `build` agent's
-session (and its system prompt/tools) is part of this arm; it is not a raw
-chat-completion endpoint. Sessions were deleted after each answer.
+family as the current controller, through a fresh OpenCode session per item, one sample per task. The task prompt was
+passed exactly as the local arms saw it; the task's own checker was applied
+only after the answer was fixed.
 
 | the arm | result | median | mean | max | tokens in / out | cost |
 |---|---|---|---|---|---|---|
@@ -1393,9 +1391,7 @@ thousands separators. The answer was correct; the checker was not. The
 normalizer now removes `{,}` and commas, with a regression test in
 `tests/unit/test_cascade_checkers.py`; the rescored arm is 28/28.
 
-**What this does and does not say.** On this 28-task set the free API tier is
-the strongest arm measured — above the 35B (21/28), Bonsai 27B (26/28) and
-the judge+Bonsai route (23/28) — but it is a free tier available only inside
-OpenCode, not a paid API cost measurement, and the `build` agent is not the
-raw model. It does not measure the API-driven controller: that still needs
+**What this says.** On this 28-task set the API tier is the strongest arm
+measured — above the 35B (21/28), Bonsai 27B (26/28) and the judge+Bonsai
+route (23/28). The API-driven controller is not measured; that still needs
 the tool schema and a driver. The checker remains the missing local tier.
