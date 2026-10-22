@@ -1,0 +1,182 @@
+{"task": "gsm8k-0005", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 1.836}
+{"task": "gsm8k-0005", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0006", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.216}
+{"task": "gsm8k-0006", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0008", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it", "latency_ms": 0.147}
+{"task": "gsm8k-0008", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0009", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.29}
+{"task": "gsm8k-0009", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0014", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.107}
+{"task": "gsm8k-0014", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0015", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "50 + 0 + 120 + 20 + 90 = 270 birds is false: 280 != 270", "latency_ms": 0.109}
+{"task": "gsm8k-0015", "phase": "escalate", "to": "27B"}
+{"task": "gsm8k-0015", "phase": "ask27", "seconds": 6.029, "finish": "stop", "tokens": 322}
+{"task": "gsm8k-0015", "phase": "verify27", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.352}
+{"task": "gsm8k-0015", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "gsm8k-0020", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.216}
+{"task": "gsm8k-0020", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0033", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes is false: 65/2 != 32", "latency_ms": 0.268}
+{"task": "gsm8k-0033", "phase": "escalate", "to": "27B"}
+{"task": "gsm8k-0033", "phase": "ask27", "seconds": 9.893, "finish": "stop", "tokens": 516}
+{"task": "gsm8k-0033", "phase": "verify27", "verdict": "unknown", "check": "arithmetic", "evidence": "no checkable arithmetic equation in the answer", "latency_ms": 0.462}
+{"task": "gsm8k-0033", "phase": "escalate", "to": "API"}
+{"task": "gsm8k-0033", "phase": "ask_api", "seconds": 3.556, "tokens": {"input": 76, "output": 155, "reasoning": 187, "cache": {"read": 6528, "write": 0}}, "cost": 0}
+{"task": "gsm8k-0033", "phase": "verify_api", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it"}
+{"task": "gsm8k-0033", "phase": "accept", "routed": "API", "verdict": "pass"}
+{"task": "gsm8k-0035", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.428}
+{"task": "gsm8k-0035", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0036", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.172}
+{"task": "gsm8k-0036", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0037", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.181}
+{"task": "gsm8k-0037", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0038", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "24500 cents = $24.50 is false: 24500 != 49/2", "latency_ms": 0.187}
+{"task": "gsm8k-0038", "phase": "escalate", "to": "27B"}
+{"task": "gsm8k-0038", "phase": "ask27", "seconds": 9.57, "finish": "stop", "tokens": 519}
+{"task": "gsm8k-0038", "phase": "verify27", "verdict": "pass", "check": "arithmetic", "evidence": "7 equation(s) check; corrupting the first one fails it", "latency_ms": 0.513}
+{"task": "gsm8k-0038", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "math-0002", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.306}
+{"task": "math-0002", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0006", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.332}
+{"task": "math-0006", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0013", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it", "latency_ms": 0.241}
+{"task": "math-0013", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0016", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81} is false: 40/243 != 40/81", "latency_ms": 0.56}
+{"task": "math-0016", "phase": "escalate", "to": "27B"}
+{"task": "math-0016", "phase": "ask27", "seconds": 12.157, "finish": "stop", "tokens": 647}
+{"task": "math-0016", "phase": "verify27", "verdict": "pass", "check": "arithmetic", "evidence": "7 equation(s) check; corrupting the first one fails it", "latency_ms": 1.105}
+{"task": "math-0016", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "math-0020", "phase": "verify35", "verdict": "unknown", "check": "arithmetic", "evidence": "no checkable arithmetic equation in the answer", "latency_ms": 0.02}
+{"task": "math-0020", "phase": "score", "p": 0.962175, "threshold": 0.65, "accept": true}
+{"task": "math-0020", "phase": "accept", "routed": "35B+head", "verdict": "unknown"}
+{"task": "math-0023", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "4 equation(s) check; corrupting the first one fails it", "latency_ms": 0.379}
+{"task": "math-0023", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0001", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 28.872}
+{"task": "humaneval-0001", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0002", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 27.436}
+{"task": "humaneval-0002", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0003", "phase": "verify35", "verdict": "fail", "check": "code_exec", "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 46, in <module>\n    check(even_odd_count)\n  File \"/tmp/work.py\", line 33, in check\n    assert candidate(-78) == (1, 1)\n           ^^^^^^^^^^^^^^\n  File \"/tmp/work.py\", line 22, in even_odd_count\n    if int(digit) % 2 == 0:\n       ^^^^^^^^^^\nValueError: invalid literal for int() with base 10: '-'", "latency_ms": 14.039}
+{"task": "humaneval-0003", "phase": "escalate", "to": "27B"}
+{"task": "humaneval-0003", "phase": "ask27", "seconds": 3.87, "finish": "stop", "tokens": 205}
+{"task": "humaneval-0003", "phase": "verify27", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 29.586}
+{"task": "humaneval-0003", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "humaneval-0004", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 27.799}
+{"task": "humaneval-0004", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0007", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 27.36}
+{"task": "humaneval-0007", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0015", "phase": "verify35", "verdict": "fail", "check": "code_exec", "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 54, in <module>\n    check(make_palindrome)\n  File \"/tmp/work.py\", line 51, in check\n    assert candidate('xyx') == 'xyx'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError", "latency_ms": 13.586}
+{"task": "humaneval-0015", "phase": "escalate", "to": "27B"}
+{"task": "humaneval-0015", "phase": "ask27", "seconds": 5.163, "finish": "stop", "tokens": 276}
+{"task": "humaneval-0015", "phase": "verify27", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 27.599}
+{"task": "humaneval-0015", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "truthfulqa-0008", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.111}
+{"task": "truthfulqa-0008", "phase": "score", "p": 0.998659, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0008", "phase": "accept", "routed": "35B+head", "verdict": "unknown"}
+{"task": "truthfulqa-0011", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.004}
+{"task": "truthfulqa-0011", "phase": "score", "p": 0.995425, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0011", "phase": "accept", "routed": "35B+head", "verdict": "unknown"}
+{"task": "truthfulqa-0013", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.003}
+{"task": "truthfulqa-0013", "phase": "score", "p": 0.995987, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0013", "phase": "accept", "routed": "35B+head", "verdict": "unknown"}
+{"task": "truthfulqa-0015", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.002}
+{"task": "truthfulqa-0015", "phase": "score", "p": 0.421515, "threshold": 0.65, "accept": false}
+{"task": "truthfulqa-0015", "phase": "escalate", "to": "27B"}
+{"task": "truthfulqa-0015", "phase": "ask27", "seconds": 0.189, "finish": "stop", "tokens": 2}
+{"task": "truthfulqa-0015", "phase": "verify27", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.008}
+{"task": "truthfulqa-0015", "phase": "escalate", "to": "API"}
+{"task": "truthfulqa-0015", "phase": "ask_api", "seconds": 8.495, "tokens": {"input": 59, "output": 2, "reasoning": 210, "cache": {"read": 6528, "write": 0}}, "cost": 0}
+{"task": "truthfulqa-0015", "phase": "verify_api", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable"}
+{"task": "truthfulqa-0015", "phase": "accept", "routed": "API", "verdict": "unknown"}
+{"task": "gsm8k-0005", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.477}
+{"task": "gsm8k-0005", "phase": "score", "p": 0.99957, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0005", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0006", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.179}
+{"task": "gsm8k-0006", "phase": "score", "p": 0.996643, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0006", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0008", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it", "latency_ms": 0.14}
+{"task": "gsm8k-0008", "phase": "score", "p": 0.993213, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0008", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0009", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.293}
+{"task": "gsm8k-0009", "phase": "score", "p": 0.87308, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0009", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0014", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.113}
+{"task": "gsm8k-0014", "phase": "score", "p": 0.993479, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0014", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0015", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "50 + 0 + 120 + 20 + 90 = 270 birds is false: 280 != 270", "latency_ms": 0.11}
+{"task": "gsm8k-0015", "phase": "score", "p": 0.644506, "threshold": 0.65, "accept": false}
+{"task": "gsm8k-0015", "phase": "escalate", "to": "27B"}
+{"task": "gsm8k-0015", "phase": "verify27", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.299}
+{"task": "gsm8k-0015", "phase": "accept", "routed": "27B", "verdict": "pass"}
+{"task": "gsm8k-0020", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "5 equation(s) check; corrupting the first one fails it", "latency_ms": 0.218}
+{"task": "gsm8k-0020", "phase": "score", "p": 0.998871, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0020", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0033", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "5 + 10 + 10 + 2.5 + 2.5 + 2.5 = 32 minutes is false: 65/2 != 32", "latency_ms": 0.231}
+{"task": "gsm8k-0033", "phase": "score", "p": 0.444093, "threshold": 0.65, "accept": false}
+{"task": "gsm8k-0033", "phase": "escalate", "to": "27B"}
+{"task": "gsm8k-0033", "phase": "verify27", "verdict": "unknown", "check": "arithmetic", "evidence": "no checkable arithmetic equation in the answer", "latency_ms": 0.435}
+{"task": "gsm8k-0033", "phase": "escalate", "to": "API"}
+{"task": "gsm8k-0033", "phase": "verify_api", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it"}
+{"task": "gsm8k-0033", "phase": "accept", "routed": "API", "verdict": "pass"}
+{"task": "gsm8k-0035", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.33}
+{"task": "gsm8k-0035", "phase": "score", "p": 0.998881, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0035", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0036", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.168}
+{"task": "gsm8k-0036", "phase": "score", "p": 0.998998, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0036", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0037", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "3 equation(s) check; corrupting the first one fails it", "latency_ms": 0.179}
+{"task": "gsm8k-0037", "phase": "score", "p": 0.982621, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0037", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "gsm8k-0038", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "24500 cents = $24.50 is false: 24500 != 49/2", "latency_ms": 0.237}
+{"task": "gsm8k-0038", "phase": "score", "p": 0.9728, "threshold": 0.65, "accept": true}
+{"task": "gsm8k-0038", "phase": "accept", "routed": "35B", "verdict": "fail"}
+{"task": "math-0002", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.271}
+{"task": "math-0002", "phase": "score", "p": 0.996054, "threshold": 0.65, "accept": true}
+{"task": "math-0002", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0006", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "2 equation(s) check; corrupting the first one fails it", "latency_ms": 0.244}
+{"task": "math-0006", "phase": "score", "p": 0.988087, "threshold": 0.65, "accept": true}
+{"task": "math-0006", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0013", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "1 equation(s) check; corrupting the first one fails it", "latency_ms": 0.18}
+{"task": "math-0013", "phase": "score", "p": 0.998371, "threshold": 0.65, "accept": true}
+{"task": "math-0013", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "math-0016", "phase": "verify35", "verdict": "fail", "check": "arithmetic", "evidence": "10 * \\frac{4}{9} * \\frac{1}{27} = \\frac{40}{81} is false: 40/243 != 40/81", "latency_ms": 0.472}
+{"task": "math-0016", "phase": "score", "p": 0.989653, "threshold": 0.65, "accept": true}
+{"task": "math-0016", "phase": "accept", "routed": "35B", "verdict": "fail"}
+{"task": "math-0020", "phase": "verify35", "verdict": "unknown", "check": "arithmetic", "evidence": "no checkable arithmetic equation in the answer", "latency_ms": 0.012}
+{"task": "math-0020", "phase": "score", "p": 0.962175, "threshold": 0.65, "accept": true}
+{"task": "math-0020", "phase": "accept", "routed": "35B", "verdict": "unknown"}
+{"task": "math-0023", "phase": "verify35", "verdict": "pass", "check": "arithmetic", "evidence": "4 equation(s) check; corrupting the first one fails it", "latency_ms": 0.342}
+{"task": "math-0023", "phase": "score", "p": 0.998721, "threshold": 0.65, "accept": true}
+{"task": "math-0023", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0001", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 31.092}
+{"task": "humaneval-0001", "phase": "score", "p": 0.998959, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0001", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0002", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 29.993}
+{"task": "humaneval-0002", "phase": "score", "p": 0.997821, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0002", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0003", "phase": "verify35", "verdict": "fail", "check": "code_exec", "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 46, in <module>\n    check(even_odd_count)\n  File \"/tmp/work.py\", line 33, in check\n    assert candidate(-78) == (1, 1)\n           ^^^^^^^^^^^^^^\n  File \"/tmp/work.py\", line 22, in even_odd_count\n    if int(digit) % 2 == 0:\n       ^^^^^^^^^^\nValueError: invalid literal for int() with base 10: '-'", "latency_ms": 14.962}
+{"task": "humaneval-0003", "phase": "score", "p": 0.970232, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0003", "phase": "accept", "routed": "35B", "verdict": "fail"}
+{"task": "humaneval-0004", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 29.859}
+{"task": "humaneval-0004", "phase": "score", "p": 0.99228, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0004", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0007", "phase": "verify35", "verdict": "pass", "check": "code_exec", "evidence": "tests pass; corrupting the returns fails them", "latency_ms": 29.756}
+{"task": "humaneval-0007", "phase": "score", "p": 0.998851, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0007", "phase": "accept", "routed": "35B", "verdict": "pass"}
+{"task": "humaneval-0015", "phase": "verify35", "verdict": "fail", "check": "code_exec", "evidence": "Traceback (most recent call last):\n  File \"/tmp/work.py\", line 54, in <module>\n    check(make_palindrome)\n  File \"/tmp/work.py\", line 51, in check\n    assert candidate('xyx') == 'xyx'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError", "latency_ms": 14.622}
+{"task": "humaneval-0015", "phase": "score", "p": 0.997934, "threshold": 0.65, "accept": true}
+{"task": "humaneval-0015", "phase": "accept", "routed": "35B", "verdict": "fail"}
+{"task": "truthfulqa-0008", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.019}
+{"task": "truthfulqa-0008", "phase": "score", "p": 0.998659, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0008", "phase": "accept", "routed": "35B", "verdict": "unknown"}
+{"task": "truthfulqa-0011", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.004}
+{"task": "truthfulqa-0011", "phase": "score", "p": 0.995425, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0011", "phase": "accept", "routed": "35B", "verdict": "unknown"}
+{"task": "truthfulqa-0013", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.003}
+{"task": "truthfulqa-0013", "phase": "score", "p": 0.995987, "threshold": 0.65, "accept": true}
+{"task": "truthfulqa-0013", "phase": "accept", "routed": "35B", "verdict": "unknown"}
+{"task": "truthfulqa-0015", "phase": "verify35", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.002}
+{"task": "truthfulqa-0015", "phase": "score", "p": 0.421515, "threshold": 0.65, "accept": false}
+{"task": "truthfulqa-0015", "phase": "escalate", "to": "27B"}
+{"task": "truthfulqa-0015", "phase": "verify27", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable", "latency_ms": 0.002}
+{"task": "truthfulqa-0015", "phase": "escalate", "to": "API"}
+{"task": "truthfulqa-0015", "phase": "verify_api", "verdict": "unknown", "check": "frame", "evidence": "choice is well formed; correctness is not executable"}
+{"task": "truthfulqa-0015", "phase": "accept", "routed": "API", "verdict": "unknown"}

@@ -49,6 +49,14 @@ def test_rate_label_is_not_a_false_reject():
     assert verdict["verdict"] == "pass"
 
 
+def test_escaped_currency_is_checked():
+    verdict = number_task(
+        r"$$\$35.00 + \$210.00 = \$245.00$$" "\n\nFinal answer: 245"
+    )
+    assert verdict["verdict"] == "pass"
+    assert verdict["mutated_ok"] is True
+
+
 def test_no_checkable_equation_is_unknown_not_pass():
     verdict = number_task("I rounded the value to 6,290,000.\n\nFinal answer: 6290000")
     assert verdict["verdict"] == "unknown"
