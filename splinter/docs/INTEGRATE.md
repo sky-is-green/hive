@@ -19,8 +19,7 @@ memory system:
 ```
 
 The memory project also ships a standalone server that speaks the same wire contract
-without the Studio UI: `python -m splinter.server --port 8765` (or the
-`splinter-serve` console script).
+without the Studio UI: `python -m splinter.server --port 8765` from the `splinter/` project root.
 
 `POST /v1/openai/chat/completions` is a genuine passthrough: it curates the
 turn, prepends the curated context to the leading system message, forwards the

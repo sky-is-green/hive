@@ -30,14 +30,11 @@ serve = [
     "uvicorn[standard]>=0.29",
 ]
 
-[project.scripts]
-splinter-serve = "splinter.server:main"
-
 # Package layout: single root, flat import names preserved —
 #   splinter/ -> cortex, sieve, membrane, retention, focal, backend, auditor,
 #             locations, logs, server (splinter.__init__ is the public facade).
-# Splinter is self-contained: `pip install .[serve]` + `splinter-serve` runs the
-# full conversation loop with no host app. Host apps (hivebench/Studio, DSH)
+# Splinter is self-contained: `pip install .[serve]` + `python -m splinter.server`
+# (from this project root) runs the full conversation loop with no host app. Host apps (hivebench/Studio, DSH)
 # plug in via splinter.server.create_app or the HTTP contract.
 
 [tool.setuptools.packages.find]
