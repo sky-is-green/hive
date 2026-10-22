@@ -25,12 +25,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import resource
 import statistics
 import sys
 import time
 from pathlib import Path
 from typing import Optional
+
+try:
+    import resource
+except ImportError:  # Windows: the measurement runs on Linux
+    resource = None  # type: ignore[assignment]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
@@ -78,6 +82,8 @@ def build_script(turns: int) -> list[tuple[str, str]]:
 
 def rss_mb() -> float:
     """The process's resident memory in MB (the peak, on Linux)."""
+    if resource is None:  # Windows: this measurement is a Linux-only run
+        return 0.0
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     # Linux reports KiB
     return round(peak / 1024.0, 1)
