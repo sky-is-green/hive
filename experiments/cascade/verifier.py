@@ -28,8 +28,11 @@ from __future__ import annotations
 import ast
 import os
 import re
-import resource
 import shutil
+try:
+    import resource
+except ImportError:  # Windows: the sandbox is bwrap-only anyway
+    resource = None  # type: ignore[assignment]
 import subprocess
 import sys
 import tempfile
@@ -308,6 +311,8 @@ def _mutated_equation(equation: dict[str, Any]) -> str | None:
 # ---------------------------------------------------------------- code sandbox
 
 def _limits() -> None:
+    if resource is None:
+        return
     resource.setrlimit(resource.RLIMIT_AS, (SANDBOX_MEMORY, SANDBOX_MEMORY))
     resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
     resource.setrlimit(resource.RLIMIT_FSIZE, (1 << 20, 1 << 20))

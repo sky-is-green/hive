@@ -36,15 +36,19 @@ NATIVE = (Path.home() / "models" / "scion-strata"
           / "Scion-FlashNext-176B-A6B-Q6K.gguf")
 CONFIG = "strata-q6k-176b.json"
 PORT = 8081
-LIB = ctypes.CDLL("libc.so.6", use_errno=True)
-LIB = ctypes.CDLL("libc.so.6", use_errno=True)
-LIB.syscall.restype = ctypes.c_long
+if sys.platform.startswith("linux"):
+    LIB = ctypes.CDLL("libc.so.6", use_errno=True)
+    LIB.syscall.restype = ctypes.c_long
+else:  # imported by the all-modules sweep on Windows; usage stays Linux-only
+    LIB = None
 #: __NR_fadvise64 on x86_64 - glibc does not export posix_fadvise
 NR_FADVISE64 = 221
 DONTNEED, WILLNEED = 4, 3
 
 
 def fadvise(path: Path, advice: int) -> None:
+    if LIB is None:
+        raise RuntimeError("cold-start prefetch requires Linux posix_fadvise")
     fd = os.open(str(path), os.O_RDONLY)
     try:
         rc = LIB.syscall(ctypes.c_long(NR_FADVISE64), ctypes.c_long(fd),
@@ -57,6 +61,8 @@ def fadvise(path: Path, advice: int) -> None:
 
 def cached_share(path: Path, sample: int = 64) -> float:
     """mincore over a sample of the file's pages (the kernel's own answer)."""
+    if LIB is None:
+        raise RuntimeError("cold-start prefetch requires Linux mincore")
     size = path.stat().st_size
     page = os.sysconf("SC_PAGE_SIZE")
     step = max(page, size // sample)
