@@ -41,6 +41,6 @@ torch==2.6.0+cpu
 # the real encoder (paraphrase-MiniLM-L3-v2, ~90 MB, CPU).  The integration
 # protocol tests measure the *real* drone, so they need it: without this
 # package they skip with a reason (never a silent pass).  CI also installs it
-# with the sibling splinter checkout; listing it here makes the bootstrap
+# with the absorbed splinter project; listing it here makes the bootstrap
 # script enough on its own.
 sentence-transformers>=2.2.0
