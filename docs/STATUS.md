@@ -57,6 +57,10 @@ dedup decision cannot be moved; the drift threshold is the free dial.
   are measured; the frontier-driver direction is not) and the **drift
   benchmark** (being rebuilt: size-matched windows, conversation-disjoint
   split).
+- the **API-slot stability repeat**: the free OpenCode tier returned
+  `outcome=failed` with zero tokens for the 70-call repeat. The one-sample
+  API rows and the ten-sample choice probe stand; a reset or paid API route
+  is needed for the six executable answers.
 
 ## Blocked
 
