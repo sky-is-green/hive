@@ -73,8 +73,9 @@ endpoint, AFK removal, model consolidation, Docker deprecation.
 - **Effort:** Medium, incremental.
 
 ### 7. Documentation audit
-- **What:** Update all docs (CASCADE-PILOT, WHITEPAPER, README, ENGINE) to
-  reflect the UI changes, cascade, sandbox, settings search, etc.
+- **What:** Update all docs (CASCADE-PILOT, the Bonsai repo's whitepaper,
+  README, ENGINE) to reflect the UI changes, cascade, sandbox, settings
+  search, etc.
 - **Effort:** Medium (mostly writing).
 
 ## What we should NOT do
@@ -120,7 +121,8 @@ Still open:
 Closed since this list was written:
 
 - **Documentation sweep** — the README, `hivebench/API.md`, `splinter/docs/COMPACTION.md`,
-  `TRAINING-TAB.md`, `ENGINE.md`, `CASCADE-PILOT.md` and `WHITEPAPER.md` now
+  `TRAINING-TAB.md`, `ENGINE.md`, `CASCADE-PILOT.md` and the Bonsai repo's
+  `WHITEPAPER.md` now
   describe the shipped Studio.  `hivebench/API.md` is checked against the running
   app by `tests/unit/test_api_docs.py`: an endpoint without a row, a row for
   an endpoint that is gone, a wrong method, or a row with no description all

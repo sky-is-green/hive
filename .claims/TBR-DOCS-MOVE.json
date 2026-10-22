@@ -1,0 +1,17 @@
+{
+  "task_id": "TBR-DOCS-MOVE",
+  "worker": "hive-dev @ /home/penis/Desktop/work/hivebench",
+  "coordination_doc": "HIVE-PLAN.md",
+  "provider": "local",
+  "target_files": [
+    "docs/WHITEPAPER.md",
+    "docs/FAILURES.md",
+    "docs/BONSAI-RUNTIME.md",
+    "cascade/BONSAI-RUNTIME.md",
+    "docs/AB-RESULTS.md",
+    "experiments/cascade/NEXT-PLAN.md"
+  ],
+  "beacon": "Remove the stale TBR whitepaper and failure register from Hive (the canonical copies are in sky-is-green/bonsai2-ternary-forensics); move the Hive-specific Bonsai 27B runtime into cascade/",
+  "updated": "2026-10-22T00:00:00Z",
+  "lease": "1h"
+}
