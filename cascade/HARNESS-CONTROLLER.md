@@ -121,7 +121,7 @@ cannot do at all, and neither is a sentence in a prompt.)
 | t0 - the 35B | the bulk | 21/28 (0.750) | the cheapest local |
 | t1 - Bonsai 2 27B | the repairable errors | 26/28 (0.929); **+5 net** over the 35B | 8.9 s/item |
 | the judge (176B head) | the plausible errors | AUC 0.864; 3 of 7 errors, 0 of 21 correct | 2.5 s/verdict |
-| the checker (4-9B + sandbox) | the executable errors | **not yet measured** | a sandbox call |
+| the checker (execution + arithmetic) | the executable errors | **6/7 errors; 4/4 at p >= 0.97; 0/21 false rejects; 17/17 mutations** | **0.23 ms median; 30 ms p95** |
 | the API (free OpenCode) | what nothing local settles | 28/28 (1.000) on the 28 tasks | 2.6 s median; free tier (paid unmeasured) |
 
 The memory decisions (dedup, drift) are a **separate lane**: the
@@ -223,8 +223,9 @@ this controller on their tiers.
 
 ## What is not built
 
-- The **checker service** (a sandbox + the 4-9B/0.8B agent). The
-  mutation self-test is specified, not implemented.
+- The **model-written checker branch** (a small model that writes its
+  own tests) and the **grounding verifier**. The execution checker is
+  built and measured; its mutation self-test is part of `verify`.
 - The **controller model** itself. The loop is written and the tools are
   specified; the first controller can be a 4B with the tool schema, or a
   frontier API.

@@ -384,7 +384,7 @@ STAGE_PREMISE = """
       <span class="arrow">→</span>
       <button type="button" data-goto="controller">the controller<small>route and verify</small></button>
       <span class="arrow">→</span>
-      <button type="button" data-goto="checker">the checker<small>the last tier</small></button>
+      <button type="button" data-goto="checker">the checker<small>the execution tier</small></button>
       <span class="arrow">→</span>
       <button type="button" data-goto="measured">the evidence<small>28 tasks</small></button>
     </div>
@@ -518,15 +518,15 @@ STAGE_CONTROLLER = """
     <div class="timing" aria-label="stage times">
       <span data-time-step="1"><b>35B</b> 6.68 s</span>
       <span data-time-step="2"><b>judge</b> 2.52 s</span>
-      <span data-time-step="3"><b>checker</b> &mdash;</span>
+      <span data-time-step="3"><b>checker</b> 0.23 ms</span>
       <span data-time-step="4"><b>27B</b> 8.92 s</span>
-      <span data-time-step="5"><b>checker</b> &mdash;</span>
+      <span data-time-step="5"><b>checker</b> 0.23 ms</span>
       <span class="total"><b>total</b> 18.1 s</span>
     </div>
     <p class="caption" data-route-caption aria-live="polite"></p>
     <p class="timing-note">Means over the 28 tasks: 35B 6.68 s, judge 2.52 s,
-      27B 8.92 s. The checker is unmeasured, so it is not in the 18.1 s
-      total.</p>
+      27B 8.92 s. The checker is measured separately at 0.23 ms median
+      (30 ms p95); the 18.1 s total is the head's path.</p>
     <p class="timing-note"><strong>It is conditional.</strong> This is the
       escalated path, not the normal one. On the 28-task run the 35B answered
       all 28; the judge sent up <strong>3</strong> - all of them errors, and
@@ -541,8 +541,9 @@ STAGE_CONTROLLER = """
       and call the API only on the case the 27B cannot settle. The controller's
       table decides which; the diagram draws the API as the residue because
       that is its role. The 27B is the measured tier (<strong>+5 net</strong>).
-      The API tier is measured too: <strong>28/28</strong>, 2.6 s median.
-      The API-driven controller is the unmeasured part.</p>
+      The execution checker is measured too: <strong>6/7 errors, 4/4 at
+      p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median. The controller
+      loop and the API-driven controller are the unmeasured parts.</p>
   </div>
 """
 
@@ -619,8 +620,10 @@ PANEL_PREMISE = """
           answers. Supported.</p></div>
       <div class="card"><h3>H3 · Execution, not judgement</h3>
         <p>A reader cannot see a plausible wrong answer; a check can. The
-          checker is the last unmeasured tier. Supported by the failures, not
-          yet by the fix.</p></div>
+          execution checker is measured: <strong>6/7 errors, 4/4 at
+          p &ge; 0.97, 0/21 false rejects</strong>, 0.23 ms median. Supported
+          by the failures and the fix; the grounding path and the controller
+          loop are next.</p></div>
       <div class="card"><h3>H4 · One loop, two levels</h3>
         <p>The membrane and the controller make the same trade - what to keep,
           what to check, when to stop. The memory level is measured; the controller
@@ -629,7 +632,7 @@ PANEL_PREMISE = """
 
     <p class="note"><strong>What follows.</strong> The next tabs are the
       evidence: the memory's encoder at work, the routing, the controller's
-      loop, the measured table, the missing checker, and the paper. The first
+      loop, the measured table, the measured checker, and the paper. The first
       one is interactive.</p>
   </div>
 </section>
@@ -724,7 +727,9 @@ PANEL_CONTROLLER = """
       700&times;5 + 1,400&times;15 = <strong>24,500&cent; = $245</strong>. The
       judge has a blind spot exactly where the answer is <em>plausible</em>;
       the checker does not. This is one of the four errors at
-      <code>p &ge; 0.97</code>.</p>
+      <code>p &ge; 0.97</code>. On the 28 tasks the checker catches 6 of 7
+      errors, all 4 at that confidence, with <strong>0 of 21</strong> false
+      rejects, at 0.23 ms median.</p>
     <p class="note good"><strong>The loop is bounded.</strong> After a configured
       number of steps the harness removes the tools and requires a final answer:
       <code>accepted</code>, <code>escalated</code> or <code>rejected</code>. The
@@ -758,14 +763,16 @@ PANEL_MEASURED = """
         <tr><td><strong>the API (free OpenCode)</strong></td>
             <td><strong>28/28 (1.000)</strong></td>
             <td>2.6 s median; free tier</td></tr>
-        <tr><td>the checker (execution + grounding)</td>
-            <td><em>unmeasured: the current build</em></td><td>a sandbox call</td></tr>
+        <tr><td><strong>the checker (execution + arithmetic)</strong></td>
+            <td><strong>6/7 errors; 4/4 at p &ge; 0.97; 0/21 false rejects;
+            17/17 mutations</strong></td>
+            <td>0.23 ms median; 30 ms p95</td></tr>
       </tbody>
     </table>
     <p class="small">The 176B is the wrong shape for escalation: it is a
       judgement model, and its generation is no better than the 35B's. A 27B
-      dense one is +5 net. The judge is the 176B's head; the checker is the
-      missing tier.</p>
+      dense one is +5 net. The judge is the 176B's head; the execution checker
+      is measured. The controller loop is the missing part.</p>
   </div>
 </section>
 """
@@ -789,11 +796,11 @@ PANEL_CHECKER = """
       <div class="card"><h3>Grounding</h3><p>For the factual remainder,
         decompose the answer into claims and check each against the store.
         A check that cannot cite is <code>unknown</code>.</p></div>
-      <div class="card"><h3>The status</h3><p><strong>Unmeasured.</strong> The
-        sandbox, the check-writer and the grounding verifier are the current
-        build. The check runs once per answer and once per mutation; a decoder
-        is paid only on the repair. Its time is the one row missing from the
-        controller total.</p></div>
+      <div class="card"><h3>The status</h3><p><strong>Execution: measured.</strong>
+        17 pass, 6 fail, 5 unknown on the 28 tasks; the four errors at
+        <code>p &ge; 0.97</code> all fail; <strong>0 of 21</strong> correct
+        answers are rejected; every pass survives a mutation. The grounding
+        verifier is implemented but not measured; the controller loop is next.</p></div>
     </div>
     <p class="small">The contract and the prior art are in
       <code>cascade/HARNESS-CONTROLLER.md</code> and
