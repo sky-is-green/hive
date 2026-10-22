@@ -36,6 +36,8 @@ ROOT = Path(__file__).resolve().parents[1]  # this repo (hivebench)
 _env_home = os.environ.get("SPLINTER_HOME") or os.environ.get("STRATA_HOME")
 if _env_home:
     HIVE_HOME = Path(_env_home)
+elif (ROOT / "splinter").is_dir():
+    HIVE_HOME = ROOT / "splinter"
 else:
     HIVE_HOME = next((ROOT.parent / _n for _n in ("splinter-memory", "strata-memory")
                       if (ROOT.parent / _n).is_dir()), ROOT.parent / "splinter-memory")

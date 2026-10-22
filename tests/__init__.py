@@ -1,9 +1,9 @@
 """Tests for the Splinter Memory system (run from the hivebench checkout)."""
 
 # --- splinter system path bootstrap -------------------------------------------
-# Non-pytest entry points (console scripts, `python -m ...`) need the sibling
-# splinter-memory checkout on sys.path: flat names (cortex, retention, backend,
-# ...) resolve from <SPLINTER>/splinter and `import splinter` from <SPLINTER> itself.
+# Non-pytest entry points (console scripts, `python -m ...`) need the memory
+# project on sys.path: flat names (cortex, retention, backend, ...) resolve
+# from <SPLINTER>/splinter and `import splinter` from <SPLINTER> itself.
 # pytest runs get the same paths from conftest.py; this is idempotent there.
 # Override the checkout location with $SPLINTER_HOME.
 import os as _os
@@ -17,6 +17,8 @@ def _resolve_system() -> _Path:
     env = _os.environ.get("SPLINTER_HOME") or _os.environ.get("STRATA_HOME")
     if env:
         return _Path(env)
+    if (_REPO_ROOT / "splinter").is_dir():
+        return _REPO_ROOT / "splinter"
     for _name in ("splinter-memory", "strata-memory"):
         _cand = _REPO_ROOT.parent / _name
         if _cand.is_dir():

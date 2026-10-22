@@ -104,7 +104,7 @@ Done since the plan was written:
   console commands.
 - **Repo-wide audit** — two audits (dead code + bugs) ran; the findings are fixed
   and there is now a regression test for the Studio's JavaScript.
-- **API docs** — every route has a human title, and `docs/API.md` maps all 84
+- **API docs** — every route has a human title, and `hivebench/API.md` maps all 84
   paths / 91 operations by purpose.
 
 Still open:
@@ -119,9 +119,9 @@ Still open:
 
 Closed since this list was written:
 
-- **Documentation sweep** — the README, `docs/API.md`, `COMPACTION.md`,
+- **Documentation sweep** — the README, `hivebench/API.md`, `splinter/docs/COMPACTION.md`,
   `TRAINING-TAB.md`, `ENGINE.md`, `CASCADE-PILOT.md` and `WHITEPAPER.md` now
-  describe the shipped Studio.  `docs/API.md` is checked against the running
+  describe the shipped Studio.  `hivebench/API.md` is checked against the running
   app by `tests/unit/test_api_docs.py`: an endpoint without a row, a row for
   an endpoint that is gone, a wrong method, or a row with no description all
   fail the suite.

@@ -1,9 +1,9 @@
 """Guards for the repo layout.
 
-This repo (hivebench) holds the evaluation suite (`experiments/`, `testing/`,
+This repo (hive) holds the evaluation suite (`experiments/`, `testing/`,
 `tests/`) and the HiveBench Studio sidecar (`harness/`) with flat top-level
-import names; the system under test lives in the sibling checkout. That
-checkout is resolved (env -> walk-up from the worktree -> primary checkout)
+import names; the system under test lives in the absorbed `splinter/`
+project. That project is resolved (env -> local project -> walk-up -> primary checkout)
 by `conftest.resolve_splinter_home`, which also fails loudly rather than
 returning a non-existent path. These tests pin the invariants the split
 depends on: no stray package dirs at the root, pyproject declaring all trees,
@@ -50,7 +50,7 @@ def test_root_python_files_are_only_known_scripts():
 
 # Directories that hold plain scripts (not importable packages) — allowed at
 # root even though they contain .py files.
-NONPKG_SCRIPT_DIRS = {"scripts"}
+NONPKG_SCRIPT_DIRS = {"scripts", "splinter"}
 
 def test_no_stray_package_dirs_at_root():
     stray = []
@@ -129,6 +129,13 @@ def test_resolve_splinter_walks_up_from_worktree(tmp_path):
     resolved = conftest.resolve_splinter_home(str(root), env={})
 
     assert Path(resolved) == sibling
+
+
+def test_resolve_splinter_prefers_local_project(tmp_path):
+    root = tmp_path / "hive"
+    (root / "splinter" / "splinter").mkdir(parents=True)
+    resolved = conftest.resolve_splinter_home(str(root), env={})
+    assert Path(resolved) == root / "splinter"
 
 
 def test_resolve_splinter_walks_up_to_legacy_strata(tmp_path):

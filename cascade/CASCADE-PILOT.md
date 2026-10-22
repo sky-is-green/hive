@@ -418,7 +418,7 @@ against their 64 GB recommendation; the mapped low-RAM mode with both 20 GB
 cards is the untested path, and it is the same model the flash-next research
 track is exercising.
 
-This is the same problem as the **prism engine lane** (`docs/ENGINE.md`): our
+This is the same problem as the **prism engine lane** (`../docs/ENGINE.md`): our
 own HIP/ROCm expert-residency engine (`--moe-slot-cache`,
 `GGML_OP_MOE_CACHE_MAP`) already runs the same 125B Q2_0 pack through the
 stack API and measures the same regime on this box (all-resident 26.9 t/s;
@@ -432,7 +432,7 @@ this exact box, and wired through `stacks/prism-*.json`.
 
 ## Program direction — engine lane absorbed, Flash-Next as E4 (2026-10-02)
 
-The engine lane (`docs/ENGINE.md`, formerly project Ember) is part of this
+The engine lane (`../docs/ENGINE.md`, formerly project Ember) is part of this
 program: the prism ROCm engine plus `stacks/prism-*.json` are the experimental
 E4 tier, and the target generator is **Qwen3.8-Flash-Next Q2_0** (66 GB /
 62 GiB local pack). The cascade is planned around the space E4 leaves: budget
@@ -447,13 +447,13 @@ alongside the desktop (`experiments/cascade/results/strata-feasibility-20261002/
 **Dual-engine direction (2026-10-02):** Strata for the Flash-Next tier,
 prism/llama.cpp for Scion-35B, the ternary pipeline and decision models, both
 behind the swappable generator contract until a port is justified — gain/loss
-and the porting work order: `docs/ENGINE.md` "Dual-engine direction".
+and the porting work order: `../docs/ENGINE.md` "Dual-engine direction".
 
 ## E4=Strata pilot and threshold re-fit (2026-10-03)
 
 Strata replaced Scion as E4 through the endpoint tier with the managed
 lifecycle (`stacks/strata-125b.json`: adopt a running server or start/stop it
-from a generated config; `docs/ENGINE.md` "Integration in hivebench — endpoint
+from a generated config; `../docs/ENGINE.md` "Integration in hivebench — endpoint
 tier + managed launch").
 Both task sets, measure mode, frontier router + frontier verifier, one sample
 per task:

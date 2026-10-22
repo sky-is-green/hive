@@ -711,7 +711,7 @@ whole of the stock encoder's deficit is those 3 turns.
 deployment.** The family-match encoder is the *right* encoder for the
 selection - it is the only candidate measured that never loses a turn -
 and it is 22x too expensive to be the drone. That is Option A's own
-verdict in `docs/ENCODER-PLAN.md` ("a quality ceiling, not a shippable
+verdict in `../splinter/docs/ENCODER-PLAN.md` ("a quality ceiling, not a shippable
 drone"), now measured rather than argued, and it points at the same
 place the plan already pointed: **the Qwen encoder is a teacher, and the
 drone must be a student of it.**

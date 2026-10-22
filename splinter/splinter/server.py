@@ -1,0 +1,1117 @@
+"""Standalone Splinter server: splinter's own serving boundary.
+
+This module is the part of the original sidecar that makes splinter work
+INDEPENDENTLY of any host application. Extracted from the hivebench sidecar
+(harness/app.py) on 2026-09-15, keeping only what splinter itself needs:
+
+  * conversation loop         /v1/splinter/{turn,curate,observe,stream}
+  * persistence + lifecycle   conv-*.json store, LRU hives, reset/inspect/state
+  * tuning surface            /v1/splinter/defaults
+  * curated OpenAI passthrough /v1/openai/{models,chat/completions}
+                              plus the Responses API shim /v1/openai/responses
+                              (X-Splinter-Conversation keyed; dsh / opencode /
+                              any OpenAI client plugs in here)
+  * provider config           /v1/provider/config (providers.local.json)
+
+Everything imported here is splinter's own (cortex/, retention/, sieve/,
+backend/, logs/) or a third-party dependency. Nothing imports from
+hivebench/. The wire contract matches the original sidecar exactly, so
+existing clients keep working unchanged.
+
+Run standalone::
+
+    python -m splinter.server --port 8765 --state-dir harness_state
+    # or after `pip install .[serve]`:
+    splinter-serve --port 8765
+
+Embed in a host application (the hivebench / DSH plug-in seam)::
+
+    from splinter.server import create_app
+    app = create_app(state_dir=..., providers_file=...)
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import secrets
+import sys
+import threading
+import time
+from pathlib import Path
+from typing import Callable, Optional
+
+import requests
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from pydantic import BaseModel
+
+from backend.cache_manager import KVCacheManager
+from backend.openai_compat import OpenAICompatBackend
+from backend.providers import (
+    MASK,
+    Provider,
+    ProviderRegistry,
+    backend_kwargs,
+    load_registry,
+    providers_path,
+    save_registry,
+)
+from cortex.config import SplinterConfig
+from cortex.splinter import Splinter
+from splinter.mcp.server import McpContext, handle_message
+from splinter.mcp.tools import remember as mcp_remember
+from splinter.mcp.tools import search as mcp_search
+from logs.event_logger import EventLogger
+from retention.hygiene import (
+    DEFAULT_MAX_CHUNK_CHARS,
+    content_fingerprint,
+    prepare_for_storage,
+)
+from retention.store import ContextStore
+
+# Repo root (splinter-memory/): one level above the splinter/ package.
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+# ---------------------------------------------------------------------------
+# Small helpers (extracted verbatim from the sidecar)
+# ---------------------------------------------------------------------------
+
+def _cors_origins() -> list[str]:
+    """Console origins. Default: localhost dev origins only - agent mode can
+    execute code, so blanket CORS (*) is opt-in via HARNESS_CORS_ORIGINS=*."""
+    raw = os.environ.get("HARNESS_CORS_ORIGINS", "").strip()
+    if raw == "*":
+        return ["*"]
+    if raw:
+        return [o.strip() for o in raw.split(",") if o.strip()]
+    return ["http://localhost:5173", "http://127.0.0.1:5173",
+            "http://localhost:3000", "http://127.0.0.1:3000",
+            "http://localhost:8765", "http://127.0.0.1:8765"]
+
+
+def _required_token() -> str:
+    """When HARNESS_TOKEN is set, /v1/* requires this bearer token."""
+    return os.environ.get("HARNESS_TOKEN", "").strip()
+
+
+def _list_models(base_url: str) -> list[str]:
+    """Model ids from an OpenAI-compatible upstream (for /v1/openai/models)."""
+    resp = requests.get(f"{base_url}/v1/models", timeout=10)
+    resp.raise_for_status()
+    return [m.get("id") for m in resp.json().get("data", []) if m.get("id")]
+
+
+def _responses_chat_payload(payload: dict) -> dict:
+    """Translate a Responses API request body into Chat Completions shape.
+
+    ``input`` (a string or a list of message items) becomes ``messages``; a
+    string is a single user turn. ``instructions`` prepends as the system
+    message, exactly where Chat Completions clients put their system prompt.
+    ``max_output_tokens`` maps to ``max_tokens``; temperature and stream ride
+    through unchanged.
+    """
+    raw = payload.get("input")
+    if isinstance(raw, str):
+        items: list = [{"type": "message", "role": "user", "content": raw}]
+    elif isinstance(raw, list):
+        items = raw
+    else:
+        items = []
+
+    messages: list[dict] = []
+    instructions = payload.get("instructions")
+    if isinstance(instructions, str) and instructions.strip():
+        messages.append({"role": "system", "content": instructions})
+    for item in items:
+        if not isinstance(item, dict) or item.get("type") not in (None, "message"):
+            continue
+        content = item.get("content")
+        if isinstance(content, list):
+            # Responses content parts (input_text / text) -> plain text.
+            content = "".join(
+                part.get("text", "") if isinstance(part, dict) else str(part)
+                for part in content
+            )
+        if not isinstance(content, str):
+            content = "" if content is None else str(content)
+        messages.append({"role": item.get("role") or "user", "content": content})
+
+    chat: dict = {"model": payload.get("model"), "messages": messages}
+    if payload.get("stream"):
+        chat["stream"] = True
+    if payload.get("temperature") is not None:
+        chat["temperature"] = payload["temperature"]
+    if payload.get("max_output_tokens") is not None:
+        chat["max_tokens"] = payload["max_output_tokens"]
+    return chat
+
+
+def _response_object(reply: str, model: str, usage: Optional[dict]) -> dict:
+    """Responses API envelope around a Chat Completions reply."""
+    return {
+        "id": "resp_" + secrets.token_hex(12),
+        "object": "response",
+        "model": model,
+        "output": [{
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": reply}],
+        }],
+        "usage": {
+            "input_tokens": int((usage or {}).get("prompt_tokens") or 0),
+            "output_tokens": int((usage or {}).get("completion_tokens") or 0),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Conversation registry (the sidecar's _State, minus host-app machinery)
+# ---------------------------------------------------------------------------
+
+class ConversationRegistry:
+    """Mutable app state: hives, locks, providers, factories.
+
+    Extracted from the sidecar with the host-app pieces removed (engine
+    profiles, run dirs, llama-server management). Request models still carry
+    an ``engine`` field for wire compatibility; it is accepted and ignored
+    here because engine sampling profiles are a host concern."""
+
+    def __init__(
+        self,
+        ultra_factory: Callable[[], object],
+        backend_factory: Callable[[Optional[str]], object],
+        providers_file: Optional[Path],
+        log_dir: str,
+        state_dir: Optional[Path] = None,
+    ) -> None:
+        self.ultra_factory = ultra_factory
+        self.backend_factory = backend_factory
+        self.providers_file = providers_file
+        self.log_dir = log_dir
+        # Conversations persist here across restarts; None/empty disables.
+        self.state_dir = Path(state_dir) if state_dir else None
+        if self.state_dir is not None:
+            self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.registry = ProviderRegistry()
+        self._ultra = None
+        self.hives: dict[str, Splinter] = {}
+        self.locks: dict[str, threading.Lock] = {}
+        self.global_lock = threading.Lock()
+        # Conversation lifecycle: LRU-bounded so a long-running server cannot
+        # accumulate hives/loggers from every session that ever opened.
+        self.max_conversations = int(os.environ.get("HARNESS_MAX_CONVERSATIONS", "50"))
+        self._last_access: dict[str, float] = {}
+        self._inflight: set[str] = set()
+        self._loggers: dict[str, EventLogger] = {}
+        self._conv_provider: dict[str, str] = {}  # per-conversation override
+
+    def ultra(self):
+        if self._ultra is None:
+            self._ultra = self.ultra_factory()
+        return self._ultra
+
+    def _conv_path(self, conversation_id: str) -> Optional[Path]:
+        """Per-conversation state file. Content-hashed name: arbitrary ids
+        (session UUIDs, workspace keys, user input) stay safe on disk."""
+        if self.state_dir is None:
+            return None
+        digest = hashlib.md5(conversation_id.encode("utf-8")).hexdigest()[:16]
+        return self.state_dir / f"conv-{digest}.json"
+
+    def save_conversation(self, conversation_id: str, splinter: Splinter) -> None:
+        """Persist one conversation atomically (tmp file + os.replace)."""
+        path = self._conv_path(conversation_id)
+        if path is None:
+            return
+        payload = {
+            "conversation_id": conversation_id,
+            "turn": splinter.turn,
+            "with_backend": splinter.backend is not None,
+            "config": splinter.config.to_dict(),
+            "store": splinter.store.to_dict(),
+        }
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(payload), encoding="utf-8")
+        os.replace(tmp, path)
+
+    def drop_conversation(self, conversation_id: str) -> None:
+        path = self._conv_path(conversation_id)
+        if path is not None and path.exists():
+            path.unlink()
+
+    def splinter_for(
+        self, conversation_id: str, config_overrides: dict | None,
+        with_backend: bool = True, engine: Optional[str] = None,
+    ) -> Splinter:
+        """Get or lazily create the conversation's splinter.
+
+        A conversation not in memory but present in ``state_dir`` restores
+        from disk (same serialization as the benchmark's checkpoint/resume),
+        so the splinter survives server restarts. In-memory hives are
+        LRU-bounded (``HARNESS_MAX_CONVERSATIONS``); evicted conversations
+        are persisted first and transparently restore on their next touch.
+
+        ``with_backend=False`` (the curate/observe flow, where the caller's
+        own shell generates) creates the splinter without an LLM backend; a
+        conversation is driven either fully (/v1/splinter/turn) or externally
+        (curate + observe), whichever touches it first wins.
+        """
+        with self.global_lock:
+            splinter = self.hives.get(conversation_id)
+            if splinter is not None:
+                self._last_access[conversation_id] = time.monotonic()
+                return splinter
+
+            def build(cfg: SplinterConfig, backend: object | None) -> Splinter:
+                logger = self._loggers.get(conversation_id)
+                if logger is None:
+                    logger = EventLogger(log_dir=self.log_dir)
+                    self._loggers[conversation_id] = logger
+                h = Splinter(
+                    config=cfg,
+                    ultra=self.ultra(),
+                    backend=backend,
+                    logger=logger,
+                )
+                self.hives[conversation_id] = h
+                self.locks.setdefault(conversation_id, threading.Lock())
+                return h
+
+            path = self._conv_path(conversation_id)
+            if path is not None and path.exists():
+                try:
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    splinter = build(SplinterConfig.from_dict(data["config"]),
+                                   self.backend_factory(None)
+                                   if data.get("with_backend") else None)
+                    splinter.store = ContextStore.from_dict(
+                        data["store"], embed_fn=splinter.ultra.embed
+                    )
+                    splinter.turn = int(data["turn"])
+                    self._last_access[conversation_id] = time.monotonic()
+                    self._evict_locked(exclude=conversation_id)
+                    return splinter
+                except (ValueError, KeyError, TypeError, OSError) as exc:
+                    print(f"splinter-server: restoring {conversation_id} failed "
+                          f"({exc}); starting fresh", file=sys.stderr)
+
+            config = SplinterConfig(confidence_mode="off")
+            if config_overrides:
+                merged = {**config.to_dict(), **config_overrides}
+                config = SplinterConfig.from_dict(merged)
+            splinter = build(config, self.backend_factory(None) if with_backend else None)
+            self._last_access[conversation_id] = time.monotonic()
+            self._evict_locked(exclude=conversation_id)
+            return splinter
+
+    def _evict_locked(self, exclude: str) -> int:
+        """LRU-evict idle conversations beyond the cap. Caller holds the
+        global lock; in-flight conversations are never evicted, and evicted
+        state is persisted first (restore-on-touch keeps it reachable)."""
+        evicted = 0
+        while len(self.hives) > self.max_conversations:
+            candidates = [cid for cid in self.hives
+                          if cid != exclude and cid not in self._inflight]
+            if not candidates:
+                break
+            oldest = min(candidates, key=lambda c: self._last_access.get(c, 0.0))
+            self.save_conversation(oldest, self.hives[oldest])
+            logger = self._loggers.pop(oldest, None)
+            if logger is not None:
+                try:
+                    logger.close()
+                except Exception:  # noqa: BLE001 - eviction must not fail
+                    pass
+            self.hives.pop(oldest, None)
+            self.locks.pop(oldest, None)
+            self._last_access.pop(oldest, None)
+            evicted += 1
+        return evicted
+
+    def begin(self, conversation_id: str) -> None:
+        self._inflight.add(conversation_id)
+        self._last_access[conversation_id] = time.monotonic()
+
+    def end(self, conversation_id: str) -> None:
+        self._inflight.discard(conversation_id)
+
+    def drop(self, conversation_id: str) -> None:
+        with self.global_lock:
+            self.hives.pop(conversation_id, None)
+            self.locks.pop(conversation_id, None)
+            self._last_access.pop(conversation_id, None)
+            logger = self._loggers.pop(conversation_id, None)
+        if logger is not None:
+            try:
+                logger.close()
+            except Exception:  # noqa: BLE001
+                pass
+        self.drop_conversation(conversation_id)
+
+    def lock_for(self, conversation_id: str) -> threading.Lock:
+        with self.global_lock:
+            return self.locks.setdefault(conversation_id, threading.Lock())
+
+
+# ---------------------------------------------------------------------------
+# Request / response models (wire-compatible with the original sidecar)
+# ---------------------------------------------------------------------------
+
+class TurnRequest(BaseModel):
+    query: str
+    conversation_id: str = "default"
+    model: Optional[str] = None  # override the provider's model for this turn's splinter
+    provider: Optional[str] = None  # per-conversation inference target (multi-model)
+    engine: Optional[str] = None  # accepted for wire compat; ignored (host concern)
+    config: Optional[dict] = None  # SplinterConfig overrides (applied on creation)
+
+
+class ResetRequest(BaseModel):
+    conversation_id: str
+
+
+class CurateRequest(BaseModel):
+    query: str
+    conversation_id: str = "default"
+    engine: Optional[str] = None  # accepted for wire compat; ignored
+    config: Optional[dict] = None
+
+
+class ObserveRequest(BaseModel):
+    conversation_id: str
+    reply: str
+
+
+class StreamTurnRequest(BaseModel):
+    query: str
+    conversation_id: str = "default"
+    engine: Optional[str] = None  # accepted for wire compat; ignored
+    config: Optional[dict] = None
+
+
+class ProviderEntry(BaseModel):
+    name: str
+    base_url: str
+    api_key: str = ""
+    model: str = ""
+    headers: dict = {}
+
+
+class ProviderConfigRequest(BaseModel):
+    providers: list[ProviderEntry]
+    default: str = ""
+    persist: bool = True
+
+
+# ---------------------------------------------------------------------------
+# App factory
+# ---------------------------------------------------------------------------
+
+def create_app(
+    ultra_factory: Optional[Callable[[], object]] = None,
+    backend_factory: Optional[Callable[[Optional[str]], object]] = None,
+    providers_file: Optional[Path] = None,
+    log_dir: str = "logs",
+    state_dir: Optional[Path] = None,
+    app_state=None,
+) -> FastAPI:
+    """Build the standalone splinter server.
+
+    ``ultra_factory`` / ``backend_factory`` are injectable for offline tests;
+    defaults build the real L3-v2 drone (CPU MiniLM) and a provider-driven
+    OpenAI-compat backend from ``providers_file`` (default: this repo's
+    providers.local.json). ``state_dir=None`` defaults to ./harness_state
+    (conversations survive restarts); passing an empty string disables
+    persistence.
+
+    ``app_state`` is the host-app seam (hivebench / DSH plug-in): pass the
+    host's own conversation registry and the routes operate on it directly -
+    no second registry, no re-init of providers/encoder. The host keeps its
+    own non-splinter routes; mounting this app last makes splinter's paths fall
+    through to it (Starlette matches routes before mounts).
+    """
+    if providers_file is None:
+        providers_file = REPO_ROOT / "providers.local.json"
+    if state_dir is None:
+        state_dir = Path(os.environ.get("SPLINTER_STATE_DIR", "harness_state"))
+
+    def _default_ultra():
+        embedding_backend = os.environ.get("HARNESS_EMBEDDING_BACKEND", "local")
+        embedding_url = os.environ.get("HARNESS_EMBEDDING_URL", "")
+        embedding_model = os.environ.get("HARNESS_EMBEDDING_MODEL", "default")
+        if embedding_backend == "served" and embedding_url:
+            from sieve.served import ServedEmbeddingDrone
+
+            return ServedEmbeddingDrone(base_url=embedding_url,
+                                        model=embedding_model)
+        # CPU by design: the encoder must never contend with llama-server
+        # for VRAM. MiniLM-L3 is 12M params; CPU embedding costs ~5ms/turn.
+        # Single-threaded on purpose: llama.cpp already holds a large
+        # thread pool, and letting PyTorch OpenMP spawn 16 more exhausts
+        # the sandbox pids cap (EAGAIN -> silent worker death). One
+        # thread is still ~5ms for a 384-dim embedding.
+        import torch
+
+        torch.set_num_threads(1)
+        from sieve.ultra_small import UltraSmallDrone
+
+        return UltraSmallDrone(confidence_mode="off", device="cpu")
+
+    def _default_backend(model: Optional[str], provider: Optional[str] = None):
+        kw = backend_kwargs(st.registry.resolve(provider))
+        if model:
+            kw["model"] = model
+        return OpenAICompatBackend(**kw)
+
+    app = FastAPI(title="Splinter Server", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins(),
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.middleware("http")
+    async def token_guard(request: Request, call_next):
+        required = _required_token()
+        if required and request.url.path.startswith("/v1/"):
+            supplied = request.headers.get("x-splinter-token", "")
+            if supplied != required:
+                return JSONResponse({"detail": "invalid or missing token"},
+                                    status_code=401)
+        return await call_next(request)
+
+    if app_state is not None:
+        # Host-app mount: the host owns the registry (providers, encoder,
+        # hives, locks) - operate on it directly, skip all re-initialisation.
+        st = app_state
+    else:
+        st = ConversationRegistry(
+            ultra_factory=ultra_factory or _default_ultra,
+            backend_factory=backend_factory or _default_backend,
+            providers_file=providers_file,
+            log_dir=log_dir,
+            state_dir=state_dir if state_dir is not None else Path("harness_state"),
+        )
+        try:
+            st.registry = load_registry(providers_file)
+        except (ValueError, OSError) as exc:
+            print(f"splinter-server: ignoring unreadable providers config ({exc})",
+                  file=sys.stderr)
+        # Eagerly load the encoder at startup, not lazily on first request.
+        # By first-request time uvicorn's event loop + connection threads are
+        # alive and tip the process over its thread budget, so MiniLM's OpenMP
+        # pool fails to spawn (EAGAIN) and the worker dies silently. Loading
+        # here - before uvicorn serves - keeps the load in a clean state.
+        try:
+            st.ultra()
+        except Exception as exc:  # noqa: BLE001 - never block startup on encoder
+            print(f"splinter-server: encoder pre-load failed ({exc}); will retry lazily",
+                  file=sys.stderr)
+    app.state.registry = st
+
+    @app.get("/health")
+    def health():
+        return {"ok": True, "conversations": len(st.hives)}
+
+    # ------------------------------------------------------------------
+    # Conversation loop
+    # ------------------------------------------------------------------
+
+    @app.post("/v1/splinter/turn")
+    def splinter_turn(req: TurnRequest):
+        query = (req.query or "").strip()
+        if not query:
+            raise HTTPException(422, "query must not be empty")
+        splinter = st.splinter_for(req.conversation_id, req.config, engine=req.engine)
+        # Per-conversation inference target: provider and/or model override
+        # swaps the conversation's backend (multi-model: pick any loaded one).
+        current_provider = st._conv_provider.get(req.conversation_id)
+        wants_backend = (req.provider and req.provider != current_provider) \
+            or (req.model and isinstance(splinter.backend, OpenAICompatBackend)
+                and req.model != splinter.backend.model)
+        if wants_backend and isinstance(splinter.backend, OpenAICompatBackend):
+            new_backend = st.backend_factory(req.model, provider=req.provider)
+            splinter.backend = new_backend
+            splinter.cache = KVCacheManager(new_backend)
+            st._conv_provider[req.conversation_id] = req.provider \
+                or st.registry.default
+        st.begin(req.conversation_id)
+        with st.lock_for(req.conversation_id):
+            result = splinter.process_turn(req.query, conversation_id=req.conversation_id)
+            st.save_conversation(req.conversation_id, splinter)
+        st.end(req.conversation_id)
+        assembled = result.assembled
+        return {
+            "conversation_id": req.conversation_id,
+            "turn": result.turn,
+            "reply": result.reply,
+            "assembled_content": assembled.content if assembled is not None else "",
+            "token_count": result.token_count,
+            "budget": result.budget,
+            "mode": result.mode,
+            "error": result.error,
+            "timings": result.timings,
+            "pes": result.pes,
+            "degradation_level": result.degradation_level,
+            "inspection": splinter.inspect_turn(result),
+        }
+
+    @app.get("/v1/splinter/inspect/{conversation_id}")
+    def splinter_inspect(conversation_id: str):
+        """Last turn's full curation detail for the prompt inspector."""
+        with st.global_lock:
+            splinter = st.hives.get(conversation_id)
+        if splinter is None:
+            raise HTTPException(404, f"no such conversation: {conversation_id}")
+        if not hasattr(splinter, "_last_turn_result") or splinter._last_turn_result is None:
+            raise HTTPException(404, "no turn has been processed yet")
+        return splinter.inspect_turn(splinter._last_turn_result)
+
+    @app.post("/v1/splinter/reset")
+    def splinter_reset(req: ResetRequest):
+        st.drop(req.conversation_id)
+        return {"ok": True}
+
+    # ------------------------------------------------------------------
+    # Curate / observe (Seam A, dsh-splinter flow): the caller's own shell
+    # generates - the server only assembles context and ingests replies.
+    # ------------------------------------------------------------------
+
+    @app.post("/v1/splinter/curate")
+    def splinter_curate(req: CurateRequest):
+        query = (req.query or "").strip()
+        if not query:
+            raise HTTPException(422, "query must not be empty")
+        splinter = st.splinter_for(req.conversation_id, req.config, with_backend=False,
+                               engine=req.engine)
+        with st.lock_for(req.conversation_id):
+            result = splinter.process_turn(query, conversation_id=req.conversation_id)
+            st.save_conversation(req.conversation_id, splinter)
+        assembled = result.assembled
+        return {
+            "conversation_id": req.conversation_id,
+            "turn": result.turn,
+            "assembled_content": assembled.content if assembled is not None else "",
+            "token_count": result.token_count,
+            "budget": result.budget,
+            "mode": result.mode,
+            "error": result.error,
+            "timings": result.timings,
+            "pes": result.pes,
+            "degradation_level": result.degradation_level,
+        }
+
+    @app.post("/v1/splinter/observe")
+    def splinter_observe(req: ObserveRequest):
+        # lazily create: external integrators may observe before ever calling
+        # curate (e.g. feeding back a reply for a session the studio has
+        # never seen); the conversation materializes here.
+        splinter = st.splinter_for(req.conversation_id, None, with_backend=False)
+        reply = (req.reply or "").strip()
+        stored = False
+        if reply and not (
+            splinter.config.filter_hedge_replies and Splinter._is_hedge_reply(reply)
+        ):
+            st.begin(req.conversation_id)
+            with st.lock_for(req.conversation_id):
+                stored = splinter.store.add_chunk(splinter.turn, reply) is not None
+                if stored:
+                    st.save_conversation(req.conversation_id, splinter)
+            st.end(req.conversation_id)
+        return {"ok": True, "stored": stored, "turn": splinter.turn}
+
+    @app.post("/v1/splinter/stream")
+    async def splinter_stream(req: StreamTurnRequest):
+        query = (req.query or "").strip()
+        if not query:
+            raise HTTPException(422, "query must not be empty")
+        try:
+            provider = st.registry.resolve(None)
+        except LookupError:
+            raise HTTPException(502, "no provider configured; start a local "
+                                     "server or configure one")
+        base_url = provider.base_url.rstrip("/")
+        headers = {"Authorization": f"Bearer {provider.api_key or 'lm-studio'}",
+                   **provider.extra_headers}
+        splinter = st.splinter_for(req.conversation_id, req.config, with_backend=False)
+        st.begin(req.conversation_id)
+        with st.lock_for(req.conversation_id):
+            result = splinter.process_turn(query, conversation_id=req.conversation_id)
+            st.save_conversation(req.conversation_id, splinter)
+        st.end(req.conversation_id)
+        assembled = result.assembled
+        curated = assembled.content if assembled is not None else ""
+        payload = {
+            "model": provider.model or "local",
+            "messages": [
+                {"role": "system", "content": curated or "You are a helpful assistant."},
+                {"role": "user", "content": query},
+            ],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+            **(splinter.config.sampling or {}),
+        }
+        if splinter.config.max_tokens:
+            payload["max_tokens"] = splinter.config.max_tokens
+
+        def sse():
+            yield "data: " + json.dumps({
+                "type": "meta", "turn": result.turn,
+                "token_count": result.token_count, "budget": result.budget,
+                "curated_chars": len(curated), "mode": result.mode,
+            }) + "\n\n"
+
+            started = time.time()
+            parts: list[str] = []
+            usage: dict = {}
+            try:
+                resp = requests.post(
+                    f"{base_url}/v1/chat/completions", json=payload,
+                    headers=headers, stream=True, timeout=600,
+                )
+                resp.raise_for_status()
+                for raw in resp.iter_lines(decode_unicode=True):
+                    if not raw:
+                        continue
+                    line = raw[6:].strip() if raw.startswith("data:") else raw.strip()
+                    if not line or line == "[DONE]":
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    usage = chunk.get("usage") or usage
+                    for choice in chunk.get("choices") or []:
+                        delta = choice.get("delta") or {}
+                        text = delta.get("content")
+                        if text:
+                            parts.append(text)
+                            yield "data: " + json.dumps({
+                                "type": "delta", "text": text}) + "\n\n"
+            except Exception as exc:  # noqa: BLE001 - surfaced as an event
+                yield "data: " + json.dumps({
+                    "type": "error", "error": str(exc)}) + "\n\n"
+
+            reply = "".join(parts)
+            stored = False
+            if reply.strip() and not (
+                splinter.config.filter_hedge_replies
+                and Splinter._is_hedge_reply(reply)
+            ):
+                stored = splinter.store.add_chunk(splinter.turn, reply) is not None
+                if stored:
+                    st.save_conversation(req.conversation_id, splinter)
+            elapsed = max(time.time() - started, 1e-6)
+            completion_tokens = (usage or {}).get("completion_tokens") or 0
+            yield "data: " + json.dumps({
+                "type": "done", "stored": stored,
+                "tokens": completion_tokens,
+                "seconds": round(elapsed, 2),
+                "tokens_per_sec": round(completion_tokens / elapsed, 1)
+                if completion_tokens else None,
+            }) + "\n\n"
+
+        return StreamingResponse(sse(), media_type="text/event-stream")
+
+    @app.get("/v1/splinter/defaults")
+    def splinter_defaults():
+        """SplinterConfig defaults - the source for the UI tuning form. Overrides
+        ride each turn request's `config` and apply when a conversation is
+        created (reset to re-tune)."""
+        return SplinterConfig().to_dict()
+
+    @app.get("/v1/splinter/state")
+    def splinter_state(conversation_id: Optional[str] = Query(default=None)):
+        def snapshot(h: Splinter) -> dict:
+            return {
+                "turn": h.turn,
+                "store_chunks": len(h.store.all_chunks()),
+                "comb_stats": dict(h.comb_stats),
+            }
+
+        if conversation_id:
+            with st.global_lock:
+                splinter = st.hives.get(conversation_id)
+            if splinter is None and st.state_dir is not None \
+                    and st._conv_path(conversation_id).exists():
+                # lazy-restore a persisted conversation so state survives restarts
+                splinter = st.splinter_for(conversation_id, None)
+            if splinter is None:
+                raise HTTPException(404, f"no such conversation: {conversation_id}")
+            return {**snapshot(splinter), "conversation_id": conversation_id}
+        with st.global_lock:
+            items = {cid: snapshot(h) for cid, h in st.hives.items()}
+        return {"count": len(items), "conversations": items}
+
+    # ------------------------------------------------------------------
+    # Curated OpenAI-compatible passthrough (Mode A integration: dsh,
+    # opencode, any OpenAI client). Standard /chat/completions wire shape,
+    # curated system context, the reply observed back into the store.
+    # Conversation key: X-Splinter-Conversation header > payload "user"
+    # > "default".
+    # ------------------------------------------------------------------
+
+    @app.get("/v1/openai/models")
+    def openai_models():
+        try:
+            provider = st.registry.resolve(None)
+        except LookupError:
+            raise HTTPException(502, "no provider configured")
+        try:
+            ids = _list_models(provider.base_url.rstrip("/"))
+        except Exception as exc:  # noqa: BLE001 - surfaced to the caller
+            raise HTTPException(502, f"cannot list models from upstream: {exc}")
+        if not ids and getattr(provider, "model", None):
+            ids = [provider.model]
+        return {"object": "list",
+                "data": [{"id": m, "object": "model"} for m in ids]}
+
+    def _openai_conversation_key(payload: dict, request: Request) -> str:
+        """Conversation ID resolution (S5): header > model-name prefix >
+        user field > default.
+
+        Model-name prefix convention: "project-name:model-id" -> cid="project-name",
+        upstream model="model-id" (payload is mutated in place). Enables opencode
+        (no custom-header support) to pin conversations by project via its model
+        config.
+        """
+        model_name = payload.get("model") or ""
+        cid = request.headers.get("X-Splinter-Conversation")
+        if not cid and ":" in model_name:
+            prefix, _, remainder = model_name.partition(":")
+            if prefix.strip() and remainder.strip():
+                cid = prefix.strip()
+                payload["model"] = remainder.strip()
+        return cid or (payload.get("user") or "") or "default"
+
+    def _openai_chat_context(payload: dict, request: Request) -> dict:
+        """Validate + curate one Chat Completions payload.
+
+        Shared by /v1/openai/chat/completions and the /v1/openai/responses
+        shim: query extraction, conversation keying, provider resolution,
+        memory curation, the upstream request build and the reply-observe
+        callback all live here, so the two wire formats cannot drift apart.
+        """
+        messages = payload.get("messages") or []
+        if not messages:
+            raise HTTPException(422, "messages must not be empty")
+        query = ""
+        for m in reversed(messages):
+            content = m.get("content") if m.get("role") == "user" else None
+            if isinstance(content, str) and content.strip():
+                query = content
+                break
+        if not query.strip():
+            raise HTTPException(422, "no user message with text content")
+        cid = _openai_conversation_key(payload, request)
+        try:
+            provider = st.registry.resolve(None)
+        except LookupError:
+            raise HTTPException(
+                502, "no provider configured; configure one via /v1/provider/config "
+                     "or providers.local.json")
+        base_url = provider.base_url.rstrip("/")
+        headers = {"Authorization": f"Bearer {provider.api_key or 'lm-studio'}",
+                   **provider.extra_headers}
+        splinter = st.splinter_for(cid, payload.get("config"), with_backend=False)
+        # Budget guard / forward window: Unsloth Studio proxies its ENTIRE
+        # thread history, which can exceed the upstream context (observed:
+        # 1.04M tokens vs 74k available -> llama.cpp 400). Curation carries
+        # the memory, so oversized payloads are trimmed to the last few
+        # turns; small payloads pass through untouched (dsh/opencode manage
+        # their own windows and are unaffected). The trim runs BEFORE the
+        # echo fingerprints below: only content actually forwarded may
+        # suppress a stored chunk from curation - a fact trimmed off the
+        # tail must stay retrievable.
+        _MAX_FWD_CHARS = 60_000
+        system_msg = (
+            messages[0]
+            if messages and messages[0].get("role") == "system"
+            else None
+        )
+        # Only a leading system message is peeled off; a client that sends no
+        # system message (opencode, curl) must keep its first user message -
+        # dropping it left the upstream with no query at all.
+        body_msgs = messages[1:] if system_msg is not None else list(messages)
+        if sum(len(str(m.get("content") or "")) for m in body_msgs) > _MAX_FWD_CHARS:
+            body_msgs = body_msgs[-8:]
+        # RC2: fingerprint the SAME normalized form the store persists -
+        # prepare_for_storage is the store's own write pipeline (boilerplate
+        # strip + secret sanitization with the conversation's own ingest
+        # settings), so sanitized/truncated stored chunks can no longer
+        # escape echo-dedup.
+        _store = getattr(splinter, "store", None)
+        _prefixes = getattr(_store, "ingest_block_prefixes", None)
+        _max_chars = getattr(_store, "max_chunk_chars", None) or DEFAULT_MAX_CHUNK_CHARS
+        payload_fingerprints = set()
+        forwarded_texts = (
+            ([system_msg] if system_msg is not None else []) + body_msgs
+        )
+        for m in forwarded_texts:
+            text = m.get("content")
+            if not isinstance(text, str) or not text:
+                continue
+            prepared = prepare_for_storage(text, _max_chars, _prefixes)
+            if prepared is not None:
+                payload_fingerprints.add(content_fingerprint(prepared))
+        with st.lock_for(cid):
+            result = splinter.process_turn(
+                query, conversation_id=cid,
+                payload_fingerprints=payload_fingerprints,
+            )
+            st.save_conversation(cid, splinter)
+        curated = result.assembled.content if result.assembled is not None else ""
+        merged_sys = curated or "You are a helpful assistant."
+        if system_msg is not None and system_msg.get("content"):
+            merged_sys = merged_sys + "\n\n" + system_msg["content"]
+        stream = bool(payload.get("stream"))
+        upstream = {
+            **payload,
+            "model": provider.model or payload.get("model") or "local",
+            "stream": stream,
+            "messages": [{"role": "system", "content": merged_sys}] + body_msgs,
+        }
+        upstream.setdefault("stream_options", {"include_usage": True})
+
+        def observe(reply: str) -> bool:
+            stored = False
+            if reply.strip() and not (
+                splinter.config.filter_hedge_replies
+                and Splinter._is_hedge_reply(reply)
+            ):
+                stored = splinter.store.add_chunk(splinter.turn, reply) is not None
+                if stored:
+                    st.save_conversation(cid, splinter)
+            return stored
+
+        return {"base_url": base_url, "headers": headers,
+                "upstream": upstream, "stream": stream, "observe": observe}
+
+    def _openai_chat_once(ctx: dict) -> dict:
+        """One non-stream upstream call; the reply is observed on the way out."""
+        resp = requests.post(
+            f"{ctx['base_url']}/v1/chat/completions", json=ctx["upstream"],
+            headers=ctx["headers"], timeout=600,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        try:
+            ctx["observe"](data["choices"][0]["message"]["content"] or "")
+        except (KeyError, IndexError):
+            pass
+        return data
+
+    def _openai_chat_chunks(ctx: dict):
+        """Yield ("chunk", parsed) per upstream SSE frame and ("done", None)
+        on [DONE]; ("error", exc) if the upstream call fails. The accumulated
+        reply is observed once the stream ends - the same contract the chat
+        endpoint always had, now shared with the Responses shim."""
+        parts: list[str] = []
+        try:
+            resp = requests.post(
+                f"{ctx['base_url']}/v1/chat/completions", json=ctx["upstream"],
+                headers=ctx["headers"], stream=True, timeout=600,
+            )
+            resp.raise_for_status()
+            for raw in resp.iter_lines(decode_unicode=True):
+                if not raw:
+                    continue
+                line = raw[6:].strip() if raw.startswith("data:") else raw.strip()
+                if not line:
+                    continue
+                if line == "[DONE]":
+                    yield "done", None
+                    break
+                try:
+                    chunk = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                for choice in chunk.get("choices") or []:
+                    delta = choice.get("delta") or {}
+                    if delta.get("content"):
+                        parts.append(delta["content"])
+                yield "chunk", chunk
+        except Exception as exc:  # noqa: BLE001 - surfaced as an SSE error event
+            yield "error", exc
+        ctx["observe"]("".join(parts))
+
+    @app.post("/v1/openai/chat/completions")
+    async def openai_chat_completions(request: Request):
+        payload = await request.json()
+        ctx = _openai_chat_context(payload, request)
+        if not ctx["stream"]:
+            return _openai_chat_once(ctx)
+
+        def sse():
+            for kind, item in _openai_chat_chunks(ctx):
+                if kind == "chunk":
+                    yield "data: " + json.dumps(item) + "\n\n"
+                elif kind == "done":
+                    yield "data: [DONE]\n\n"
+                else:
+                    yield "data: " + json.dumps({
+                        "error": {"message": str(item),
+                                  "type": "splinter_upstream_error"},
+                    }) + "\n\n"
+
+        return StreamingResponse(sse(), media_type="text/event-stream")
+
+    @app.post("/v1/openai/responses")
+    async def openai_responses(request: Request):
+        """Responses API shim (Unsloth Studio's openai provider type posts
+        here): translate input/instructions into the same Chat Completions
+        code path as /v1/openai/chat/completions - same providers, curation
+        and conversation keying - then translate the reply back."""
+        payload = await request.json()
+        chat_payload = _responses_chat_payload(payload)
+        ctx = _openai_chat_context(chat_payload, request)
+        model = chat_payload.get("model") or ""
+        if not ctx["stream"]:
+            data = _openai_chat_once(ctx)
+            reply = ""
+            try:
+                reply = data["choices"][0]["message"]["content"] or ""
+            except (KeyError, IndexError, TypeError):
+                pass
+            return _response_object(reply, model or data.get("model") or "",
+                                    data.get("usage"))
+
+        def sse():
+            parts: list[str] = []
+            usage: dict = {}
+            resp_model = model
+            failed = False
+            for kind, item in _openai_chat_chunks(ctx):
+                if kind == "chunk":
+                    usage = item.get("usage") or usage
+                    resp_model = resp_model or item.get("model") or ""
+                    for choice in item.get("choices") or []:
+                        text = (choice.get("delta") or {}).get("content")
+                        if text:
+                            parts.append(text)
+                            yield ("event: response.output_text.delta\n"
+                                   "data: " + json.dumps({
+                                       "type": "response.output_text.delta",
+                                       "delta": text,
+                                   }) + "\n\n")
+                elif kind == "error":
+                    failed = True
+                    yield ("event: response.failed\n"
+                           "data: " + json.dumps({
+                               "type": "response.failed",
+                               "error": {"message": str(item),
+                                         "type": "splinter_upstream_error"},
+                           }) + "\n\n")
+            if failed:
+                return
+            yield ("event: response.completed\n"
+                   "data: " + json.dumps({
+                       "type": "response.completed",
+                       "response": _response_object("".join(parts), resp_model,
+                                                    usage),
+                   }) + "\n\n")
+
+        return StreamingResponse(sse(), media_type="text/event-stream")
+
+    # ------------------------------------------------------------------
+    # Provider configuration (self-service: no file editing required)
+    # ------------------------------------------------------------------
+
+    @app.post("/v1/provider/config")
+    def set_providers(req: ProviderConfigRequest):
+        reg = ProviderRegistry(default=req.default)
+        for entry in req.providers:
+            data = entry.model_dump()
+            if data.get("api_key") == MASK:
+                # the UI echoes the mask back for untouched keys - keep the
+                # stored secret instead of overwriting it with "***"
+                previous = [p for p in st.registry.providers
+                            if p.name.lower() == str(data.get("name", "")).lower()]
+                data["api_key"] = previous[0].api_key if previous else ""
+            try:
+                reg.providers.append(Provider.from_dict(data))
+            except ValueError as exc:
+                raise HTTPException(422, str(exc))
+        st.registry = reg
+        persisted = None
+        if req.persist:
+            path = save_registry(reg, st.providers_file)
+            persisted = str(path)
+        return {"ok": True, "default": reg.default,
+                "providers": reg.redacted(), "persisted_to": persisted}
+
+    @app.get("/v1/provider/config")
+    def get_providers():
+        return {
+            "default": st.registry.default,
+            "providers": st.registry.redacted(),
+            "file": str(providers_path(st.providers_file)),
+        }
+
+    @app.post("/v1/mcp")
+    async def mcp_endpoint(request: Request):
+        """Stateless JSON-RPC MCP endpoint (S2): splinter_remember / splinter_search."""
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(400, "invalid JSON body")
+
+        def do_remember(conversation_id: str, text: str) -> dict:
+            splinter = st.splinter_for(conversation_id, None, with_backend=False)
+            with st.lock_for(conversation_id):
+                payload = mcp_remember(splinter, text)
+                st.save_conversation(conversation_id, splinter)
+            return {"conversation_id": conversation_id, **payload}
+
+        def do_search(conversation_id: str, query: str, top_k: int) -> dict:
+            splinter = st.splinter_for(conversation_id, None, with_backend=False)
+            with st.lock_for(conversation_id):
+                payload = mcp_search(splinter, query, top_k)
+                st.save_conversation(conversation_id, splinter)
+            return {"conversation_id": conversation_id, **payload}
+
+        response = handle_message(body, McpContext(
+            remember=do_remember, search=do_search))
+        if response is None:  # notifications only — nothing to answer
+            return Response(status_code=202)
+        return response
+
+    return app
+
+
+def main() -> None:
+    """CLI entry point (console script: splinter-serve)."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="splinter-serve",
+        description="Standalone Splinter server (conversation loop + curated "
+                    "OpenAI passthrough), independent of any host app.",
+    )
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int,
+                        default=int(os.environ.get("SPLINTER_PORT", "8765")))
+    parser.add_argument("--state-dir", default=None,
+                        help="conversation persistence dir (default: $SPLINTER_STATE_DIR "
+                             "or ./harness_state)")
+    parser.add_argument("--providers", default=None,
+                        help="providers JSON file (default: <repo>/providers.local.json)")
+    parser.add_argument("--log-dir", default="logs")
+    args = parser.parse_args()
+
+    import uvicorn
+
+    app = create_app(
+        providers_file=Path(args.providers) if args.providers else None,
+        log_dir=args.log_dir,
+        state_dir=Path(args.state_dir) if args.state_dir else None,
+    )
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
+
+if __name__ == "__main__":
+    main()

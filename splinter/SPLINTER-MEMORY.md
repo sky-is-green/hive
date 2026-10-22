@@ -22,7 +22,7 @@ window to *stay useful* as the conversation grows: the memory layer, the
 mechanisms, the measured results, and the code that implements them.
 
 The canonical paper lives with the code
-([sky-is-green/splinter-memory](https://github.com/sky-is-green/splinter-memory));
+([sky-is-green/hive/tree/main/splinter](https://github.com/sky-is-green/hive/tree/main/splinter));
 this edition adds the encoder measurement taken on the harness's own traffic
 (§7) and the operational notes a practitioner needs.
 
@@ -132,8 +132,10 @@ Three ways, in increasing order of control:
 at it; nothing else changes.
 
 ```bash
-git clone https://github.com/sky-is-green/hivebench
-cd hivebench && python -m harness --port 8765
+git clone https://github.com/sky-is-green/hive
+cd hive
+python -m pip install -e splinter
+python -m harness --port 8765
 ```
 
 **2. As a library** - the memory system is importable, engine-agnostic and
@@ -412,7 +414,7 @@ and the cost, not the better answers.
   split, because the current one was trained and measured on the same
   traffic (a fit, not a generalisation).
 - The full sweep, the fine-tune runs and the replay are in
-  `docs/ENCODER-NOTES.md` in the harness repository.
+  `docs/ENCODER-NOTES.md` in [`splinter/`](https://github.com/sky-is-green/hive/tree/main/splinter).
 
 ## Limits, honestly
 
@@ -487,7 +489,7 @@ MIT. See `LICENSE` and `CITATION.cff` in this repository.
             for Long-Horizon LLM Conversations},
   author = {{HiveBench Studio contributors}},
   year   = {2026},
-  url    = {https://github.com/sky-is-green/splinter-memory}
+  url    = {https://github.com/sky-is-green/hive/tree/main/splinter}
 }
 ```
 

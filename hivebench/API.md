@@ -244,7 +244,7 @@ curl http://127.0.0.1:8765/health
 
 ## Related
 
-- `docs/CASCADE-PILOT.md` — the cascade design, the console contract, and the
+- `../cascade/CASCADE-PILOT.md` — the cascade design, the console contract, and the
   measured results.
 - `experiments/cascade/LEARNED-GATE-PLAN.md` — the learned gate and its
   pre-registered acceptance rule.

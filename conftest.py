@@ -5,11 +5,12 @@ under test from the sibling splinter-memory checkout, so flat names like
 is invoked (editable install makes this unnecessary, but from-source runs
 stay supported).
 
-The sibling checkout is resolved in this order (see `resolve_splinter_home`):
+The memory project is resolved in this order (see `resolve_splinter_home`):
 
 1. an explicit ``$SPLINTER_HOME`` (legacy ``$STRATA_HOME`` still accepted);
-2. walking up from ``ROOT`` for a ``splinter-memory`` / ``strata-memory`` dir;
-3. the primary checkout's sibling, recovered from the git worktree marker.
+2. the absorbed ``splinter/`` project in this monorepo;
+3. walking up from ``ROOT`` for a ``splinter-memory`` / ``strata-memory`` dir;
+4. the primary checkout's sibling, recovered from the git worktree marker.
 
 HIVE-OPS worktrees live at ``<project>/worktrees/<repo>/hivebench-<Task_ID>``,
 so ``ROOT/../splinter-memory`` does not exist from a worktree. Rather than
@@ -97,12 +98,17 @@ def resolve_splinter_home(root, env=None):
                 "or unset it."
             )
 
-    # 2) Walk up from ROOT (covers the worktree layout via a shared parent).
+    # 2) The absorbed memory project in this monorepo.
+    local = os.path.normpath(os.path.join(root, "splinter"))
+    if _is_dir(local) and _is_dir(os.path.join(local, "splinter")):
+        return local
+
+    # 3) Walk up from ROOT (covers the worktree layout via a shared parent).
     for candidate in _walk_up_candidates(root):
         if _is_dir(candidate):
             return candidate
 
-    # 3) Primary checkout's sibling (when the worktree is not under the primary).
+    # 4) Primary checkout's sibling (when the worktree is not under the primary).
     primary = _primary_checkout(root)
     if primary:
         for name in SIBLING_NAMES:
@@ -110,21 +116,21 @@ def resolve_splinter_home(root, env=None):
             if _is_dir(candidate):
                 return candidate
 
-    # 4) Fail loudly, printing every path we resolved/tried.
+    # 5) Fail loudly, printing every path we resolved/tried.
     searched = list(_walk_up_candidates(root))
     fallback = os.path.normpath(
         os.path.join(os.path.dirname(os.path.abspath(root)), SIBLING_NAMES[0])
     )
     tried = "\n".join(f"    - {p}" for p in searched)
     raise SplinterHomeNotFound(
-        "Could not locate the sibling memory checkout "
-        f"({' / '.join(SIBLING_NAMES)}).\n"
+        "Could not locate the memory checkout "
+        f"(splinter/ or {' / '.join(SIBLING_NAMES)}).\n"
         f"  worktree root     : {os.path.abspath(root)}\n"
         f"  primary checkout  : {primary or 'unknown'}\n"
         f"  SPLINTER_HOME     : {env.get('SPLINTER_HOME', '<unset>')}\n"
         f"  paths searched    :\n{tried}\n"
         f"  fallback path     : {fallback}\n"
-        "Set SPLINTER_HOME=/path/to/splinter-memory (or STRATA_HOME) and re-run."
+        "Set SPLINTER_HOME=/path/to/splinter (or STRATA_HOME) and re-run."
     )
 
 

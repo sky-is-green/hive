@@ -1,12 +1,11 @@
 cff-version: 1.2.0
 message: "If you use this software or its measurements, cite it as below."
-title: "HiveBench"
+title: "Hive"
 abstract: >-
-  Evaluation suite and Studio sidecar for Splinter-Memory. Ships the white
-  paper's falsifiable predictions (P1-P11) as executable, offline tests with
-  measured verdicts, deterministic retrieval diagnostics that avoid
-  LLM-as-judge circularity in the evidence path, and replayable paired A/B
-  batteries (splinter-curated context vs a naive FIFO window).
+  A local-first stack for memory, verification, and routing in language
+  models. It contains Splinter Memory, the Hive Cascade, and HiveBench, the
+  evaluation suite that measures both: deterministic verification, replayable
+  paired A/B batteries, and the full results log.
 type: software
 authors:
   - name: "sky-is-green"
@@ -14,11 +13,14 @@ authors:
 version: "0.1.0"
 date-released: "2026-09-22"
 license: MIT
-repository-code: "https://github.com/sky-is-green/hivebench"
-url: "https://github.com/sky-is-green/hivebench"
+repository-code: "https://github.com/sky-is-green/hive"
+url: "https://github.com/sky-is-green/hive"
 keywords:
   - evaluation
   - benchmark
   - context-management
   - llm
   - reproducibility
+  - memory
+  - verification
+  - routing
