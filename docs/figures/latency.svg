@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="272" viewBox="0 0 800 272" role="img" aria-labelledby="title desc">
+<title id="title">The same answer, 42.5× the wall clock</title>
+<desc id="desc">Horizontal bar chart of mean seconds per item: the 35B-A3B at 5.36 seconds, the 176B-A6B at 229.67 seconds, a factor of 42.5.</desc>
+<rect x="0.5" y="0.5" width="799" height="271" rx="14" fill="#fbfaf8" stroke="#e4e0d8"/>
+<text x="28" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#171614">The same answer, 42.5× the wall clock</text>
+<text x="28" y="59" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#6b675f">Ten organic tasks, co-hosted; served-correct 0.800 for both. Mean seconds per item.</text>
+<line x1="28" y1="74" x2="772" y2="74" stroke="#e4e0d8"/>
+
+<line x1="260.0" y1="82" x2="260.0" y2="216" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="260.0" y="232.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">0</text>
+<line x1="351.4" y1="82" x2="351.4" y2="216" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="351.4" y="232.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">50</text>
+<line x1="442.9" y1="82" x2="442.9" y2="216" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="442.9" y="232.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">100</text>
+<line x1="534.3" y1="82" x2="534.3" y2="216" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="534.3" y="232.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">150</text>
+<line x1="625.7" y1="82" x2="625.7" y2="216" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="625.7" y="232.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">200</text>
+<rect x="260.0" y="105" width="9.8" height="30" rx="6" fill="#0f766e" stroke="#0f766e"/>
+<text x="28.0" y="118.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 35B-A3B</text>
+<text x="28.0" y="136.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="start">the small tier</text>
+<text x="278.8" y="124.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">5.36 s</text>
+<rect x="260.0" y="175" width="420.0" height="30" rx="6" fill="#e9e4da" stroke="#a8a29e"/>
+<text x="28.0" y="188.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 176B-A6B</text>
+<text x="28.0" y="206.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="start">the large tier</text>
+<text x="689.0" y="194.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">229.67 s</text>
+<line x1="28" y1="237" x2="772" y2="237" stroke="#e4e0d8"/>
+<text x="28" y="254" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f">Source: docs/AB-RESULTS.md §2B · 10 organic tasks · mean seconds per item</text>
+
+</svg>

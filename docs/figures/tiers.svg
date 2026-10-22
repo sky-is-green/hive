@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="372" viewBox="0 0 800 372" role="img" aria-labelledby="title desc">
+<title id="title">The 28-task tier results</title>
+<desc id="desc">Horizontal bar chart of five 28-task results: 176B alone 19/28, 35B alone 21/28, 176B head to Bonsai 23/28, 27B alone 26/28, and oracle to Bonsai 27/28.</desc>
+<rect x="0.5" y="0.5" width="799" height="371" rx="14" fill="#fbfaf8" stroke="#e4e0d8"/>
+<text x="28" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#171614">The 28-task tier results</text>
+<text x="28" y="59" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#6b675f">Correct answers, one draw per task. The 27B is the generator; the head is the gate.</text>
+<line x1="28" y1="74" x2="772" y2="74" stroke="#e4e0d8"/>
+
+<line x1="280.0" y1="90" x2="280.0" y2="316" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="280.0" y="328.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">0</text>
+<line x1="380.0" y1="90" x2="380.0" y2="316" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="380.0" y="328.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">7</text>
+<line x1="480.0" y1="90" x2="480.0" y2="316" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="480.0" y="328.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">14</text>
+<line x1="580.0" y1="90" x2="580.0" y2="316" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="580.0" y="328.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">21</text>
+<line x1="680.0" y1="90" x2="680.0" y2="316" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="680.0" y="328.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">28</text>
+<line x1="580.0" y1="90" x2="580.0" y2="316" stroke="#b8b0a3" stroke-dasharray="4 4"/>
+<text x="580.0" y="86.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="middle">35B: 21/28</text>
+<rect x="280.0" y="91" width="271.4" height="26" rx="6" fill="#e9e4da" stroke="#a8a29e"/>
+<text x="28.0" y="103.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 176B alone</text>
+<text x="28.0" y="119.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="start">head-to-head</text>
+<text x="560.4" y="108.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">19/28<tspan fill="#6b675f" font-weight="400"> · 67.9%</tspan></text>
+<rect x="280.0" y="139" width="300.0" height="26" rx="6" fill="#d6d0c4" stroke="#8a8378"/>
+<text x="28.0" y="151.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 35B alone</text>
+<text x="28.0" y="167.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="start">the baseline</text>
+<text x="589.0" y="156.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">21/28<tspan fill="#6b675f" font-weight="400"> · 75.0%</tspan></text>
+<rect x="280.0" y="187" width="328.6" height="26" rx="6" fill="#dbeafe" stroke="#2563eb"/>
+<text x="28.0" y="199.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 176B head → Bonsai</text>
+<text x="28.0" y="215.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#2563eb" font-weight="400" text-anchor="start">3 escalations, all errors</text>
+<text x="617.6" y="204.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">23/28<tspan fill="#6b675f" font-weight="400"> · 82.1%</tspan></text>
+<rect x="280.0" y="235" width="371.4" height="26" rx="6" fill="#0f766e" stroke="#0f766e"/>
+<text x="28.0" y="247.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The 27B alone (+5 net)</text>
+<text x="28.0" y="263.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#0f766e" font-weight="400" text-anchor="start">6 fixed, 1 broken</text>
+<text x="660.4" y="252.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">26/28<tspan fill="#6b675f" font-weight="400"> · 92.9%</tspan></text>
+<rect x="280.0" y="283" width="385.7" height="26" rx="6" fill="#134e4a" stroke="#134e4a"/>
+<text x="28.0" y="295.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The oracle → Bonsai</text>
+<text x="28.0" y="311.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#134e4a" font-weight="400" text-anchor="start">7 escalations, all errors</text>
+<text x="674.7" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">27/28<tspan fill="#6b675f" font-weight="400"> · 96.4%</tspan></text>
+<line x1="28" y1="341" x2="772" y2="341" stroke="#e4e0d8"/>
+<text x="28" y="358" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f">Source: docs/AB-RESULTS.md §1B-sexies · the 176B alone is the head-to-head; its generation arm is net 0</text>
+
+</svg>

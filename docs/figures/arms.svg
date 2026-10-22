@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="338" viewBox="0 0 800 338" role="img" aria-labelledby="title desc">
+<title id="title">The A/B arms, 84 items each</title>
+<desc id="desc">Horizontal bar chart of four arms over 84 items each: no verifier 64/84, verifier alone 63/84, verifier plus repair 67/84, and the learned gate 70/84. The gate is off because its false flags exceed the pre-registered budget.</desc>
+<rect x="0.5" y="0.5" width="799" height="337" rx="14" fill="#fbfaf8" stroke="#e4e0d8"/>
+<text x="28" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#171614">The A/B arms, 84 items each</text>
+<text x="28" y="59" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#6b675f">Served-correct. A verifier alone is a tax; the repair leg is what pays.</text>
+<line x1="28" y1="74" x2="772" y2="74" stroke="#e4e0d8"/>
+
+<line x1="260.0" y1="92" x2="260.0" y2="288" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="260.0" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">0</text>
+<line x1="365.0" y1="92" x2="365.0" y2="288" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="365.0" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">21</text>
+<line x1="470.0" y1="92" x2="470.0" y2="288" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="470.0" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">42</text>
+<line x1="575.0" y1="92" x2="575.0" y2="288" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="575.0" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">63</text>
+<line x1="680.0" y1="92" x2="680.0" y2="288" stroke="#ece7de" stroke-dasharray="3 4"/>
+<text x="680.0" y="300.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f" font-weight="400" text-anchor="middle">84</text>
+<line x1="580.0" y1="92" x2="580.0" y2="288" stroke="#b8b0a3" stroke-dasharray="4 4"/>
+<text x="580.0" y="88.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="middle">64 baseline</text>
+<rect x="260.0" y="96" width="320.0" height="28" rx="6" fill="#e9e4da" stroke="#b8b0a3"/>
+<text x="28.0" y="111.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">No verifier, no repair</text>
+<text x="28.0" y="129.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#6b675f" font-weight="400" text-anchor="start">the baseline</text>
+<text x="589.0" y="114.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">64/84<tspan fill="#6b675f" font-weight="400"> · 76.2%</tspan></text>
+<rect x="260.0" y="148" width="315.0" height="28" rx="6" fill="#f7d9c4" stroke="#c2410c"/>
+<text x="28.0" y="163.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The verifier alone</text>
+<text x="28.0" y="181.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#b91c1c" font-weight="400" text-anchor="start">a tax: -1.2</text>
+<text x="584.0" y="166.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">63/84<tspan fill="#6b675f" font-weight="400"> · 75.0%</tspan></text>
+<rect x="260.0" y="200" width="335.0" height="28" rx="6" fill="#0f766e" stroke="#0f766e"/>
+<text x="28.0" y="215.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The verifier + the repair leg</text>
+<text x="28.0" y="233.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#0f766e" font-weight="400" text-anchor="start">+3.6 over no verification</text>
+<text x="604.0" y="218.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">67/84<tspan fill="#6b675f" font-weight="400"> · 79.8%</tspan></text>
+<rect x="260.0" y="252" width="350.0" height="28" rx="6" fill="#fef3c7" stroke="#b45309" stroke-dasharray="5 3"/>
+<text x="28.0" y="267.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="500" text-anchor="start">The learned gate (off)</text>
+<text x="28.0" y="285.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" fill="#b45309" font-weight="400" text-anchor="start">3 false flags &gt; budget of 2</text>
+<text x="619.0" y="270.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" fill="#171614" font-weight="600">70/84<tspan fill="#6b675f" font-weight="400"> · 83.3%</tspan></text>
+<line x1="28" y1="307" x2="772" y2="307" stroke="#e4e0d8"/>
+<text x="28" y="324" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" fill="#6b675f">Source: docs/AB-RESULTS.md §3A-3E · 3 draws × 28 tasks · 84 items per arm</text>
+
+</svg>
