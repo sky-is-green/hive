@@ -113,7 +113,7 @@ Most evaluation harnesses tell you how a model performs in a sandbox.
 HiveBench, the evaluation suite in this repository, tells you *whether the
 context you feed the model is the reason it works*, deterministically, offline,
 and replayably: falsifiable P1-P11 predictions with measured PASS/FAIL verdicts
-(including its own failures), a ~30 s offline suite, paired A/B head-to-heads
+(including its own failures), a ~2 minute offline suite, paired A/B head-to-heads
 against the naive FIFO window, and an auditor that corroborates the evidence
 without constituting it. The rationale, the run commands and the live-benchmark
 guide are in [`../hivebench/README.md`](../hivebench/README.md).
@@ -232,8 +232,8 @@ polling.
 
 | Suite | Covers | Current state |
 |---|---|---|
-| unit (root tests) | every layer, offline, no LLM calls | 546 tests, all passing (verified Sep 12) |
-| integration (root tests) | pipeline end-to-end, incl. live-gated MCP suite | 53 tests |
+| unit (root tests) | every layer, offline, no LLM calls | 1183 tests, all passing (verified Oct 22) |
+| integration (root tests) | pipeline end-to-end, incl. live-gated MCP suite | 126 tests |
 | Live batteries | paired A/B vs FIFO, protocol P1–P11 verdicts, MCP battery | recorded in white paper §8 and per-run reports |
 
 Run from the repository root: `python -m pytest tests/unit -q`, ~25 s offline (the suite README has the grouped runs).

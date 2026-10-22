@@ -8,8 +8,8 @@ The inventory the campaign rests on:
 | | what it is | where it lives |
 |---|---|---|
 | a hand-crafted model | the Scion family: **35B-A3B** (35B, 3B active, ternary PQ2_0) and **FlashNext-176B-A6B** (176B, 6B active, ternary Q2_0), plus the k=1 MTP drafter | `SkyIsNotGreen/Scion-35B-A3B`, `SkyIsNotGreen/Scion-FlashNext-176B-A6B` (both public on the Hub) |
-| a hand-crafted harness | the **Studio**: the console, the launch panel, the Global controls, the chat, the cascade console, the harvest | `hivebench/` (this repo) |
-| a hand-crafted management pipeline | the **curation** (five layers) + the **Global controls** that make it configurable in one place | the sibling's `splinter/` + `harness/controls.py` |
+| a hand-crafted harness | the **Studio**: the console, the launch panel, the Global controls, the chat, the cascade console, the harvest | `harness/` + `hivebench/` (this repo) |
+| a hand-crafted management pipeline | the **curation** (five layers) + the **Global controls** that make it configurable in one place | the local `splinter/` + `harness/controls.py` |
 | answer quality reporting | the cascade's `report.json` (per-item verdicts, the findings, the ladder's resolution), the `manifest.json` (provenance), the generated `MODEL-CARD.md` | `experiments/cascade/results/<run>/` |
 | API escalation | the ladder's `--api-fallback` arm, behind the human gate, with the escalation lane harvesting every resolution | `experiments/cascade/cascade.py`, `harness/cascade/api.py` |
 
@@ -237,7 +237,7 @@ comparison fills each:
 | §9's Threat 6 (the encoder ceiling) reads as "stop looking for a better encoder" | the encoder measurement: the three jobs, the thresholds, and the fine-tune (already written) - **plus** 5A, the held-out arm |
 | P10 (the drift reset) FAILs, unexplained | 2B - the drift detector's threshold was calibrated for another encoder, which is a *mechanistic* explanation the paper can now give |
 | P2's precision clause is the open question | 2A, 2B - the precision story, with the curation's decisions measured rather than assumed |
-| the paper never mentions the **cascade** | 3A-3E - the answer-quality reporting and the API escalation, as the sibling system's evidence for the curation's effect |
+| the paper never mentions the **cascade** | 3A-3E - the answer-quality reporting and the API escalation, as the memory system's evidence for the curation's effect |
 | §12 (the tooling) predates the Studio | the Studio itself: the Global controls, the launch panel, the harvest - with the two released models and the tuned encoder listed as artifacts |
 | the reader has nothing to download | the Hub artifacts (the paper, the bench, the encoder, the two Scion releases) - the reproduction path is now a download, not a build |
 

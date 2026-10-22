@@ -45,11 +45,10 @@ jobs:
 
   tests:
     needs: select_os
-    # actions/checkout refuses paths outside the workspace, so the sibling
-    # system checkout lives inside it; conftest + package bootstraps honour
-    # $SPLINTER_HOME (their default is ../splinter-memory for local dev).
+    # The memory system is absorbed at ./splinter; conftest and the package
+    # bootstraps honour $SPLINTER_HOME (the default is ./splinter locally).
     env:
-      SPLINTER_HOME: ${{ github.workspace }}/splinter-sys
+      SPLINTER_HOME: ${{ github.workspace }}/splinter
       # Keep downloads off the runner disk: the hosted Windows image is tight,
       # and pip's cache costs GBs. `PIP_NO_CACHE_DIR` makes this binding for
       # every `pip install` below (and is why setup-python has no `cache: pip`).
@@ -130,13 +129,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      # The system under test — sibling repo, checked out inside the workspace
-      - uses: actions/checkout@v4
-        with:
-          repository: sky-is-green/Splinter-memory
-          ref: SplinterMemory-test
-          path: splinter-sys
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -163,7 +155,7 @@ jobs:
         run: |
           # env.SPLINTER_HOME context expression, not a shell var: pwsh wraps
           # run blocks in single quotes, so $VAR expansion never happens there.
-          pip install -e ${{ env.SPLINTER_HOME }}
+          pip install -e splinter
           pip install -e .
           pip install pytest-xdist==3.8.0
 

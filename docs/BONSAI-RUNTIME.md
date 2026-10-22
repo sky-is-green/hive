@@ -22,7 +22,7 @@ serving command is:
 ```sh
 HIP_VISIBLE_DEVICES=1 \
   ./prism-qwen4exp-shrink/build-hip/bin/llama-server \
-    -m hivebench/artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf \
+    -m artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf \
     -ngl 99 -c 8192 --host 127.0.0.1 --port 8897 \
     --chat-template-kwargs '{"enable_thinking": false}'
 ```
@@ -41,7 +41,7 @@ HIP_VISIBLE_DEVICES=1 \
 ## Serve / evaluate
 
 ```sh
-cd ~/Desktop/work/hivebench
+cd ~/Desktop/work/hive
 FORK=artifacts/ternary/oracle/prism-fork/bin/llama-prism-b10709-9a9394a
 PIN=~/Desktop/work/worktrees/splinter-memory/hivebench-SPLINTER-PIN
 
@@ -58,7 +58,7 @@ SPLINTER_HOME=$PIN PYTHONPATH=$PIN/splinter \
   `llama-server`; without it the reasoning template returns empty visible content.
 - `HIP_VISIBLE_DEVICES=1` keeps the desktop GPU0 free; the 27B `PQ2_0` fits one
   RX 7900 XT at `-ngl 99` (the driver's default), so both cards are not needed.
-- **T23 workaround:** the sibling `splinter-memory` main no longer defines
+- **T23 workaround:** the memory project (`splinter/`) no longer defines
   `cortex.config.SplinterConfig`, so the harness import fails unless the F6 pin is
   on `PYTHONPATH` (`$PIN/splinter`) with `SPLINTER_HOME=$PIN`.
 
@@ -88,7 +88,7 @@ Use `HIP_VISIBLE_DEVICES=""`, `--device none`, and `--no-op-offload`, plus the
 preflight/guard in `experiments/cascade/run_partner_probe.sh`:
 
 ```sh
-cd ~/Desktop/work/hivebench
+cd ~/Desktop/work/hive
 ./experiments/cascade/run_partner_probe.sh \
   artifacts/ternary/oracle/bonsai27/Ternary-Bonsai-2-27B-PQ2_0.gguf \
   experiments/cascade/results/partner-bonsai-organic-20261018/bonsai-transfer-bench.jsonl \
