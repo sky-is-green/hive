@@ -1614,3 +1614,7 @@ stability call, for both DeepSeek and GLM. The resulting 21/28 is the fixed
 and the ten-sample `truthfulqa-0015` probe stand. The six executable API
 answers are still only one sample each. Repeating them needs a reset or paid
 API route; the local 27B path remains a stable control.
+
+**Lane closed.** The API-stability repeat is not part of the paper's claim.
+The one-sample API rows and the ten-sample choice probe stand; no further API
+sampling is planned.
