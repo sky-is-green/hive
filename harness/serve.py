@@ -200,6 +200,8 @@ def _add_serve_args(parser: argparse.ArgumentParser) -> None:
                         help="context size for a generated stack (default 8192)")
     parser.add_argument("--backend", default=None,
                         help="server backend (default: the first installed of rocm, vulkan)")
+    parser.add_argument("--fetch", action="store_true",
+                        help="fetch a missing engine backend from the manifest before applying")
     parser.add_argument("--role", default="face",
                         help="role to give a generated tier (default: face)")
     parser.add_argument("--save", default=None,
@@ -299,7 +301,7 @@ def _prepare(args: argparse.Namespace,
         except ValueError as exc:
             raise ValueError(str(exc)) from None
         backend = _pick_backend(devices, args.backend)
-        if args.backend:
+        if args.backend and not args.fetch:
             try:
                 chosen = backend_manifest.resolve(args.backend)
             except KeyError as exc:
@@ -307,7 +309,8 @@ def _prepare(args: argparse.Namespace,
             if not chosen.get("installed"):
                 raise ValueError(
                     f"backend {args.backend!r} is not installed "
-                    f"({chosen.get('binary')}); run `hive backends`")
+                    f"({chosen.get('binary')}); run `hive backends fetch "
+                    f"{args.backend}` or add --fetch")
         # validate the flags before a multi-GB download
         if model != "local":
             _ensure_hf_model(model, file, args.models_dir)
@@ -513,6 +516,48 @@ def _record(args: argparse.Namespace, stack: Stack, status: dict[str, Any],
     }
 
 
+def _ensure_fetch(args: argparse.Namespace, stack: Stack) -> None:
+    """Fetch any missing local backend before the stack is applied."""
+    missing: list[str] = []
+    for tier in stack.tiers:
+        if getattr(tier, "endpoint", None):
+            continue
+        name = str(tier.backend or "vulkan")
+        if name in missing:
+            continue
+        try:
+            installed = backend_manifest.resolve(name).get("installed")
+        except KeyError as exc:
+            raise RuntimeError(str(exc)) from None
+        if not installed:
+            missing.append(name)
+    for name in missing:
+        print(ui.info(f"fetching {name} ...", stream=sys.stderr),
+              file=sys.stderr, flush=True)
+        last = {"pct": -1}
+
+        def progress(done: int, total: int) -> None:
+            if getattr(args, "as_json", False):
+                return
+            if total > 0:
+                pct = int(done * 100 / total)
+                if pct != last["pct"]:
+                    last["pct"] = pct
+                    sys.stderr.write(
+                        f"\r  {pct:3d}%  {done / 1048576:.1f} / {total / 1048576:.1f} MiB")
+                    if done >= total:
+                        sys.stderr.write("\n")
+            else:
+                sys.stderr.write(f"\r  {done / 1048576:.1f} MiB")
+            sys.stderr.flush()
+
+        try:
+            backend_manifest.fetch_backend(name, progress=progress)
+        except (KeyError, RuntimeError, OSError) as exc:
+            raise RuntimeError(f"cannot fetch backend {name!r}: {exc}") from exc
+        print(ui.ok(f"installed {name}", stream=sys.stderr), file=sys.stderr)
+
+
 def run(args: argparse.Namespace) -> int:
     if args.backends:
         rows = backend_manifest.rows()
@@ -550,6 +595,13 @@ def run(args: argparse.Namespace) -> int:
     except RuntimeError as exc:
         print(f"hive serve: {exc}", file=sys.stderr)
         return 1
+
+    if getattr(args, "fetch", False):
+        try:
+            _ensure_fetch(args, stack)
+        except RuntimeError as exc:
+            print(f"hive serve: {exc}", file=sys.stderr)
+            return 1
 
     if args.detach and not args._child:
         return _detach(args, stack, warnings)

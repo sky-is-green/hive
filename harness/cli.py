@@ -924,6 +924,69 @@ def cmd_backends_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_setup(args: argparse.Namespace) -> int:
+    """One-command onboarding: a working engine and the writable paths."""
+    installed = backend_manifest.installed()
+    fetched = None
+    if not installed:
+        if args.no_fetch:
+            print("hive setup: no engine backend installed; run "
+                  "`hive backends fetch vulkan`", file=sys.stderr)
+            return 1
+        name = backend_manifest.default_fetch_backend()
+        last = {"pct": -1}
+
+        def progress(done: int, total: int) -> None:
+            if args.as_json:
+                return
+            if total > 0:
+                pct = int(done * 100 / total)
+                if pct != last["pct"]:
+                    last["pct"] = pct
+                    sys.stderr.write(
+                        f"\r  {pct:3d}%  {done / 1048576:.1f} / {total / 1048576:.1f} MiB")
+                    if done >= total:
+                        sys.stderr.write("\n")
+            else:
+                sys.stderr.write(f"\r  {done / 1048576:.1f} MiB")
+            sys.stderr.flush()
+
+        if not args.as_json:
+            print(termui.info(f"no engine installed; fetching {name}"), file=sys.stderr)
+        try:
+            fetched = backend_manifest.fetch_backend(name, progress=progress)
+        except (KeyError, RuntimeError, OSError) as exc:
+            print(f"hive setup: cannot fetch {name}: {exc}", file=sys.stderr)
+            return 1
+        installed = backend_manifest.installed()
+
+    manager = _models_manager(args)
+    stacks = _stacks_directory(args.stacks_dir)
+    stacks.mkdir(parents=True, exist_ok=True)
+    state = serve_state.serve_dir()
+    payload = {
+        "ok": True,
+        "fetched": fetched,
+        "backends": installed,
+        "models_dir": str(manager.models_dir),
+        "stacks_dir": str(stacks),
+        "state_dir": str(state),
+    }
+    if args.as_json:
+        _json(payload)
+        return 0
+    termui.header("setup")
+    print(f"  {termui.ok('engine: ' + (', '.join(installed) or 'none'))}")
+    termui.kv([("models", manager.models_dir), ("stacks", stacks),
+               ("state", state)])
+    print()
+    print(f"  {termui.dim('next')}")
+    print(f"    {termui.accent('›')} hive models download <repo>[:<file>]")
+    print(f"    {termui.accent('›')} hive serve --model <repo:file> --cards 1")
+    print(f"    {termui.accent('›')} hive doctor")
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     checks: list[dict] = []
 
@@ -1252,6 +1315,15 @@ def build_parser() -> argparse.ArgumentParser:
     bfetch.add_argument("--json", action="store_true", dest="as_json")
     bfetch.set_defaults(func=cmd_backends_fetch)
     backends.set_defaults(func=cmd_backends)
+
+    setup = sub.add_parser(
+        "setup", help="onboard this box: engine, model/stacks/state paths")
+    _add_models_dir(setup)
+    _add_stacks_dir(setup)
+    setup.add_argument("--no-fetch", action="store_true",
+                       help="do not fetch a portable engine if none is installed")
+    setup.add_argument("--json", action="store_true", dest="as_json")
+    setup.set_defaults(func=cmd_setup)
 
     doctor = sub.add_parser("doctor", help="check the box before serving")
     _add_models_dir(doctor)
