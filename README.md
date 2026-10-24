@@ -61,9 +61,12 @@ Kubernetes, no container runtime and no API key — is the claim.
 ## Serve from the CLI
 
 `hive` is the operational CLI: start a stack, find it again, read its logs, and
-stop it, without the Studio.
+stop it, without the Studio.  A bare `hive` on a terminal opens the interactive
+dashboard (Status, Models, Stacks, Runs) with arrow-key navigation; anywhere
+else it prints the static summary.
 
 ```bash
+hive
 hive doctor
 hive models list
 hive serve peer-2tier --detach

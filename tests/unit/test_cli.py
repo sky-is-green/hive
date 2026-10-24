@@ -43,7 +43,8 @@ def _record(name: str = "demo", **overrides) -> dict:
     return record
 
 
-def test_root_help_version_and_unknown(capsys):
+def test_root_help_version_and_unknown(capsys, monkeypatch):
+    monkeypatch.setenv("HIVE_NO_TUI", "1")
     with pytest.raises(SystemExit) as exc:
         cli.main(["--version"])
     assert exc.value.code == 0
@@ -57,6 +58,12 @@ def test_root_help_version_and_unknown(capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main(["not-a-command"])
     assert exc.value.code == 2
+
+
+def test_tui_command_needs_a_terminal(capsys, monkeypatch):
+    monkeypatch.setenv("HIVE_NO_TUI", "1")
+    assert cli.main(["tui"]) == 1
+    assert "interactive terminal" in capsys.readouterr().err
 
 
 def test_version_and_config(capsys):
