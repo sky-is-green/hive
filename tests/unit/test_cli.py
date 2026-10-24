@@ -64,8 +64,8 @@ def test_version_and_config(capsys):
     assert cli.main(["config", "--json", "--models-dir", "/tmp/hive-models",
                      "--stacks-dir", "/tmp/hive-stacks"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["models_dir"] == "/tmp/hive-models"
-    assert payload["stacks_dir"] == "/tmp/hive-stacks"
+    assert Path(payload["models_dir"]) == Path("/tmp/hive-models")
+    assert Path(payload["stacks_dir"]) == Path("/tmp/hive-stacks")
     assert "state_dir" in payload
 
 
