@@ -27,6 +27,9 @@ models/
 runs/
 runs_mock/
 data/
+# The packaged backend manifest is authored source, not generated data.
+!harness/data/
+!harness/data/*.json
 sample_data/
 *.pt
 *.pth

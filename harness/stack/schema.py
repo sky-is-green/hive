@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 from urllib.parse import urlsplit
 
+from harness import paths
+
 # Tier roles (LOCAL-STACKS.md §2) — ADR-L1: roles, not sizes.  ``face`` is the
 # model the human talks to; every other role is a subordinate tier.
 ROLE_FACE = "face"
@@ -498,9 +500,10 @@ def _check_name(name: str) -> str:
 def stacks_dir(root: str | Path | None = None) -> Path:
     """Directory holding ``<name>.json``.
 
-    ``root`` overrides the repo root (tests); default is ``<repo>/stacks``.
+    ``root`` overrides the Hive home (tests); the default is ``<home>/stacks``
+    — the checkout root for a source install, ``~/.hive`` for a wheel.
     """
-    base = Path(__file__).resolve().parents[2] if root is None else Path(root)
+    base = paths.home() if root is None else Path(root)
     return base / STACKS_DIRNAME
 
 

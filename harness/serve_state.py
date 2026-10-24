@@ -22,8 +22,10 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_STATE_DIR = REPO_ROOT / "harness_state"
+from harness import paths
+
+REPO_ROOT = paths.SOURCE_ROOT
+DEFAULT_STATE_DIR = paths.state_dir()
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
@@ -32,9 +34,8 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 # ---------------------------------------------------------------------------
 
 def state_dir() -> Path:
-    """The state root (``HIVE_STATE_DIR`` or ``<repo>/harness_state``)."""
-    raw = os.environ.get("HIVE_STATE_DIR") or DEFAULT_STATE_DIR
-    return Path(raw).expanduser()
+    """The state root (``HIVE_STATE_DIR`` or ``<HIVE_HOME>/harness_state``)."""
+    return paths.state_dir()
 
 
 def serve_dir() -> Path:

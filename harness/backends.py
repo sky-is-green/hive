@@ -28,8 +28,10 @@ import zipfile
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = REPO_ROOT / "tools" / "backends" / "manifest.json"
+from harness import paths
+
+REPO_ROOT = paths.SOURCE_ROOT
+MANIFEST_PATH = paths.manifest_path()
 GITHUB_API = "https://api.github.com/repos"
 _USER_AGENT = "hivebench-backend-fetch"
 
@@ -63,7 +65,7 @@ def resolve(name: str, *, root: str | Path | None = None,
         raise KeyError(f"unknown backend {name!r}; known: {', '.join(entries)}")
     entry = dict(entries[key])
     entry["name"] = key
-    base = Path(root) if root else REPO_ROOT
+    base = Path(root) if root else paths.home()
     exe = "llama-server.exe" if os.name == "nt" else "llama-server"
     binary = base / str(entry.get("binary_dir") or f"tools/backends/{key}") / exe
     entry["binary"] = str(binary)
@@ -279,7 +281,7 @@ def fetch_backend(
     release: dict[str, Any] | None = None,
     download: Callable[..., None] | None = None,
 ) -> dict[str, Any]:
-    """Download and install one declared backend into ``tools/backends/<name>``.
+    """Download and install one declared backend into ``<HIVE_HOME>/tools/backends/<name>``.
 
     The release archive is staged and verified before it replaces anything, so
     a failed download never leaves a half-installed engine.  ``release`` and

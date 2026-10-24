@@ -109,15 +109,28 @@ be re-run, not just read.
 
 ## Install
 
+Serve-only — the `hive` CLI, backend fetch, GGUF library and the memory guard:
+
 ```bash
 git clone https://github.com/sky-is-green/hive.git
 cd hive
 python3 -m venv .venv
-.venv/bin/python -m pip install -e splinter   # the memory system
-.venv/bin/python -m pip install -e .          # the suite and the Studio
+.venv/bin/python -m pip install -e .
+.venv/bin/hive setup
 ```
 
-The suite's grouped runs and the Studio are in
+The Studio and the evaluation suite are optional extras (the memory system is
+a separate editable package from this checkout):
+
+```bash
+.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e ".[studio,eval,test]"
+```
+
+A source checkout keeps mutable state in the repo (`stacks/`,
+`models/gguf/`, `tools/backends/`, `harness_state/`). An installed wheel uses
+`HIVE_HOME` instead (default `~/.hive`), so the package directory stays
+read-only. The suite's grouped runs and the Studio are in
 [`hivebench/README.md`](hivebench/README.md).
 
 ## The state
