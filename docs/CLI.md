@@ -85,6 +85,18 @@ hive status               # running serves with per-tier up/down
 hive models list          # a readable library table
 ```
 
+## `hive setup`
+
+One-command onboarding: it checks the engine, fetches the portable Vulkan build
+if none is installed, creates the model/stack/state directories, and prints the
+next commands.
+
+```bash
+hive setup
+hive setup --json
+hive setup --no-fetch        # do not download anything
+```
+
 ## `hive serve`
 
 Apply one stack and keep it serving.  A stack is a JSON file under `stacks/`
@@ -116,6 +128,7 @@ hive serve --model org/repo:model.gguf --cards 2 --save two-card
 | `--devices 0,1` | explicit HIP indices, overriding `--cards` |
 | `--ctx N` | context size for a generated stack (default 8192) |
 | `--backend NAME` | server build for a generated tier (default: the first installed of `rocm`, `vulkan`) |
+| `--fetch` | fetch a missing backend from the manifest before applying |
 | `--name NAME` | name this serve; default is the stack name |
 | `--detach` | run in the background and return when the endpoints are healthy |
 | `--replace` | stop a running serve with the same name first |

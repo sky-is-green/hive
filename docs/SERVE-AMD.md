@@ -29,9 +29,13 @@ python3 -m venv .venv
 Hive launches one process per tier from `tools/backends/<backend>/llama-server`.
 
 ```bash
-.venv/bin/hive backends fetch vulkan   # portable release, ~35 MiB, verified
+.venv/bin/hive setup                   # fetch the portable engine + create paths
 .venv/bin/hive backends                # what is declared, what is installed
 ```
+
+`hive setup` is the one-command onboarding; it fetches the portable Vulkan
+build if no engine is installed. The same action on its own is
+`hive backends fetch vulkan`.
 
 That downloads the latest upstream `llama-server` build for this platform,
 verifies it with `--version`, and installs it under `tools/backends/vulkan`.
