@@ -186,7 +186,7 @@ def test_start_spawns_the_facade_and_waits_for_health(repo) -> None:
 
     cmd = spawner.cmds[0]
     assert cmd[0].endswith("python")
-    assert cmd[1].endswith("tools/deepinfer/serve.py")
+    assert str(cmd[1]).replace("\\", "/").endswith("tools/deepinfer/serve.py")
     assert "--config" in cmd and "--port" in cmd
     assert cmd[cmd.index("--port") + 1] == "8090"
 
@@ -199,7 +199,8 @@ def test_start_spawns_the_facade_and_waits_for_health(repo) -> None:
     # The DeepInfer checkout and the AMD overlay are importable.
     python_path = spawner.kwargs[0]["env"]["PYTHONPATH"]
     assert "vendor" in python_path
-    assert str(Path("vendor") / "deepinfer") in python_path
+    assert (str(Path("vendor") / "deepinfer").replace("\\", "/")
+            in python_path.replace("\\", "/"))
 
 
 def test_stop_terminates_the_owned_process(repo) -> None:
