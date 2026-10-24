@@ -292,13 +292,14 @@ def _prepare(args: argparse.Namespace,
                     "--model needs the GGUF file: --file NAME or --model repo:file")
         if args.ctx <= 0:
             raise ValueError("--ctx must be positive")
-        if model != "local":
-            _ensure_hf_model(model, file, args.models_dir)
         try:
             devices = _select_devices(_detect_devices(), args.cards, args.devices)
         except ValueError as exc:
             raise ValueError(str(exc)) from None
         backend = _pick_backend(devices, args.backend)
+        # validate the flags before a multi-GB download
+        if model != "local":
+            _ensure_hf_model(model, file, args.models_dir)
         generated, warnings = _stack_from_model(
             model=model, file=file, devices=devices, ctx=args.ctx,
             backend=backend, role=args.role, name=args.save or args.name)
