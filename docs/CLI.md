@@ -22,17 +22,27 @@ hive stop peer-2tier
 
 ## Install
 
-From a checkout:
+From a checkout, the base install is serve-only:
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -e .
+.venv/bin/hive setup
 .venv/bin/hive --help
 ```
 
-`hive` is the console script declared in `pyproject.toml`.  For serving only,
-the GGUF library and a server build are enough; the evaluation suite's model
-downloads are not required.  `hive doctor` tells you what is missing.
+The Studio and evaluation suite are extras:
+
+```bash
+.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e ".[studio,eval,test]"
+```
+
+`hive` is the console script declared in `pyproject.toml`.  Serve-only needs
+the GGUF library and a server build; FastAPI, the splinter memory system and the
+suite's model downloads are not required.  An installed wheel keeps mutable
+state under `HIVE_HOME` (default `~/.hive`) instead of site-packages; a source
+checkout uses the repo.  `hive doctor` tells you what is missing.
 
 ## Interactive dashboard
 

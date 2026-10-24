@@ -33,6 +33,8 @@ from typing import Callable, Optional
 
 import requests
 
+from harness import paths
+
 # Quantization labels for GGUF general.file_type, mirroring llama.cpp's
 # LLAMA_FTYPE_* values. Unknown values render as ftype-N.
 _FILE_TYPE_NAMES: dict[int, str] = {
@@ -52,7 +54,10 @@ _FILE_TYPE_NAMES: dict[int, str] = {
 # harness/harness/models.py and parents[2] pointed at the root; the flattening
 # left the constant behind and every repo-relative path — tools/backends in
 # particular — resolved into the parent workspace instead.)
-REPO_ROOT = Path(__file__).resolve().parents[1]
+# The writable Hive root: the checkout for a source install, HIVE_HOME for a
+# wheel.  Kept under this historical name because the model-manager tests use
+# it as an injectable root.
+REPO_ROOT = paths.home()
 HF_API = "https://huggingface.co/api"
 
 # Header-parse guards. The GGUF reader is best-effort and runs on every
@@ -79,8 +84,9 @@ def _default_models_dir() -> Path:
     lm = _lmstudio_models_dir()
     if lm and lm.is_dir():
         return lm
-    # Fallback: repo's own models/gguf (created on demand, also used for HF downloads)
-    fallback = REPO_ROOT / "models" / "gguf"
+    # Fallback: the Hive home's models/gguf (created on demand, also used for
+    # HF downloads).  A source checkout keeps the historical repo-local path.
+    fallback = paths.models_dir()
     fallback.mkdir(parents=True, exist_ok=True)
     return fallback
 
@@ -173,8 +179,8 @@ def preflight_memory(model_path, *, hardware_probe=None) -> dict:
                 "model_gb": round(model_gb, 3)}
     if hardware_probe is None:
         try:
-            from harness.app import _hardware_summary
-            hw = _hardware_summary()
+            from harness.hardware import hardware_summary
+            hw = hardware_summary()
         except Exception:  # noqa: BLE001 - best-effort; never block a load
             return {"ok": True, "checked": False,
                     "reason": "hardware probe unavailable",
@@ -772,8 +778,8 @@ def fit_gpu_layers(model_path, *, ctx_size: int = 8192,
         return None
     if hardware is None:
         try:
-            from harness.app import _hardware_summary
-            hardware = _hardware_summary()
+            from harness.hardware import hardware_summary
+            hardware = hardware_summary()
         except Exception:  # noqa: BLE001 - caller falls back
             return None
     vram_free = hardware.get("vram_free_gb")
@@ -1167,7 +1173,7 @@ class LlamaServerManager:
         # Persisted override from previous directory selection
         persisted: Optional[Path] = None
         try:
-            cfg = REPO_ROOT / "harness_state" / "models_dir.txt"
+            cfg = paths.state_dir() / "models_dir.txt"
             if cfg.is_file():
                 p = Path(cfg.read_text(encoding="utf-8").strip())
                 if p.is_dir():
@@ -1183,7 +1189,7 @@ class LlamaServerManager:
         self.models_dir.mkdir(parents=True, exist_ok=True)
         self.host = host
         self.port = port
-        self.log_dir = Path(log_dir) if log_dir else REPO_ROOT / "logs"
+        self.log_dir = Path(log_dir) if log_dir else paths.logs_dir()
         self.spawner = spawner
         self.prober = prober or _probe
         self.startup_timeout = startup_timeout
@@ -1350,7 +1356,7 @@ class LlamaServerManager:
             raise PermissionError(f"cannot read folder: {p}")
         self.models_dir = p
         try:
-            cfg = REPO_ROOT / "harness_state" / "models_dir.txt"
+            cfg = paths.state_dir() / "models_dir.txt"
             cfg.parent.mkdir(parents=True, exist_ok=True)
             cfg.write_text(str(p), encoding="utf-8")
         except OSError:

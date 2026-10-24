@@ -42,7 +42,21 @@ _SPLINTER = _resolve_system()
 for _p in (_SPLINTER, _SPLINTER / "splinter"):
     if str(_p) not in _sys.path:
         _sys.path.insert(0, str(_p))
-from harness.app import create_app
 
 __all__ = ["create_app"]
+
+
+def __getattr__(name: str):
+    """Import the Studio lazily so the serving CLI stays lightweight.
+
+    ``hive`` only needs the serving modules; importing the package must not
+    drag in FastAPI, psutil, the splinter memory system, or the experiments.
+    ``from harness import create_app`` still works, and ``python -m harness``
+    imports :mod:`harness.app` explicitly.
+    """
+    if name == "create_app":
+        from harness.app import create_app
+
+        return create_app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

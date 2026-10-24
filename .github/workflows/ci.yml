@@ -156,8 +156,7 @@ jobs:
           # env.SPLINTER_HOME context expression, not a shell var: pwsh wraps
           # run blocks in single quotes, so $VAR expansion never happens there.
           pip install -e splinter
-          pip install -e .
-          pip install pytest-xdist==3.8.0
+          pip install -e ".[studio,eval,test]"
 
       - name: Disk headroom
         shell: bash

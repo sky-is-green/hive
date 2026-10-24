@@ -185,25 +185,46 @@ hive/
   harness/    # the suite + Studio sidecar
 ```
 
-Windows (PowerShell):
+Serve-only (the `hive` CLI, an engine backend and the GGUF library):
+
+```bash
+git clone https://github.com/sky-is-green/hive.git
+cd hive
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+.venv/bin/hive setup
+```
+
+The Studio and evaluation suite are extras. From a checkout:
+
+```bash
+.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e ".[studio,eval,test]"
+```
+
+Windows (PowerShell), full install:
 
 ```powershell
 git clone https://github.com/sky-is-green/hive.git
 cd hive
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e splinter   # the system
-.\.venv\Scripts\python -m pip install -e .          # suite + studio (console scripts)
+.\.venv\Scripts\python -m pip install -e ".[studio,eval,test]"
 ```
 
-Linux/macOS:
+Linux/macOS, full install:
 
 ```bash
 git clone https://github.com/sky-is-green/hive.git
 cd hive
 python3 -m venv .venv
-.venv/bin/python -m pip install -e splinter   # the system
-.venv/bin/python -m pip install -e .          # suite + studio (console scripts)
+.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e ".[studio,eval,test]"
 ```
+
+A wheel install keeps runtime state under `HIVE_HOME` (default `~/.hive`); a
+source checkout keeps the repo-local `stacks/`, `models/gguf/`,
+`tools/backends/` and `harness_state/` layout.
 
 Flat import names are preserved (`experiments.*`, `testing.*`, `tests.*`,
 `harness.*`, `deepseek_harness`); the system under test resolves as `splinter` /

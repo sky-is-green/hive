@@ -66,7 +66,7 @@ def _version() -> str:
         from importlib.metadata import version as package_version
         return package_version("hivebench")
     except Exception:  # noqa: BLE001 - a source checkout may not be installed
-        return "0.1.0"
+        return "0.2.0"
 
 
 def _json(value: Any) -> None:

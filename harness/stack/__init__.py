@@ -12,7 +12,6 @@ Modules: :mod:`schema` (data model + file I/O + shape validation),
 :mod:`api` (router factory).
 """
 
-from harness.stack.api import PREFIX, create_router
 from harness.stack.deepinfer import DeepInferLauncher
 from harness.stack.endpoint import endpoint_base, endpoint_port, probe_endpoint
 from harness.stack.manager import (
@@ -91,3 +90,12 @@ __all__ = [
     "PREFIX",
     "create_router",
 ]
+
+
+def __getattr__(name: str):
+    """Keep the FastAPI router out of the serving CLI's import graph."""
+    if name in {"PREFIX", "create_router"}:
+        from harness.stack import api
+
+        return getattr(api, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -21,8 +21,12 @@ Verified on 2× RX 7900 XT (gfx1100, ROCm 7.2.4, kernel 7.3): a one-tier stack w
 git clone https://github.com/sky-is-green/hive.git
 cd hive
 python3 -m venv .venv
-.venv/bin/pip install -e .
+.venv/bin/pip install -e .          # serve-only; no Studio/eval extras needed
 ```
+
+The base install deliberately omits FastAPI, pytest, datasets and the splinter
+memory system.  An installed wheel writes under `HIVE_HOME` (default
+`~/.hive`); the paths below assume the source checkout.
 
 ## 2. Install a llama-server build
 

@@ -14,9 +14,23 @@ from __future__ import annotations
 
 import glob
 import os
+import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+
+def _optional_psutil():
+    """psutil is a base install dependency, but hardware probes stay best-effort."""
+    try:
+        import psutil
+        return psutil
+    except Exception:  # noqa: BLE001 - optional at import time
+        return None
 
 
 def parse_visible_indices(value: Optional[str]) -> Optional[list[int]]:
@@ -177,6 +191,213 @@ def gpu_processes() -> list[dict]:
     rows.sort(key=lambda r: r["vram_mb"], reverse=True)
     return rows
 
+
+
+def hardware_summary(repo_root: Path | None = None) -> dict:
+    """Host VRAM/RAM summary for fit estimates (nvidia-smi + AMD registry + psutil).
+
+    This lives with the other lightweight hardware probes so serving does not
+    need to import the Studio application.  ``repo_root`` is kept for the
+    Studio, whose historical repo root points at its workspace.
+    """
+    psutil = _optional_psutil()
+    repo = Path(repo_root) if repo_root is not None else REPO_ROOT
+    try:
+        vm = psutil.virtual_memory()
+        total_ram_gb = round(vm.total / (1024 ** 3), 2)
+        available_ram_gb = round(vm.available / (1024 ** 3), 2)
+    except Exception:
+        total_ram_gb = 8.0
+        available_ram_gb = 8.0
+    vram_gb: Optional[float] = None
+    combined_vram_gb: Optional[float] = None
+    devices: list[dict] = []
+    # Nvidia
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=name,memory.total,memory.used",
+             "--format=csv,noheader,nounits"],
+            timeout=2, text=True, stderr=subprocess.DEVNULL,
+            creationflags=_NO_WINDOW,
+        )
+        for line in out.strip().splitlines():
+            parts = [p.strip().strip('"') for p in line.split(",")]
+            if len(parts) < 3:
+                continue
+            try:
+                total = round(int(parts[1]) / 1024, 2)
+                used = round(int(parts[2]) / 1024, 2)
+            except ValueError:
+                continue
+            vram_gb = (vram_gb or 0) + total  # sum for combined
+            devices.append({"backend": "cuda", "name": parts[0],
+                            "memory_gb": total, "used_gb": used,
+                            "free_gb": round(max(0.0, total - used), 2)})
+    except Exception:
+        pass
+    # AMD fallback via registry + WMI count (avoids duplicate registry entries counting 4x)
+    if not devices:
+        try:
+            import winreg
+
+            per_card_gb = None
+            desc_name = None
+            base = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, base) as k:
+                for i in range(100):
+                    try:
+                        sub = winreg.EnumKey(k, i)
+                    except OSError:
+                        break
+                    try:
+                        with winreg.OpenKey(k, sub) as sk:
+                            try:
+                                desc = winreg.QueryValueEx(sk, "DriverDesc")[0]
+                            except OSError:
+                                continue
+                            if "AMD" not in str(desc) and "Radeon" not in str(desc):
+                                continue
+                            try:
+                                qmem = winreg.QueryValueEx(sk, "HardwareInformation.qwMemorySize")[0]
+                                gb = round(int(qmem) / (1024 ** 3), 2)
+                                if gb < 1 or gb > 64:
+                                    continue
+                                per_card_gb = gb
+                                desc_name = str(desc)
+                                break
+                            except OSError:
+                                continue
+                    except OSError:
+                        continue
+            if per_card_gb:
+                # count physical AMD GPUs via WMI (registry has duplicates)
+                count = 1
+                try:
+                    out = subprocess.check_output(
+                        ["powershell", "-Command", "(Get-CimInstance Win32_VideoController | Where-Object {$_.Name -like '*AMD*' -or $_.Name -like '*Radeon*'}).Count"],
+                        timeout=2, text=True, stderr=subprocess.DEVNULL, creationflags=_NO_WINDOW,
+                    )
+                    # output may be "2" or blank
+                    txt = out.strip().split()[0] if out.strip() else "1"
+                    count = int(txt)
+                    if count < 1:
+                        count = 1
+                except Exception:
+                    count = 1
+                vram_gb = per_card_gb * count
+                for _ in range(count):
+                    devices.append({"backend": "rocm", "name": desc_name, "memory_gb": per_card_gb})
+        except Exception:
+            pass
+    # Linux fallback (cross-platform)
+    if not devices and sys.platform != "win32":
+        try:
+            out = subprocess.check_output(
+                ["rocm-smi", "--showmeminfo", "vram"],
+                timeout=2, text=True, stderr=subprocess.DEVNULL,
+                creationflags=_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+            import re as _re2
+
+            for m in _re2.finditer(r"(\d{9,})\s*B", out):
+                val = int(m.group(1))
+                gb = round(val / (1024 ** 3), 2)
+                if 1 < gb < 128:
+                    vram_gb = (vram_gb or 0) + gb
+                    devices.append({"backend": "rocm", "name": "AMD GPU", "memory_gb": gb})
+        except Exception:
+            pass
+        try:
+            from harness.hardware import linux_amd_devices
+            if not devices:
+                devices.extend(linux_amd_devices())
+        except Exception:
+            pass
+    # macOS fallback
+    if not devices and sys.platform == "darwin":
+        try:
+            out = subprocess.check_output(
+                ["system_profiler", "SPDisplaysDataType"],
+                timeout=3, text=True, stderr=subprocess.DEVNULL,
+            )
+            import re as _re3
+
+            for line in out.splitlines():
+                if "VRAM" in line and "GB" in line:
+                    m = _re3.search(r"(\d+)\s*GB", line)
+                    if m:
+                        gb = float(m.group(1))
+                        if 1 < gb < 128:
+                            vram_gb = (vram_gb or 0) + gb
+                            devices.append({"backend": "metal", "name": "Apple GPU", "memory_gb": gb})
+        except Exception:
+            pass
+    for index, device in enumerate(devices):
+        device.setdefault("index", index)
+    visibility_env = ("HIP_VISIBLE_DEVICES"
+                      if any(d.get("backend") == "rocm" for d in devices)
+                      else "CUDA_VISIBLE_DEVICES")
+    visibility_value = os.environ.get("HIP_VISIBLE_DEVICES")
+    if visibility_value is None and any(d.get("backend") == "cuda" for d in devices):
+        visibility_value = os.environ.get("CUDA_VISIBLE_DEVICES")
+    visible_indices = parse_visible_indices(visibility_value)
+    for device in devices:
+        device["visible"] = (visible_indices is None
+                             or device.get("index") in visible_indices)
+    visible = [d for d in devices if d.get("visible")]
+
+    def _sum(items, key):
+        vals = [d[key] for d in items if d.get(key) is not None]
+        return round(sum(vals), 2) if vals else None
+
+    vram_total = _sum(visible, "memory_gb")
+    vram_free = _sum(visible, "free_gb")
+    combined_vram_gb = _sum(devices, "memory_gb")
+    if vram_total is not None:
+        vram_gb = vram_total
+        if any(d.get("backend") == "cuda" for d in devices):
+            source = "nvidia-smi"
+        elif any(d.get("backend") == "rocm" for d in devices):
+            source = "amd-registry" if os.name == "nt" else "sysfs"
+        elif devices:
+            source = "sysfs"
+        else:
+            source = "ram"
+        available_gb = vram_free if vram_free is not None else vram_total
+    else:
+        vram_gb = None
+        source = "ram"
+        available_gb = total_ram_gb
+    try:
+        swap = psutil.swap_memory()
+        swap_total_gb = round(swap.total / (1024 ** 3), 2)
+        swap_used_gb = round(swap.used / (1024 ** 3), 2)
+    except Exception:
+        swap_total_gb = swap_used_gb = None
+    disk = disk_summary({
+        "repo": str(repo),
+        "models": str(repo / "models" / "gguf"),
+        "tmp": "/tmp" if os.name != "nt" else os.environ.get("TEMP", "/tmp"),
+    })
+    return {
+        "cpu_count": os.cpu_count(),
+        "total_ram_gb": total_ram_gb,
+        "available_ram_gb": available_ram_gb,
+        "swap_total_gb": swap_total_gb,
+        "swap_used_gb": swap_used_gb,
+        "disk": disk,
+        "vram_gb": vram_gb,
+        "vram_free_gb": vram_free,
+        "combined_vram_gb": combined_vram_gb,
+        "gtt_total_gb": _sum(visible, "gtt_total_gb"),
+        "gtt_used_gb": _sum(visible, "gtt_used_gb"),
+        "available_gb": round(available_gb, 2) if available_gb is not None else None,
+        "devices": devices,
+        "vram_source": source,
+        "visibility": {"env": visibility_env if visible_indices is not None else None,
+                       "value": visibility_value,
+                       "indices": visible_indices},
+    }
 
 def disk_summary(paths: dict[str, str]) -> dict:
     """Free/total GB per labelled path, skipping unreadable ones."""

@@ -206,7 +206,7 @@ def _hardware_summary(
 
     else:
         def probe() -> dict[str, Any]:
-            from harness.app import _hardware_summary as real_summary
+            from harness.hardware import hardware_summary as real_summary
 
             return real_summary()
 
