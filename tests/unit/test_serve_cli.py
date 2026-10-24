@@ -94,3 +94,73 @@ def test_serve_apply_failure_returns_one(tmp_path, monkeypatch, capsys):
     rc = serve.main([str(_stack_file(tmp_path)), "--once"])
     assert rc == 1
     assert "refused" in capsys.readouterr().err
+
+
+_DEVICES = [
+    {"index": 0, "bdf": "0000:03:00.0", "memory_gb": 20.0, "display": True},
+    {"index": 1, "bdf": "0000:07:00.0", "memory_gb": 20.0, "display": False},
+]
+
+
+def test_model_two_cards_generates_pin_ts_backend(monkeypatch):
+    monkeypatch.setattr(serve, "_detect_devices", lambda: _DEVICES)
+    monkeypatch.setattr(serve, "backend_binary",
+                        lambda name: "/fake/llama-server" if name == "rocm" else None)
+    monkeypatch.setattr(serve, "LlamaServerManager", _Models)
+    monkeypatch.setattr(serve, "StackManager", _Manager)
+    _Manager.instances.clear()
+
+    rc = serve.main(["--model", "org/m", "--file", "m.gguf", "--cards", "2", "--once"])
+
+    assert rc == 0
+    tier = _Manager.instances[-1].applied.tiers[0]
+    assert tier.repo == "org/m" and tier.file == "m.gguf"
+    assert tier.pin == "0,1"
+    assert tier.ts == "1,1"          # equal cards -> equal split
+    assert tier.backend == "rocm"    # the installed backend wins
+    assert tier.ngl == 99
+
+
+def test_model_repo_colon_file_form(monkeypatch):
+    monkeypatch.setattr(serve, "_detect_devices", lambda: _DEVICES)
+    monkeypatch.setattr(serve, "backend_binary", lambda name: None)
+    monkeypatch.setattr(serve, "LlamaServerManager", _Models)
+    monkeypatch.setattr(serve, "StackManager", _Manager)
+    _Manager.instances.clear()
+
+    rc = serve.main(["--model", "org/m:model.gguf", "--cards", "1", "--once"])
+
+    assert rc == 0
+    tier = _Manager.instances[-1].applied.tiers[0]
+    assert tier.file == "model.gguf"
+    assert tier.pin == "0"
+    assert tier.ts is None           # one card: no tensor split
+
+
+def test_model_more_cards_than_detected(monkeypatch, capsys):
+    monkeypatch.setattr(serve, "_detect_devices", lambda: _DEVICES[:1])
+    rc = serve.main(["--model", "org/m", "--file", "m.gguf", "--cards", "2", "--once"])
+    assert rc == 2
+    assert "only 1 GPU" in capsys.readouterr().err
+
+
+def test_model_no_gpu_falls_back_to_cpu(monkeypatch):
+    monkeypatch.setattr(serve, "_detect_devices", lambda: [])
+    monkeypatch.setattr(serve, "backend_binary",
+                        lambda name: "/fake/llama-server" if name == "cpu" else None)
+    monkeypatch.setattr(serve, "LlamaServerManager", _Models)
+    monkeypatch.setattr(serve, "StackManager", _Manager)
+    _Manager.instances.clear()
+
+    rc = serve.main(["--model", "org/m", "--file", "m.gguf", "--once"])
+
+    assert rc == 0
+    tier = _Manager.instances[-1].applied.tiers[0]
+    assert tier.backend == "cpu"
+    assert tier.pin is None
+
+
+def test_model_needs_a_file(capsys):
+    rc = serve.main(["--model", "org/m", "--once"])
+    assert rc == 2
+    assert "needs the GGUF file" in capsys.readouterr().err
