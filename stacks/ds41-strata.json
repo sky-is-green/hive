@@ -18,6 +18,7 @@
         "repo": "~/Desktop/work/strata-ds41",
         "config": "local/ds41-hivebench.json",
         "python": "~/Desktop/work/strata/.venv/bin/python",
+        "server": "tools/v41/serve/serve_ds41.py",
         "ctx_flag": "--ctx",
         "engine_args": [],
         "timeout_s": 1800

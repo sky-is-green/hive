@@ -225,9 +225,13 @@ class StrataLauncher:
         tmp_path.write_text(payload, encoding="utf-8")
         os.replace(tmp_path, gen_path)
 
+        # Most Strata engines use the generic server.  A model with its own
+        # encoder (V4.1) names a shim in ``launch.server``; the argv shape is
+        # the same.
+        server = str(launch.get("server") or "serve/server.py").strip()
         cmd = [
             str(resolved["python"]),
-            "serve/server.py",
+            server,
             "--engine", str(launch.get("kind") or "strata"),
             "--config", str(gen_path),
             "--port", str(resolved["port"]),
