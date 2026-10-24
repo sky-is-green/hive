@@ -899,7 +899,8 @@ def build_parser() -> argparse.ArgumentParser:
     ml.set_defaults(func=cmd_models_list)
 
     msearch = models_sub.add_parser("search", help="search Hugging Face for GGUF repos")
-    msearch.add_argument("query", help="words to search for")
+    msearch.add_argument("query", nargs="?", default="",
+                         help="words to search for (omit for popular repos)")
     msearch.add_argument("--limit", type=int, default=12,
                          help="number of repos (default 12)")
     _add_models_dir(msearch)

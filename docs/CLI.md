@@ -142,6 +142,7 @@ The local GGUF library.  The directory is the configured one
 ```bash
 hive models list
 hive models search qwen --limit 8            # Hugging Face GGUF repos
+hive models search                           # the popular ones
 hive models files org/repo                   # the GGUFs in a repo
 hive models download org/repo:model.gguf     # progress on stderr
 hive models download org/repo                # only if the repo has one GGUF

@@ -1268,7 +1268,8 @@ class LlamaServerManager:
         self._local_cache_ts=time.time()
         if os.environ.get("HIVE_DEBUG"):
             print(f"list_local: {len(out)} models in "
-                  f"{(self._local_cache_ts-t0):.2f}s from {self.models_dir}")
+                  f"{(self._local_cache_ts-t0):.2f}s from {self.models_dir}",
+                  file=sys.stderr)
         return out
 
     def invalidate_cache(self) -> None:
