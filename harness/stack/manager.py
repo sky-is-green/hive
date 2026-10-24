@@ -358,6 +358,12 @@ class StackManager:
                         health = info.get("health") or self.endpoint_prober(endpoint)
                     if not isinstance(health, Mapping):
                         health = {}
+                    expect = _tier_field(tier, "expect_model", None)
+                    reported_model = health.get("model")
+                    if expect and reported_model and str(expect) != str(reported_model):
+                        raise RuntimeError(
+                            f"endpoint {endpoint} reports model {reported_model!r}, "
+                            f"expected {expect!r} (stale route or wrong server)")
                     reported_ctx = health.get("max_context")
                     runtimes[tier.role] = TierRuntime(
                         role=tier.role,

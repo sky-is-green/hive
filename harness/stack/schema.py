@@ -48,7 +48,7 @@ _TIER_FIELDS: tuple[str, ...] = (
 )
 _TIER_OPTIONAL: tuple[str, ...] = (
     "spec", "mmproj", "pin", "ts", "engine_args", "endpoint", "caps",
-    "launch",
+    "launch", "expect_model",
 )
 _STACK_FIELDS: tuple[str, ...] = ("name", "version", "tiers", "routing")
 
@@ -333,6 +333,9 @@ class Tier:
     endpoint: Optional[str] = None
     caps: Optional[dict[str, Any]] = None
     launch: Optional[dict[str, Any]] = None
+    #: the model this tier's endpoint must report (a stale route answering
+    #: from another model is refused; LocalAI hit the same class in #10952)
+    expect_model: Optional[str] = None
 
     def to_dict(self) -> dict[str, Any]:
         """The tier as it appears in a ``stacks/<name>.json`` file."""
@@ -362,6 +365,8 @@ class Tier:
             out["caps"] = dict(self.caps)
         if self.launch is not None:
             out["launch"] = dict(self.launch)
+        if self.expect_model is not None:
+            out["expect_model"] = self.expect_model
         return out
 
     @classmethod
@@ -399,6 +404,7 @@ class Tier:
             caps=_as_optional_object(data.get("caps"), "tier caps"),
             launch=(validate_launch(data.get("launch"))
                     if data.get("launch") is not None else None),
+            expect_model=_as_optional_text(data.get("expect_model"), "tier expect_model"),
         )
 
 
