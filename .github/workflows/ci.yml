@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, hivebench-test]
+    branches: [main, hive_test]
   pull_request:
   # The slow windows leg also runs nightly, and on demand on any branch.
   schedule:
@@ -29,7 +29,7 @@ jobs:
     # Compute the matrix before the runners queue.  The windows leg is the slow
     # one (hosted runner + windows FS); it runs where merge-time correctness
     # matters — main, PRs, nightly, manual dispatch — and not on every
-    # hivebench-test iteration push, which only needs the fast ubuntu signal.
+    # hive_test iteration push, which only needs the fast ubuntu signal.
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.matrix.outputs.os }}
