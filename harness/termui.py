@@ -5,10 +5,10 @@ this module is presentation only: JSON never goes through it, and colour is
 disabled when the stream is not a TTY, when ``NO_COLOR`` is set, or when
 ``TERM=dumb``.  ``FORCE_COLOR=1`` and ``--no-color`` override the detection.
 
-The palette is black and yellow: bright yellow for headers, keys and highlights,
-white for body text, grey for secondary detail, and red only for a failure.
-The Hive mark is an ASCII wordmark printed at startup; there is no glyph lockup
-in the middle of command output.
+The palette is the Studio's black and yellow: #FFDD00 for headers, keys and
+highlights, #FFB703 for amber/secondary emphasis, white for body text, grey for
+secondary detail, and red only for a failure.  The Hive mark is an ASCII
+wordmark printed at startup; there is no glyph lockup in command output.
 """
 from __future__ import annotations
 
@@ -19,8 +19,17 @@ from contextlib import contextmanager
 from typing import Iterable, Sequence, TextIO
 
 RESET = "\x1b[0m"
-_ACCENT = "38;5;226"   # bright yellow
-_WARN = "38;5;214"     # amber
+
+
+def _truecolor() -> bool:
+    return os.environ.get("COLORTERM", "").strip().lower() in ("truecolor", "24bit")
+
+
+# The Studio palette: #FFDD00 is the yellow used for text on black; #FFB703 is
+# its amber/secondary.  Use exact RGB where the terminal advertises truecolor
+# and the nearest xterm-256 pair (220 / 214) otherwise.
+_ACCENT = "38;2;255;221;0" if _truecolor() else "38;5;220"
+_WARN = "38;2;255;183;3" if _truecolor() else "38;5;214"
 _RED = "38;5;203"      # failures only
 _GRAY = "38;5;245"
 _DIM = "2"

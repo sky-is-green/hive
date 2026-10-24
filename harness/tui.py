@@ -80,7 +80,9 @@ class App:
             curses.start_color()
             # Explicit black background: the whole TUI is black + yellow.
             white = curses.COLOR_WHITE
-            yellow = 226 if curses.COLORS >= 256 else curses.COLOR_YELLOW
+            # xterm 220 is #FFD700, the nearest 256-colour step to the Studio's
+            # #FFDD00; 214 is the amber #FFB703.
+            yellow = 220 if curses.COLORS >= 256 else curses.COLOR_YELLOW
             gray = 245 if curses.COLORS >= 256 else curses.COLOR_WHITE
             red = 203 if curses.COLORS >= 256 else curses.COLOR_RED
             self.pairs = {
