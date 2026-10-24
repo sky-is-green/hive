@@ -877,6 +877,50 @@ def cmd_backends(args: argparse.Namespace) -> int:
            [[row["name"], "installed" if row["installed"] else "-",
              ",".join(row.get("accelerators") or []), row.get("binary"),
              row.get("label")] for row in rows])
+    print(f"\n  {termui.dim('hive backends fetch <name> installs a portable release')}")
+    return 0
+
+
+def cmd_backends_fetch(args: argparse.Namespace) -> int:
+    name = args.name or backend_manifest.default_fetch_backend()
+    last = {"pct": -1}
+
+    def progress(done: int, total: int) -> None:
+        if args.as_json:
+            return
+        if total > 0:
+            pct = int(done * 100 / total)
+            if pct == last["pct"]:
+                return
+            last["pct"] = pct
+            sys.stderr.write(
+                f"\r  {pct:3d}%  {done / 1048576:.1f} / {total / 1048576:.1f} MiB")
+            if done >= total:
+                sys.stderr.write("\n")
+        else:
+            sys.stderr.write(f"\r  {done / 1048576:.1f} MiB")
+        sys.stderr.flush()
+
+    if not args.as_json:
+        print(termui.info(f"resolving {name} for this host"), file=sys.stderr)
+    try:
+        result = backend_manifest.fetch_backend(
+            name, tag=args.tag, force=args.force, progress=progress)
+    except (KeyError, RuntimeError, OSError) as exc:
+        print(f"hive backends fetch: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(result)
+        return 0
+    if result.get("already"):
+        print(termui.dim(
+            f"{name} is already installed at {result['path']} "
+            "(use --force to replace it)"))
+        return 0
+    print(termui.ok(f"installed {name} · {result.get('tag') or 'release'}"))
+    termui.kv([("binary", result["binary"]),
+               ("asset", result.get("asset") or "-")])
+    print(f"  {termui.dim('hive backends')}  {termui.dim('to see every build')}")
     return 0
 
 
@@ -921,8 +965,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             add("ok", "backends", ", ".join(installed))
         else:
             add("fail", "backends",
-                "none installed; run scripts/install_amd_engine.sh or "
-                "hive backends to see what is declared")
+                "none installed; run `hive backends fetch vulkan` "
+                "(or see `hive backends`)")
     except (OSError, ValueError) as exc:
         add("fail", "backends", f"backend manifest: {exc}")
 
@@ -1188,8 +1232,25 @@ def build_parser() -> argparse.ArgumentParser:
                       help="arguments for experiments.cascade.run_cascade")
     crun.set_defaults(func=cmd_cascade_run)
 
-    backends = sub.add_parser("backends", help="server builds declared and installed")
-    backends.add_argument("--json", action="store_true", dest="as_json")
+    backends = sub.add_parser("backends",
+                              help="server builds declared, installed or fetched")
+    backends.add_argument("--json", action="store_true", dest="as_json",
+                          help="machine-readable output")
+    backends_sub = backends.add_subparsers(dest="backends_command",
+                                           metavar="<action>")
+    blist = backends_sub.add_parser("list", help="list declared backends")
+    blist.add_argument("--json", action="store_true", dest="as_json")
+    blist.set_defaults(func=cmd_backends)
+    bfetch = backends_sub.add_parser(
+        "fetch", help="download a portable llama.cpp release")
+    bfetch.add_argument("name", nargs="?", default=None,
+                        help="backend to install (default: vulkan)")
+    bfetch.add_argument("--tag", default=None,
+                        help="GitHub release tag (default: newest build)")
+    bfetch.add_argument("--force", action="store_true",
+                        help="replace an existing backend directory")
+    bfetch.add_argument("--json", action="store_true", dest="as_json")
+    bfetch.set_defaults(func=cmd_backends_fetch)
     backends.set_defaults(func=cmd_backends)
 
     doctor = sub.add_parser("doctor", help="check the box before serving")

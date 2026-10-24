@@ -68,6 +68,7 @@ else it prints the static summary.
 ```bash
 hive
 hive doctor
+hive backends fetch vulkan
 hive models list
 hive serve peer-2tier --detach
 hive status

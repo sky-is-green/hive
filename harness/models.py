@@ -1488,8 +1488,8 @@ class LlamaServerManager:
                 # be fetched explicitly
                 raise RuntimeError(
                     f"no llama-server binary for backend '{backend_name}' under "
-                    f"tools/backends/{backend_name}/ - fetch one with "
-                    "tools/fetch_backend.ps1")
+                    f"tools/backends/{backend_name}/ - install one with "
+                    f"`hive backends fetch {backend_name}`")
         if not binary.is_file():
             raise RuntimeError(
                 f"llama-server not found at {self.binary}. Set HARNESS_LLAMA_SERVER "

@@ -15,7 +15,7 @@ Verified on 2× RX 7900 XT (gfx1100, ROCm 7.2.4, kernel 7.3): a one-tier stack w
 | GPU | any RDNA3 card (gfx1100 / gfx1101 / gfx1102). ROCm 7.x with `rocminfo` seeing the card |
 | Python | 3.12+ |
 | Disk | the GGUF plus a few GB |
-| Build tools | only if you build the engine yourself; `scripts/install_amd_engine.sh` can use an existing build |
+| Build tools | not needed for the portable Vulkan build; the custom ROCm/Scion builds need them |
 
 ```bash
 git clone https://github.com/sky-is-green/hive.git
@@ -29,14 +29,23 @@ python3 -m venv .venv
 Hive launches one process per tier from `tools/backends/<backend>/llama-server`.
 
 ```bash
-scripts/install_amd_engine.sh          # builds/links the ROCm engine as backend "rocm"
+.venv/bin/hive backends fetch vulkan   # portable release, ~35 MiB, verified
 .venv/bin/hive backends                # what is declared, what is installed
 ```
 
-Expected shape (this box):
+That downloads the latest upstream `llama-server` build for this platform,
+verifies it with `--version`, and installs it under `tools/backends/vulkan`.
+No compiler and no ROCm version match are needed. The custom ROCm/Scion builds
+remain the advanced path:
+
+```bash
+scripts/install_amd_engine.sh          # builds/links the prism ROCm engine as "rocm"
+```
+
+Expected shape after the fetch:
 
 ```
-  vulkan   -          amd,nvidia,intel     Vulkan
+  vulkan   installed  amd,nvidia,intel     Vulkan
   rocm     installed  amd                  ROCm (HIP)
   cuda     -          nvidia               CUDA
   cpu      -          cpu                  CPU
@@ -122,7 +131,7 @@ not the starting point.
 
 | symptom | cause / fix |
 |---|---|
-| `no llama-server binary for backend 'rocm'` | the build is not installed. Run `scripts/install_amd_engine.sh`, or `--backend vulkan` |
+| `no llama-server binary for backend 'rocm'` | the build is not installed. Run `hive backends fetch rocm`, `hive backends fetch vulkan`, or use `--backend vulkan` |
 | `invalid ggml type 142` | the model uses a quant the chosen build does not know (PQ2_0 needs the `scion` fork) — set `"backend": "scion"` |
 | OOM at load | lower `--ctx` first (the KV cache), then `ngl` |
 | desktop stutter | the tier is pinned to the display card; use `--devices 1` |
