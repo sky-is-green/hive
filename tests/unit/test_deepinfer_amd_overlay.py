@@ -23,21 +23,35 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VENDOR = REPO_ROOT / "vendor"
 for _extra in (str(VENDOR), str(VENDOR / "deepinfer")):
-    if _extra not in sys.path:
+    if Path(_extra).is_dir() and _extra not in sys.path:
         sys.path.insert(0, _extra)
 
-torch = pytest.importorskip("torch")
+# The overlay lives under vendor/, which this repo deliberately does not commit
+# (the claims gate rejects vendor/**).  So on a clean clone - CI - the import
+# must fail *quietly*: a module-level pytest.skip/importorskip raises
+# BaseException, which the import sweep does not catch, turning the whole sweep
+# red.  A plain try/except + a module marker keeps the module importable and
+# skips only these tests.
+_IMPORT_ERROR: str | None = None
+try:
+    import torch  # noqa: F401
+    import deepinfer_amd  # noqa: E402
+    from deepinfer_amd import hardware as amd_hardware  # noqa: E402
+    from deepinfer_amd.platform import PlatformAMD  # noqa: E402
+except ImportError as exc:  # torch absent, or vendor/deepinfer_amd not checked out
+    _IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
-import deepinfer_amd  # noqa: E402
-from deepinfer_amd import hardware as amd_hardware  # noqa: E402
-from deepinfer_amd.platform import PlatformAMD  # noqa: E402
+pytestmark = pytest.mark.skipif(
+    _IMPORT_ERROR is not None,
+    reason=f"DeepInfer AMD overlay unavailable ({_IMPORT_ERROR})")
 
 # The overlay registers the torch-native replacements for the CUDA-only
 # packages (deep_gemm, tile_kernels, ...).  On a non-AMD host the install
 # is a no-op, so the replacements are registered directly here.
-deepinfer_amd.install()
-if "deep_gemm" not in sys.modules:
-    deepinfer_amd._install_op_shims()
+if _IMPORT_ERROR is None:
+    deepinfer_amd.install()
+    if "deep_gemm" not in sys.modules:
+        deepinfer_amd._install_op_shims()
 
 
 # ---------------------------------------------------------------------------
