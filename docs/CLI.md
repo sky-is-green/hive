@@ -34,6 +34,27 @@ python3 -m venv .venv
 the GGUF library and a server build are enough; the evaluation suite's model
 downloads are not required.  `hive doctor` tells you what is missing.
 
+## Look and feel
+
+A bare `hive` is the front door, not a usage error: it prints the Hive mark, the
+current serve/model/stack counts, and the next commands.  The rest of the CLI
+uses the same small language — the amber hexagon, green/amber/red for
+pass/warn/fail, hairline table rules, and a spinner for the slow operations
+(`serve` startup, `stop`, a model import or library scan).
+
+Colour is automatic: it is used only on a terminal, and is disabled in a pipe,
+when `NO_COLOR` is set, or with `--no-color` (accepted before or after the
+command).  `FORCE_COLOR=1` forces it.  JSON output is never coloured and never
+goes through the presentation layer.  `HIVE_NO_SPINNER=1` keeps the colour but
+disables animation.
+
+```bash
+hive                      # dashboard
+hive doctor               # ✔ / ! / ✘ checks
+hive status               # running serves with per-tier up/down
+hive models list          # a readable library table
+```
+
 ## `hive serve`
 
 Apply one stack and keep it serving.  A stack is a JSON file under `stacks/`
@@ -251,6 +272,8 @@ CLI prints one line and exits 1.
 | `HARNESS_LLAMA_SERVER` | default `llama-server` path when no backend is selected |
 | `HARNESS_MEMORY_GUARD` | `0` disables the pre-load VRAM/RAM check (not recommended) |
 | `HIVE_DEBUG` | print tracebacks and the model-list timing line |
+| `NO_COLOR` / `FORCE_COLOR` | force colour off / on (TTY detection otherwise) |
+| `HIVE_NO_SPINNER` | keep colour but disable the spinner |
 
 ## Paths
 

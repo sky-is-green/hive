@@ -49,8 +49,10 @@ def test_root_help_version_and_unknown(capsys):
     assert exc.value.code == 0
     assert "hive" in capsys.readouterr().out
 
-    assert cli.main([]) == 2
-    assert "usage: hive" in capsys.readouterr().err
+    assert cli.main([]) == 0
+    out = capsys.readouterr().out
+    assert "hive" in out and "get started" in out
+    assert "\x1b[" not in out
 
     with pytest.raises(SystemExit) as exc:
         cli.main(["not-a-command"])
