@@ -190,6 +190,8 @@ def test_status_json_and_stop(tmp_path, capsys, monkeypatch):
     assert serve_state.read_record("demo") is None
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+                    reason="no /proc command-line fingerprint on Windows")
 def test_stop_never_kills_a_reused_pid(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("HIVE_STATE_DIR", str(tmp_path))
     serve_state.write_record(_record(cmdline="something else entirely"))
@@ -202,6 +204,8 @@ def test_stop_never_kills_a_reused_pid(tmp_path, capsys, monkeypatch):
     assert "stale" in capsys.readouterr().out
 
 
+@pytest.mark.skipif(sys.platform == "win32",
+                    reason="no /proc command-line fingerprint on Windows")
 def test_status_prune(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("HIVE_STATE_DIR", str(tmp_path))
     serve_state.write_record(_record(cmdline="gone"))
