@@ -1266,7 +1266,9 @@ class LlamaServerManager:
         out=sorted(entries, key=lambda e: e["modified"], reverse=True)
         self._local_cache=out
         self._local_cache_ts=time.time()
-        print(f"list_local: {len(out)} models in {(self._local_cache_ts-t0):.2f}s from {self.models_dir}")
+        if os.environ.get("HIVE_DEBUG"):
+            print(f"list_local: {len(out)} models in "
+                  f"{(self._local_cache_ts-t0):.2f}s from {self.models_dir}")
         return out
 
     def invalidate_cache(self) -> None:

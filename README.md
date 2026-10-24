@@ -58,6 +58,26 @@ convenience; here they are the mechanism by which a wrong answer is caught. That
 combination — plus local-first operation on two consumer cards, with no
 Kubernetes, no container runtime and no API key — is the claim.
 
+## Serve from the CLI
+
+`hive` is the operational CLI: start a stack, find it again, read its logs, and
+stop it, without the Studio.
+
+```bash
+hive doctor
+hive models list
+hive serve peer-2tier --detach
+hive status
+hive stop peer-2tier
+```
+
+A stack names a role, a model and an engine; `hive serve` starts or adopts each
+tier and unloads them on exit. `--model` takes a Hugging Face repo (`org/repo:file.gguf`)
+or a local GGUF, and `--cards` picks the cards. Every command has `--json`, and
+a detached serve is recorded under `harness_state/serve/` so `status`, `stop`
+and `logs` work from another shell. The full reference is
+[`docs/CLI.md`](docs/CLI.md).
+
 ## Layout
 
 | path | what lives there |
@@ -76,6 +96,7 @@ be re-run, not just read.
 | | |
 |---|---|
 | the two papers | [Splinter Memory](splinter/SPLINTER-WHITE-PAPER.md) · [The Hive Cascade](cascade/CASCADE-PAPER.md) |
+| the CLI | [serve, status, stop, logs, models, stacks, doctor](docs/CLI.md) |
 | the current state | [measured / invalid / unmeasured / blocked](docs/STATUS.md) |
 | the visual companion | [hive-cascade-paper](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper) |
 | the task sets and run reports | [SkyIsNotGreen/hive-cascade](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade) |
