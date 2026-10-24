@@ -69,6 +69,7 @@ hive models list
 hive serve peer-2tier --detach
 hive status
 hive stop peer-2tier
+hive cascade runs
 ```
 
 A stack names a role, a model and an engine; `hive serve` starts or adopts each

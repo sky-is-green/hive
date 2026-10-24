@@ -172,6 +172,25 @@ repository exists.  It never starts a process.  `--strict` treats warnings as
 failures.  `--stacks-dir` names the directory holding the JSON files (default:
 `<repo>/stacks`).
 
+## `hive cascade`
+
+The verification / repair / escalation runner, and its recorded runs.
+
+```bash
+hive cascade runs                         # recorded runs and their summary
+hive cascade report strata-cascade-...    # one run's summary
+hive cascade report <run> --json          # the full report
+hive cascade run -- --limit 3 --tasks experiments/cascade/tasks.json
+hive cascade run --help                   # the runner's own options
+```
+
+`run` is a pass-through: every argument after `run` goes to
+`experiments/cascade/run_cascade.py` unchanged, including `--help`, so the
+runner's full option surface stays in one place.  It writes the usual
+`experiments/cascade/runs/<name>/report.json`; `runs` and `report` read that.
+The runner needs its endpoint (`--scion-base`) and, for an API fallback, its
+own key; neither is a Hive setting.
+
 ## `hive backends`
 
 ```bash
@@ -256,5 +275,6 @@ CLI prints one line and exits 1.
 | model download is slow | it is a real download; progress is on stderr, `HF_TOKEN` helps private repos |
 | a failed load | `hive logs <name> --tier <role>` — the engine's startup error is in that file |
 
-The evaluation suite (cascade, benchmarks, training) keeps its own commands in
-`hivebench/README.md`; this page is the serving and operations surface.
+The benchmark and training runners keep their own commands in
+`hivebench/README.md`; the serving/ops surface and the cascade wrapper are
+here.

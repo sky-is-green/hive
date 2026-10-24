@@ -69,6 +69,52 @@ def test_version_and_config(capsys):
     assert "state_dir" in payload
 
 
+def test_cascade_runs_and_report(tmp_path, capsys, monkeypatch):
+    runs = tmp_path / "runs"
+    run = runs / "r1"
+    run.mkdir(parents=True)
+    (run / "report.json").write_text(json.dumps({
+        "summary": {"tasks": 3, "cascade_accuracy": 0.667,
+                    "escalation_rate": 0.333, "cascade_mean_ms": 1200.0},
+        "records": [{"task": "a"}],
+    }), encoding="utf-8")
+    monkeypatch.setattr(cli, "CASCADE_RUNS", runs)
+
+    assert cli.main(["cascade", "runs", "--json"]) == 0
+    rows = json.loads(capsys.readouterr().out)
+    assert rows[0]["run"] == "r1"
+    assert rows[0]["summary"]["tasks"] == 3
+
+    assert cli.main(["cascade", "report", "r1", "--json"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["records"][0]["task"] == "a"
+
+    assert cli.main(["cascade", "report", "nope"]) == 1
+    assert "no report" in capsys.readouterr().err
+
+
+def test_cascade_run_forwards_arguments(tmp_path, capsys, monkeypatch):
+    runner = tmp_path / "runner.py"
+    runner.write_text("print('runner')", encoding="utf-8")
+    monkeypatch.setattr(cli, "CASCADE_RUNNER", runner)
+    calls = []
+
+    def fake_call(command, cwd=None):
+        calls.append((command, cwd))
+        return 7
+
+    monkeypatch.setattr(cli.subprocess, "call", fake_call)
+    assert cli.main(["cascade", "run", "--", "--limit", "2"]) == 7
+    command, cwd = calls[0]
+    assert command[:2] == [sys.executable, str(runner)]
+    assert command[2:] == ["--limit", "2"]
+    assert cwd == str(cli.REPO_ROOT)
+
+    # the pass-through must not intercept the runner's own --help
+    assert cli.main(["cascade", "run", "--help"]) == 7
+    assert calls[1][0][2:] == ["--help"]
+
+
 def test_stacks_list_show_validate(tmp_path, capsys):
     stacks = tmp_path / "stacks"
     stacks.mkdir()
