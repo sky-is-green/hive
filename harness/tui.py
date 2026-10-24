@@ -59,6 +59,13 @@ class App:
         self.offset = 0
         self.color = bool(termui.color_enabled())
         self._init_colors()
+        self.sel_attr = (self.pairs.get("sel", 0) if self.color
+                         else curses.A_REVERSE)
+        if self.color:
+            try:
+                self.screen.bkgd(" ", curses.color_pair(1))
+            except curses.error:
+                pass
         self._load()
 
     # ------------------------------------------------------------------
@@ -71,23 +78,24 @@ class App:
             return
         try:
             curses.start_color()
-            try:
-                curses.use_default_colors()
-            except curses.error:
-                pass
-            amber = 214 if curses.COLORS >= 256 else curses.COLOR_YELLOW
+            # Explicit black background: the whole TUI is black + yellow.
+            white = curses.COLOR_WHITE
+            yellow = 226 if curses.COLORS >= 256 else curses.COLOR_YELLOW
+            gray = 245 if curses.COLORS >= 256 else curses.COLOR_WHITE
+            red = 203 if curses.COLORS >= 256 else curses.COLOR_RED
             self.pairs = {
-                "amber": curses.color_pair(1) if self._pair(1, amber) else 0,
-                "green": curses.color_pair(2) if self._pair(2, curses.COLOR_GREEN) else 0,
-                "red": curses.color_pair(3) if self._pair(3, curses.COLOR_RED) else 0,
-                "yellow": curses.color_pair(4) if self._pair(4, curses.COLOR_YELLOW) else 0,
+                "text": curses.color_pair(1) if self._pair(1, white, curses.COLOR_BLACK) else 0,
+                "amber": curses.color_pair(2) if self._pair(2, yellow, curses.COLOR_BLACK) else 0,
+                "gray": curses.color_pair(3) if self._pair(3, gray, curses.COLOR_BLACK) else 0,
+                "red": curses.color_pair(4) if self._pair(4, red, curses.COLOR_BLACK) else 0,
+                "sel": curses.color_pair(5) if self._pair(5, curses.COLOR_BLACK, yellow) else 0,
             }
         except curses.error:
             self.color = False
 
-    def _pair(self, index: int, fg: int) -> bool:
+    def _pair(self, index: int, fg: int, bg: int) -> bool:
         try:
-            curses.init_pair(index, fg, -1)
+            curses.init_pair(index, fg, bg)
             return True
         except curses.error:
             return False
@@ -98,6 +106,8 @@ class App:
         value = self.pairs.get(name, 0)
         if name == "amber":
             value |= curses.A_BOLD
+        elif name == "gray":
+            value |= curses.A_DIM
         return value
 
     def put(self, y: int, x: int, text: str, attr: int = 0) -> None:
@@ -114,8 +124,7 @@ class App:
 
     def _rule(self, y: int) -> None:
         _, width = self.screen.getmaxyx()
-        self.put(y, 0, termui.symbols()["rule"] * (width - 1),
-                 curses.A_DIM if curses else 0)
+        self.put(y, 0, termui.symbols()["rule"] * (width - 1), self.attr("gray"))
 
     # ------------------------------------------------------------------
     # data
@@ -241,19 +250,17 @@ class App:
             self.put(0, 0, "terminal too small (need at least 50x12)", curses.A_BOLD)
             self.screen.refresh()
             return
-        sym = termui.symbols()
-        self.put(0, 2, f"{sym['hex']} hive {ops._version()}", self.attr("amber"))
+        self.put(0, 2, f"hive {ops._version()}", self.attr("amber"))
         stamp = time.strftime("%H:%M:%S")
-        self.put(0, max(2, width - len(stamp) - 2), stamp,
-                 curses.A_DIM if self.color else 0)
+        self.put(0, max(2, width - len(stamp) - 2), stamp, self.attr("gray"))
 
         x = 2
         for index, name in enumerate(TABS):
             label = f" {index + 1} {name} "
             if index == self.tab:
-                self.put(1, x, label, curses.A_REVERSE | self.attr("amber"))
+                self.put(1, x, label, self.sel_attr)
             else:
-                self.put(1, x, label, curses.A_DIM if self.color else 0)
+                self.put(1, x, label, self.attr("gray"))
             x += len(label) + 1
         self._rule(2)
 
@@ -263,8 +270,7 @@ class App:
             self._draw_overlay(height, width)
 
         if self.message:
-            self.put(height - 2, 2, self.message[:width - 4],
-                     curses.A_DIM if self.color else 0)
+            self.put(height - 2, 2, self.message[:width - 4], self.attr("gray"))
         self._footer(height, width)
         self.screen.refresh()
 
@@ -285,18 +291,20 @@ class App:
         head = ["NAME", "PID", "MODE", "UPTIME", "STATE"]
         widths = [26, 8, 12, 10, 8]
         self.put(3, 3, "  ".join(h.ljust(w) for h, w in zip(head, widths)),
-                 curses.A_DIM if self.color else 0)
+                 self.attr("amber"))
         y = 4
         view = height - 7
         for offset in range(self.top, min(len(self.rows), self.top + view)):
             row = self.rows[offset]
             if y >= height - 3:
                 break
-            attr = 0
+            attr = self.attr("text")
             if row.kind == "serve" and offset == self.sel:
-                attr = curses.A_REVERSE
+                attr = self.sel_attr
+            elif row.kind == "serve" and row.cells[-1] == "stale":
+                attr = self.attr("red")
             elif row.kind == "tier":
-                attr = curses.A_DIM if self.color else 0
+                attr = self.attr("red") if row.cells[-1] == "down" else self.attr("gray")
             marker = ">" if offset == self.sel else " "
             if row.kind == "serve":
                 text = "  ".join(
@@ -311,19 +319,19 @@ class App:
             self.put(y, 2, f"{marker} {text}", attr)
             y += 1
         if not self.rows:
-            self.put(5, 4, "No serves are running.", curses.A_DIM if self.color else 0)
+            self.put(5, 4, "No serves are running.", self.attr("gray"))
             self.put(6, 4, "Start one:  hive serve <stack> --detach",
-                     self.attr("amber") if self.color else 0)
+                     self.attr("amber"))
 
     def _draw_table(self, headers: list[str], widths: list[int],
                     y: int, bottom: int) -> None:
         self.put(y, 3, "  ".join(
             header.ljust(widths[index]) for index, header in enumerate(headers)),
-            curses.A_DIM if self.color else 0)
+            self.attr("amber"))
         view = max(1, bottom - y - 1)
         for offset in range(self.top, min(len(self.rows), self.top + view)):
             row = self.rows[offset]
-            attr = curses.A_REVERSE if offset == self.sel else 0
+            attr = self.sel_attr if offset == self.sel else self.attr("text")
             marker = ">" if offset == self.sel else " "
             cells = []
             for index, cell in enumerate(row.cells):
@@ -332,7 +340,7 @@ class App:
             self.put(y + 1 + (offset - self.top), 2,
                      f"{marker} " + "  ".join(cells), attr)
         if not self.rows:
-            self.put(y + 2, 4, "Nothing here yet.", curses.A_DIM if self.color else 0)
+            self.put(y + 2, 4, "Nothing here yet.", self.attr("gray"))
 
     def _footer(self, height: int, width: int) -> None:
         context = {
@@ -342,21 +350,21 @@ class App:
             3: "enter report",
         }[self.tab]
         line = f" {context}  ·  r refresh  ·  ? help  ·  q quit "
-        self.put(height - 1, 0, line[-width:], curses.A_REVERSE)
+        self.put(height - 1, 0, line[-width:], self.sel_attr)
 
     def _draw_overlay(self, height: int, width: int) -> None:
         top, bottom = 4, height - 3
-        self.put(top - 1, 2, f" {self.overlay_title} ",
-                 curses.A_REVERSE | self.attr("amber"))
+        self.put(top - 1, 2, f" {self.overlay_title} ", self.sel_attr)
         view = bottom - top
         for index in range(view):
             source = self.offset + index
             if source >= len(self.overlay):
                 break
-            self.put(top + index, 3, self.overlay[source][:width - 6])
+            self.put(top + index, 3, self.overlay[source][:width - 6],
+                     self.attr("text"))
         self.put(height - 2, 2,
                  "↑↓ scroll · r reload · q back"[:width - 4],
-                 curses.A_DIM if self.color else 0)
+                 self.attr("gray"))
 
     # ------------------------------------------------------------------
     # actions
@@ -547,6 +555,40 @@ class App:
                 self._load()
         return False
 
+    def splash(self) -> None:
+        """The fish-like greeting: ASCII wordmark, then the dashboard."""
+        if os.environ.get("HIVE_NO_SPLASH") or curses is None:
+            return
+        height, width = self.screen.getmaxyx()
+        lines = termui.logo()
+        widest = max((len(line) for line in lines), default=0)
+        if height < len(lines) + 9 or width < widest + 4:
+            return
+        top = max(1, (height - len(lines) - 6) // 2)
+        for index, line in enumerate(lines):
+            self.put(top + index, max(0, (width - len(line)) // 2),
+                     line, self.attr("amber"))
+        tagline = "local GGUF stacks · one engine per role"
+        version = f"hive {ops._version()}"
+        hint = "press any key"
+        self.put(top + len(lines) + 1,
+                 max(0, (width - len(tagline)) // 2), tagline, self.attr("gray"))
+        self.put(top + len(lines) + 2,
+                 max(0, (width - len(version)) // 2), version, self.attr("amber"))
+        self.put(top + len(lines) + 4,
+                 max(0, (width - len(hint)) // 2), hint, self.attr("gray"))
+        self.screen.refresh()
+        try:
+            self.screen.timeout(1200)
+            self.screen.getch()
+        except curses.error:
+            pass
+        finally:
+            try:
+                self.screen.timeout(-1)
+            except curses.error:
+                pass
+
     def loop(self) -> None:
         while True:
             self.draw()
@@ -580,7 +622,9 @@ def run() -> int:
         except curses.error:
             pass
         screen.keypad(True)
-        App(screen).loop()
+        app = App(screen)
+        app.splash()
+        app.loop()
 
     try:
         curses.wrapper(_main)

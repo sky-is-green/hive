@@ -50,8 +50,10 @@ explicit `hive tui`.  It is a real navigation surface, not a printed page:
 | `?` | key help |
 | `q` | quit |
 
-The Status tab shows the same records as `hive status`, with per-tier `up` /
-`down`; Models, Stacks and Runs mirror their subcommands.  The dashboard is
+It opens on a short splash with the ASCII wordmark (skip it with
+`HIVE_NO_SPLASH=1`).  The Status tab shows the same records as `hive status`,
+with per-tier `up` / `down`; Models, Stacks and Runs mirror their subcommands.
+The dashboard is
 read-mostly: details, logs and stopping are available in place; starting a
 stack and downloading a model stay explicit CLI actions.
 
@@ -61,9 +63,12 @@ rest remain scriptable and unchanged.
 
 ## Look and feel
 
-The static surface uses the same small language — the amber hexagon,
-green/amber/red for pass/warn/fail, hairline table rules, and a spinner for the
-slow operations (`serve` startup, `stop`, a model import or library scan).
+The palette is black and yellow throughout: bright yellow for headers, keys
+and selections, white for body text, grey for secondary detail, and red only
+for a failure.  A Hive ASCII wordmark is printed at startup (and on the
+interactive splash); there is no glyph in the middle of command output.  The
+static surface keeps the same rules and uses a spinner for the slow operations
+(`serve` startup, `stop`, a model import or library scan).
 
 Colour is automatic: it is used only on a terminal, and is disabled in a pipe,
 when `NO_COLOR` is set, or with `--no-color` (accepted before or after the
@@ -299,6 +304,7 @@ CLI prints one line and exits 1.
 | `NO_COLOR` / `FORCE_COLOR` | force colour off / on (TTY detection otherwise) |
 | `HIVE_NO_SPINNER` | keep colour but disable the spinner |
 | `HIVE_NO_TUI` | never open the interactive dashboard; use the static one |
+| `HIVE_NO_SPLASH` | skip the ASCII startup splash in the dashboard |
 
 ## Paths
 
