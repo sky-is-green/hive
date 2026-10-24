@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hivebench"
-version = "0.1.0"
-description = "HiveBench — the evaluation suite and Studio sidecar for the Hive stack (Splinter Memory + Hive Cascade)"
+version = "0.2.0"
+description = "Hive — engine-agnostic GGUF serving, cascade, and evaluation harness"
 readme = "hivebench/README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -13,19 +13,45 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
+# The base install is serve-only: the `hive` CLI, backend fetch, GGUF
+# discovery/download, model lifecycle and the memory guard.  The Studio and
+# the evaluation suite are opt-in extras so a serving box does not pull in
+# FastAPI, pytest, datasets or accelerate.
 dependencies = [
-    # Evaluation suite
-    "pytest>=8.0",
-    "accelerate>=1.1.0",
-    "datasets>=3.0",
-    # Serving CLI (hive models/serve need these directly, not transitively)
     "huggingface_hub>=0.24",
     "requests>=2.28",
-    # Studio sidecar (harness)
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+studio = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "pydantic>=2.12,<3",
     "python-multipart>=0.0.9",
+    "numpy>=1.26",
+]
+eval = [
+    "accelerate>=1.1.0",
+    "datasets>=3.0",
+    "numpy>=1.26",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-xdist>=3.8",
+    "httpx>=0.28",
+]
+all = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "pydantic>=2.12,<3",
+    "python-multipart>=0.0.9",
+    "numpy>=1.26",
+    "accelerate>=1.1.0",
+    "datasets>=3.0",
+    "pytest>=8.0",
+    "pytest-xdist>=3.8",
+    "httpx>=0.28",
 ]
 
 [project.scripts]
@@ -52,3 +78,8 @@ hivebench-harness = "harness.__main__:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["experiments*", "testing*", "tests*", "harness*"]
+
+[tool.setuptools.package-data]
+# The backend manifest is read-only source data; the checkout copy under
+# tools/backends still wins when one is present.
+harness = ["data/*.json"]
