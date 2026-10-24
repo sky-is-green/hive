@@ -4,8 +4,9 @@ This is the shortest path from a clone to an OpenAI-compatible endpoint serving 
 It uses Hive's engine slots: the stack names a role and a backend, the harness owns the process.
 
 Verified on 2× RX 7900 XT (gfx1100, ROCm 7.2.4, kernel 7.3): a one-tier stack with the `scion` build loaded a
-10.5 GB GGUF in ~5 s, answered `/health`, printed the endpoint, and unloaded on `--once`. The two-card *generated*
-stack is verified as configuration; a two-card model load is not yet in the record.
+10.5 GB GGUF in ~5 s, answered `/health`, printed the endpoint, and unloaded on `--once`. The same model with
+`pin 0,1` and `ts 1,1` loaded **across both cards** — 5.58 GiB on card 0 and 6.98 GiB on card 1 — answered
+`/v1/models`, and unloaded on SIGINT, returning both cards to their baseline.
 
 ## 1. Prerequisites
 
