@@ -245,12 +245,21 @@ own key; neither is a Hive setting.
 ## `hive backends`
 
 ```bash
-hive backends
+hive backends                  # declared, installed, and where
 hive backends --json
+hive backends fetch            # portable Vulkan build for this host
+hive backends fetch rocm       # or a named build
+hive backends fetch vulkan --tag b11869
 ```
 
 Lists every declared server build (`tools/backends/<name>/llama-server`), its
 accelerators, whether it is installed, and its path.  `-` means not installed.
+
+`fetch` resolves the newest matching llama.cpp release for this platform,
+downloads and verifies it with `--version`, and atomically replaces the
+backend directory only after verification.  `--force` is required to replace
+an existing install.  The custom ROCm/Scion builds still come from their
+scripts; `fetch` is the portable path a new user needs.
 
 ## `hive doctor`
 

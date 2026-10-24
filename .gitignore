@@ -129,6 +129,9 @@ experiments/cascade/results/*/logit-*/readout.err
 # HF cache (CI sets HF_HOME to $GITHUB_WORKSPACE/.hf-cache)
 .hf-cache/
 
+# Downloaded engine builds (hive backends fetch); the manifest is the declaration.
+tools/backends/*/
+
 # The DeepInfer AMD build: the compiled extension, its build directory, and
 # the hipify pass's output files (ROCm's PyTorch writes foo.cpp -> foo_hip.cpp
 # next to the original).  The build script removes the last two itself.
