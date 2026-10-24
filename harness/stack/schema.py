@@ -60,8 +60,8 @@ LAUNCH_KINDS: tuple[str, ...] = ("strata", "deepinfer")
 
 #: Fields a tier's ``launch`` object round-trips.
 _LAUNCH_FIELDS: tuple[str, ...] = (
-    "kind", "repo", "config", "python", "engine_args", "options", "timeout_s",
-    "ctx_flag",
+    "kind", "repo", "config", "python", "server", "engine_args", "options",
+    "timeout_s", "ctx_flag",
 )
 
 #: Flags the managed launch owns; a ``launch.engine_args`` entry carrying one
@@ -173,8 +173,11 @@ def validate_launch(value: Any, *, where: str = "tier launch") -> dict[str, Any]
 
     Shape only: ``kind`` (one of :data:`LAUNCH_KINDS`), ``repo`` and
     ``config`` (strings), optional ``python`` (default ``.venv/bin/python``,
-    resolved at start), optional ``engine_args`` (deny-list validated),
-    optional ``options`` object merged into the generated server config,
+    resolved at start), optional ``server`` (the server entry point inside
+    ``repo``; default ``serve/server.py`` — V4.1 uses its encoder shim
+    ``tools/v41/serve/serve_ds41.py``), optional ``engine_args`` (deny-list
+    validated), optional ``options`` object merged into the generated server
+    config,
     optional ``ctx_flag`` (the engine's own context flag - ``--ctx`` on the
     DeepSeek-V4.1 engine, which rejects the ``--max-context`` this launcher
     forces by default), and optional positive ``timeout_s`` for startup.
@@ -204,6 +207,9 @@ def validate_launch(value: Any, *, where: str = "tier launch") -> dict[str, Any]
     python = _as_optional_text(value.get("python"), f"{where} python")
     if python is not None:
         out["python"] = python
+    server = _as_optional_text(value.get("server"), f"{where} server")
+    if server is not None:
+        out["server"] = server
     if value.get("engine_args") is not None:
         out["engine_args"] = validate_launch_args(value.get("engine_args"))
     ctx_flag = _as_optional_text(value.get("ctx_flag"), f"{where} ctx_flag")
