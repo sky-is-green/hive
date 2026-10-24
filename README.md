@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/hive-mark.svg" width="88" alt="Hive"></p>
+
 # Hive
 
 **A local-first stack for memory, verification, and routing in language models.**
