@@ -212,7 +212,7 @@ def cmd_home(_args: argparse.Namespace | None = None) -> int:
                      if row["installed"]]
     except (OSError, ValueError):
         installed = []
-    run_text = "none" if not running else f"{running} running"
+    run_text = "none" if not running else str(running)
     if stale:
         run_text += f" · {stale} stale"
     termui.banner(

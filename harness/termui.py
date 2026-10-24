@@ -5,9 +5,10 @@ this module is presentation only: JSON never goes through it, and colour is
 disabled when the stream is not a TTY, when ``NO_COLOR`` is set, or when
 ``TERM=dumb``.  ``FORCE_COLOR=1`` and ``--no-color`` override the detection.
 
-The visual language is deliberately small: the amber hexagon from the mark,
-green/amber/red for pass/warn/fail, a thin rule, and box-drawing-free tables
-(so the output survives narrow terminals and copy/paste).
+The palette is black and yellow: bright yellow for headers, keys and highlights,
+white for body text, grey for secondary detail, and red only for a failure.
+The Hive mark is an ASCII wordmark printed at startup; there is no glyph lockup
+in the middle of command output.
 """
 from __future__ import annotations
 
@@ -18,10 +19,10 @@ from contextlib import contextmanager
 from typing import Iterable, Sequence, TextIO
 
 RESET = "\x1b[0m"
-_ACCENT = "38;5;214"   # the mark's amber
-_GREEN = "38;5;42"
-_RED = "38;5;203"
-_YELLOW = "38;5;220"
+_ACCENT = "38;5;226"   # bright yellow
+_WARN = "38;5;214"     # amber
+_RED = "38;5;203"      # failures only
+_GRAY = "38;5;245"
 _DIM = "2"
 _BOLD = "1"
 
@@ -48,6 +49,22 @@ _ASCII = {
     "bullet": "-",
 }
 
+_LOGO = [
+    r"  ██╗  ██╗██╗██╗   ██╗███████╗",
+    r"  ██║  ██║██║██║   ██║██╔════╝",
+    r"  ███████║██║██║   ██║█████╗  ",
+    r"  ██╔══██║██║╚██╗ ██╔╝██╔══╝  ",
+    r"  ██║  ██║██║ ╚████╔╝ ███████╗",
+    r"  ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚══════╝",
+]
+_LOGO_ASCII = [
+    r"  #   #  ###  #   #  ####",
+    r"  #   #   #   #   #  #   ",
+    r"  #####   #   #   #  ### ",
+    r"  #   #   #    # #   #   ",
+    r"  #   #  ###    #    ####",
+]
+
 
 def set_color(enabled: bool | None) -> None:
     """Force colour on/off; ``None`` restores automatic detection."""
@@ -72,6 +89,11 @@ def symbols(stream: TextIO | None = None) -> dict[str, str]:
     except (UnicodeEncodeError, LookupError):
         return _ASCII
     return _UNICODE
+
+
+def logo(stream: TextIO | None = None) -> list[str]:
+    """The startup wordmark, Unicode when the stream can encode it."""
+    return list(_LOGO if symbols(stream) is _UNICODE else _LOGO_ASCII)
 
 
 def color_enabled(stream: TextIO | None = None) -> bool:
@@ -104,11 +126,11 @@ def bold(text: object, stream: TextIO | None = None) -> str:
 
 
 def dim(text: object, stream: TextIO | None = None) -> str:
-    return paint(text, _DIM, stream)
+    return paint(text, _GRAY, stream)
 
 
 def _mark(kind: str, text: object, stream: TextIO | None = None) -> str:
-    code = {"ok": _GREEN, "warn": _YELLOW, "fail": _RED}[kind]
+    code = {"ok": _ACCENT, "warn": _WARN, "fail": _RED}[kind]
     sign = symbols(stream)[kind]
     return f"{paint(sign, code, stream)} {text}"
 
@@ -131,9 +153,9 @@ def info(text: object, stream: TextIO | None = None) -> str:
 
 def header(title: str, subtitle: str | None = None,
            stream: TextIO | None = None) -> None:
-    """The small Hive lockup: ``⬡ hive · title``."""
+    """A small text lockup: ``hive · title`` (no glyph in the line)."""
     stream = stream or sys.stdout
-    line = f"  {accent(symbols(stream)['hex'], stream)} {bold('hive', stream)}"
+    line = f"  {accent(bold('hive', stream), stream)}"
     if title:
         line += f"  {dim('·', stream)} {title}"
     print(line, file=stream)
@@ -148,10 +170,11 @@ def rule(width: int = 64, stream: TextIO | None = None) -> None:
 
 def banner(version: str, stats: Iterable[tuple[str, str]],
            commands: Sequence[str], stream: TextIO | None = None) -> None:
-    """The landing page for a bare ``hive``."""
+    """The startup page for a bare ``hive``."""
     stream = stream or sys.stdout
-    print(f"  {accent(symbols(stream)['hex'], stream)} "
-          f"{bold('hive', stream)} {dim(version, stream)}", file=stream)
+    for line in logo(stream):
+        print(f"  {accent(line, stream)}", file=stream)
+    print(f"  {accent('hive', stream)} {dim(version, stream)}", file=stream)
     print(f"     {dim('local GGUF stacks · one engine per role', stream)}",
           file=stream)
     print(file=stream)
@@ -169,7 +192,7 @@ def banner(version: str, stats: Iterable[tuple[str, str]],
 
 def table(headers: Sequence[str], rows: Sequence[Sequence[object]],
           *, indent: str = "  ", stream: TextIO | None = None) -> None:
-    """A plain table with an optional coloured header and hairline rule."""
+    """A plain table with a yellow header and a hairline rule."""
     stream = stream or sys.stdout
     data = [[("" if cell is None else str(cell)) for cell in row] for row in rows]
     widths: list[int] = []
