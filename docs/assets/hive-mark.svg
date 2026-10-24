@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Hive">
+  <!-- a hive cell, with the cascade inside: three tiers, the last one weighted -->
+  <polygon points="128,14 220,67 220,173 128,226 36,173 36,67"
+           fill="none" stroke="#F5A524" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M84 74 L128 100 L172 74" fill="none" stroke="#F5A524" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+  <path d="M84 116 L128 142 L172 116" fill="none" stroke="#F5A524" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+  <path d="M84 158 L128 184 L172 158" fill="none" stroke="#F5A524" stroke-width="17"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
