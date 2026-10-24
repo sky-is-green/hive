@@ -34,13 +34,36 @@ python3 -m venv .venv
 the GGUF library and a server build are enough; the evaluation suite's model
 downloads are not required.  `hive doctor` tells you what is missing.
 
+## Interactive dashboard
+
+A bare `hive` on a terminal opens a full-screen dashboard; there is also an
+explicit `hive tui`.  It is a real navigation surface, not a printed page:
+
+| key | action |
+|---|---|
+| `1`–`4`, `←`/`→`, `Tab` | Status, Models, Stacks, Runs |
+| `↑`/`↓`, `j`/`k` | move the selection |
+| `Enter` | details for the selected serve/model/stack/run |
+| `l` | supervisor log (Status) |
+| `x` | stop the selected serve (Status) |
+| `r` | refresh |
+| `?` | key help |
+| `q` | quit |
+
+The Status tab shows the same records as `hive status`, with per-tier `up` /
+`down`; Models, Stacks and Runs mirror their subcommands.  The dashboard is
+read-mostly: details, logs and stopping are available in place; starting a
+stack and downloading a model stay explicit CLI actions.
+
+A pipe, a captured stream, `HIVE_NO_TUI=1`, or a terminal without `curses`
+gets the static dashboard instead.  `hive status`, `hive models list`, and the
+rest remain scriptable and unchanged.
+
 ## Look and feel
 
-A bare `hive` is the front door, not a usage error: it prints the Hive mark, the
-current serve/model/stack counts, and the next commands.  The rest of the CLI
-uses the same small language — the amber hexagon, green/amber/red for
-pass/warn/fail, hairline table rules, and a spinner for the slow operations
-(`serve` startup, `stop`, a model import or library scan).
+The static surface uses the same small language — the amber hexagon,
+green/amber/red for pass/warn/fail, hairline table rules, and a spinner for the
+slow operations (`serve` startup, `stop`, a model import or library scan).
 
 Colour is automatic: it is used only on a terminal, and is disabled in a pipe,
 when `NO_COLOR` is set, or with `--no-color` (accepted before or after the
@@ -49,7 +72,8 @@ goes through the presentation layer.  `HIVE_NO_SPINNER=1` keeps the colour but
 disables animation.
 
 ```bash
-hive                      # dashboard
+hive                      # interactive dashboard on a TTY
+hive tui                  # the same, explicitly
 hive doctor               # ✔ / ! / ✘ checks
 hive status               # running serves with per-tier up/down
 hive models list          # a readable library table
@@ -274,6 +298,7 @@ CLI prints one line and exits 1.
 | `HIVE_DEBUG` | print tracebacks and the model-list timing line |
 | `NO_COLOR` / `FORCE_COLOR` | force colour off / on (TTY detection otherwise) |
 | `HIVE_NO_SPINNER` | keep colour but disable the spinner |
+| `HIVE_NO_TUI` | never open the interactive dashboard; use the static one |
 
 ## Paths
 

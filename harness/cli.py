@@ -150,6 +150,33 @@ def _resolve_one(records: list[dict], name: str | None) -> dict:
     return records[0]
 
 
+def _tui_available() -> bool:
+    """Whether a bare ``hive`` should take over the terminal."""
+    if os.environ.get("HIVE_NO_TUI"):
+        return False
+    if os.environ.get("TERM") == "dumb":
+        return False
+    try:
+        if not (sys.stdin.isatty() and sys.stdout.isatty()):
+            return False
+    except (AttributeError, OSError):
+        return False
+    try:
+        import curses  # noqa: F401 - availability probe
+    except ImportError:
+        return False
+    return True
+
+
+def cmd_tui(_args: argparse.Namespace) -> int:
+    if not _tui_available():
+        print("hive tui: an interactive terminal is required "
+              "(use the plain commands in a pipe, or HIVE_NO_TUI=1)", file=sys.stderr)
+        return 1
+    from harness import tui
+    return tui.run()
+
+
 def _port_free(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -1030,6 +1057,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve.add_parser(sub)
 
+    tui = sub.add_parser("tui", help="interactive terminal dashboard")
+    tui.set_defaults(func=cmd_tui)
+
     status = sub.add_parser("status", aliases=["ps"],
                             help="show running serves and their endpoints")
     status.add_argument("--json", action="store_true", dest="as_json",
@@ -1197,6 +1227,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(raw)
     if not getattr(args, "func", None):
+        if _tui_available():
+            from harness import tui
+            code = tui.run()
+            if code == 0:
+                return 0
+            print("hive: the interactive dashboard could not start; "
+                  "showing the static one", file=sys.stderr)
         return cmd_home(args)
     try:
         return int(args.func(args) or 0)
