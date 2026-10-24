@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "backends": {
+    "vulkan": {
+      "label": "Vulkan",
+      "binary_dir": "tools/backends/vulkan",
+      "accelerators": ["amd", "nvidia", "intel"],
+      "notes": "Cross-vendor llama.cpp build; the portable fallback."
+    },
+    "rocm": {
+      "label": "ROCm (HIP)",
+      "binary_dir": "tools/backends/rocm",
+      "accelerators": ["amd"],
+      "notes": "AMD only; the prism AMD engine build."
+    },
+    "cuda": {
+      "label": "CUDA",
+      "binary_dir": "tools/backends/cuda",
+      "accelerators": ["nvidia"],
+      "notes": "NVIDIA only."
+    },
+    "cpu": {
+      "label": "CPU",
+      "binary_dir": "tools/backends/cpu",
+      "accelerators": ["cpu"],
+      "notes": "No GPU offload; the last resort."
+    },
+    "sycl": {
+      "label": "SYCL (oneAPI)",
+      "binary_dir": "tools/backends/sycl",
+      "accelerators": ["intel"],
+      "notes": "Intel GPUs."
+    },
+    "scion": {
+      "label": "Scion (moe-corr-runtime)",
+      "binary_dir": "tools/backends/scion",
+      "accelerators": ["amd", "nvidia"],
+      "notes": "The fork with the ternary PQ2_0 container and the draft-MTP sidecar."
+    }
+  }
+}

@@ -104,8 +104,8 @@ _DEVICES = [
 
 def test_model_two_cards_generates_pin_ts_backend(monkeypatch):
     monkeypatch.setattr(serve, "_detect_devices", lambda: _DEVICES)
-    monkeypatch.setattr(serve, "backend_binary",
-                        lambda name: "/fake/llama-server" if name == "rocm" else None)
+    monkeypatch.setattr(serve.backend_manifest, "for_accelerator",
+                        lambda kind: "rocm")
     monkeypatch.setattr(serve, "LlamaServerManager", _Models)
     monkeypatch.setattr(serve, "StackManager", _Manager)
     _Manager.instances.clear()
@@ -123,7 +123,7 @@ def test_model_two_cards_generates_pin_ts_backend(monkeypatch):
 
 def test_model_repo_colon_file_form(monkeypatch):
     monkeypatch.setattr(serve, "_detect_devices", lambda: _DEVICES)
-    monkeypatch.setattr(serve, "backend_binary", lambda name: None)
+    monkeypatch.setattr(serve.backend_manifest, "for_accelerator", lambda kind: None)
     monkeypatch.setattr(serve, "LlamaServerManager", _Models)
     monkeypatch.setattr(serve, "StackManager", _Manager)
     _Manager.instances.clear()
@@ -146,8 +146,8 @@ def test_model_more_cards_than_detected(monkeypatch, capsys):
 
 def test_model_no_gpu_falls_back_to_cpu(monkeypatch):
     monkeypatch.setattr(serve, "_detect_devices", lambda: [])
-    monkeypatch.setattr(serve, "backend_binary",
-                        lambda name: "/fake/llama-server" if name == "cpu" else None)
+    monkeypatch.setattr(serve.backend_manifest, "for_accelerator",
+                        lambda kind: "cpu")
     monkeypatch.setattr(serve, "LlamaServerManager", _Models)
     monkeypatch.setattr(serve, "StackManager", _Manager)
     _Manager.instances.clear()
@@ -164,3 +164,10 @@ def test_model_needs_a_file(capsys):
     rc = serve.main(["--model", "org/m", "--once"])
     assert rc == 2
     assert "needs the GGUF file" in capsys.readouterr().err
+
+
+def test_serve_backends_lists_the_manifest(capsys):
+    rc = serve.main(["--backends"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "rocm" in out and "vulkan" in out and "scion" in out

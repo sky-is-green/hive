@@ -34,8 +34,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+from harness import backends as backend_manifest
 from harness.hardware import linux_amd_devices
-from harness.models import LlamaServerManager, backend_binary
+from harness.models import LlamaServerManager
 from harness.stack.manager import StackManager
 from harness.stack.schema import (
     Stack, list_stacks, load_stack, stack_path, validate_shape)
@@ -88,15 +89,17 @@ def _select_devices(devices: list[dict], count: int | None,
 
 
 def _pick_backend(devices: list[dict], requested: str | None) -> str | None:
-    """The backend whose binary is actually installed, not just available."""
+    """The installed backend to use, from the manifest (not by convention).
+
+    ``None`` means nothing suitable is installed; the caller then uses the
+    default llama-server binary rather than guess a backend that would fail at
+    load time with "fetch one with tools/fetch_backend.ps1".
+    """
     if requested:
         return requested
-    if devices:
-        for name in ("rocm", "vulkan"):
-            if backend_binary(name):
-                return name
-        return None
-    return "cpu" if backend_binary("cpu") else None
+    # linux_amd_devices is the only detector today; a future NVIDIA probe maps
+    # to "nvidia" here and the manifest picks cuda over vulkan.
+    return backend_manifest.for_accelerator("amd" if devices else "cpu")
 
 
 def _slug(text: str) -> str:
@@ -140,6 +143,8 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="stack name under stacks/, or a path to a .json stack")
     parser.add_argument("--list", action="store_true",
                         help="list the saved stacks and exit")
+    parser.add_argument("--backends", action="store_true",
+                        help="list the declared llama-server backends and exit")
     parser.add_argument("--model", default=None,
                         help="HuggingFace repo (or repo:file) to serve without a stack file")
     parser.add_argument("--file", default=None,
@@ -196,6 +201,13 @@ def _print_table(rows: list[dict[str, Any]], host: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+
+    if args.backends:
+        for row in backend_manifest.rows():
+            state = "installed" if row["installed"] else "-"
+            accel = ",".join(row.get("accelerators") or [])
+            print(f"  {row['name']:<8} {state:<10} {accel:<20} {row.get('label', '')}")
+        return 0
 
     if args.list:
         rows = list_stacks(root=args.stacks_dir)
