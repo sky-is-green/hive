@@ -37,6 +37,7 @@ import os
 import platform
 import shutil
 import socket
+import subprocess
 import sys
 import time
 import urllib.error
@@ -50,6 +51,10 @@ from harness import serve, serve_state
 from harness.hardware import linux_amd_devices
 from harness.models import LlamaServerManager
 from harness.stack import schema
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CASCADE_RUNS = REPO_ROOT / "experiments" / "cascade" / "runs"
+CASCADE_RUNNER = REPO_ROOT / "experiments" / "cascade" / "run_cascade.py"
 
 
 # ---------------------------------------------------------------------------
@@ -676,6 +681,93 @@ def cmd_stacks_validate(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------------
+# cascade
+# ---------------------------------------------------------------------------
+
+def cmd_cascade_runs(args: argparse.Namespace) -> int:
+    runs: list[dict] = []
+    if CASCADE_RUNS.is_dir():
+        for path in sorted(CASCADE_RUNS.iterdir(), key=lambda p: p.name, reverse=True):
+            if not path.is_dir():
+                continue
+            report = path / "report.json"
+            if not report.is_file():
+                continue
+            summary: dict = {}
+            try:
+                data = json.loads(report.read_text(encoding="utf-8"))
+                summary = dict(data.get("summary") or {})
+            except (OSError, ValueError, json.JSONDecodeError):
+                pass
+            runs.append({
+                "run": path.name,
+                "path": str(report),
+                "modified": time.strftime("%Y-%m-%d %H:%M",
+                                          time.localtime(report.stat().st_mtime)),
+                "summary": summary,
+            })
+    if args.as_json:
+        _json(runs)
+        return 0
+    if not runs:
+        print(f"no cascade runs in {CASCADE_RUNS}")
+        return 0
+    rows = []
+    for row in runs:
+        summary = row["summary"]
+        tasks = summary.get("tasks", "-")
+        acc = summary.get("cascade_accuracy")
+        esc = summary.get("escalation_rate")
+        mean = summary.get("cascade_mean_ms", summary.get("scion_mean_ms"))
+        rows.append([
+            row["run"], tasks,
+            f"{float(acc):.1%}" if isinstance(acc, (int, float)) else "-",
+            f"{float(esc):.1%}" if isinstance(esc, (int, float)) else "-",
+            f"{float(mean):.0f}" if isinstance(mean, (int, float)) else "-",
+            row["modified"],
+        ])
+    _table(["RUN", "TASKS", "CASCADE", "ESCALATE", "MEAN MS", "MODIFIED"], rows)
+    return 0
+
+
+def cmd_cascade_report(args: argparse.Namespace) -> int:
+    name = str(args.run)
+    if Path(name).name != name or name in ("", ".", ".."):
+        print(f"hive cascade report: invalid run name {name!r}", file=sys.stderr)
+        return 2
+    path = CASCADE_RUNS / name / "report.json"
+    if not path.is_file():
+        print(f"hive cascade report: no report at {path}", file=sys.stderr)
+        return 1
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"hive cascade report: cannot read {path}: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(data)
+    else:
+        _json(dict(data.get("summary") or {}))
+    return 0
+
+
+def cmd_cascade_run(args: argparse.Namespace) -> int:
+    if not CASCADE_RUNNER.is_file():
+        print(f"hive cascade run: runner not found at {CASCADE_RUNNER}",
+              file=sys.stderr)
+        return 1
+    forwarded = list(args.args)
+    if forwarded and forwarded[0] == "--":
+        forwarded = forwarded[1:]
+    command = [sys.executable, str(CASCADE_RUNNER), *forwarded]
+    try:
+        return int(subprocess.call(command, cwd=str(REPO_ROOT)))
+    except OSError as exc:
+        print(f"hive cascade run: cannot start the runner: {exc}", file=sys.stderr)
+        return 1
+
+
+# ---------------------------------------------------------------------------
 # backends / doctor / config / version
 # ---------------------------------------------------------------------------
 
@@ -968,6 +1060,27 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--json", action="store_true", dest="as_json")
     sv.set_defaults(func=cmd_stacks_validate)
 
+    cascade = sub.add_parser(
+        "cascade", help="the verification / repair / escalation runner")
+    cascade_sub = cascade.add_subparsers(dest="cascade_command", metavar="<action>",
+                                         required=True)
+    cruns = cascade_sub.add_parser("runs", help="list recorded cascade runs")
+    cruns.add_argument("--json", action="store_true", dest="as_json")
+    cruns.set_defaults(func=cmd_cascade_runs)
+
+    creport = cascade_sub.add_parser("report", help="print one run's report")
+    creport.add_argument("run", help="run directory name")
+    creport.add_argument("--json", action="store_true", dest="as_json",
+                         help="the full report instead of the summary")
+    creport.set_defaults(func=cmd_cascade_report)
+
+    crun = cascade_sub.add_parser(
+        "run", add_help=False,
+        help="run the cascade runner (all arguments are forwarded)")
+    crun.add_argument("args", nargs=argparse.REMAINDER,
+                      help="arguments for experiments.cascade.run_cascade")
+    crun.set_defaults(func=cmd_cascade_run)
+
     backends = sub.add_parser("backends", help="server builds declared and installed")
     backends.add_argument("--json", action="store_true", dest="as_json")
     backends.set_defaults(func=cmd_backends)
@@ -993,8 +1106,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    raw = list(sys.argv[1:] if argv is None else argv)
+    # `cascade run` is a pass-through: the runner owns its argument surface, so
+    # do not let argparse reject its flags (including --help) before forwarding.
+    if len(raw) >= 2 and raw[0] == "cascade" and raw[1] == "run":
+        return cmd_cascade_run(argparse.Namespace(args=raw[2:]))
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw)
     if not getattr(args, "func", None):
         parser.print_help(sys.stderr)
         return 2
