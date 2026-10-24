@@ -30,7 +30,7 @@ Hive launches one process per tier from `tools/backends/<backend>/llama-server`.
 
 ```bash
 scripts/install_amd_engine.sh          # builds/links the ROCm engine as backend "rocm"
-.venv/bin/hive serve --backends        # what is declared, what is installed
+.venv/bin/hive backends                # what is declared, what is installed
 ```
 
 Expected shape (this box):
@@ -57,6 +57,15 @@ fail at load time.
 # two cards: split the model across both, write the stack for later
 .venv/bin/hive serve --model TheBloke/Some-Model-GGUF:model.Q4_K_M.gguf --cards 2 --save two-card
 .venv/bin/hive serve two-card
+
+# a local GGUF you already downloaded
+.venv/bin/hive serve --model /models/model.Q4_K_M.gguf --cards 1
+
+# background: returns when the endpoint answers
+.venv/bin/hive serve two-card --detach
+.venv/bin/hive status
+.venv/bin/hive logs two-card --tier face
+.venv/bin/hive stop two-card
 ```
 
 `--cards 2` writes:
@@ -71,6 +80,8 @@ fail at load time.
 - `ts` is the tensor split, proportional to VRAM (`1,1` for equal cards).
 - `--devices 1` pins one specific card; `--ctx` sets the context.
 - The display card is allowed but warned about: the engine and the desktop will fight for VRAM.
+- A `repo:file` model is downloaded into the models library before the stack is applied; the first serve prints
+  progress on stderr. `HF_TOKEN` is used for gated repos.
 
 Or write the stack by hand (`stacks/my.json`) and run `hive serve stacks/my.json`; `--once` applies, prints the
 endpoints, and unloads — a smoke test.
@@ -78,6 +89,8 @@ endpoints, and unloads — a smoke test.
 ## 4. Check it
 
 ```bash
+.venv/bin/hive status                  # endpoints, ctx, backend, up/down
+.venv/bin/hive doctor                  # cards, backends, paths, ports
 curl -s http://127.0.0.1:1234/v1/models | head -c 400
 curl -s http://127.0.0.1:1234/v1/chat/completions \
   -H 'Content-Type: application/json' \
@@ -115,6 +128,8 @@ not the starting point.
 | desktop stutter | the tier is pinned to the display card; use `--devices 1` |
 | endpoint answers from the wrong model | add `expect_model` to the tier; `apply` refuses a mismatch |
 | `--cards 2 but only 1 GPU detected` | `harness.hardware` reads amdgpu sysfs; check `rocminfo` and `HIP_VISIBLE_DEVICES` |
+| a detached serve will not stop | `hive stop <name> --force`; `hive status` shows whether the PID still matches |
+| a load failed after the endpoint was up | `hive logs <name> --tier <role>` — the engine's startup error is in that file |
 
 ## 8. Notes from a sanitized tree
 

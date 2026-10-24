@@ -500,17 +500,28 @@ def stacks_dir(root: str | Path | None = None) -> Path:
 
 def stack_path(name: str, *, root: str | Path | None = None) -> Path:
     """Path of ``stacks/<name>.json`` (rejects path traversal in ``name``)."""
-    return stacks_dir(root) / f"{_check_name(name)}.json"
+    return stack_path_in(name, stacks_dir(root))
+
+
+def stack_path_in(name: str, directory: str | Path) -> Path:
+    """Path of ``<directory>/<name>.json`` (rejects path traversal)."""
+    return Path(directory).expanduser() / f"{_check_name(name)}.json"
 
 
 def load_stack(name: str, *, root: str | Path | None = None) -> Stack:
-    """Read and shape-validate one saved stack.
+    """Read one stack from ``<root>/stacks``, shape-validated."""
+    return load_stack_in(name, stacks_dir(root))
 
-    Raises ``FileNotFoundError`` when absent and ``ValueError`` when the file
-    is malformed; it does not run residency validation (that is
-    ``residency.plan_residency``).
+
+def load_stack_in(name: str, directory: str | Path) -> Stack:
+    """Read and shape-validate ``<directory>/<name>.json``.
+
+    ``directory`` is the stack directory itself (the CLI's ``--stacks-dir``),
+    not a repo root.  Raises ``FileNotFoundError`` when absent and
+    ``ValueError`` when the file is malformed; it does not run residency
+    validation (that is ``residency.plan_residency``).
     """
-    path = stack_path(name, root=root)
+    path = stack_path_in(name, directory)
     try:
         raw = path.read_text(encoding="utf-8")
     except FileNotFoundError:
@@ -532,11 +543,16 @@ def load_stack(name: str, *, root: str | Path | None = None) -> Stack:
 
 
 def list_stacks(*, root: str | Path | None = None) -> list[dict[str, Any]]:
-    """Saved-stack summaries for ``GET /v1/stacks``.
+    """Saved-stack summaries for ``GET /v1/stacks`` (root semantics)."""
+    return list_stacks_in(stacks_dir(root))
+
+
+def list_stacks_in(directory: str | Path) -> list[dict[str, Any]]:
+    """Saved-stack summaries from one stack directory.
 
     One row per file: ``{"name", "tiers", "roles"}``, sorted by name.
     """
-    directory = stacks_dir(root)
+    directory = Path(directory).expanduser()
     if not directory.is_dir():
         return []
 
