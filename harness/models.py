@@ -102,7 +102,7 @@ BACKENDS = ("vulkan", "rocm", "cuda", "cpu", "sycl", "scion")
 
 def _binary_for_backend(backend: Optional[str]) -> Optional[Path]:
     """Per-backend llama-server binary under tools/backends/<backend>/, when
-    present (fetched via tools/fetch_backend.ps1). None when the backend is
+    present (fetched via `hive backends fetch`). None when the backend is
     unknown to the layout or its binary has not been fetched."""
     if not backend:
         return None
@@ -1462,7 +1462,7 @@ class LlamaServerManager:
 
         ``backend`` selects a per-backend llama-server binary from
         ``tools/backends/<backend>/`` (vulkan | rocm | cuda | cpu | sycl;
-        fetched via tools/fetch_backend.ps1). Unset/unknown falls back to the
+        fetched via `hive backends fetch`). Unset/unknown falls back to the
         default binary. ``embedding`` enables ``--embedding`` mode for
         embedding models (bge-m3, nomic-embed, etc. — uses ``--pooling``
         when provided)."""

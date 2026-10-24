@@ -188,10 +188,10 @@ def test_load_unknown_backend_and_missing_backend_binary(tmp_path):
 
     with pytest.raises(RuntimeError) as exc:
         mgr.load(model="x", backend="rocm")
-    # either the backend binary is missing (fetch_backend error) or the
-    # model resolution fires first (if the rocm binary happens to exist)
+    # either the backend binary is missing (the fetch hint) or the model
+    # resolution fires first (if the rocm binary happens to exist)
     error = str(exc.value)
-    assert ("fetch_backend" in error or "HARNESS_LLAMA_SERVER" in error
+    assert ("hive backends fetch" in error or "HARNESS_LLAMA_SERVER" in error
             or "neither a local file" in error)
 
 
