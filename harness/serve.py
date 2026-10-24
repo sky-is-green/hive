@@ -297,6 +297,15 @@ def _prepare(args: argparse.Namespace,
         except ValueError as exc:
             raise ValueError(str(exc)) from None
         backend = _pick_backend(devices, args.backend)
+        if args.backend:
+            try:
+                chosen = backend_manifest.resolve(args.backend)
+            except KeyError as exc:
+                raise ValueError(str(exc)) from None
+            if not chosen.get("installed"):
+                raise ValueError(
+                    f"backend {args.backend!r} is not installed "
+                    f"({chosen.get('binary')}); run `hive backends`")
         # validate the flags before a multi-GB download
         if model != "local":
             _ensure_hf_model(model, file, args.models_dir)

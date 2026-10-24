@@ -283,6 +283,18 @@ class _FakeManager:
         return {"ok": True, "unloaded": ["face"]}
 
 
+def test_serve_rejects_an_unknown_backend_before_download(tmp_path, monkeypatch,
+                                                          capsys):
+    monkeypatch.setattr(serve, "LlamaServerManager", _FakeModels)
+    monkeypatch.setattr(serve, "StackManager", _FakeManager)
+    model = tmp_path / "little.gguf"
+    model.write_bytes(b"GGUF")
+    rc = serve.main(["--model", str(model), "--cards", "0",
+                     "--backend", "no-such-backend", "--once"])
+    assert rc == 2
+    assert "no-such-backend" in capsys.readouterr().err
+
+
 def test_serve_downloads_a_remote_model(tmp_path, monkeypatch, capsys):
     class _RemoteModels:
         def __init__(self, models_dir=None):
