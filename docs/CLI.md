@@ -63,12 +63,13 @@ rest remain scriptable and unchanged.
 
 ## Look and feel
 
-The palette is black and yellow throughout: bright yellow for headers, keys
-and selections, white for body text, grey for secondary detail, and red only
-for a failure.  A Hive ASCII wordmark is printed at startup (and on the
-interactive splash); there is no glyph in the middle of command output.  The
-static surface keeps the same rules and uses a spinner for the slow operations
-(`serve` startup, `stop`, a model import or library scan).
+The palette is the Studio's black and yellow throughout: `#FFDD00` for
+headers, keys and selections, `#FFB703` for amber/secondary emphasis, white for
+body text, grey for secondary detail, and red only for a failure.  A Hive ASCII
+wordmark is printed at startup (and on the interactive splash); there is no
+glyph in the middle of command output.  The static surface keeps the same rules
+and uses a spinner for the slow operations (`serve` startup, `stop`, a model
+import or library scan).
 
 Colour is automatic: it is used only on a terminal, and is disabled in a pipe,
 when `NO_COLOR` is set, or with `--no-color` (accepted before or after the
