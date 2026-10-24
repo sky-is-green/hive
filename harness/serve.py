@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from harness import backends as backend_manifest
-from harness import serve_state
+from harness import serve_state, termui
 from harness.hardware import linux_amd_devices
 from harness.models import LlamaServerManager
 from harness.stack.manager import StackManager
@@ -137,14 +137,16 @@ def _ensure_hf_model(model: str, file: str, models_dir: str | None) -> None:
     except ImportError:
         raise RuntimeError(
             "huggingface_hub is not installed; install it or pass a local .gguf")
-    print(f"downloading {model}:{file} ...", file=sys.stderr, flush=True)
+    print(termui.info(f"downloading {model}:{file} ...", stream=sys.stderr),
+          file=sys.stderr, flush=True)
     try:
         path = Path(hf_hub_download(
             repo_id=model, filename=file, local_dir=str(models_dir_path)))
     except Exception as exc:  # noqa: BLE001 - gated/network/disk are one line
         raise RuntimeError(f"cannot download {model}:{file}: {exc}") from exc
     size = path.stat().st_size / (1024 ** 3) if path.is_file() else 0.0
-    print(f"  {path} ({size:.2f} GiB)", file=sys.stderr, flush=True)
+    print(f"  {termui.dim(path, stream=sys.stderr)} ({size:.2f} GiB)",
+          file=sys.stderr, flush=True)
 
 
 def _stack_from_model(*, model: str, file: str, devices: list[dict], ctx: int,
@@ -423,16 +425,17 @@ def _detach(args: argparse.Namespace, stack: Stack, warnings: list[str]) -> int:
     deadline = time.monotonic() + max(10.0, float(args.timeout) + 15.0)
     record: dict | None = None
     try:
-        while time.monotonic() < deadline:
-            if proc.poll() is not None:
-                break
-            try:
-                record = serve_state.read_record(name)
-            except ValueError:
-                record = None
-            if record and int(record.get("pid") or 0) == proc.pid:
-                break
-            time.sleep(0.2)
+        with termui.spinner(f"starting {name}"):
+            while time.monotonic() < deadline:
+                if proc.poll() is not None:
+                    break
+                try:
+                    record = serve_state.read_record(name)
+                except ValueError:
+                    record = None
+                if record and int(record.get("pid") or 0) == proc.pid:
+                    break
+                time.sleep(0.2)
     except KeyboardInterrupt:
         serve_state.terminate(proc.pid, force=True, timeout=5.0)
         print("hive serve: interrupted while starting; stopped", file=sys.stderr)
@@ -444,10 +447,11 @@ def _detach(args: argparse.Namespace, stack: Stack, warnings: list[str]) -> int:
             reason = f"did not become ready within {deadline - time.monotonic():.0f}s"
         else:
             reason = f"exited with code {proc.returncode}"
-        print(f"hive serve: {name!r} {reason}; log: {log}", file=sys.stderr)
+        print(termui.fail(f"{name!r} {reason}", stream=sys.stderr), file=sys.stderr)
+        print(f"  {termui.dim('log')}  {log}", file=sys.stderr)
         try:
             for line in serve_state.tail_lines(log, 20):
-                print(f"  {line}", file=sys.stderr)
+                print(f"  {termui.dim(line, stream=sys.stderr)}", file=sys.stderr)
         except OSError:
             pass
         return 1
@@ -455,11 +459,11 @@ def _detach(args: argparse.Namespace, stack: Stack, warnings: list[str]) -> int:
     if args.as_json:
         print(json.dumps(record, indent=2, sort_keys=True))
         return 0
-    print(f"serving {name!r} (pid {record['pid']}, detached)")
+    print(termui.ok(f"serving {name!r} · pid {record['pid']} · detached"))
     _print_table(list(record.get("tiers") or []), args.host)
-    print(f"  log  {log}")
+    print(f"  {termui.dim('log')}  {log}")
     for warning in list(warnings) + list(record.get("warnings") or []):
-        print(f"  ! {warning}")
+        print(f"  {termui.warn(warning)}")
     return 0
 
 
@@ -483,9 +487,9 @@ def _print_table(rows: list[dict[str, Any]], host: str) -> None:
         ctx = row.get("ctx")
         backend = row.get("backend") or ""
         extra = " ".join(str(x) for x in (backend, f"ctx {ctx}" if ctx else "") if x)
-        print(f"  {role:<{width}}  {endpoint}")
+        print(f"  {termui.accent(role.ljust(width))}  {endpoint}")
         if extra:
-            print(f"  {'':<{width}}  {extra}")
+            print(f"  {'':<{width}}  {termui.dim(extra)}")
 
 
 def _record(args: argparse.Namespace, stack: Stack, status: dict[str, Any],
@@ -515,22 +519,26 @@ def run(args: argparse.Namespace) -> int:
         if args.as_json:
             print(json.dumps(rows, indent=2, sort_keys=True))
         else:
-            for row in rows:
-                state = "installed" if row["installed"] else "-"
-                accel = ",".join(row.get("accelerators") or [])
-                print(f"  {row['name']:<8} {state:<10} {accel:<20} {row.get('label', '')}")
+            termui.header("backends")
+            termui.table(["NAME", "STATUS", "ACCELERATORS", "LABEL"],
+                     [[row["name"], "installed" if row["installed"] else "-",
+                       ",".join(row.get("accelerators") or []),
+                       row.get("label", "")] for row in rows])
         return 0
 
     if args.list:
-        rows = list_stacks_in(_stacks_directory(args.stacks_dir))
+        directory = _stacks_directory(args.stacks_dir)
+        rows = list_stacks_in(directory)
         if args.as_json:
             print(json.dumps(rows, indent=2, sort_keys=True))
-        elif not rows:
-            print("no saved stacks")
         else:
-            for row in rows:
-                roles = ",".join(row.get("roles", []))
-                print(f"  {row.get('name', '?'):<24} {roles}")
+            termui.header("stacks", str(directory))
+            if not rows:
+                print(f"  {termui.dim('no saved stacks')}")
+            else:
+                termui.table(["NAME", "ROLES"],
+                         [[row.get("name", "?"),
+                           ",".join(row.get("roles", []))] for row in rows])
         return 0
 
     parser = _standalone_parser()
@@ -569,7 +577,8 @@ def run(args: argparse.Namespace) -> int:
     manager = StackManager(models, stacks_root=args.stacks_dir)
 
     try:
-        manager.apply(stack)
+        with termui.spinner(f"applying {stack.name}"):
+            manager.apply(stack)
     except RuntimeError as exc:
         print(f"hive serve: {exc}", file=sys.stderr)
         return 1
@@ -588,21 +597,25 @@ def run(args: argparse.Namespace) -> int:
     if args.as_json:
         print(json.dumps(record or status, indent=2, sort_keys=True))
     else:
-        print(f"stack {stack.name!r} applied")
+        print(termui.ok(f"stack {stack.name!r} applied"))
         _print_table(rows, args.host)
         for warning in warnings + list(status.get("warnings", []) or []):
-            print(f"  ! {warning}")
+            print(f"  {termui.warn(warning)}")
         if record is not None:
-            print(f"  name {record['name']}  pid {record['pid']}  ({record['mode']})")
+            print(f"  {termui.dim('name')} {record['name']}  "
+                  f"{termui.dim('pid')} {record['pid']}  "
+                  f"{termui.dim(record['mode'])}")
             if args._child:
-                print(f"  log  {record['log_path']}")
+                print(f"  {termui.dim('log')}  {record['log_path']}")
 
     if args.once:
         manager.unload()
+        if not args.as_json:
+            print(f"  {termui.dim('unloaded')}")
         return 0
 
     if not args.as_json:
-        print("serving; Ctrl-C to stop", flush=True)
+        print(f"  {termui.accent('serving')}  {termui.dim('Ctrl-C to stop')}", flush=True)
 
     def _stop(signum: int, frame: Any) -> None:
         raise KeyboardInterrupt

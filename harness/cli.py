@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Any
 
 from harness import backends as backend_manifest
-from harness import serve, serve_state
+from harness import serve, serve_state, termui
 from harness.hardware import linux_amd_devices
 from harness.models import LlamaServerManager
 from harness.stack import schema
@@ -74,20 +74,7 @@ def _json(value: Any) -> None:
 
 
 def _table(headers: list[str], rows: list[list[Any]], indent: str = "  ") -> None:
-    data = [[("" if cell is None else str(cell)) for cell in row] for row in rows]
-    widths = []
-    for index, header in enumerate(headers):
-        width = len(header)
-        for row in data:
-            if index < len(row):
-                width = max(width, len(row[index]))
-        widths.append(width)
-    print(indent + "  ".join(
-        header.ljust(widths[index]) for index, header in enumerate(headers)).rstrip())
-    for row in data:
-        cells = [row[index] if index < len(row) else "" for index in range(len(headers))]
-        print(indent + "  ".join(
-            cells[index].ljust(widths[index]) for index in range(len(headers))).rstrip())
+    termui.table(headers, rows, indent=indent)
 
 
 def _models_manager(args: argparse.Namespace, *,
@@ -174,8 +161,45 @@ def _port_free(host: str, port: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# status / stop / logs
+# landing page / status / stop / logs
 # ---------------------------------------------------------------------------
+
+def cmd_home(_args: argparse.Namespace | None = None) -> int:
+    """A bare ``hive``: the product's front door, not a usage error."""
+    records = serve_state.list_records()
+    running = sum(1 for record in records if serve_state.pid_matches(record))
+    stale = len(records) - running
+    try:
+        manager = _models_manager(argparse.Namespace(models_dir=None))
+        files = list(manager.models_dir.rglob("*.gguf"))
+        total = sum(path.stat().st_size for path in files) / (1024 ** 3)
+        model_text = f"{len(files)} · {total:.1f} GiB"
+    except OSError:
+        model_text = "unavailable"
+    try:
+        stacks = len(schema.list_stacks_in(_stacks_directory(None)))
+    except (OSError, ValueError):
+        stacks = 0
+    try:
+        installed = [row["name"] for row in backend_manifest.rows()
+                     if row["installed"]]
+    except (OSError, ValueError):
+        installed = []
+    run_text = "none" if not running else f"{running} running"
+    if stale:
+        run_text += f" · {stale} stale"
+    termui.banner(
+        _version(),
+        [("running", run_text),
+         ("models", model_text),
+         ("stacks", str(stacks)),
+         ("backends", ", ".join(installed) or "none")],
+        ["hive doctor",
+         "hive serve peer-2tier --detach",
+         "hive status",
+         "hive models list"])
+    return 0
+
 
 def cmd_status(args: argparse.Namespace) -> int:
     records = serve_state.list_records()
@@ -220,37 +244,41 @@ def cmd_status(args: argparse.Namespace) -> int:
         return 0
 
     if not views:
-        print("nothing running (start one with: hive serve <stack>)")
+        print(f"  {termui.dim('nothing running · start one with: hive serve <stack>')}")
         if pruned:
-            print(f"pruned stale record(s): {', '.join(pruned)}")
+            print(f"  {termui.ok('pruned ' + ', '.join(pruned))}")
         return 0
+    termui.header("serves")
     for view in views:
         name = view.get("name", "?")
-        head = (f"{name}  pid {view['pid']}  {view.get('mode') or 'foreground'}  "
-                f"up {serve_state.format_duration(view['uptime_s'])}")
-        if view["state"] != "running":
-            head += "  STALE (process is gone or the pid was reused)"
-        print(head)
+        state = (termui.ok("running") if view["state"] == "running"
+                 else termui.fail("stale"))
+        print(f"  {termui.accent(name)}  {termui.dim('pid')} {view['pid']}  "
+              f"{termui.dim(view.get('mode') or 'foreground')}  "
+              f"{termui.dim('up ' + serve_state.format_duration(view['uptime_s']))}  "
+              f"{state}")
         for tier in view["tiers"]:
             endpoint = _tier_endpoint(view, tier)
             probe = tier.get("probe") or {}
-            status = "-"
             if probe.get("up"):
-                status = "up"
+                status = termui.ok("up")
             elif probe:
-                status = "down"
+                status = termui.fail("down")
+            else:
+                status = termui.dim("-")
             ctx = tier.get("ctx") or ""
             backend = tier.get("backend") or ""
-            print(f"  {str(tier.get('role') or '?'):<8} {endpoint:<42} "
-                  f"ctx {str(ctx):<6} {backend:<8} {status}")
+            role = str(tier.get("role") or "?")
+            print(f"  {termui.accent(role.ljust(8))} {endpoint:<42} "
+                  f"{termui.dim(f'ctx {ctx:<6} {backend:<8}')} {status}")
         if view.get("log_path"):
-            print(f"  log  {view['log_path']}")
+            print(f"  {termui.dim('log')}  {view['log_path']}")
         elif view["state"] == "running":
-            print("  log  (foreground; logs are on its terminal)")
+            print(f"  {termui.dim('log')}  (foreground; logs are on its terminal)")
         if view["state"] != "running":
-            print(f"  prune with: hive status --prune")
+            print(f"  {termui.warn('prune with: hive status --prune')}")
     if pruned:
-        print(f"pruned stale record(s): {', '.join(pruned)}")
+        print(f"  {termui.ok('pruned ' + ', '.join(pruned))}")
     return 0
 
 
@@ -271,7 +299,7 @@ def cmd_stop(args: argparse.Namespace) -> int:
     elif len(records) == 1:
         targets = records
     elif not records:
-        print("nothing running")
+        print(f"  {termui.dim('nothing running')}")
         return 0
     else:
         names = ", ".join(str(record.get("name")) for record in records)
@@ -280,7 +308,7 @@ def cmd_stop(args: argparse.Namespace) -> int:
         return 2
 
     if not targets:
-        print("nothing running")
+        print(f"  {termui.dim('nothing running')}")
         return 0
 
     results: list[dict] = []
@@ -292,8 +320,9 @@ def cmd_stop(args: argparse.Namespace) -> int:
             results.append({"name": name, "stopped": True, "state": "stale",
                             "message": "removed stale record (process was gone)"})
             continue
-        ok, message = serve_state.terminate(
-            record["pid"], force=args.force, timeout=args.timeout)
+        with termui.spinner(f"stopping {name}"):
+            ok, message = serve_state.terminate(
+                record["pid"], force=args.force, timeout=args.timeout)
         if ok:
             serve_state.remove_record(name)
         else:
@@ -305,8 +334,10 @@ def cmd_stop(args: argparse.Namespace) -> int:
         _json({"ok": not failed, "serves": results})
     else:
         for result in results:
-            print(f"{'stopped' if result['stopped'] else 'could not stop'} "
-                  f"{result['name']}: {result['message']}")
+            detail = "" if result["message"] in ("stopped", "killed") else (
+                f" · {result['message']}")
+            text = f"{result['name']}{detail}"
+            print(f"  {termui.ok('stopped ' + text) if result['stopped'] else termui.fail('could not stop ' + text)}")
     return 1 if failed else 0
 
 
@@ -358,7 +389,8 @@ def cmd_logs(args: argparse.Namespace) -> int:
     if not args.follow:
         return 0
 
-    print(f"-- following {path} (Ctrl-C to stop) --", file=sys.stderr)
+    print(termui.dim(f"-- following {path} (Ctrl-C to stop) --",
+                     stream=sys.stderr), file=sys.stderr)
     try:
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             handle.seek(0, os.SEEK_END)
@@ -368,7 +400,8 @@ def cmd_logs(args: argparse.Namespace) -> int:
                     print(line, end="", flush=True)
                     continue
                 if not serve_state.pid_alive(int(record["pid"])):
-                    print("-- the serve has stopped --", file=sys.stderr)
+                    print(termui.dim("-- the serve has stopped --",
+                                     stream=sys.stderr), file=sys.stderr)
                     break
                 time.sleep(0.3)
     except KeyboardInterrupt:
@@ -385,20 +418,25 @@ def cmd_logs(args: argparse.Namespace) -> int:
 
 def cmd_models_list(args: argparse.Namespace) -> int:
     manager = _models_manager(args)
-    rows = manager.list_local(use_cache=False)
+    if args.as_json:
+        rows = manager.list_local(use_cache=False)
+    else:
+        with termui.spinner("reading the model library"):
+            rows = manager.list_local(use_cache=False)
     if args.as_json:
         _json(rows)
         return 0
+    termui.header("models", str(manager.models_dir))
     if not rows:
-        print(f"no GGUF models in {manager.models_dir}")
-        print("  download one with: hive models download <repo>[:<file>]")
+        print(f"  {termui.dim('no GGUF models here yet')}")
+        print(f"  {termui.info('hive models download <repo>[:<file>]')}")
         return 0
     _table(
         ["NAME", "SIZE", "QUANT", "CTX", "FILE"],
         [[row.get("name"), f"{float(row.get('size_gb') or 0):.2f} GiB",
           row.get("quantization") or "-", row.get("context_length") or "-",
           row.get("file")] for row in rows])
-    print(f"\n  {len(rows)} model(s) in {manager.models_dir}")
+    print(f"\n  {termui.dim(f'{len(rows)} model(s)')}")
     return 0
 
 
@@ -412,8 +450,9 @@ def cmd_models_search(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(rows)
         return 0
+    termui.header("models · search", args.query or "popular")
     if not rows:
-        print("no GGUF repos matched")
+        print(f"  {termui.dim('no GGUF repos matched')}")
         return 0
     _table(["REPO", "DOWNLOADS", "LIKES", "MODIFIED", "LICENSE"],
            [[row.get("repo"), row.get("downloads"), row.get("likes"),
@@ -431,8 +470,9 @@ def cmd_models_files(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(rows)
         return 0
+    termui.header("models · files", args.repo)
     if not rows:
-        print(f"{args.repo} has no .gguf files")
+        print(f"  {termui.dim(f'{args.repo} has no .gguf files')}")
         return 0
     _table(["FILE", "SIZE"], [[row.get("file"),
                                f"{float(row.get('size_gb') or 0):.2f} GiB"]
@@ -493,6 +533,8 @@ def cmd_models_download(args: argparse.Namespace) -> int:
     except ImportError:
         print("hive models download: huggingface_hub is not installed", file=sys.stderr)
         return 1
+    if not args.as_json:
+        print(termui.info(f"downloading {repo}:{file}"), file=sys.stderr, flush=True)
     try:
         path = Path(hf_hub_download(
             repo_id=repo, filename=file, revision=args.revision,
@@ -506,8 +548,8 @@ def cmd_models_download(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(payload)
     else:
-        print(f"downloaded {repo}:{file}")
-        print(f"  {path}  ({size:.2f} GiB)")
+        print(termui.ok(f"downloaded {repo}:{file}"))
+        termui.kv([("path", path), ("size", f"{size:.2f} GiB")])
     return 0
 
 
@@ -519,9 +561,9 @@ def cmd_models_import(args: argparse.Namespace) -> int:
         if args.as_json:
             _json(result)
         else:
-            print(f"linked {source} into {manager.models_dir}")
+            print(ui.ok(f"linked {source.name or source}"))
             for item in result.get("imported", [])[:20]:
-                print(f"  {item}")
+                print(f"  {ui.dim(item)}")
         return 0
     if not source.is_file():
         print(f"hive models import: no such file or folder: {source}", file=sys.stderr)
@@ -548,16 +590,19 @@ def cmd_models_import(args: argparse.Namespace) -> int:
                 dest.symlink_to(source)
                 how = "symlink"
             except OSError:
-                shutil.copy2(source, dest)
+                with termui.spinner(f"copying {source.name}"):
+                    shutil.copy2(source, dest)
                 how = "copy"
     else:
-        shutil.copy2(source, dest)
+        with termui.spinner(f"copying {source.name}"):
+            shutil.copy2(source, dest)
     payload = {"imported": dest.name, "path": str(dest), "linked": how != "copy",
                "how": how}
     if args.as_json:
         _json(payload)
     else:
-        print(f"imported {source.name} ({how}) -> {dest}")
+        print(termui.ok(f"imported {source.name} · {how}"))
+        print(f"  {termui.dim(dest)}")
     return 0
 
 
@@ -575,7 +620,7 @@ def cmd_models_remove(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(result)
     else:
-        print(f"removed {result['deleted']}")
+        print(termui.ok(f"removed {result['deleted']}"))
     return 0
 
 
@@ -589,8 +634,9 @@ def cmd_stacks_list(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(rows)
         return 0
+    termui.header("stacks", str(directory))
     if not rows:
-        print(f"no saved stacks in {directory}")
+        print(f"  {termui.dim('no saved stacks here yet')}")
         return 0
     _table(["NAME", "TIERS", "ROLES"],
            [[row.get("name"), row.get("tiers"),
@@ -668,15 +714,19 @@ def cmd_stacks_validate(args: argparse.Namespace) -> int:
         _json({"ok": ok, "stack": stack.name, "errors": errors,
                "warnings": warnings, "tiers": details})
         return 0 if ok else 1
-    print(f"stack {stack.name!r} ({len(stack.tiers)} tier(s))")
+    termui.header("stacks · validate", stack.name)
+    print(f"  {termui.dim(f'{len(stack.tiers)} tier(s)')}")
     for problem in problems:
-        print(f"  [fail] {problem}")
+        print(f"  {termui.fail(problem)}")
     for row in details:
-        mark = {"ok": "ok", "warn": "warn", "fail": "fail"}[row["status"]]
-        print(f"  [{mark:<4}] {row['role']:<8} {row['detail']}")
+        mark = {"ok": termui.ok, "warn": termui.warn, "fail": termui.fail}[row["status"]]
+        print(f"  {mark(str(row['role']).ljust(8))} {termui.dim(row['detail'])}")
+    for error in errors:
+        if error not in problems:
+            print(f"  {termui.fail(error)}")
     for warning in warnings:
-        print(f"  [warn] {warning}")
-    print("  ok" if ok else "  validation failed")
+        print(f"  {termui.warn(warning)}")
+    print(f"  {termui.ok('ok') if ok else termui.fail('validation failed')}")
     return 0 if ok else 1
 
 
@@ -709,8 +759,9 @@ def cmd_cascade_runs(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(runs)
         return 0
+    termui.header("cascade", str(CASCADE_RUNS))
     if not runs:
-        print(f"no cascade runs in {CASCADE_RUNS}")
+        print(f"  {termui.dim('no runs yet')}")
         return 0
     rows = []
     for row in runs:
@@ -747,8 +798,26 @@ def cmd_cascade_report(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(data)
     else:
-        _json(dict(data.get("summary") or {}))
+        termui.header("cascade · report", name)
+        summary = dict(data.get("summary") or {})
+        if not summary:
+            print(f"  {termui.dim('no summary in this report')}")
+            return 0
+        termui.kv([(key, _metric(key, value)) for key, value in summary.items()])
     return 0
+
+
+def _metric(key: str, value: object) -> str:
+    if isinstance(value, bool):
+        return str(value)
+    if isinstance(value, (int, float)):
+        if "rate" in key or "accuracy" in key:
+            return f"{float(value):.1%}"
+        if key.endswith("_ms"):
+            return f"{float(value):.0f} ms"
+        if isinstance(value, float):
+            return f"{float(value):.3f}"
+    return str(value)
 
 
 def cmd_cascade_run(args: argparse.Namespace) -> int:
@@ -776,6 +845,7 @@ def cmd_backends(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(rows)
         return 0
+    termui.header("backends")
     _table(["NAME", "STATUS", "ACCELERATORS", "BINARY", "LABEL"],
            [[row["name"], "installed" if row["installed"] else "-",
              ",".join(row.get("accelerators") or []), row.get("binary"),
@@ -873,15 +943,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                "summary": {"ok": len(checks) - len(failures) - len(warnings),
                            "warn": len(warnings), "fail": len(failures)}})
         return 0 if ok else 1
+    termui.header("doctor", f"{platform.system()} {platform.machine()}")
     width = max((len(check["name"]) for check in checks), default=0)
     for check in checks:
-        print(f"  [{check['status']:<4}] {check['name']:<{width}}  {check['detail']}")
+        mark = {"ok": termui.ok, "warn": termui.warn, "fail": termui.fail}[check["status"]]
+        print(f"  {mark(check['name'].ljust(width))}  {termui.dim(check['detail'])}")
+    print()
     if failures:
-        print(f"\n  {len(failures)} failure(s); fix them before serving")
+        print(f"  {termui.fail(f'{len(failures)} failure(s) · fix them before serving')}")
     elif args.strict and warnings:
-        print(f"\n  {len(warnings)} warning(s) (--strict)")
+        print(f"  {termui.warn(f'{len(warnings)} warning(s) · --strict')}")
+    elif warnings:
+        print(f"  {termui.warn(f'ready · {len(warnings)} warning(s)')}")
     else:
-        print("\n  ready" if not warnings else f"\n  ready ({len(warnings)} warning(s))")
+        print(f"  {termui.ok('ready')}")
     return 0 if ok else 1
 
 
@@ -908,10 +983,10 @@ def cmd_config(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(payload)
     else:
-        for key, value in payload.items():
-            if isinstance(value, list):
-                value = ", ".join(str(item) for item in value) or "-"
-            print(f"{key:<18} {value}")
+        termui.header("config")
+        termui.kv([(key, ", ".join(str(item) for item in value) or "-"
+                if isinstance(value, list) else value)
+               for key, value in payload.items()])
     return 0
 
 
@@ -921,7 +996,7 @@ def cmd_version(args: argparse.Namespace) -> int:
     if args.as_json:
         _json(payload)
     else:
-        print(f"hive {payload['hive']}")
+        print(f"{termui.accent('hive')} {payload['hive']}")
     return 0
 
 
@@ -949,6 +1024,8 @@ def build_parser() -> argparse.ArgumentParser:
             "every command accepts --json; run 'hive <command> --help' for details."),
     )
     parser.add_argument("--version", action="version", version=f"hive {_version()}")
+    parser.add_argument("--no-color", action="store_true",
+                        help="disable colour even on a TTY")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     serve.add_parser(sub)
@@ -1107,15 +1184,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
+    passthrough = len(raw) >= 2 and raw[0] == "cascade" and raw[1] == "run"
+    # Accept --no-color before or after the command, not only where argparse
+    # would look for a global option.
+    if not passthrough and "--no-color" in raw:
+        termui.set_color(False)
+        raw = [item for item in raw if item != "--no-color"]
     # `cascade run` is a pass-through: the runner owns its argument surface, so
     # do not let argparse reject its flags (including --help) before forwarding.
-    if len(raw) >= 2 and raw[0] == "cascade" and raw[1] == "run":
+    if passthrough:
         return cmd_cascade_run(argparse.Namespace(args=raw[2:]))
     parser = build_parser()
     args = parser.parse_args(raw)
     if not getattr(args, "func", None):
-        parser.print_help(sys.stderr)
-        return 2
+        return cmd_home(args)
     try:
         return int(args.func(args) or 0)
     except BrokenPipeError:  # pragma: no cover - `hive models list | head`
