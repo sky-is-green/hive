@@ -606,8 +606,16 @@ def _tier_validation(stack: schema.Stack, args: argparse.Namespace) -> tuple[lis
     manager = _models_manager(args)
     for tier in stack.tiers:
         row = {"role": tier.role, "status": "ok", "detail": ""}
+        launch_ok = True
+        if tier.launch:
+            repo = Path(str(tier.launch.get("repo") or "")).expanduser()
+            if str(repo) and not repo.exists():
+                launch_ok = False
+                errors.append(f"tier {tier.role!r}: launch repo {repo} does not exist")
+                row.update(status="fail", detail="launch repo missing")
         if tier.endpoint:
-            row["detail"] = f"endpoint {tier.endpoint}"
+            if launch_ok:
+                row["detail"] = f"endpoint {tier.endpoint}"
             details.append(row)
             continue
         backend_ok = True
@@ -638,11 +646,6 @@ def _tier_validation(stack: schema.Stack, args: argparse.Namespace) -> tuple[lis
                 errors.append(f"tier {tier.role!r}: model {tier.file!r} is not in "
                               f"{manager.models_dir}")
                 row.update(status="fail", detail="model missing")
-        if tier.launch:
-            repo = Path(str(tier.launch.get("repo") or "")).expanduser()
-            if str(repo) and not repo.exists():
-                errors.append(f"tier {tier.role!r}: launch repo {repo} does not exist")
-                row.update(status="fail", detail="launch repo missing")
         details.append(row)
     return errors, warnings, details
 
