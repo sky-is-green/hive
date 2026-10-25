@@ -9,9 +9,12 @@ without mixing them into one unmaintainable settings blob.
 The first slice is live in [`harness/state_store.py`](../harness/state_store.py):
 `StatePaths`, per-file `flock`, `tmp → fsync → os.replace`, schema checks,
 corrupt-file quarantine, atomic audit JSONL and redaction. It owns
-`settings/controller.json`, `profiles/*.json` and `audit/settings-*.jsonl`.
-The legacy `studio_settings.json` migration, security/tool grants, sandbox and
-browser grants are still design-only.
+`settings/controller.json`, `profiles/*.json`,
+`profiles/controller-traces-*.jsonl` and `audit/settings-*.jsonl`.
+The controller trace stores request features, the proposal, and lifecycle
+outcomes, never the raw request text. The legacy `studio_settings.json`
+migration, security/tool grants, sandbox and browser grants are still
+design-only.
 
 ## Principles
 
@@ -48,6 +51,7 @@ $HIVE_STATE_DIR/                    # default: $HIVE_HOME/harness_state
   profiles/
     hardware-<id>.json              # machine capability snapshot
     recommendations-<id>.json       # generated proposals + evidence
+    controller-traces-YYYYMM.jsonl  # privacy-preserving proposal/outcome log
   controllers/
     <name>/
       manifest.json
@@ -93,6 +97,7 @@ The same path handles the older `settings.json` naming if found.
 | Browser site grants | `settings/browser-grants.json` | until revoked/expiry | user |
 | Hardware profile | `profiles/hardware-*.json` | until rescan | machine |
 | Recommendations | `profiles/recommendations-*.json` | generated; auditable | system |
+| Controller traces | `profiles/controller-traces-YYYYMM.jsonl` | append-only | system |
 | Controller config | `settings/controller.json` | until changed | user |
 | Controller artifacts | `controllers/<name>/` | until removed | user/system |
 | Tool audit | `audit/tool-calls-YYYYMM.jsonl` | append-only | system |

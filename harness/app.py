@@ -4722,6 +4722,7 @@ def create_app(
                 desired_ctx=(int(body["desired_ctx"])
                              if body.get("desired_ctx") is not None else None),
                 kv_type=str(body.get("kv_type") or "q8_0"),
+                request=body.get("request"),
             )
         except (ControllerError, OSError, ValueError, TypeError) as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -4766,6 +4767,26 @@ def create_app(
             raise HTTPException(403, str(exc)) from exc
         except ControllerError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/v1/controller/outcome")
+    def controller_outcome(body: dict[str, Any] = Body(default={})):
+        """Append an accepted/rejected/wrong label to a proposal trace."""
+        from harness.controller.service import ControllerError
+
+        proposal_id = str(body.get("proposal_id") or "").strip()
+        outcome = str(body.get("outcome") or "").strip()
+        if not proposal_id or not outcome:
+            raise HTTPException(422, "proposal_id and outcome are required")
+        metrics = body.get("metrics")
+        if metrics is not None and not isinstance(metrics, dict):
+            raise HTTPException(422, "metrics must be an object")
+        try:
+            _controller().record_outcome(proposal_id, outcome,
+                                         metrics=metrics or {})
+        except ControllerError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"ok": True, "proposal_id": proposal_id, "outcome": outcome,
+                "metrics": metrics or {}}
 
     @app.get("/v1/encoder/status")
     def encoder_status(model: Optional[str] = Query(default=None),

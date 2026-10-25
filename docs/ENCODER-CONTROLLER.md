@@ -289,7 +289,10 @@ The deterministic rung is now wired end to end:
 hive profile scan --consent hardware
 hive profile show
 hive controller propose --model models/gguf/some-model.gguf --ctx 16384
+hive controller propose --model models/gguf/some-model.gguf \
+  --request "How do I profile a long coding task?"
 hive controller apply <proposal-id> --yes
+hive controller outcome <proposal-id> accepted --metric latency_ms=42
 hive controller revert --yes
 ```
 
@@ -310,8 +313,17 @@ appends a redacted audit event. Reverting removes keys that did not exist before
 the apply, rather than leaving `null` values behind.
 
 The Studio's **Global** tab has the same flow: consent checkbox → scan →
-optional model size/context → propose → review evidence/warnings → apply with a
-confirmation dialog → revert.
+optional model size/context → optional request text → propose → review
+evidence/warnings → apply with a confirmation dialog → revert.
+
+An optional request goes through the model-free
+[`features.py`](../harness/controller/features.py) baseline (intent, context
+pressure, risk) and can lower the context cap for a short chat or raise it for
+code/reasoning. Only the feature dictionary and proposal are written to the
+controller trace, never the raw request text. The trace is append-only
+`profiles/controller-traces-YYYYMM.jsonl`; `controller outcome` records the
+human/evaluation label and metrics, and apply/revert append lifecycle events,
+so later E1 work has privacy-preserving examples to label.
 
 The encoder boundary is separate from E0. `hive encoder status` inspects the
 configured model without loading it; `hive encoder embed "text"` loads the
@@ -332,6 +344,8 @@ Already present:
 - `StatePaths`/`JsonStore` atomic, locked, schema-versioned controller state;
 - a consent-gated hardware profile store;
 - the deterministic E0 recommender and allowlist;
+- the model-free request-feature baseline and request-aware context cap;
+- privacy-preserving proposal/lifecycle traces for E1 data collection;
 - confirmed apply, rollback presence tracking, and the settings audit log;
 - the lazy local `SentenceTransformerEncoder` adapter;
 - CLI, API and Studio Global-tab surfaces for the E0 flow.

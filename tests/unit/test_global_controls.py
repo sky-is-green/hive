@@ -43,7 +43,10 @@ def test_the_controller_panel_is_manual_and_explicit(client):
     assert "function proposeController(" in page
     assert "function applyController(" in page
     assert "function revertController(" in page
+    assert "function outcomeController(" in page
+    assert 'id="ctrl-request"' in page
     assert "/v1/controller/apply" in page
+    assert "/v1/controller/outcome" in page
     assert "confirm=true" in page or "confirm: true" in page
 
 

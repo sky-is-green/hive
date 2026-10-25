@@ -74,6 +74,8 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C13 | `hive stop does-not-exist` | Clear error and exit 1; no signal to the wrong process. | |
 | C14 | `hive profile scan --consent hardware --state-dir /tmp/hive-ui-gate` | Saves a local profile; prints CPU/RAM/cards; makes no settings change. | |
 | C15 | `hive controller propose --state-dir /tmp/hive-ui-gate --model-gib 12 --native-ctx 32768 --ctx 16384` | Proposal only; allowlisted keys, evidence, warnings; no apply. | |
+| C15b | Add `--request "How do I test this?"` to C15 | Request features appear; raw request text is absent from the controller trace. | |
+| C15c | `hive controller outcome <id> accepted --metric latency_ms=42` | Outcome and metric append to the trace; proposal record is unchanged. | |
 | C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |

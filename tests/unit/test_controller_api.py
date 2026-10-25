@@ -64,9 +64,18 @@ def test_propose_apply_requires_confirm_and_rolls_back(client):
     client.post("/v1/profiles/scan",
                 json={"consent": "hardware", "profile_id": "local-test"})
     r = client.post("/v1/controller/propose", json={
-        "model_gib": 12, "native_ctx": 32768, "desired_ctx": 16384})
+        "model_gib": 12, "native_ctx": 32768, "desired_ctx": 16384,
+        "request": "How do I test this?"})
     assert r.status_code == 200
-    proposal_id = r.json()["proposal"]["id"]
+    proposal = r.json()["proposal"]
+    assert proposal["request_features"]["intent"] == "qa"
+    proposal_id = proposal["id"]
+
+    labelled = client.post("/v1/controller/outcome", json={
+        "proposal_id": proposal_id, "outcome": "accepted",
+        "metrics": {"latency_ms": 12}})
+    assert labelled.status_code == 200
+    assert labelled.json()["outcome"] == "accepted"
 
     denied = client.post("/v1/controller/apply", json={"proposal_id": proposal_id})
     assert denied.status_code == 403
