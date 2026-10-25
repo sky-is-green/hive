@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import platform
+import shlex
 import shutil
 import socket
 import subprocess
@@ -1173,6 +1174,120 @@ def _add_stacks_dir(parser: argparse.ArgumentParser) -> None:
                         help="directory of stack files (default: <repo>/stacks)")
 
 
+def _normalize_help(parser: argparse.ArgumentParser) -> None:
+    """Fill the generic help missing from repeated ``--json`` flags.
+
+    The flags were added in many branches over time; this keeps their wording
+    identical without duplicating the string at every call site.  Explicit
+    help (for example ``stacks show``) is never overwritten.
+    """
+    seen: set[int] = set()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for child in action.choices.values():
+                if id(child) in seen:
+                    continue
+                seen.add(id(child))
+                _normalize_help(child)
+        elif "--json" in action.option_strings and not action.help:
+            action.help = "machine-readable JSON on stdout"
+
+
+def _action_schema(action: argparse.Action) -> dict[str, Any] | None:
+    if action.help == argparse.SUPPRESS:
+        return None
+    item: dict[str, Any] = {
+        "kind": "option" if action.option_strings else "argument",
+        "name": action.dest,
+        "flags": list(action.option_strings),
+        "help": action.help or "",
+    }
+    if action.nargs not in (None, 1):
+        item["nargs"] = action.nargs
+    if action.required:
+        item["required"] = True
+    if action.default not in (None, argparse.SUPPRESS):
+        item["default"] = action.default
+    choices = getattr(action, "choices", None)
+    if choices and not isinstance(action, argparse._SubParsersAction):
+        item["choices"] = list(choices)
+    if action.type in (int, float, str):
+        item["type"] = action.type.__name__
+    return item
+
+
+def _command_schema(parser: argparse.ArgumentParser,
+                    path: list[str]) -> dict[str, Any]:
+    """Describe a parser tree for agents and docs generators.
+
+    The shape is deliberately boring and stable: commands, options, arguments,
+    defaults, and choices.  It is derived from the live parser, so it cannot
+    drift from ``--help``.
+    """
+    options: list[dict[str, Any]] = []
+    arguments: list[dict[str, Any]] = []
+    commands: list[dict[str, Any]] = []
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            grouped: dict[int, list[str]] = {}
+            by_id: dict[int, argparse.ArgumentParser] = {}
+            for alias, child in action.choices.items():
+                key = id(child)
+                grouped.setdefault(key, []).append(alias)
+                by_id[key] = child
+            for key, aliases in grouped.items():
+                child = by_id[key]
+                row = _command_schema(child, path + [aliases[0]])
+                if len(aliases) > 1:
+                    row["aliases"] = aliases[1:]
+                commands.append(row)
+            continue
+        row = _action_schema(action)
+        if row is None:
+            continue
+        if row["kind"] == "option":
+            options.append(row)
+        else:
+            arguments.append(row)
+    return {
+        "name": path[-1],
+        "path": " ".join(path),
+        "prog": parser.prog,
+        "description": parser.description or getattr(parser, "_help", "") or "",
+        "options": options,
+        "arguments": arguments,
+        "commands": commands,
+    }
+
+
+def _parser_for_topic(topic: str) -> argparse.ArgumentParser | None:
+    parser = build_parser()
+    for token in shlex.split(topic):
+        action = next(
+            (a for a in parser._actions
+             if isinstance(a, argparse._SubParsersAction)),
+            None,
+        )
+        if action is None or token not in action.choices:
+            return None
+        parser = action.choices[token]
+    return parser
+
+
+def cmd_help(args: argparse.Namespace) -> int:
+    topic = " ".join(args.topic or [])
+    parser = _parser_for_topic(topic) if topic else build_parser()
+    if parser is None:
+        print(f"hive help: unknown command {topic!r}", file=sys.stderr)
+        return 2
+    if args.as_json:
+        path = ["hive"] + (shlex.split(topic) if topic else [])
+        _json(_command_schema(parser, path))
+        return 0
+    parser.print_help()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="hive",
@@ -1180,7 +1295,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Hive — serve and manage local GGUF stacks, engine-blind.",
         epilog=(
             "docs: docs/CLI.md · quickstart: docs/SERVE-AMD.md\n"
-            "every command accepts --json; run 'hive <command> --help' for details."),
+            "data commands accept --json; 'hive help --json' emits the full "
+            "command catalog; run 'hive <command> --help' for details."),
     )
     parser.add_argument("--version", action="version", version=f"hive {_version()}")
     parser.add_argument("--no-color", action="store_true",
@@ -1189,11 +1305,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve.add_parser(sub)
 
-    tui = sub.add_parser("tui", help="interactive terminal dashboard")
+    tui = sub.add_parser(
+        "tui",
+        help="interactive terminal dashboard",
+        description="Open the interactive dashboard (Status, Models, Stacks, Runs).")
     tui.set_defaults(func=cmd_tui)
 
-    status = sub.add_parser("status", aliases=["ps"],
-                            help="show running serves and their endpoints")
+    status = sub.add_parser(
+        "status", aliases=["ps"],
+        help="show running serves and their endpoints",
+        description="List recorded serves, their tier endpoints, and live health. "
+                    "Records are advisory and checked against their process.")
     status.add_argument("--json", action="store_true", dest="as_json",
                         help="machine-readable output")
     status.add_argument("--no-probe", action="store_true",
@@ -1202,7 +1324,12 @@ def build_parser() -> argparse.ArgumentParser:
                         help="remove records whose process is gone")
     status.set_defaults(func=cmd_status)
 
-    stop = sub.add_parser("stop", help="stop a serve (name; or --all)")
+    stop = sub.add_parser(
+        "stop",
+        help="stop a serve (name; or --all)",
+        description="Stop one recorded serve, the only running serve, or every "
+                    "recorded serve with --all. Stale records are cleaned without "
+                    "signalling a reused PID.")
     stop.add_argument("name", nargs="?", help="serve name (the only one if omitted)")
     stop.add_argument("--all", action="store_true", help="stop every recorded serve")
     stop.add_argument("--force", action="store_true",
@@ -1212,7 +1339,11 @@ def build_parser() -> argparse.ArgumentParser:
     stop.add_argument("--json", action="store_true", dest="as_json")
     stop.set_defaults(func=cmd_stop)
 
-    logs = sub.add_parser("logs", help="show or follow a serve's log")
+    logs = sub.add_parser(
+        "logs",
+        help="show or follow a serve's log",
+        description="Show a serve's supervisor log, or one tier's engine log "
+                    "with --tier. Use --follow to stream new lines.")
     logs.add_argument("name", nargs="?", help="serve name (the only one if omitted)")
     logs.add_argument("--tier", default=None, help="a tier role's engine log")
     logs.add_argument("-n", "--lines", type=int, default=80,
@@ -1221,15 +1352,24 @@ def build_parser() -> argparse.ArgumentParser:
     logs.add_argument("--json", action="store_true", dest="as_json")
     logs.set_defaults(func=cmd_logs)
 
-    models = sub.add_parser("models", help="local GGUF library")
+    models = sub.add_parser(
+        "models",
+        help="local GGUF library",
+        description="Browse, search, download, import, or remove GGUF models "
+                    "in the configured local library.")
     models_sub = models.add_subparsers(dest="models_command", metavar="<action>",
                                        required=True)
-    ml = models_sub.add_parser("list", help="list local GGUFs")
+    ml = models_sub.add_parser(
+        "list", help="list local GGUFs",
+        description="List GGUF files in the configured local model library.")
     _add_models_dir(ml)
     ml.add_argument("--json", action="store_true", dest="as_json")
     ml.set_defaults(func=cmd_models_list)
 
-    msearch = models_sub.add_parser("search", help="search Hugging Face for GGUF repos")
+    msearch = models_sub.add_parser(
+        "search", help="search Hugging Face for GGUF repos",
+        description="Search the Hugging Face Hub for GGUF repositories. Omit "
+                    "the query to list popular repos.")
     msearch.add_argument("query", nargs="?", default="",
                          help="words to search for (omit for popular repos)")
     msearch.add_argument("--limit", type=int, default=12,
@@ -1238,13 +1378,18 @@ def build_parser() -> argparse.ArgumentParser:
     msearch.add_argument("--json", action="store_true", dest="as_json")
     msearch.set_defaults(func=cmd_models_search)
 
-    mfiles = models_sub.add_parser("files", help="list the GGUFs in a Hugging Face repo")
+    mfiles = models_sub.add_parser(
+        "files", help="list the GGUFs in a Hugging Face repo",
+        description="List the GGUF files and sizes in one Hugging Face repo.")
     mfiles.add_argument("repo", help="org/repo")
     _add_models_dir(mfiles)
     mfiles.add_argument("--json", action="store_true", dest="as_json")
     mfiles.set_defaults(func=cmd_models_files)
 
-    md = models_sub.add_parser("dir", help="show or set the models directory")
+    md = models_sub.add_parser(
+        "dir", help="show or set the models directory",
+        description="Print the resolved GGUF library path, or set a new one "
+                    "with PATH/--set. The setting persists.")
     md.add_argument("path", nargs="?", help="a directory to use from now on")
     md.add_argument("--set", dest="set", default=None,
                     help="set the models directory (same as the positional)")
@@ -1252,7 +1397,10 @@ def build_parser() -> argparse.ArgumentParser:
     md.add_argument("--json", action="store_true", dest="as_json")
     md.set_defaults(func=cmd_models_dir)
 
-    mdn = models_sub.add_parser("download", help="download one GGUF from Hugging Face")
+    mdn = models_sub.add_parser(
+        "download", help="download one GGUF from Hugging Face",
+        description="Download one GGUF from a Hugging Face repo into the local "
+                    "library. Use --file or repo:file to select the file.")
     mdn.add_argument("repo", help="org/repo, or org/repo:file.gguf")
     mdn.add_argument("--file", default=None, help="GGUF file inside the repo")
     mdn.add_argument("--revision", default="main", help="HF revision (default main)")
@@ -1260,7 +1408,10 @@ def build_parser() -> argparse.ArgumentParser:
     mdn.add_argument("--json", action="store_true", dest="as_json")
     mdn.set_defaults(func=cmd_models_download)
 
-    mi = models_sub.add_parser("import", help="link a local GGUF or folder into the library")
+    mi = models_sub.add_parser(
+        "import", help="link a local GGUF or folder into the library",
+        description="Link one local .gguf file, or every .gguf in a folder, "
+                    "into the library. --copy copies instead of linking.")
     mi.add_argument("path", help="a .gguf file or a folder containing GGUFs")
     mi.add_argument("--copy", action="store_true",
                     help="copy the file instead of hardlink/symlink")
@@ -1268,29 +1419,44 @@ def build_parser() -> argparse.ArgumentParser:
     mi.add_argument("--json", action="store_true", dest="as_json")
     mi.set_defaults(func=cmd_models_import)
 
-    mr = models_sub.add_parser("remove", help="delete one GGUF from the library")
+    mr = models_sub.add_parser(
+        "remove", help="delete one GGUF from the library",
+        description="Delete one GGUF from the library. --yes is required; the "
+                    "command never deletes outside the configured library.")
     mr.add_argument("file", help="file name or relative path inside the library")
     mr.add_argument("--yes", action="store_true", help="confirm the deletion")
     _add_models_dir(mr)
     mr.add_argument("--json", action="store_true", dest="as_json")
     mr.set_defaults(func=cmd_models_remove)
 
-    stacks = sub.add_parser("stacks", help="saved stacks")
+    stacks = sub.add_parser(
+        "stacks",
+        help="saved stacks",
+        description="List, inspect, or validate saved stack files without "
+                    "starting an engine.")
     stacks_sub = stacks.add_subparsers(dest="stacks_command", metavar="<action>",
                                        required=True)
-    sl = stacks_sub.add_parser("list", help="list saved stacks")
+    sl = stacks_sub.add_parser(
+        "list", help="list saved stacks",
+        description="List stack files in the stacks directory.")
     _add_stacks_dir(sl)
     sl.add_argument("--json", action="store_true", dest="as_json")
     sl.set_defaults(func=cmd_stacks_list)
 
-    ss = stacks_sub.add_parser("show", help="print one stack as JSON")
+    ss = stacks_sub.add_parser(
+        "show", help="print one stack as JSON",
+        description="Print one stack's resolved JSON. --json is accepted for "
+                    "symmetry; this command always prints JSON.")
     ss.add_argument("stack", help="stack name or path")
     _add_stacks_dir(ss)
     ss.add_argument("--json", action="store_true", dest="as_json",
                     help="accepted for symmetry; show always prints JSON")
     ss.set_defaults(func=cmd_stacks_show)
 
-    sv = stacks_sub.add_parser("validate", help="check a stack without starting it")
+    sv = stacks_sub.add_parser(
+        "validate", help="check a stack without starting it",
+        description="Validate a stack file without launching an engine. "
+                    "--strict treats warnings as failures.")
     sv.add_argument("stack", help="stack name or path")
     _add_stacks_dir(sv)
     _add_models_dir(sv)
@@ -1300,14 +1466,20 @@ def build_parser() -> argparse.ArgumentParser:
     sv.set_defaults(func=cmd_stacks_validate)
 
     cascade = sub.add_parser(
-        "cascade", help="the verification / repair / escalation runner")
+        "cascade", help="the verification / repair / escalation runner",
+        description="Run or inspect the Hive cascade: generate, detect, repair, "
+                    "and escalate answers.")
     cascade_sub = cascade.add_subparsers(dest="cascade_command", metavar="<action>",
                                          required=True)
-    cruns = cascade_sub.add_parser("runs", help="list recorded cascade runs")
+    cruns = cascade_sub.add_parser(
+        "runs", help="list recorded cascade runs",
+        description="List recorded cascade runs, newest first.")
     cruns.add_argument("--json", action="store_true", dest="as_json")
     cruns.set_defaults(func=cmd_cascade_runs)
 
-    creport = cascade_sub.add_parser("report", help="print one run's report")
+    creport = cascade_sub.add_parser(
+        "report", help="print one run's report",
+        description="Print a run's summary, or its full report with --json.")
     creport.add_argument("run", help="run directory name")
     creport.add_argument("--json", action="store_true", dest="as_json",
                          help="the full report instead of the summary")
@@ -1315,22 +1487,32 @@ def build_parser() -> argparse.ArgumentParser:
 
     crun = cascade_sub.add_parser(
         "run", add_help=False,
-        help="run the cascade runner (all arguments are forwarded)")
+        help="run the cascade runner (all arguments are forwarded)",
+        description="Run the cascade runner; every argument after 'run' is "
+                    "forwarded to experiments.cascade.run_cascade. This "
+                    "command does not parse the runner's own flags.")
     crun.add_argument("args", nargs=argparse.REMAINDER,
                       help="arguments for experiments.cascade.run_cascade")
     crun.set_defaults(func=cmd_cascade_run)
 
-    backends = sub.add_parser("backends",
-                              help="server builds declared, installed or fetched")
+    backends = sub.add_parser(
+        "backends",
+        help="server builds declared, installed or fetched",
+        description="Inspect the declared engine server builds, or fetch a "
+                    "portable llama.cpp release.")
     backends.add_argument("--json", action="store_true", dest="as_json",
                           help="machine-readable output")
     backends_sub = backends.add_subparsers(dest="backends_command",
                                            metavar="<action>")
-    blist = backends_sub.add_parser("list", help="list declared backends")
+    blist = backends_sub.add_parser(
+        "list", help="list declared backends",
+        description="List declared backends and whether each is installed.")
     blist.add_argument("--json", action="store_true", dest="as_json")
     blist.set_defaults(func=cmd_backends)
     bfetch = backends_sub.add_parser(
-        "fetch", help="download a portable llama.cpp release")
+        "fetch", help="download a portable llama.cpp release",
+        description="Download and install a portable llama.cpp backend "
+                    "release. --force replaces an existing directory.")
     bfetch.add_argument("name", nargs="?", default=None,
                         help="backend to install (default: vulkan)")
     bfetch.add_argument("--tag", default=None,
@@ -1342,7 +1524,10 @@ def build_parser() -> argparse.ArgumentParser:
     backends.set_defaults(func=cmd_backends)
 
     setup = sub.add_parser(
-        "setup", help="onboard this box: engine, model/stacks/state paths")
+        "setup",
+        help="onboard this box: engine, model/stacks/state paths",
+        description="Create missing paths, fetch a portable engine when needed, "
+                    "and print the next commands. It does not download a model.")
     _add_models_dir(setup)
     _add_stacks_dir(setup)
     setup.add_argument("--no-fetch", action="store_true",
@@ -1350,7 +1535,12 @@ def build_parser() -> argparse.ArgumentParser:
     setup.add_argument("--json", action="store_true", dest="as_json")
     setup.set_defaults(func=cmd_setup)
 
-    doctor = sub.add_parser("doctor", help="check the box before serving")
+    doctor = sub.add_parser(
+        "doctor",
+        help="check the box before serving",
+        description="Check Python, paths, engines, cards, host memory, ports, "
+                    "and the Hugging Face token before a serve. --strict treats "
+                    "warnings as failures.")
     _add_models_dir(doctor)
     _add_stacks_dir(doctor)
     doctor.add_argument("--strict", action="store_true",
@@ -1358,15 +1548,34 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--json", action="store_true", dest="as_json")
     doctor.set_defaults(func=cmd_doctor)
 
-    config = sub.add_parser("config", help="resolved paths and versions")
+    config = sub.add_parser(
+        "config", help="resolved paths and versions",
+        description="Print the resolved model, stack, state, log, and backend "
+                    "paths plus versions. Read-only.")
     _add_models_dir(config)
     _add_stacks_dir(config)
     config.add_argument("--json", action="store_true", dest="as_json")
     config.set_defaults(func=cmd_config)
 
-    version = sub.add_parser("version", help="print the Hive version")
-    version.add_argument("--json", action="store_true", dest="as_json")
+    version = sub.add_parser(
+        "version", help="print the Hive version",
+        description="Print Hive, Python, and platform versions.")
+    version.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
     version.set_defaults(func=cmd_version)
+
+    help_parser = sub.add_parser(
+        "help",
+        help="show help or a machine-readable command catalog",
+        description="Print human help for a command, or emit the complete "
+                    "command/option catalog as JSON for agents and scripts.")
+    help_parser.add_argument(
+        "topic", nargs="*", default=None,
+        help="command or subcommand, e.g. 'serve' or 'models list'")
+    help_parser.add_argument("--json", action="store_true", dest="as_json",
+                             help="emit the command/option catalog as JSON")
+    help_parser.set_defaults(func=cmd_help)
+    _normalize_help(parser)
     return parser
 
 

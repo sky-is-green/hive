@@ -31,6 +31,20 @@ from harness.stack import schema
 
 TABS = ("Status", "Models", "Stacks", "Runs")
 
+HELP_LINES = (
+    "1-4, ←/→, TAB   switch tab",
+    "↑/↓, j/k          move",
+    "ENTER            details",
+    "l                supervisor log (Status)",
+    "x                stop selected serve (Status)",
+    "r                refresh header and active tab",
+    "?                this help",
+    "q                quit",
+    "",
+    "Header: RAM free · VRAM free · GTT used (best-effort probes).",
+    "Data is read through the same modules as the CLI.",
+)
+
 
 def format_resources(summary: dict[str, Any] | None) -> str:
     """One compact host/GPU line for the dashboard header.
@@ -574,17 +588,7 @@ class App:
         elif key == ord("?") or key == curses.KEY_F1:
             self.mode = "help"
             self.overlay_title = "keys"
-            self.overlay = [
-                "1-4, ←/→, TAB   switch tab",
-                "↑/↓, j/k          move",
-                "ENTER            details",
-                "l                supervisor log (Status)",
-                "x                stop selected serve (Status)",
-                "r                refresh",
-                "q                quit",
-                "",
-                "Data is read through the same modules as the CLI.",
-            ]
+            self.overlay = list(HELP_LINES)
             self.offset = 0
         elif self.tab == 0 and key == ord("l"):
             self._logs()

@@ -13,6 +13,13 @@ def test_run_falls_back_without_a_tty(monkeypatch):
     assert tui.run() == 1
 
 
+def test_help_names_the_actions_and_the_resource_strip():
+    help_text = "\n".join(tui.HELP_LINES)
+    for token in ("switch tab", "ENTER", "supervisor log", "stop selected",
+                  "refresh", "RAM free", "VRAM free", "GTT used", "quit"):
+        assert token in help_text
+
+
 def test_format_resources_is_compact_and_omits_missing_probes():
     line = tui.format_resources({
         "available_ram_gb": 24.0,

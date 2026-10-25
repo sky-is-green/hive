@@ -242,14 +242,30 @@ backend <b>{_esc(report.get('backend') or '&mdash;')}</b> &middot; run
 
 
 def render_nav(active: str = "") -> str:
-    """Shared top nav bar for all Studio pages."""
-    items = [("server", "/server", "Studio"), ("runs", "/runs", "Runs"),
-             ("cascade", "/cascade", "Cascade"), ("docs", "/docs", "API docs")]
+    """Shared top nav bar for all Studio pages.
+
+    Labels are short for humans; every link also carries a title that names
+    the surface's job.  ``aria-current`` marks the active page for assistive
+    tech and for deterministic page scraping.
+    """
+    items = [
+        ("server", "/server", "Studio", "Configure engines, models, and the loaded chat"),
+        ("runs", "/runs", "Runs", "Browse saved run bundles and reports"),
+        ("cascade", "/cascade", "Cascade", "Generate, detect, repair, and escalate answers"),
+        ("senses", "/cascade#senses-panel", "Senses",
+         "Upload a sensory input and preview its cascade route"),
+        ("docs", "/docs", "API docs", "Read the HTTP API and console route map"),
+    ]
     parts = []
-    for key, href, label in items:
+    for key, href, label, title in items:
         cls = "active" if key == active else ""
-        parts.append(f"<a href='{href}'><button type='button' class='{cls}'>{label}</button></a>")
-    return "<nav style='display:flex;gap:.4rem;align-items:center;margin:.3rem 0 1rem;flex-wrap:wrap'>" + " ".join(parts) + "</nav>"
+        current = " aria-current='page'" if key == active else ""
+        parts.append(
+            f"<a href='{href}' title='{title}'{current}><button type='button' "
+            f"class='{cls}'>{label}</button></a>"
+        )
+    return ("<nav style='display:flex;gap:.4rem;align-items:center;"
+            "margin:.3rem 0 1rem;flex-wrap:wrap'>" + " ".join(parts) + "</nav>")
 
 def render_runs_page(entries: list[dict]) -> str:
     """Index of available run bundles."""
@@ -796,11 +812,11 @@ def render_server_page() -> str:
 <!-- ==================== LEFT: tabs ==================== -->
 <div class="col" id="left-col">
 <div class="tabs" id="main-tabs">
-<button class="tab active" data-tab="tab-home">Home</button>
-<button class="tab" data-tab="tab-settings">Settings</button>
-<button class="tab" data-tab="tab-global">Global</button>
-<button class="tab" data-tab="tab-cascade" onclick="location.href='/cascade'">Cascade</button>
-<button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto">More tools ▾</button>
+<button class="tab active" data-tab="tab-home" title="Start here: load a model, open the cascade, or run setup.">Home</button>
+<button class="tab" data-tab="tab-settings" title="Models, providers, engines, and local library settings.">Settings</button>
+<button class="tab" data-tab="tab-global" title="Global quality defaults inherited by conversations and runs.">Global</button>
+<button class="tab" data-tab="tab-cascade" onclick="location.href='/cascade'" title="Verification, repair, escalation, and sensory upload.">Cascade</button>
+<button id="adv-toggle" class="tab" onclick="toggleAdvanced()" style="margin-left:auto" title="Agent, engines, library, providers, Hub, inspector, and training.">More tools ▾</button>
 </div>
 <div class="tabs" id="adv-tabs" style="display:none">
 <button class="tab" data-tab="tab-setup" style="display:none">Docker setup</button>
