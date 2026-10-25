@@ -3,7 +3,8 @@
 `hive` is the command-line surface of the harness.  It is the same operational
 layer as the Studio, without the browser: serve a stack, find it again, read its
 logs, stop it, manage the local GGUF library, and check the box before a load.
-Every command has a `--json` form for scripts.
+Commands that return data accept `--json`; `hive help --json` emits the full
+command/option catalog for scripts and agents.
 
 The CLI is **engine-blind**.  A stack tier is a role with a model and either a
 server backend or an endpoint; `hive serve` starts or adopts it, and the command
@@ -43,6 +44,23 @@ the GGUF library and a server build; FastAPI, the splinter memory system and the
 suite's model downloads are not required.  An installed wheel keeps mutable
 state under `HIVE_HOME` (default `~/.hive`) instead of site-packages; a source
 checkout uses the repo.  `hive doctor` tells you what is missing.
+
+## Help and the command catalog
+
+`hive --help` is the human index.  `hive help <command>` opens the same help as
+`hive <command> --help`, including nested commands:
+
+```bash
+hive help
+hive help models
+hive help models list
+```
+
+For an agent or a docs generator, `hive help --json` emits the live parser as
+stable JSON: command paths, aliases, descriptions, options, arguments, defaults,
+choices, and the `--json` behavior.  A topic narrows the same catalog:
+`hive help models --json` returns only that subtree.  It is generated from the
+parser itself, so it cannot drift from the human help.
 
 ## Interactive dashboard
 

@@ -73,6 +73,16 @@ def test_page_scripts_are_valid_javascript(page):
         )
 
 
+def test_nav_is_self_describing_and_marks_the_active_page():
+    html = render_cascade_page(["tasks-hard.json"])
+    assert ">Senses</button>" in html
+    assert "aria-current='page'" in html  # Cascade is the active page
+    assert "title='Upload a sensory input" in html
+    assert "title='Generate, detect, repair, and escalate answers'" in html
+    server = render_server_page()
+    assert 'title="Verification, repair, escalation, and sensory upload."' in server
+
+
 def test_cascade_page_has_a_senses_upload_panel():
     html = render_cascade_page(["tasks-hard.json"])
     assert 'id="senses-panel"' in html

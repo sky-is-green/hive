@@ -78,9 +78,10 @@ hive cascade runs
 
 A stack names a role, a model and an engine; `hive serve` starts or adopts each
 tier and unloads them on exit. `--model` takes a Hugging Face repo (`org/repo:file.gguf`)
-or a local GGUF, and `--cards` picks the cards. Every command has `--json`, and
-a detached serve is recorded under `harness_state/serve/` so `status`, `stop`
-and `logs` work from another shell. The full reference is
+or a local GGUF, and `--cards` picks the cards. Data commands accept `--json`;
+`hive help --json` emits the full command catalog. A detached serve is recorded
+under `harness_state/serve/` so `status`, `stop`, and `logs` work from another
+shell. The full reference is
 [`docs/CLI.md`](docs/CLI.md).
 
 ## Layout
