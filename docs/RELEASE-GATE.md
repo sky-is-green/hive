@@ -82,6 +82,8 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C21 | `hive tools revoke --all --yes` | Requires confirmation; existing grants disappear. | |
 | C22 | `hive tools audit` | Append-only records show decisions; arguments are hashes, not raw values. | |
 | C23 | Global → **Tool policy & grants** | Tier/master controls and revoke-all work; page states that DSH enforcement is still pending. | |
+| C24 | `hive ui status --json` | Reports web running/not running and both switch commands; starts nothing. | |
+| C25 | `hive ui web --mock --detach` then `hive ui status` | Studio starts, status sees it, and the TUI `w` opens it. | |
 | C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
@@ -125,7 +127,8 @@ Send these exact keys and confirm the destination:
 | `2` | Models: local GGUF table; `Enter` opens model metadata; `q` back. |
 | `3` | Stacks: saved stack table; `Enter` opens full stack JSON; `q` back. |
 | `4` | Runs: cascade-run table; `Enter` opens **run summary**, not a claim to open the report; full-report command is printed. |
-| `?` | Key help: tabs, movement, Enter, `l`, `x` with confirmation, `r`, `q`; resource-strip meaning. |
+| `w` | Opens a **running** Studio; if none is running, tells you to run `hive ui web`. |
+| `?` | Key help: tabs, movement, Enter, `l`, `x` with confirmation, `w` web, `r`, `q`; resource-strip meaning. |
 | `q` | Leaves help/overlay; in the main screen it quits. |
 
 Check:
@@ -190,6 +193,7 @@ python -m harness --mock --no-open --port 8765
 - [ ] Global → **Tool policy & grants** shows the Guarded default; saving Strict/Trusted/Open persists.
 - [ ] **Revoke all grants** asks first and clears the list.
 - [ ] The panel states that the bundled DSH agent is **not yet** behind the gateway. A release must not claim agent tool enforcement without a separate PASS.
+- [ ] Global → **Working modes** explains the two surfaces and copies `hive ui terminal`.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).
 - [ ] At 1200 px, 760 px, and 390 px wide, the page remains usable; no horizontal scroll except intentional code/tables.
 - [ ] Keyboard focus is visible; the command palette opens with `Ctrl+K`; Escape closes it.

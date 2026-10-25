@@ -2943,9 +2943,15 @@ def create_app(
 
     @app.get("/v1/agent/status")
     def agent_status():
-        """Agent service state: running, model, last error."""
+        """Agent service state: running, model, last error, gateway status."""
+        from harness.security import SecurityStore
+
         return {"runtime_running": agent_service.runtime_running,
                 "permission_policy": agent_service.permission_policy,
+                # Honest release signal: the policy core exists, but the
+                # bundled DSH runtime has no pre-execution hook yet.
+                "gateway_enforced": False,
+                "security_tier": SecurityStore(_state_paths()).read()["tier"],
                 "busy": agent_service._inflight}
 
     @app.post("/v1/agent/cancel")
