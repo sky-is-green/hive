@@ -291,6 +291,8 @@ hive profile show
 hive controller propose --model models/gguf/some-model.gguf --ctx 16384
 hive controller propose --model models/gguf/some-model.gguf \
   --request "How do I profile a long coding task?"
+hive controller propose --model models/gguf/some-model.gguf \
+  --request "..." --embed-request
 hive controller apply <proposal-id> --yes
 hive controller outcome <proposal-id> accepted --metric latency_ms=42
 hive controller revert --yes
@@ -320,10 +322,13 @@ An optional request goes through the model-free
 [`features.py`](../harness/controller/features.py) baseline (intent, context
 pressure, risk) and can lower the context cap for a short chat or raise it for
 code/reasoning. Only the feature dictionary and proposal are written to the
-controller trace, never the raw request text. The trace is append-only
-`profiles/controller-traces-YYYYMM.jsonl`; `controller outcome` records the
-human/evaluation label and metrics, and apply/revert append lifecycle events,
-so later E1 work has privacy-preserving examples to label.
+controller trace, never the raw request text. `--embed-request` is the explicit
+opt-in that loads the configured sentence-transformer on the CPU and adds its
+vector, model name and dimension to the trace; without it, E0 stays model-free.
+The trace is append-only `profiles/controller-traces-YYYYMM.jsonl`;
+`controller outcome` records the human/evaluation label and metrics, and
+apply/revert append lifecycle events, so later E1 work has privacy-preserving
+examples to label.
 
 The encoder boundary is separate from E0. `hive encoder status` inspects the
 configured model without loading it; `hive encoder embed "text"` loads the

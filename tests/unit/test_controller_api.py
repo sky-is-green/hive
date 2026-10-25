@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from harness.app import create_app
 from harness.controller.profile import HardwareProfiler
+from harness.controller.service import ControllerService
 
 
 def _summary():
@@ -99,3 +103,22 @@ def test_encoder_status_does_not_load(client):
     body = r.json()
     assert body["loaded"] is False
     assert body["model"]
+
+
+def test_embed_flag_traces_a_vector_without_raw_text(client, monkeypatch):
+    monkeypatch.setattr(
+        ControllerService, "_request_embedding",
+        lambda self, request: {"model": "fake", "dimensions": 2,
+                               "vector": [0.25, -0.5]})
+    client.post("/v1/profiles/scan",
+                json={"consent": "hardware", "profile_id": "local-test"})
+    r = client.post("/v1/controller/propose", json={
+        "model_gib": 12, "request": "private request text",
+        "embed_request": True})
+    assert r.status_code == 200
+    state = Path(client.app.state.harness.state_dir)
+    trace = next((state / "profiles").glob("controller-traces-*.jsonl")).read_text(
+        encoding="utf-8")
+    row = json.loads(trace.splitlines()[0])
+    assert row["request_embedding"]["vector"] == [0.25, -0.5]
+    assert "private request text" not in trace

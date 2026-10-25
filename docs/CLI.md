@@ -325,6 +325,7 @@ hive profile list
 hive controller propose --model models/gguf/model.gguf --ctx 16384
 hive controller propose --model-gib 12 --native-ctx 32768 --ctx 16384
 hive controller propose --model-gib 12 --request "How do I test this?"
+hive controller propose --model-gib 12 --request "..." --embed-request
 hive controller apply <proposal-id> --yes
 hive controller outcome <proposal-id> accepted --metric latency_ms=42
 hive controller revert --yes
@@ -343,7 +344,9 @@ present/absent values under `settings/controller.json`, and appends a redacted
 audit record. The optional `--request` uses the deterministic feature baseline
 to cap context for short work and give code/reasoning more room; only the
 feature dictionary is written to `profiles/controller-traces-*.jsonl`, never
-the raw request text. `controller outcome` appends the human/evaluation label
+the raw request text. Add `--embed-request` to explicitly load the configured
+CPU encoder and trace a vector alongside the features. `controller outcome`
+appends the human/evaluation label
 (`accepted`, `rejected`, `wrong`, `unknown` or `abandoned`) and optional
 `key=value` metrics to the same trace; apply/revert append their lifecycle
 events automatically. `revert` restores the previous values and removes keys

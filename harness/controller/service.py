@@ -7,10 +7,16 @@ Studio, and it records every proposal/apply/revert in the settings audit log.
 
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
+from harness.controller.encoder import (
+    EncoderError,
+    TextEncoder,
+    encoder_from_settings,
+)
 from harness.controller.features import text_features
 from harness.controller.profile import HardwareProfiler
 from harness.controller.recommend import (
@@ -31,6 +37,7 @@ from harness.studio_settings import load_settings, save_settings
 SettingsLoader = Callable[[Path | None], dict[str, Any]]
 SettingsSaver = Callable[[dict[str, Any], Path | None], dict[str, Any]]
 SettingsRemover = Callable[[dict[str, list[str]], Path | None], dict[str, Any]]
+EncoderFactory = Callable[[], TextEncoder]
 
 
 class ControllerError(RuntimeError):
@@ -94,6 +101,7 @@ class ControllerService:
         settings_loader: SettingsLoader = load_settings,
         settings_saver: SettingsSaver = save_settings,
         settings_remover: SettingsRemover = _default_remove,
+        encoder_factory: EncoderFactory | None = None,
         now: Callable[[], datetime] | None = None,
     ) -> None:
         self.state = (state or StatePaths.default()).ensure()
@@ -101,6 +109,8 @@ class ControllerService:
         self._load = settings_loader
         self._save = settings_saver
         self._remove = settings_remover
+        self._encoder_factory = encoder_factory
+        self._encoder: TextEncoder | None = None
         self._now = now or _now
 
     def _recommendations(self, profile_id: str) -> JsonStore:
@@ -120,6 +130,31 @@ class ControllerService:
         """Append a proposal/outcome record; no raw request text is stored."""
         AuditLog(self.state.controller_trace_file()).append(
             {"schema_version": 1, "event": event, **fields})
+
+    def _get_encoder(self) -> TextEncoder:
+        if self._encoder is None:
+            if self._encoder_factory is not None:
+                self._encoder = self._encoder_factory()
+            else:
+                self._encoder = encoder_from_settings(
+                    self._load(self.state.root), local_files_only=True)
+        return self._encoder
+
+    def _request_embedding(self, request: str) -> dict[str, Any]:
+        try:
+            encoder = self._get_encoder()
+            vector = encoder.encode_one(request)
+        except EncoderError as exc:
+            raise ControllerError(str(exc)) from exc
+        except Exception as exc:  # noqa: BLE001 - optional local model
+            raise ControllerError(f"encoder failed: {exc}") from exc
+        if not vector or any(not math.isfinite(float(value)) for value in vector):
+            raise ControllerError("encoder returned an unusable vector")
+        return {
+            "model": str(getattr(encoder, "model", "") or ""),
+            "dimensions": len(vector),
+            "vector": [round(float(value), 6) for value in vector],
+        }
 
     def record_outcome(self, proposal_id: str, outcome: str, *,
                        metrics: Mapping[str, Any] | None = None) -> None:
@@ -174,6 +209,7 @@ class ControllerService:
         desired_ctx: int | None = None,
         kv_type: str = "q8_0",
         request: str | None = None,
+        embed_request: bool = False,
     ) -> dict[str, Any]:
         profile = self.profiler.get(profile_id) if profile_id else self.profiler.latest()
         if profile is None:
@@ -182,6 +218,8 @@ class ControllerService:
                 "--consent hardware` first")
         if model_gib is not None and model_gib <= 0:
             raise ControllerError("model_gib must be > 0")
+        if embed_request and not (request and request.strip()):
+            raise ControllerError("embed_request requires non-empty request text")
         model: ModelRequest | None = None
         if model_path is not None:
             model = model_request_from_path(model_path, desired_ctx=desired_ctx)
@@ -212,6 +250,7 @@ class ControllerService:
                                now=self._now())
         except (ProposalError, ValueError) as exc:
             raise ControllerError(str(exc)) from exc
+        embedding = self._request_embedding(request) if embed_request else None
         store = self._recommendations(profile["profile_id"])
 
         def add(current: dict[str, Any]) -> dict[str, Any]:
@@ -232,15 +271,17 @@ class ControllerService:
             changes=proposal["changes"],
             confidence=proposal["confidence"],
         )
-        self._trace(
-            "controller.proposal",
-            proposal_id=proposal["id"],
-            profile_id=profile["profile_id"],
-            request_features=proposal.get("request_features"),
-            changes=proposal["changes"],
-            confidence=proposal["confidence"],
-            model=proposal.get("model"),
-        )
+        trace_fields: dict[str, Any] = {
+            "proposal_id": proposal["id"],
+            "profile_id": profile["profile_id"],
+            "request_features": proposal.get("request_features"),
+            "changes": proposal["changes"],
+            "confidence": proposal["confidence"],
+            "model": proposal.get("model"),
+        }
+        if embedding is not None:
+            trace_fields["request_embedding"] = embedding
+        self._trace("controller.proposal", **trace_fields)
         return proposal
 
     def _find(self, proposal_id: str,

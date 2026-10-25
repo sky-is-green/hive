@@ -11,8 +11,9 @@ The first slice is live in [`harness/state_store.py`](../harness/state_store.py)
 corrupt-file quarantine, atomic audit JSONL and redaction. It owns
 `settings/controller.json`, `profiles/*.json`,
 `profiles/controller-traces-*.jsonl` and `audit/settings-*.jsonl`.
-The controller trace stores request features, the proposal, and lifecycle
-outcomes, never the raw request text. The legacy `studio_settings.json`
+The controller trace stores request features, the proposal, optional
+explicitly-enabled encoder vectors, and lifecycle outcomes, never the raw
+request text. The legacy `studio_settings.json`
 migration, security/tool grants, sandbox and browser grants are still
 design-only.
 

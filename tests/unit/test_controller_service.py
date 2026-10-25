@@ -51,7 +51,16 @@ class _Settings:
         return copy.deepcopy(self.data)
 
 
-def _service(tmp_path):
+class _FakeEncoder:
+    model = "fake-encoder"
+    dimensions = 4
+
+    def encode_one(self, text):
+        assert "test request" in text
+        return [0.1, -0.2, 0.3, 0.4]
+
+
+def _service(tmp_path, *, encoder_factory=None):
     state = StatePaths(tmp_path / "state")
     profiler = HardwareProfiler(state, probe=_summary)
     profiler.scan("hardware", profile_id="local-test")
@@ -59,6 +68,7 @@ def _service(tmp_path):
     service = ControllerService(
         state, profiler=profiler,
         settings_loader=settings.load, settings_saver=settings.save,
+        encoder_factory=encoder_factory,
         now=lambda: datetime(2026, 10, 25, 21, tzinfo=timezone.utc),
     )
     return service, settings, state
@@ -137,6 +147,27 @@ def test_request_features_are_traced_but_raw_text_is_not(tmp_path):
     trace = state.controller_trace_file().read_text(encoding="utf-8")
     assert '"outcome": "applied"' in trace
     assert '"outcome": "reverted"' in trace
+
+
+def test_optional_encoder_vector_is_traced_without_raw_text(tmp_path):
+    service, _settings, state = _service(
+        tmp_path, encoder_factory=lambda: _FakeEncoder())
+    service.propose(
+        model_gib=12.0, native_ctx=32768, request="test request",
+        embed_request=True)
+    text = state.controller_trace_file().read_text(encoding="utf-8")
+    trace = json.loads(text.splitlines()[0])
+    assert trace["request_embedding"]["model"] == "fake-encoder"
+    assert trace["request_embedding"]["dimensions"] == 4
+    assert trace["request_embedding"]["vector"] == [0.1, -0.2, 0.3, 0.4]
+    assert "test request" not in text
+
+
+def test_embed_request_needs_text(tmp_path):
+    service, _settings, _state = _service(
+        tmp_path, encoder_factory=lambda: _FakeEncoder())
+    with pytest.raises(ControllerError, match="requires non-empty"):
+        service.propose(model_gib=1.0, embed_request=True)
 
 
 def test_record_outcome_is_append_only_and_typed(tmp_path):
