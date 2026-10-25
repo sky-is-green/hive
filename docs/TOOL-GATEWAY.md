@@ -292,3 +292,98 @@ step. Do not ship a prompt-only gate as if it were a security boundary.
 - Browser download/upload destination defaults.
 - Whether visible browser is a separate window or an embedded panel; separate
   window is the safer first implementation.
+
+## Hazards the first draft did not cover
+
+These are not optional polish; they are part of the gateway's threat model.
+
+### Prompt injection and untrusted tool output
+
+A web page, file, MCP response, or tool result can contain instructions aimed at
+the model. The policy layer must treat all tool output as **untrusted data**:
+
+- never inherit instructions from tool output, a page, or an MCP server;
+- the approval reason and the user-facing action summary are claims, not
+  authority; the gateway displays the concrete action alongside them;
+- never let a tool result change the tier, grants, sandbox or network policy;
+- do not expose a tool's raw output to a later privileged tool without a
+  boundary marker and, for sensitive actions, a fresh approval;
+- screenshot/OCR output is untrusted too.
+
+### SSRF, redirects and DNS rebinding
+
+For browser and network tools:
+
+- resolve every hostname and check **all** resolved addresses against private,
+  loopback, link-local, multicast and cloud-metadata ranges;
+- re-check after every redirect and subresource request;
+- block `file://`, `data:`, `javascript:` and similar local schemes by default;
+- pin the approved origin; a redirect to a different origin needs a new
+  decision;
+- do not trust the reason or the displayed URL without the resolved origin.
+
+### Egress and exfiltration
+
+Public network access is allowed, but moving user data out is a separate act:
+
+- downloads, uploads, form posts and clipboard writes show source, destination,
+  size and content class;
+- secrets found in a page or a file must be redacted before display/audit;
+- private-network approval is independent of public browsing;
+- a browser profile with user cookies is a high-risk grant, never a silent
+  default.
+
+### Subagents and nested sessions
+
+Child sessions/workers must use the same gateway and inherit **no broader**
+grants than their parent. A delegated worker cannot:
+
+- approve its own request;
+- reuse a parent's global grant for a different tool identity;
+- bypass the private-network gate;
+- inherit a “session” grant from a different session.
+
+The current `agent_subagents.py` nested loop must be covered explicitly; a
+gateway that only wraps the face agent is not a boundary.
+
+### Approval flooding and turn control
+
+- At most one pending approval per turn is actionable at a time; additional
+  calls queue visibly.
+- A deny/timeout cancels that tool attempt and ends the turn; no retry with a
+  disguised tool name.
+- 10 minutes is a hard interactive limit; the UI shows a countdown.
+- A cancelled/closed UI counts as deny.
+- The audit records the decision even if the model then ends the turn.
+
+### MCP and third-party tool trust
+
+- MCP server identity + version is part of every tool identity;
+- changed schemas or binaries require re-approval;
+- server processes themselves run under the sandbox policy where possible;
+- a tool's declared `read_only` metadata is not trusted until the server is
+  registered/verified;
+- network endpoints are not automatically trusted because they are local.
+
+### Docker image and supply chain
+
+- Pin the sandbox image by digest, not only a mutable tag.
+- Record image provenance and checksum.
+- Do not mount the Docker socket, host home, SSH directory, browser profile or
+  GPU devices unless an explicit, separate grant exists.
+- A missing image is a sandbox failure; do not silently use the host.
+
+### Approval DoS and long waits
+
+Ten minutes is long enough to block a turn. The UI must allow cancel/stop at
+any time, and the agent must have a deterministic blocked result. Headless runs
+fail fast; they do not hold a process for ten minutes.
+
+### Audit limitations
+
+An append-only file is tamper-evident only if protected. At minimum:
+
+- mode `0600`, rotate by month, never let the tool API rewrite it;
+- record hashes of redacted arguments and results;
+- optionally chain each record's hash to the previous record;
+- if the audit sink fails, deny the call.
