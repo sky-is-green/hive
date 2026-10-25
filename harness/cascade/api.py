@@ -243,6 +243,9 @@ def create_router(
             raise HTTPException(503, "no sensory encoder attached to this sidecar")
 
         limit = int(senses.max_bytes)
+        declared = getattr(file, "size", None)
+        if declared is not None and int(declared) > limit:
+            raise HTTPException(413, f"upload exceeds the {limit}-byte limit")
         try:
             data = await file.read(limit + 1)
         except OSError as exc:
