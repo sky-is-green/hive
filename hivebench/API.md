@@ -43,6 +43,8 @@ curl http://127.0.0.1:8765/health
 | `GET` | `/v1/cascade/roles` | The role taxonomy (A1, B1, C1, D3, E4, ...) with descriptions. |
 | `POST` | `/v1/cascade/run` | Launch — body: `#/components/schemas/CascadeRunRequest` |
 | `GET` | `/v1/cascade/runs` | List run bundles available for viewing. |
+| `POST` | `/v1/cascade/senses` | Classify, store and encode one image/audio/video/text upload; preview its cascade path. |
+| `GET` | `/v1/cascade/senses/status` | Sensory encoder/ingress state (model, dimensions, limits, loaded). |
 | `POST` | `/v1/cascade/validate` | Validate a candidate answer against a task with the validator model. |
 | `GET` | `/v1/cascade/validator` | Validator service state (model, device, loaded). |
 

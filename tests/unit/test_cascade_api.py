@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from harness.cascade import api as cascade_api
 from harness.cascade.registry import default_registry
+from harness.cascade.senses import MockSensoryEncoder, SensesService
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CASCADE = REPO_ROOT / "experiments" / "cascade"
@@ -42,6 +43,11 @@ def client(tmp_path):
         runner=runner,
         spawn=fake_spawn,
         registry=default_registry(),
+        senses=SensesService(
+            MockSensoryEncoder(),
+            store_dir=tmp_path / "senses",
+            max_bytes=64,
+        ),
     )
     app = FastAPI()
     app.include_router(router)
@@ -96,6 +102,89 @@ def test_plan_rejects_out_of_range_confidence(client):
 def test_plan_unknown_bucket_falls_back_to_standard_qa(client):
     plan = client.get("/v1/cascade/plan", params={"bucket": "nonsense"}).json()["plan"]
     assert plan["path"] == "P2"
+
+
+def test_senses_status_and_image_upload_route_to_p6(client):
+    status = client.get("/v1/cascade/senses/status").json()
+    assert status["configured"] is True
+    assert status["model"] == "mock-senses-v1"
+    assert status["loaded"] is False
+
+    payload = b"\x89PNG\r\n\x1a\nimage"
+    resp = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("figure.png", payload, "image/png")},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["modality"] == "image"
+    assert body["bucket"] == "vision"
+    assert body["path"] == "P6"
+    assert body["plan"]["path"] == "P6"
+    assert body["routed"] is True
+    assert body["dimensions"] == 8
+    assert Path(body["stored_path"]).read_bytes() == payload
+
+
+def test_senses_text_upload_routes_to_standard_qa(client):
+    resp = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("notes.txt", b"hello hive", "text/plain")},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["modality"] == "text"
+    assert body["bucket"] == "qa"
+    assert body["path"] == "P2"
+
+
+def test_senses_audio_is_stored_but_not_routed(client):
+    resp = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("clip.wav", b"RIFFfake", "audio/wav")},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["modality"] == "audio"
+    assert body["path"] is None
+    assert body["routed"] is False
+    assert "no cascade path" in body["note"]
+    assert Path(body["stored_path"]).is_file()
+
+
+def test_senses_rejects_unsupported_empty_and_oversized_uploads(client):
+    unsupported = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("blob.bin", b"data", "application/x-unknown")},
+    )
+    assert unsupported.status_code == 415
+
+    empty = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("empty.txt", b"", "text/plain")},
+    )
+    assert empty.status_code == 422
+
+    oversized = client.post(
+        "/v1/cascade/senses",
+        files={"file": ("big.txt", b"x" * 65, "text/plain")},
+    )
+    assert oversized.status_code == 413
+
+
+def test_senses_is_503_when_no_encoder_is_attached(tmp_path):
+    router = cascade_api.create_router(runs_root=tmp_path / "runs", tasks_root=tmp_path)
+    app = FastAPI()
+    app.include_router(router)
+    bare = TestClient(app)
+
+    status = bare.get("/v1/cascade/senses/status").json()
+    assert status["configured"] is False
+    resp = bare.post(
+        "/v1/cascade/senses",
+        files={"file": ("x.txt", b"hello", "text/plain")},
+    )
+    assert resp.status_code == 503
 
 
 def test_frontier_empty_and_measured(client):
