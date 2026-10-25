@@ -1040,14 +1040,39 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         add("warn", "cards", f"cannot read amdgpu sysfs: {exc}")
     else:
         if devices:
-            detail = "; ".join(
-                f"card {d.get('index')}: {d.get('memory_gb')} GiB"
-                f"{' (display)' if d.get('display') else ''}" for d in devices)
+            def _card(d: dict) -> str:
+                total = d.get("memory_gb")
+                used = d.get("used_gb")
+                free = d.get("free_gb")
+                if used is not None and free is not None:
+                    state = f"{used} used / {free} free GiB"
+                else:
+                    state = f"{total} GiB"
+                return (f"card {d.get('index')}: {state}"
+                        f"{' (display)' if d.get('display') else ''}")
+
+            detail = "; ".join(_card(d) for d in devices)
             add("ok", "cards", detail)
         elif platform.system() == "Linux":
             add("warn", "cards", "no amdgpu cards found via sysfs")
         else:
             add("warn", "cards", "GPU probing is Linux-only")
+
+    try:
+        import psutil
+
+        vm = psutil.virtual_memory()
+        detail = (f"{vm.available / (1024 ** 3):.1f}/"
+                  f"{vm.total / (1024 ** 3):.1f} GiB free")
+        gtt_used = [d.get("gtt_used_gb") for d in devices
+                    if isinstance(d.get("gtt_used_gb"), (int, float))]
+        gtt_total = [d.get("gtt_total_gb") for d in devices
+                     if isinstance(d.get("gtt_total_gb"), (int, float))]
+        if gtt_used and gtt_total:
+            detail += f" · GTT {sum(gtt_used):.1f}/{sum(gtt_total):.1f} GiB"
+        add("ok", "memory", detail)
+    except Exception as exc:  # noqa: BLE001 - psutil is best-effort
+        add("warn", "memory", f"cannot read host memory: {exc}")
 
     rocm = shutil.which("rocminfo") or shutil.which("rocm-smi")
     if rocm:
