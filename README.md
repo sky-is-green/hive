@@ -104,6 +104,8 @@ be re-run, not just read.
 | the two papers | [Splinter Memory](splinter/SPLINTER-WHITE-PAPER.md) · [The Hive Cascade](cascade/CASCADE-PAPER.md) |
 | the CLI | [serve, status, stop, logs, models, stacks, doctor](docs/CLI.md) |
 | the current state | [measured / invalid / unmeasured / blocked](docs/STATUS.md) |
+| the manual release gate | [HG-1: CLI, TUI, Studio, packaging](docs/RELEASE-GATE.md) |
+| the encoder/controller plan | [first-run profile, settings proposals, custom encoder](docs/ENCODER-CONTROLLER.md) |
 | the visual companion | [hive-cascade-paper](https://huggingface.co/spaces/SkyIsNotGreen/hive-cascade-paper) |
 | the task sets and run reports | [SkyIsNotGreen/hive-cascade](https://huggingface.co/datasets/SkyIsNotGreen/hive-cascade) |
 | the memory cards | [splinter-memory](https://huggingface.co/SkyIsNotGreen/splinter-memory) · [splinter-encoder](https://huggingface.co/SkyIsNotGreen/splinter-encoder) |
