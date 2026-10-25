@@ -727,6 +727,13 @@ SETTINGS_INDEX = [
     "id": "tab-global"
   },
   {
+    "label": "Hardware profile & controller",
+    "desc": "Local scan, deterministic proposal, confirmed apply/rollback",
+    "cat": "Performance",
+    "tab": "tab-global",
+    "id": "tab-global"
+  },
+  {
     "label": "Memory & RAG baseline",
     "desc": "The curation every conversation starts from",
     "cat": "Splinter",
@@ -2638,6 +2645,7 @@ loadEngines().catch(() => {{}});
 /* populate model dropdowns from local library */
 loadLibrarySystem().catch(() => {{}});
 loadStudioSettings();
+loadControllerStatus();
 loadChatToggles();
 loadStudioCommands();
 applyPinnedTabs();

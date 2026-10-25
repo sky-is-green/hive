@@ -31,8 +31,9 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 #: every boolean the Studio stores
 BOOL_KEYS = ("sandbox_enabled", "tools_enabled", "auto_compact", "dev_mode",
@@ -102,23 +103,49 @@ def load_settings(state_dir: str | Path | None = None) -> dict[str, Any]:
 
 
 def save_settings(data: dict[str, Any],
-                  state_dir: str | Path | None = None) -> dict[str, Any]:
-    """Apply the given keys to the stored settings and return the result."""
-    current = load_settings(state_dir)
-    for key in BOOL_KEYS:
-        if key in data:
-            current[key] = bool(data[key])
-    for key in STR_KEYS:
-        value = str(data.get(key) or "").strip()
-        if value:
-            current[key] = value
-    for key in DICT_KEYS:
-        value = data.get(key)
-        if isinstance(value, dict):
-            merged = dict(current.get(key) or {})
-            merged.update(value)
-            current[key] = merged
+                  state_dir: str | Path | None = None, *,
+                  remove: Mapping[str, Iterable[str]] | None = None
+                  ) -> dict[str, Any]:
+    """Apply the given keys to the stored settings and return the result.
+
+    ``remove`` is used by controller rollback: a setting that did not exist
+    before a proposal must be removed, not left behind as ``null``.  It is a
+    mapping of block name to keys, and only known blocks may be touched.
+    """
     path = settings_path(state_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(current, indent=1), encoding="utf-8")
-    return current
+    # The Studio and a confirmed controller apply can write this file from
+    # different threads/processes.  Keep the read-modify-write under the same
+    # per-file lock the controller state uses.
+    from harness.state_store import file_lock
+
+    with file_lock(path):
+        current = load_settings(state_dir)
+        for key in BOOL_KEYS:
+            if key in data:
+                current[key] = bool(data[key])
+        for key in STR_KEYS:
+            value = str(data.get(key) or "").strip()
+            if value:
+                current[key] = value
+        for key in DICT_KEYS:
+            value = data.get(key)
+            if isinstance(value, dict):
+                merged = dict(current.get(key) or {})
+                merged.update(value)
+                current[key] = merged
+        for block, keys in (remove or {}).items():
+            if block not in DICT_KEYS:
+                continue
+            target = current.get(block)
+            if not isinstance(target, dict):
+                continue
+            for key in keys:
+                target.pop(str(key), None)
+        tmp = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+        with tmp.open("w", encoding="utf-8") as handle:
+            handle.write(json.dumps(current, indent=1))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+        return current

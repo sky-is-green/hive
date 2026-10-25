@@ -1,9 +1,17 @@
 # Hive state store
 
-**Status:** design, 2026-10-25.
+**Status:** core store implemented for controller state; policy migration pending,
+2026-10-25.
 
 How Hive persists choices, grants, recommendations and evidence across restarts
 without mixing them into one unmaintainable settings blob.
+
+The first slice is live in [`harness/state_store.py`](../harness/state_store.py):
+`StatePaths`, per-file `flock`, `tmp → fsync → os.replace`, schema checks,
+corrupt-file quarantine, atomic audit JSONL and redaction. It owns
+`settings/controller.json`, `profiles/*.json` and `audit/settings-*.jsonl`.
+The legacy `studio_settings.json` migration, security/tool grants, sandbox and
+browser grants are still design-only.
 
 ## Principles
 
