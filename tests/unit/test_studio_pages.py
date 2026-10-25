@@ -73,6 +73,16 @@ def test_page_scripts_are_valid_javascript(page):
         )
 
 
+def test_cascade_page_has_a_senses_upload_panel():
+    html = render_cascade_page(["tasks-hard.json"])
+    assert 'id="senses-panel"' in html
+    assert 'id="senses-file"' in html
+    assert 'id="senses-button"' in html
+    assert "uploadSense()" in html
+    assert "/v1/cascade/senses/status" in html
+    assert "/v1/cascade/senses" in html
+
+
 def test_assistant_context_points_at_the_studio_api():
     """The app-assistant context must name the real endpoints."""
     from harness.app import _ASSISTANT_CONTEXT

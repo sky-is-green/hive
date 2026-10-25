@@ -4097,6 +4097,19 @@ def render_cascade_page(task_files: list[str]) -> str:
 {render_nav("cascade")}
 <p class="note">The cascade is <b>fully in your control</b>: every knob the runner accepts is exposed here. The learned gate is <b>off by default</b> (its own pre-registered rule); <code>--gate intern-0.8b</code> is an opt-in third trigger. The escalation lane harvests every ladder-resolved item to <code>escalation.jsonl</code> next to the report.</p>
 
+<section id="senses-panel" style="max-width:72rem">
+<h2>Senses: upload an input</h2>
+<p class="note">Image and text uploads are classified and encoded here. An image with a routed sense goes to <b>P6</b>; audio and video are stored and encoded but have no cascade path yet. The panel stays disabled until a sensory encoder is attached — it does not substitute a fake embedding.</p>
+<div class="grid-2col">
+  <label title="One image, audio clip, video, or text/code document.">Input file <input id="senses-file" type="file" accept="image/*,audio/*,video/*,text/*,.md,.markdown,.json,.jsonl,.yaml,.yml,.toml,.py,.js,.ts,.c,.h,.cpp,.rs,.go,.java,.sh,.sql,.html,.css,.xml,.csv,.tsv"></label>
+</div>
+<div class="row" style="margin-top:.75rem">
+  <button type="button" id="senses-button" onclick="uploadSense()" disabled>Ingest upload</button>
+  <span id="senses-status" class="note" style="margin-left:1rem">checking encoder…</span>
+</div>
+<pre id="senses-result" style="display:none; margin-top:1rem; max-height:24rem; overflow:auto"></pre>
+</section>
+
 <form id="cascade-form" onsubmit="return launchCascade(event)" style="max-width:72rem">
 <section>
 <h2 style="margin-top:0">Run</h2>
@@ -4229,5 +4242,59 @@ async function launchCascade(ev) {{
     }}
   }} catch (e) {{ /* the form still works without the baseline */ }}
 }})();
+
+async function refreshSenses() {{
+  const status = document.getElementById('senses-status');
+  const button = document.getElementById('senses-button');
+  if (!status || !button) return;
+  try {{
+    const r = await fetch('/v1/cascade/senses/status');
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'status failed');
+    if (!data.configured) {{
+      status.textContent = 'no sensory encoder attached (model loading is deferred)';
+      button.disabled = true;
+      return;
+    }}
+    status.textContent = data.model + ' · ' + data.dimensions + 'd · ≤'
+      + data.max_bytes + ' bytes';
+    button.disabled = false;
+  }} catch (e) {{
+    status.textContent = 'senses unavailable: ' + e.message;
+    button.disabled = true;
+  }}
+}}
+
+async function uploadSense() {{
+  const input = document.getElementById('senses-file');
+  const status = document.getElementById('senses-status');
+  const result = document.getElementById('senses-result');
+  const button = document.getElementById('senses-button');
+  if (!input || !input.files || !input.files.length) {{
+    status.textContent = 'choose a file first';
+    return;
+  }}
+  const body = new FormData();
+  body.append('file', input.files[0]);
+  status.textContent = 'ingesting…';
+  status.style.color = '';
+  result.style.display = 'none';
+  button.disabled = true;
+  try {{
+    const r = await fetch('/v1/cascade/senses', {{method: 'POST', body: body}});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+    status.textContent = data.modality + ' → ' + (data.path || 'no cascade path yet');
+    result.textContent = JSON.stringify(data, null, 2);
+    result.style.display = 'block';
+  }} catch (e) {{
+    status.textContent = 'error: ' + e.message;
+    status.style.color = '#b3372c';
+  }} finally {{
+    button.disabled = false;
+  }}
+}}
+
+refreshSenses();
 </script>
 </body></html>"""
