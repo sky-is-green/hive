@@ -18,6 +18,8 @@ Path                          Verb  Contract
 ``/v1/cascade/validate``      POST  score one candidate answer (P(correct))
 ``/v1/cascade/plan``          GET   ``plan_request`` for bucket/confidence/out_len
 ``/v1/cascade/frontier``      GET   per-role Pareto fronts from an oracle file
+``/v1/cascade/senses/status`` GET   sensory encoder/ingress state
+``/v1/cascade/senses``        POST  classify, store and encode one upload
 ``/v1/cascade/run``           POST  launch a pilot/oracle run (background)
 ``/v1/cascade/runs``          GET   run index, newest first
 ``/v1/cascade/report/{run}``  GET   one run's ``report.json``
@@ -35,17 +37,26 @@ import re
 import subprocess
 import sys
 import time
+from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from harness.cascade.oracle import CandidateMeasurement, frontier_by_role
 from harness.cascade.paths import PATHS, ROUTE_TABLE
 from harness.cascade.registry import CandidateRegistry, default_registry
 from harness.cascade.roles import ROLES, Device
 from harness.cascade.scheduler import LatencyModel, RouteDecision, plan_request
+from harness.cascade.senses import (
+    EncoderError,
+    PayloadTooLarge,
+    SensesError,
+    UnsupportedModality,
+    bucket_for_modality,
+)
 
 #: Router prefix (the app mounts the router without adding another prefix).
 PREFIX = "/v1/cascade"
@@ -166,6 +177,7 @@ def create_router(
     spawn: Optional[Spawner] = None,
     registry: Optional[CandidateRegistry] = None,
     validator: Any = None,
+    senses: Any = None,
     defaults: Optional[Callable[[], dict]] = None,
 ) -> APIRouter:
     """Return the ``/v1/cascade`` router.
@@ -174,7 +186,9 @@ def create_router(
     app) can point the router at a tmp tree; ``spawn`` replaces the subprocess
     launcher in tests; ``validator`` is a
     :class:`harness.cascade.validator.ValidatorService`-like object (lazy in
-    production, a fake in tests); ``defaults`` returns the harness-wide
+    production, a fake in tests); ``senses`` is a
+    :class:`harness.cascade.senses.SensesService` (unconfigured by default so
+    the API never fabricates embeddings); ``defaults`` returns the harness-wide
     baseline (the Global tab's Quality block) that a run starts from
     unless it says otherwise.
     """
@@ -205,6 +219,77 @@ def create_router(
             "paths": [path.to_dict() for path in PATHS],
             "route_table": dict(ROUTE_TABLE),
         }
+
+    @router.get("/senses/status")
+    def senses_status() -> dict[str, Any]:
+        """Sensory ingress state; no encoder is loaded by this call."""
+        if senses is None:
+            return {
+                "configured": False,
+                "loaded": False,
+                "note": "no sensory encoder attached to this sidecar",
+            }
+        return {"configured": True, **senses.status()}
+
+    @router.post("/senses")
+    async def sense_upload(file: UploadFile = File(...)) -> dict[str, Any]:
+        """Classify, store and encode one upload; suggest a cascade path.
+
+        This is the A2/P6 front door.  It does not generate an answer: it
+        returns the embedding and the scheduler's path preview so a caller
+        can hand the stored content to the vision generator.
+        """
+        if senses is None:
+            raise HTTPException(503, "no sensory encoder attached to this sidecar")
+
+        limit = int(senses.max_bytes)
+        try:
+            data = await file.read(limit + 1)
+        except OSError as exc:
+            raise HTTPException(400, f"could not read upload: {exc}") from exc
+        if len(data) > limit:
+            raise HTTPException(413, f"upload exceeds the {limit}-byte limit")
+
+        try:
+            sense = await run_in_threadpool(
+                partial(
+                    senses.ingest,
+                    data=data,
+                    filename=file.filename,
+                    content_type=file.content_type,
+                )
+            )
+        except PayloadTooLarge as exc:
+            raise HTTPException(413, str(exc)) from exc
+        except UnsupportedModality as exc:
+            raise HTTPException(415, str(exc)) from exc
+        except EncoderError as exc:
+            raise HTTPException(503, str(exc)) from exc
+        except SensesError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+        bucket = bucket_for_modality(sense.modality)
+        path = ROUTE_TABLE.get(bucket) if bucket else None
+        plan = (
+            plan_request(RouteDecision(bucket=bucket, confidence=1.0)).to_dict()
+            if bucket and path
+            else None
+        )
+        out = sense.to_dict()
+        out.update(
+            {
+                "bucket": bucket,
+                "path": path,
+                "plan": plan,
+                "routed": path is not None,
+            }
+        )
+        if path is None:
+            out["note"] = (
+                "encoded and stored; no cascade path is defined for this "
+                "modality yet"
+            )
+        return out
 
     @router.get("/registry")
     def registry_view() -> dict[str, Any]:
