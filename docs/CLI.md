@@ -71,19 +71,21 @@ explicit `hive tui`.  It is a real navigation surface, not a printed page:
 |---|---|
 | `1`–`4`, `←`/`→`, `Tab` | Status, Models, Stacks, Runs |
 | `↑`/`↓`, `j`/`k` | move the selection |
-| `Enter` | details for the selected serve/model/stack/run |
+| `Enter` | details for the selected serve/model/stack; run summary for a cascade run |
 | `l` | supervisor log (Status) |
-| `x` | stop the selected serve (Status) |
-| `r` | refresh |
+| `x` | stop the selected serve; press `y` or Enter to confirm (Status) |
+| `r` | refresh the header and active tab |
 | `?` | key help |
-| `q` | quit |
+| `q` | quit, or back out of an overlay |
 
 It opens on a short splash with the ASCII wordmark (skip it with
 `HIVE_NO_SPLASH=1`).  The Status tab shows the same records as `hive status`,
 with per-tier `up` / `down`; Models, Stacks and Runs mirror their subcommands.
 The dashboard is
 read-mostly: details, logs and stopping are available in place; starting a
-stack and downloading a model stay explicit CLI actions.
+stack and downloading a model stay explicit CLI actions.  The Runs tab shows
+the run summary; the full artifact stays available through
+`hive cascade report <run>` (or the Studio report page).
 
 A pipe, a captured stream, `HIVE_NO_TUI=1`, or a terminal without `curses`
 gets the static dashboard instead.  `hive status`, `hive models list`, and the
