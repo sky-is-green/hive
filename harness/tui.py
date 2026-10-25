@@ -26,10 +26,34 @@ except ImportError:  # pragma: no cover - platform dependent
     curses = None  # type: ignore
 
 from harness import cli as ops
-from harness import serve_state, termui
+from harness import hardware, serve_state, termui
 from harness.stack import schema
 
 TABS = ("Status", "Models", "Stacks", "Runs")
+
+
+def format_resources(summary: dict[str, Any] | None) -> str:
+    """One compact host/GPU line for the dashboard header.
+
+    Kept pure so it can be tested without a curses screen.  Missing probes
+    are omitted rather than rendered as a fake zero.
+    """
+    if not summary:
+        return ""
+    parts: list[str] = []
+    ram_free = summary.get("available_ram_gb")
+    ram_total = summary.get("total_ram_gb")
+    if isinstance(ram_free, (int, float)) and isinstance(ram_total, (int, float)):
+        parts.append(f"RAM {ram_free:.1f}/{ram_total:.1f} GiB free")
+    vram_free = summary.get("vram_free_gb")
+    vram_total = summary.get("vram_gb")
+    if isinstance(vram_free, (int, float)) and isinstance(vram_total, (int, float)):
+        parts.append(f"VRAM {vram_free:.1f}/{vram_total:.1f} GiB free")
+    gtt_used = summary.get("gtt_used_gb")
+    gtt_total = summary.get("gtt_total_gb")
+    if isinstance(gtt_used, (int, float)) and isinstance(gtt_total, (int, float)):
+        parts.append(f"GTT {gtt_used:.1f}/{gtt_total:.1f} GiB")
+    return " · ".join(parts)
 
 
 @dataclass
@@ -52,6 +76,7 @@ class App:
         self.sel = 0
         self.top = 0
         self.rows: list[Row] = []
+        self.resources: dict[str, Any] = {}
         self.message = ""
         self.mode = "main"          # main | detail | logs | help
         self.overlay_title = ""
@@ -131,10 +156,18 @@ class App:
     # ------------------------------------------------------------------
     # data
     # ------------------------------------------------------------------
+    def _load_resources(self) -> None:
+        try:
+            self.resources = hardware.hardware_summary()
+        except Exception:  # noqa: BLE001 - a probe must never break the dashboard
+            self.resources = {}
+
     def _load(self) -> None:
         self.rows = []
+        self.message = ""
         self.sel = 0
         self.top = 0
+        self._load_resources()
         if self.tab == 0:
             self._load_status()
         elif self.tab == 1:
@@ -252,9 +285,16 @@ class App:
             self.put(0, 0, "terminal too small (need at least 50x12)", curses.A_BOLD)
             self.screen.refresh()
             return
-        self.put(0, 2, f"hive {ops._version()}", self.attr("amber"))
+        version_text = f"hive {ops._version()}"
+        self.put(0, 2, version_text, self.attr("amber"))
         stamp = time.strftime("%H:%M:%S")
         self.put(0, max(2, width - len(stamp) - 2), stamp, self.attr("gray"))
+        resource_text = format_resources(self.resources)
+        if resource_text:
+            x = 2 + len(version_text) + 3
+            room = width - len(stamp) - 4 - x
+            if room > 20:
+                self.put(0, x, resource_text[:room], self.attr("gray"))
 
         x = 2
         for index, name in enumerate(TABS):

@@ -11,3 +11,19 @@ def test_run_falls_back_without_a_tty(monkeypatch):
     monkeypatch.delenv("HIVE_NO_TUI", raising=False)
     # pytest captures stdin/stdout, so this is the pipe case
     assert tui.run() == 1
+
+
+def test_format_resources_is_compact_and_omits_missing_probes():
+    line = tui.format_resources({
+        "available_ram_gb": 24.0,
+        "total_ram_gb": 30.0,
+        "vram_free_gb": 1.4,
+        "vram_gb": 21.5,
+        "gtt_used_gb": 0.17,
+        "gtt_total_gb": 29.4,
+    })
+    assert line == (
+        "RAM 24.0/30.0 GiB free · VRAM 1.4/21.5 GiB free · GTT 0.2/29.4 GiB"
+    )
+    assert tui.format_resources({}) == ""
+    assert tui.format_resources({"vram_gb": 21.5}) == ""

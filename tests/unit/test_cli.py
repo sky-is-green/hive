@@ -300,6 +300,24 @@ def test_doctor_json_with_a_declared_backend(tmp_path, capsys, monkeypatch):
     assert any(check["name"] == "backends" for check in payload["checks"])
 
 
+def test_doctor_reports_live_card_usage(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(cli, "linux_amd_devices", lambda: [{
+        "index": 1, "memory_gb": 21.46, "used_gb": 20.74,
+        "free_gb": 0.72, "display": False,
+    }])
+    monkeypatch.setattr(cli.backend_manifest, "rows", lambda: [{
+        "name": "rocm", "installed": True, "binary": "/bin/true",
+        "accelerators": ["amd"], "label": "ROCm",
+    }])
+    assert cli.main(["doctor", "--json", "--models-dir", str(tmp_path / "models"),
+                     "--stacks-dir", str(tmp_path / "stacks")]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    cards = next(check for check in payload["checks"] if check["name"] == "cards")
+    assert "card 1: 20.74 used / 0.72 free GiB" in cards["detail"]
+    memory = next(check for check in payload["checks"] if check["name"] == "memory")
+    assert "GiB free" in memory["detail"]
+
+
 def test_serve_missing_stack_is_a_usage_error(capsys):
     assert serve.main(["/tmp/does-not-exist.json", "--once"]) == 2
     assert "no stack file" in capsys.readouterr().err

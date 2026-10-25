@@ -81,6 +81,11 @@ glyph in the middle of command output.  The static surface keeps the same rules
 and uses a spinner for the slow operations (`serve` startup, `stop`, a model
 import or library scan).
 
+The dashboard header and `hive doctor` use the same live memory snapshot:
+host RAM available, per-card VRAM used/free, and GTT when the driver exposes
+it.  Check that line before launching a large stack; `hive doctor` also prints
+the host memory and GTT totals so a tight box is obvious before a load.
+
 Colour is automatic: it is used only on a terminal, and is disabled in a pipe,
 when `NO_COLOR` is set, or with `--no-color` (accepted before or after the
 command).  `FORCE_COLOR=1` forces it.  JSON output is never coloured and never
