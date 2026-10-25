@@ -334,7 +334,30 @@ The encoder boundary is separate from E0. `hive encoder status` inspects the
 configured model without loading it; `hive encoder embed "text"` loads the
 sentence-transformers backend lazily on the CPU. It is local-only by default;
 pass `--allow-download` to permit a missing model to be fetched. The controller
-does not use an encoder yet, so there is no fake embedding in this path.
+does not use an encoder for its decisions yet, so there is no fake embedding in
+this path.
+
+### Idle unload
+
+The controller's lazy encoder has a configurable lifecycle in the `encoder`
+settings block:
+
+```jsonc
+{
+  "controller_idle_unload": true,
+  "controller_idle_seconds": 300
+}
+```
+
+When enabled, the last successful controller embedding arms a daemon timer.
+If the encoder is idle for the configured number of seconds, the service drops
+its reference to the model; the next request reloads it through the same lazy
+factory. The timer never touches the serving engine or its VRAM. Turning the
+toggle off keeps the encoder resident for the life of the Studio process.
+`0.1` is the floor and `300` is the default. Changes take effect on the next
+controller embedding; the timer is cancelled when the toggle is turned off.
+`hive controller status` reports whether the controller encoder is loaded and
+how long remains before unload.
 
 ## Current state and gaps
 

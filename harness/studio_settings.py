@@ -68,6 +68,10 @@ DEFAULTS: dict[str, Any] = {
         "embedding_backend": "local",
         "embedding_url": "",
         "medium_model": "microsoft/graphcodebert-base",
+        # Controller-only lifecycle: unload the lazily loaded encoder after
+        # this many idle seconds.  The serving engine is never touched.
+        "controller_idle_unload": True,
+        "controller_idle_seconds": 300,
     },
 }
 

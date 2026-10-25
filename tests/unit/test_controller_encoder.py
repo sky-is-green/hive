@@ -8,10 +8,39 @@ import pytest
 
 from harness.controller.encoder import (
     EncoderError,
+    EncoderLifecycle,
     EncoderUnavailable,
     SentenceTransformerEncoder,
     encoder_from_settings,
 )
+
+
+class _Clock:
+    def __init__(self, now=100.0):
+        self.now = now
+
+    def __call__(self):
+        return self.now
+
+
+class _Timer:
+    def __init__(self, interval, function, args=()):
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.started = False
+        self.cancelled = False
+        self.daemon = False
+
+    def start(self):
+        self.started = True
+
+    def cancel(self):
+        self.cancelled = True
+
+    def fire(self):
+        if self.started and not self.cancelled:
+            self.function(*self.args)
 
 
 class _FakeModel:
@@ -80,3 +109,69 @@ def test_local_setting_builds_the_lazy_adapter():
         "embedding_model": "m", "embedding_backend": "local"}})
     assert encoder.model == "m"
     assert encoder.status()["loaded"] is False
+
+
+def _fake_lifecycle(*, idle_unload=True, idle_seconds=30.0):
+    clock = _Clock()
+    timers = []
+    loads = {"n": 0}
+
+    def factory():
+        loads["n"] += 1
+        return SentenceTransformerEncoder("fake")
+
+    def timer_factory(interval, function, args=()):
+        timer = _Timer(interval, function, args)
+        timers.append(timer)
+        return timer
+
+    lifecycle = EncoderLifecycle(
+        factory, idle_unload=idle_unload, idle_seconds=idle_seconds,
+        clock=clock, timer_factory=timer_factory)
+    return lifecycle, clock, timers, loads
+
+
+def test_lifecycle_unloads_after_the_idle_window():
+    lifecycle, clock, timers, loads = _fake_lifecycle()
+    assert lifecycle.get().model == "fake"
+    assert lifecycle.status()["loaded"] is True
+    assert len(timers) == 1 and timers[0].started
+    assert timers[0].interval == 30.0
+
+    clock.now += 30.0
+    timers[0].fire()
+    assert lifecycle.status()["loaded"] is False
+    assert loads["n"] == 1
+    assert lifecycle.get().model == "fake"
+    assert loads["n"] == 2
+
+
+def test_lifecycle_can_disable_idle_unload():
+    lifecycle, _clock, timers, _loads = _fake_lifecycle(idle_unload=False)
+    lifecycle.get()
+    assert timers == []
+    assert lifecycle.status()["idle_unload"] is False
+
+
+def test_touch_rearms_the_timer_and_stale_timer_is_ignored():
+    lifecycle, clock, timers, _loads = _fake_lifecycle()
+    lifecycle.get()
+    first = timers[0]
+    clock.now += 10
+    lifecycle.touch()
+    second = timers[1]
+    assert first.cancelled
+    clock.now += 30
+    first.function(*first.args)  # stale generation must not unload the new window
+    assert lifecycle.status()["loaded"] is True
+    second.fire()
+    assert lifecycle.status()["loaded"] is False
+
+
+def test_reconfiguring_off_cancels_the_pending_unload():
+    lifecycle, _clock, timers, _loads = _fake_lifecycle()
+    lifecycle.get()
+    lifecycle.configure(idle_unload=False, idle_seconds=30)
+    assert timers[0].cancelled
+    assert lifecycle.status()["loaded"] is True
+    assert lifecycle.status()["idle_remaining_s"] is None

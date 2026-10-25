@@ -77,6 +77,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C15b | Add `--request "How do I test this?"` to C15 | Request features appear; raw request text is absent from the controller trace. | |
 | C15c | `hive controller outcome <id> accepted --metric latency_ms=42` | Outcome and metric append to the trace; proposal record is unchanged. | |
 | C15d | `hive controller propose ... --request "..." --embed-request` | Explicit CPU encoder vector appears in the trace; raw text does not. | |
+| C15e | Set `controller_idle_unload=false`, then true with `controller_idle_seconds=1`; propose with `--embed-request`, wait, run `hive controller status` | Off keeps it loaded; on drops it after the idle window; no serving-engine VRAM changes. | |
 | C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |

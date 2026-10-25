@@ -104,6 +104,8 @@ def test_the_encoder_is_chosen_in_the_global_tab(client):
     assert 'id="ge-embedding_backend"' in page
     assert 'id="ge-embedding_url"' in page
     assert 'id="ge-medium_model"' in page
+    assert 'id="ge-controller_idle_unload"' in page
+    assert 'id="ge-controller_idle_seconds"' in page
     # the candidates are offered, but any model id can be typed
     assert "sentence-transformers/paraphrase-MiniLM-L3-v2" in page
     assert "Qwen/Qwen3-Embedding-0.6B" in page

@@ -163,6 +163,22 @@ def test_optional_encoder_vector_is_traced_without_raw_text(tmp_path):
     assert "test request" not in text
 
 
+def test_service_respects_the_encoder_lifecycle_setting(tmp_path):
+    service, settings, _state = _service(
+        tmp_path, encoder_factory=lambda: _FakeEncoder())
+    settings.data["encoder"] = {
+        "controller_idle_unload": False,
+        "controller_idle_seconds": 1,
+    }
+    service.propose(model_gib=1.0, request="test request", embed_request=True)
+    encoder = service.status()["encoder"]
+    assert encoder["loaded"] is True
+    assert encoder["idle_unload"] is False
+    assert encoder["idle_remaining_s"] is None
+    assert service.unload_encoder() is True
+    assert service.status()["encoder"]["loaded"] is False
+
+
 def test_embed_request_needs_text(tmp_path):
     service, _settings, _state = _service(
         tmp_path, encoder_factory=lambda: _FakeEncoder())

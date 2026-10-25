@@ -321,8 +321,10 @@ a single hive theme (yellow/black) across every page.
 - **Hardware profile & controller** — also in Global: an explicit-consent
   local scan, a deterministic E0 proposal (threads, context, GPU layers and
   resident experts only), the evidence and warnings behind it, and a
-  confirmed apply with rollback. Nothing is applied by scanning, and no
-  prompt or hardware profile leaves the machine.
+  confirmed apply with rollback. Optional request text adds features and,
+  with the explicit encoder checkbox, a CPU vector trace; the lazy encoder
+  has a configurable idle-unload timer. Nothing is applied by scanning, and
+  no prompt or hardware profile leaves the machine.
 - **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
   `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`, `compact`, `dev`,

@@ -42,6 +42,19 @@ def test_settings_round_trip(client):
     assert again["sandbox_enabled"] is False
 
 
+def test_controller_encoder_lifecycle_is_stored(client):
+    body = client.get("/v1/studio/settings").json()
+    assert body["encoder"]["controller_idle_unload"] is True
+    assert body["encoder"]["controller_idle_seconds"] == 300
+    client.put("/v1/studio/settings", json={"encoder": {
+        "controller_idle_unload": False,
+        "controller_idle_seconds": 45,
+    }})
+    saved = client.get("/v1/studio/settings").json()["encoder"]
+    assert saved["controller_idle_unload"] is False
+    assert saved["controller_idle_seconds"] == 45
+
+
 def test_sandbox_off_blocks_execution(client):
     client.put("/v1/studio/settings", json={"sandbox_enabled": False})
     r = client.post("/v1/sandbox/exec", json={"command": "echo hi"})

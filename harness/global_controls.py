@@ -123,6 +123,17 @@ ENCODER_FIELDS: list[tuple[str, str, str, str]] = [
      "candidates. Does: the recall on a big context. Changing: off (the "
      "toggle) leaves the small encoder alone; a different model trades VRAM "
      "for quality."),
+    ("controller_idle_unload", "unload controller encoder when idle", "check",
+     "How: after the controller's lazy encoder finishes a request, a daemon "
+     "timer drops the model reference when it has been idle for the number of "
+     "seconds below. Does: frees the encoder's CPU RAM; the next request "
+     "reloads it. Changing: off keeps it resident for the life of the Studio. "
+     "This never touches the serving engine or VRAM."),
+    ("controller_idle_seconds", "controller encoder idle seconds", "num",
+     "How: idle timeout for the controller encoder. Does: how long it stays "
+     "loaded after the last use. Changing: lower frees RAM sooner but reloads "
+     "more often; 0.1 is the floor, 300 is the default. Ignored while the "
+     "unload toggle is off."),
 ]
 
 QUALITY_FIELDS: list[tuple[str, str, str, str]] = [
