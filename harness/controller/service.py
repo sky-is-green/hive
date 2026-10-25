@@ -14,6 +14,7 @@ from typing import Any, Callable, Mapping
 
 from harness.controller.encoder import (
     EncoderError,
+    EncoderLifecycle,
     TextEncoder,
     encoder_from_settings,
 )
@@ -110,7 +111,7 @@ class ControllerService:
         self._save = settings_saver
         self._remove = settings_remover
         self._encoder_factory = encoder_factory
-        self._encoder: TextEncoder | None = None
+        self._encoder_lifecycle: EncoderLifecycle | None = None
         self._now = now or _now
 
     def _recommendations(self, profile_id: str) -> JsonStore:
@@ -131,19 +132,42 @@ class ControllerService:
         AuditLog(self.state.controller_trace_file()).append(
             {"schema_version": 1, "event": event, **fields})
 
+    def _encoder_policy(self) -> tuple[bool, float]:
+        block = (self._load(self.state.root).get("encoder") or {})
+        block = block if isinstance(block, Mapping) else {}
+        idle_unload = bool(block.get("controller_idle_unload", True))
+        try:
+            idle_seconds = float(block.get("controller_idle_seconds", 300))
+        except (TypeError, ValueError):
+            idle_seconds = 300.0
+        return idle_unload, max(0.1, idle_seconds)
+
     def _get_encoder(self) -> TextEncoder:
-        if self._encoder is None:
+        idle_unload, idle_seconds = self._encoder_policy()
+        if self._encoder_lifecycle is None:
             if self._encoder_factory is not None:
-                self._encoder = self._encoder_factory()
+                factory = self._encoder_factory
             else:
-                self._encoder = encoder_from_settings(
-                    self._load(self.state.root), local_files_only=True)
-        return self._encoder
+                def factory() -> TextEncoder:
+                    return encoder_from_settings(
+                        self._load(self.state.root), local_files_only=True)
+            self._encoder_lifecycle = EncoderLifecycle(
+                factory, idle_unload=idle_unload, idle_seconds=idle_seconds)
+        else:
+            self._encoder_lifecycle.configure(
+                idle_unload=idle_unload, idle_seconds=idle_seconds)
+        return self._encoder_lifecycle.get()
+
+    def unload_encoder(self) -> bool:
+        """Drop the controller's encoder now; return whether one was loaded."""
+        return (self._encoder_lifecycle.unload()
+                if self._encoder_lifecycle is not None else False)
 
     def _request_embedding(self, request: str) -> dict[str, Any]:
         try:
             encoder = self._get_encoder()
             vector = encoder.encode_one(request)
+            self._encoder_lifecycle.touch()  # type: ignore[union-attr]
         except EncoderError as exc:
             raise ControllerError(str(exc)) from exc
         except Exception as exc:  # noqa: BLE001 - optional local model
@@ -190,6 +214,12 @@ class ControllerService:
             controller = self._controller().read()
         except SchemaMismatch as exc:
             controller = {**_default_controller(), "error": str(exc)}
+        if self._encoder_lifecycle is not None:
+            encoder = self._encoder_lifecycle.status()
+        else:
+            idle_unload, idle_seconds = self._encoder_policy()
+            encoder = {"loaded": False, "idle_unload": idle_unload,
+                       "idle_seconds": idle_seconds, "idle_remaining_s": None}
         return {
             "state_dir": str(self.state.root),
             "trace_file": str(self.state.controller_trace_file()),
@@ -197,6 +227,7 @@ class ControllerService:
             "proposals": proposals,
             "latest_proposal": latest,
             "controller": controller,
+            "encoder": encoder,
         }
 
     def propose(

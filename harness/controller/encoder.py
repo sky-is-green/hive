@@ -8,7 +8,9 @@ and reports a typed unavailable state instead of pretending to have vectors.
 from __future__ import annotations
 
 import math
-from typing import Any, Sequence
+import threading
+import time
+from typing import Any, Callable, Sequence
 
 
 class EncoderError(RuntimeError):
@@ -151,6 +153,130 @@ class SentenceTransformerEncoder(TextEncoder):
             "dimensions": self.dimensions,
             "normalize": self.normalize,
         }
+
+
+class EncoderLifecycle:
+    """Lazy encoder cache with an optional idle-unload timer.
+
+    The timer is a daemon thread, so it never keeps Hive alive.  It only drops
+    this service's reference to the model; it never touches the serving engine
+    or its VRAM.  A request that arrives after expiry creates a fresh encoder
+    through the same factory.
+    """
+
+    def __init__(
+        self,
+        factory: Callable[[], TextEncoder],
+        *,
+        idle_unload: bool = True,
+        idle_seconds: float = 300.0,
+        clock: Callable[[], float] = time.monotonic,
+        timer_factory: Callable[..., Any] = threading.Timer,
+    ) -> None:
+        self._factory = factory
+        self._clock = clock
+        self._timer_factory = timer_factory
+        self._lock = threading.RLock()
+        self._encoder: TextEncoder | None = None
+        self._timer: Any = None
+        self._last_used: float | None = None
+        self._generation = 0
+        self._idle_unload = bool(idle_unload)
+        self._idle_seconds = max(0.1, float(idle_seconds))
+
+    def configure(self, *, idle_unload: bool,
+                  idle_seconds: float) -> None:
+        """Apply settings; an already-loaded model gets a fresh idle window."""
+        with self._lock:
+            self._idle_unload = bool(idle_unload)
+            self._idle_seconds = max(0.1, float(idle_seconds))
+            self._cancel_locked()
+            if self._encoder is not None:
+                self._last_used = self._clock()
+                self._schedule_locked()
+
+    def get(self) -> TextEncoder:
+        with self._lock:
+            if self._encoder is None:
+                self._encoder = self._factory()
+            self._last_used = self._clock()
+            self._schedule_locked()
+            return self._encoder
+
+    def touch(self) -> None:
+        """Reset the idle window after a successful encode."""
+        with self._lock:
+            if self._encoder is None:
+                return
+            self._last_used = self._clock()
+            self._schedule_locked()
+
+    def unload(self) -> bool:
+        """Drop the model immediately; return whether one was loaded."""
+        with self._lock:
+            self._cancel_locked()
+            was_loaded = self._encoder is not None
+            self._encoder = None
+            self._last_used = None
+            self._generation += 1
+            return was_loaded
+
+    def close(self) -> None:
+        self.unload()
+
+    def status(self) -> dict[str, Any]:
+        with self._lock:
+            remaining = None
+            if (self._encoder is not None and self._idle_unload
+                    and self._last_used is not None):
+                remaining = max(
+                    0.0, self._last_used + self._idle_seconds - self._clock())
+            return {
+                "loaded": self._encoder is not None,
+                "idle_unload": self._idle_unload,
+                "idle_seconds": round(self._idle_seconds, 3),
+                "idle_remaining_s": (round(remaining, 3)
+                                     if remaining is not None else None),
+            }
+
+    def _cancel_locked(self) -> None:
+        if self._timer is not None:
+            try:
+                self._timer.cancel()
+            except Exception:  # noqa: BLE001 - a dead timer is harmless
+                pass
+            self._timer = None
+
+    def _schedule_locked(self) -> None:
+        self._cancel_locked()
+        if (self._encoder is None or not self._idle_unload
+                or self._last_used is None):
+            return
+        self._generation += 1
+        generation = self._generation
+        deadline = self._last_used + self._idle_seconds
+        delay = max(0.0, deadline - self._clock())
+        timer = self._timer_factory(delay, self._expire,
+                                    args=(deadline, generation))
+        timer.daemon = True
+        self._timer = timer
+        timer.start()
+
+    def _expire(self, deadline: float, generation: int) -> None:
+        with self._lock:
+            if generation != self._generation:
+                return
+            self._timer = None
+            if not self._idle_unload or self._encoder is None:
+                return
+            now = self._clock()
+            if now + 1e-6 < deadline or (
+                    self._last_used is not None and self._last_used > deadline):
+                self._schedule_locked()
+                return
+            self._encoder = None
+            self._last_used = None
+            self._generation += 1
 
 
 def encoder_from_settings(settings: dict[str, Any], *,

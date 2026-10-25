@@ -357,6 +357,11 @@ The Studio's **Global** tab exposes the same scan → propose → review → app
 revert flow. `hive encoder embed` passes `--allow-download` only when asked;
 without it, a missing model is an error, not a silent download.
 
+The controller encoder has its own lifecycle settings in the `encoder` block:
+`controller_idle_unload` (default on) and `controller_idle_seconds` (default
+300, floor 0.1). The lazy model is dropped after that idle window; the next
+request reloads it. `hive controller status` shows whether it is loaded.
+
 ## `hive doctor`
 
 ```bash
