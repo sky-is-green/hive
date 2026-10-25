@@ -13,9 +13,11 @@ corrupt-file quarantine, atomic audit JSONL and redaction. It owns
 `profiles/controller-traces-*.jsonl` and `audit/settings-*.jsonl`.
 The controller trace stores request features, the proposal, optional
 explicitly-enabled encoder vectors, and lifecycle outcomes, never the raw
-request text. The legacy `studio_settings.json`
-migration, security/tool grants, sandbox and browser grants are still
-design-only.
+request text. `settings/security.json` and `settings/tool-grants.json` are now
+used by the gateway core. Studio settings now read the legacy
+`studio_settings.json` and write the migrated `settings/studio.json` on the
+next save; the legacy file is left in place. Sandbox and browser grant stores
+are still design-only.
 
 ## Principles
 

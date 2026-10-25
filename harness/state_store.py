@@ -152,6 +152,23 @@ class StatePaths:
         return self.profiles_dir / (
             f"controller-traces-{_safe_token(token, 'trace month')}.jsonl")
 
+    def security_file(self) -> Path:
+        return self.settings_file("security")
+
+    def grants_file(self) -> Path:
+        return self.settings_file("tool-grants")
+
+    def sandbox_file(self) -> Path:
+        return self.settings_file("sandbox")
+
+    def browser_grants_file(self) -> Path:
+        return self.settings_file("browser-grants")
+
+    def tool_audit_file(self, month: str | None = None) -> Path:
+        token = month or datetime.now(timezone.utc).strftime("%Y%m")
+        return self.audit_dir / (
+            f"tool-calls-{_safe_token(token, 'audit month')}.jsonl")
+
 
 def _chmod(path: Path, mode: int) -> None:
     try:

@@ -4789,6 +4789,61 @@ def create_app(
         return {"ok": True, "proposal_id": proposal_id, "outcome": outcome,
                 "metrics": metrics or {}}
 
+    @app.get("/v1/tools/policy")
+    def tools_policy():
+        """Show the safety tier, master switches, and saved grants."""
+        from harness.security import GrantStore, SecurityStore
+
+        state = _state_paths()
+        return {"policy": SecurityStore(state).read(),
+                "grants": GrantStore(state).list()}
+
+    @app.put("/v1/tools/policy")
+    def tools_policy_put(body: dict[str, Any] = Body(default={})):
+        """Set the safety tier and/or master switches."""
+        from harness.security import SecurityError, SecurityStore
+
+        store = SecurityStore(_state_paths())
+        try:
+            if body.get("tier") is not None:
+                store.set_tier(str(body["tier"]))
+            master = body.get("master")
+            if isinstance(master, dict) and master:
+                store.set_master(**master)
+            elif master is not None and not isinstance(master, dict):
+                raise SecurityError("master must be an object")
+        except SecurityError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"policy": store.read()}
+
+    @app.post("/v1/tools/revoke")
+    def tools_revoke(body: dict[str, Any] = Body(default={})):
+        """Revoke one global tool grant, or all of them with all=true."""
+        from harness.security import GrantStore
+
+        identity = str(body.get("identity") or "").strip() or None
+        all_grants = body.get("all") is True
+        if not identity and not all_grants:
+            raise HTTPException(422, "identity or all=true is required")
+        removed = GrantStore(_state_paths()).revoke(
+            identity, session_id=body.get("session_id"))
+        return {"ok": True, "removed": removed}
+
+    @app.get("/v1/tools/audit")
+    def tools_audit(limit: int = Query(default=50, ge=1, le=1000)):
+        """Show recent tool-gateway audit records (arguments are hashed)."""
+        from harness.state_store import StatePaths
+
+        path = StatePaths(Path(st.state_dir)).tool_audit_file()
+        rows: list[dict[str, Any]] = []
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines()[-limit:]:
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    continue
+        return {"records": rows, "path": str(path)}
+
     @app.get("/v1/encoder/status")
     def encoder_status(model: Optional[str] = Query(default=None),
                        allow_download: bool = Query(default=False)):

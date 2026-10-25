@@ -60,7 +60,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | ID | Command | Expected | Result |
 |---|---|---|---|
 | C1 | `hive` in a pipe / no TTY | Hive wordmark, version, running/models/stacks/backends, `get started`, `hive --help` footer. No menus or cursor control. | |
-| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, profile, controller, encoder, version, help. | |
+| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, profile, controller, encoder, ui, tools, version, help. | |
 | C3 | `hive help models list` | Same body as `hive models list --help`; description and every option present. | |
 | C4 | `hive help --json \| jq .` | Valid JSON; commands and options have descriptions; aliases appear. | |
 | C5 | `hive help models --json \| jq .` | `name=models`, `path="hive models"`, seven subcommands. | |
@@ -78,6 +78,10 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C15c | `hive controller outcome <id> accepted --metric latency_ms=42` | Outcome and metric append to the trace; proposal record is unchanged. | |
 | C15d | `hive controller propose ... --request "..." --embed-request` | Explicit CPU encoder vector appears in the trace; raw text does not. | |
 | C15e | Set `controller_idle_unload=false`, then true with `controller_idle_seconds=1`; propose with `--embed-request`, wait, run `hive controller status` | Off keeps it loaded; on drops it after the idle window; no serving-engine VRAM changes. | |
+| C20 | `hive tools status` / `policy` / `grants` | Guarded default; tier changes persist; no grants initially. | |
+| C21 | `hive tools revoke --all --yes` | Requires confirmation; existing grants disappear. | |
+| C22 | `hive tools audit` | Append-only records show decisions; arguments are hashes, not raw values. | |
+| C23 | Global → **Tool policy & grants** | Tier/master controls and revoke-all work; page states that DSH enforcement is still pending. | |
 | C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
@@ -183,6 +187,9 @@ python -m harness --mock --no-open --port 8765
 - [ ] **Propose** shows `changes`, `evidence`, and any warnings. **Apply with confirmation** asks first; **Revert last** restores the previous values.
 - [ ] The Global tab's ordinary **Save the baseline** still works and does not overwrite the controller panel state.
 - [ ] `POST /v1/controller/apply` without `confirm=true` is refused.
+- [ ] Global → **Tool policy & grants** shows the Guarded default; saving Strict/Trusted/Open persists.
+- [ ] **Revoke all grants** asks first and clears the list.
+- [ ] The panel states that the bundled DSH agent is **not yet** behind the gateway. A release must not claim agent tool enforcement without a separate PASS.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).
 - [ ] At 1200 px, 760 px, and 390 px wide, the page remains usable; no horizontal scroll except intentional code/tables.
 - [ ] Keyboard focus is visible; the command palette opens with `Ctrl+K`; Escape closes it.

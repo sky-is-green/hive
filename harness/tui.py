@@ -37,6 +37,7 @@ HELP_LINES = (
     "ENTER            details",
     "l                supervisor log (Status)",
     "x                stop selected serve, with confirmation (Status)",
+    "w                open the running web Studio",
     "r                refresh header and active tab",
     "?                this help",
     "q                quit",
@@ -456,6 +457,24 @@ class App:
     # ------------------------------------------------------------------
     # actions
     # ------------------------------------------------------------------
+    def _open_web(self) -> None:
+        """Open the running Studio; never start a server from inside curses."""
+        import urllib.request
+        import webbrowser
+
+        url = "http://127.0.0.1:8765"
+        try:
+            with urllib.request.urlopen(f"{url}/health", timeout=0.5) as response:
+                if response.status != 200:
+                    raise OSError("not healthy")
+        except Exception:  # noqa: BLE001 - "not running" is the useful answer
+            self.message = "web UI not running; run `hive ui web` in a shell"
+            return
+        if webbrowser.open(url):
+            self.message = "opened the web UI"
+        else:
+            self.message = f"open {url} in a browser"
+
     def _detail(self) -> None:
         row = self.current()
         if row is None:
@@ -646,6 +665,8 @@ class App:
         elif key == ord("r"):
             self._load()
             self.message = "refreshed"
+        elif key == ord("w"):
+            self._open_web()
         elif key in (10, 13, curses.KEY_ENTER):
             self._detail()
         elif key == ord("?") or key == curses.KEY_F1:

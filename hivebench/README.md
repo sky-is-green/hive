@@ -17,7 +17,9 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **116 REST operations** across 107 paths (107 operations under `/v1/`).
+Studio serves **120 REST operations** across 110 paths (111 operations under `/v1/`).
+**New here?** Start with [The Hive Book](../docs/book/README.md), especially the
+terminal-versus-web chapter.
 The suite is green (**1183 unit + 126 integration** tests, verified Oct 22); the
 live batteries and the Studio are under active development.
 
@@ -311,7 +313,7 @@ a single hive theme (yellow/black) across every page.
 
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
-- **Settings tab** — a searchable settings index: 34 settings across 8
+- **Settings tab** — a searchable settings index: 35 settings across 9
   categories, each linking to where it lives.
 - **Global tab** — the harness-wide controls, in one place: **the encoder**
   (the small model that does the retrieval and the memory management — the
@@ -370,7 +372,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (107 operations across 98 paths under `/v1/`)
+### API surface (111 operations across 101 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -383,6 +385,7 @@ a single hive theme (yellow/black) across every page.
 | Commands | `/v1/commands`, `/v1/commands/run` |
 | Studio | `/v1/studio/settings`, `/v1/studio/strata` |
 | Controller | `/v1/profiles/hardware`, `/v1/profiles/scan`, `/v1/controller/status`, `/v1/controller/propose`, `/v1/controller/apply`, `/v1/controller/revert`, `/v1/controller/outcome`, `/v1/encoder/status` |
+| Tools | `/v1/tools/policy`, `/v1/tools/revoke`, `/v1/tools/audit` |
 | Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
 | Chat | `/v1/splinter/stream`, `/v1/chat/stop` |

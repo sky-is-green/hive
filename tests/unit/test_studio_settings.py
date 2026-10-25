@@ -8,6 +8,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from harness.app import create_app
+from harness.studio_settings import (
+    legacy_settings_path,
+    load_settings,
+    save_settings,
+    settings_path,
+)
 
 
 @pytest.fixture()
@@ -40,6 +46,20 @@ def test_settings_round_trip(client):
     assert updated["tools_enabled"] is False
     again = client.get("/v1/studio/settings").json()
     assert again["sandbox_enabled"] is False
+
+
+def test_legacy_settings_are_read_then_migrated_on_save(tmp_path):
+    legacy = legacy_settings_path(tmp_path)
+    legacy.write_text(
+        '{"dev_mode": false, "encoder": {"embedding_model": "legacy-model"}}',
+        encoding="utf-8")
+    loaded = load_settings(tmp_path)
+    assert loaded["encoder"]["embedding_model"] == "legacy-model"
+    save_settings({"dev_mode": True}, tmp_path)
+    assert settings_path(tmp_path).is_file()
+    assert legacy.is_file()  # never delete evidence while migrating
+    assert load_settings(tmp_path)["dev_mode"] is True
+    assert load_settings(tmp_path)["encoder"]["embedding_model"] == "legacy-model"
 
 
 def test_controller_encoder_lifecycle_is_stored(client):
