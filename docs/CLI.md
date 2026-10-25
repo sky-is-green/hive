@@ -309,6 +309,43 @@ backend directory only after verification.  `--force` is required to replace
 an existing install.  The custom ROCm/Scion builds still come from their
 scripts; `fetch` is the portable path a new user needs.
 
+## `hive profile`, `hive controller`, and `hive encoder`
+
+These are the deterministic E0 lane: a local hardware snapshot, an allowlisted
+settings proposal, and a lazy text-encoder boundary. They do not load a model
+unless `encoder embed` is called, and they never auto-apply settings.
+
+```bash
+# explicit consent; the snapshot stays under HIVE_STATE_DIR
+hive profile scan --consent hardware
+hive profile show
+hive profile list
+
+# propose: only runtime_defaults.threads / ctx_size / ngl / resident_gib
+hive controller propose --model models/gguf/model.gguf --ctx 16384
+hive controller propose --model-gib 12 --native-ctx 32768 --ctx 16384
+hive controller apply <proposal-id> --yes
+hive controller revert --yes
+hive controller status
+
+# inspect without loading; embed is CPU-only and local-only by default
+hive encoder status
+hive encoder embed "the request to classify"
+```
+
+`profile scan` needs an explicit `--consent hardware`; it reads the existing
+`hive doctor` probes and does not upload anything. `controller propose` saves
+an immutable recommendation under `HIVE_STATE_DIR/profiles/`; applying it
+requires `--yes` (or `confirm=true` through the API), records the previous
+present/absent values under `settings/controller.json`, and appends a redacted
+audit record. `revert` restores the previous values and removes keys that did
+not exist before. The E0 allowlist deliberately excludes memory, quality,
+launch, encoder and MCP blocks.
+
+The Studio's **Global** tab exposes the same scan → propose → review → apply →
+revert flow. `hive encoder embed` passes `--allow-download` only when asked;
+without it, a missing model is an error, not a silent download.
+
 ## `hive doctor`
 
 ```bash

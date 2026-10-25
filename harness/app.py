@@ -4658,6 +4658,135 @@ def create_app(
         """Update the Studio's toggles (sandbox, tool use, auto-compaction)."""
         return _save_studio_settings(body or {})
 
+    # ------------------------------------------------------------------
+    # Hardware profile + deterministic controller
+    # ------------------------------------------------------------------
+    def _state_paths():
+        from harness.state_store import StatePaths
+
+        return StatePaths(Path(st.state_dir))
+
+    def _controller():
+        from harness.controller.service import ControllerService
+
+        return ControllerService(_state_paths())
+
+    @app.get("/v1/profiles/hardware")
+    def profile_hardware(profile_id: Optional[str] = Query(default=None)):
+        """The newest saved hardware profile, or the one named by profile_id."""
+        from harness.controller.profile import HardwareProfiler
+
+        profiler = HardwareProfiler(_state_paths())
+        profile = profiler.get(profile_id) if profile_id else profiler.latest()
+        if profile is None:
+            raise HTTPException(404, "no hardware profile saved")
+        return {"profile": profile}
+
+    @app.post("/v1/profiles/scan")
+    def profile_scan(body: dict[str, Any] = Body(default={})):
+        """Scan hardware locally after explicit consent."""
+        from harness.controller.profile import (
+            ConsentRequired,
+            HardwareProfiler,
+        )
+
+        try:
+            profile = HardwareProfiler(_state_paths()).scan(
+                body.get("consent"),
+                profile_id=body.get("profile_id"),
+            )
+        except ConsentRequired as exc:
+            raise HTTPException(403, str(exc)) from exc
+        except (OSError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"profile": profile}
+
+    @app.get("/v1/controller/status")
+    def controller_status():
+        """Show the saved profile, proposals, and last applied change."""
+        return _controller().status()
+
+    @app.post("/v1/controller/propose")
+    def controller_propose(body: dict[str, Any] = Body(default={})):
+        """Build an allowlisted E0 settings proposal."""
+        from harness.controller.service import ControllerError
+
+        try:
+            proposal = _controller().propose(
+                profile_id=body.get("profile_id"),
+                model_path=body.get("model_path"),
+                model_gib=(float(body["model_gib"])
+                           if body.get("model_gib") is not None else None),
+                native_ctx=(int(body["native_ctx"])
+                            if body.get("native_ctx") is not None else None),
+                desired_ctx=(int(body["desired_ctx"])
+                             if body.get("desired_ctx") is not None else None),
+                kv_type=str(body.get("kv_type") or "q8_0"),
+            )
+        except (ControllerError, OSError, ValueError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"proposal": proposal}
+
+    @app.post("/v1/controller/apply")
+    def controller_apply(body: dict[str, Any] = Body(default={})):
+        """Apply one proposal only after an explicit confirmation."""
+        from harness.controller.service import (
+            ConfirmationRequired,
+            ControllerError,
+        )
+
+        if body.get("confirm") is not True:
+            raise HTTPException(403, "controller apply requires confirm=true")
+        proposal_id = str(body.get("proposal_id") or "").strip()
+        if not proposal_id:
+            raise HTTPException(422, "proposal_id is required")
+        try:
+            result = _controller().apply(
+                proposal_id, confirmed=True,
+                profile_id=body.get("profile_id"))
+        except ConfirmationRequired as exc:
+            raise HTTPException(403, str(exc)) from exc
+        except ControllerError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return result
+
+    @app.post("/v1/controller/revert")
+    def controller_revert(body: dict[str, Any] = Body(default={})):
+        """Roll back the last confirmed controller change."""
+        from harness.controller.service import (
+            ConfirmationRequired,
+            ControllerError,
+        )
+
+        if body.get("confirm") is not True:
+            raise HTTPException(403, "controller revert requires confirm=true")
+        try:
+            return _controller().revert(confirmed=True)
+        except ConfirmationRequired as exc:
+            raise HTTPException(403, str(exc)) from exc
+        except ControllerError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/v1/encoder/status")
+    def encoder_status(model: Optional[str] = Query(default=None),
+                       allow_download: bool = Query(default=False)):
+        """Report the configured local encoder without loading its weights."""
+        from harness.controller.encoder import (
+            EncoderUnavailable,
+            SentenceTransformerEncoder,
+            encoder_from_settings,
+        )
+
+        try:
+            encoder = (SentenceTransformerEncoder(
+                model, local_files_only=not allow_download)
+                if model else encoder_from_settings(
+                    load_studio_settings(st.state_dir),
+                    local_files_only=not allow_download))
+        except (EncoderUnavailable, ValueError) as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return encoder.status()
+
     @app.post("/v1/sandbox/exec")
     def sandbox_exec(req: SandboxExecRequest):
         """Run a command in the sandbox (Docker when the daemon is up, else a local subprocess)."""

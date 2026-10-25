@@ -1,6 +1,6 @@
 # The Hive encoder and settings controller
 
-**Status:** design note / experiment plan, 2026-10-25.
+**Status:** E0 implemented; learned rungs still experiments, 2026-10-25.
 
 This is the plan for the small model that turns a request, a machine profile and
 the current run state into **safe harness settings**. It is separate from the
@@ -281,6 +281,44 @@ Do these in order; stop if the earlier rung fails.
 E0 is the first deliverable. It gives the product a useful first-run experience
 without any encoder, and it produces the labels and counterfactuals E1–E3 need.
 
+### E0 in this build
+
+The deterministic rung is now wired end to end:
+
+```bash
+hive profile scan --consent hardware
+hive profile show
+hive controller propose --model models/gguf/some-model.gguf --ctx 16384
+hive controller apply <proposal-id> --yes
+hive controller revert --yes
+```
+
+The controller proposes only these keys, with type/range checks:
+
+```text
+runtime_defaults.threads
+runtime_defaults.ctx_size
+runtime_defaults.ngl
+runtime_defaults.resident_gib
+```
+
+It never writes the memory, quality, launch, encoder or MCP blocks. A proposal
+is saved as a recommendation under `HIVE_STATE_DIR/profiles/`; applying it is a
+separate confirmed action that stores the previous present/absent state under
+`HIVE_STATE_DIR/settings/controller.json`, writes the studio settings, and
+appends a redacted audit event. Reverting removes keys that did not exist before
+the apply, rather than leaving `null` values behind.
+
+The Studio's **Global** tab has the same flow: consent checkbox → scan →
+optional model size/context → propose → review evidence/warnings → apply with a
+confirmation dialog → revert.
+
+The encoder boundary is separate from E0. `hive encoder status` inspects the
+configured model without loading it; `hive encoder embed "text"` loads the
+sentence-transformers backend lazily on the CPU. It is local-only by default;
+pass `--allow-download` to permit a missing model to be fetched. The controller
+does not use an encoder yet, so there is no fake embedding in this path.
+
 ## Current state and gaps
 
 Already present:
@@ -290,15 +328,23 @@ Already present:
 - hardware probes and fit/residency helpers;
 - `hive setup` and `hive doctor` paths;
 - the Studio Global controls and the CLI/TUI surfaces;
-- the memory encoder path and `EmbeddingGemma` as a candidate, not a dependency.
+- the memory encoder path and `EmbeddingGemma` as a candidate, not a dependency;
+- `StatePaths`/`JsonStore` atomic, locked, schema-versioned controller state;
+- a consent-gated hardware profile store;
+- the deterministic E0 recommender and allowlist;
+- confirmed apply, rollback presence tracking, and the settings audit log;
+- the lazy local `SentenceTransformerEncoder` adapter;
+- CLI, API and Studio Global-tab surfaces for the E0 flow.
 
 Not wired:
 
-- a first-run hardware scan/profile store and consent UI;
-- a deterministic recommender with explanations;
+- migration of the legacy `harness_state/studio_settings.json` into
+  `settings/studio.json` (the controller uses the existing store);
+- a first-run `hive setup` prompt for the hardware scan;
 - a controller head or custom encoder package;
 - trace collection/counterfactual labeling;
-- the safe application/rollback layer for controller proposals;
+- a served-encoder adapter for the controller (the Studio's retrieval drone
+  already has one);
 - a multimodal generator, so senses cannot yet answer an image.
 
 ## Non-negotiables

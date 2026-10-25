@@ -34,7 +34,7 @@ NODE = shutil.which("node")
 #: page name -> (renderer, expected script block count).  A count of 0 means the
 #: page is static HTML (no behaviour to break).
 PAGES = {
-    "server": (render_server_page, 2),
+    "server": (render_server_page, 3),
     "cascade": (lambda: render_cascade_page(["tasks-hard.json"]), 1),
     "runs": (lambda: render_runs_page([]), 0),
     "report": (lambda: render_report_page({"kind": "benchmark"}, "run-x"), 0),

@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **89 paths, 97 operations** (80
+no longer exists, or if a method is wrong. **106 paths, 115 operations** (97
 of the paths under `/v1/`).
 
 ```sh
@@ -139,6 +139,18 @@ curl http://127.0.0.1:8765/health
 |---|---|---|
 | `POST` | `/v1/sandbox/exec` | Run a command in the sandbox (Docker when the daemon is up, else a local subprocess). — body: `#/components/schemas/SandboxExecRequest` |
 | `GET` | `/v1/sandbox/status` | Sandbox availability: docker installed, daemon up, fallback mode. |
+
+### Controller — hardware profile and E0 settings proposal
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/profiles/hardware` | The newest saved hardware profile, or one named by `profile_id`. |
+| `POST` | `/v1/profiles/scan` | Probe and save CPU/RAM/GPU/storage locally after explicit hardware consent. |
+| `GET` | `/v1/controller/status` | The saved profile, proposals, and last applied controller change. |
+| `POST` | `/v1/controller/propose` | Build an allowlisted E0 proposal; never applies it. |
+| `POST` | `/v1/controller/apply` | Apply one proposal only with `confirm=true`; captures rollback values. |
+| `POST` | `/v1/controller/revert` | Roll back the last confirmed controller change with `confirm=true`. |
+| `GET` | `/v1/encoder/status` | Report the configured text encoder without loading its weights. |
 
 ### Studio — the console's own toggles
 

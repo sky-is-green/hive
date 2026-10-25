@@ -36,6 +36,17 @@ def test_the_global_tab_is_in_the_console(client):
     assert "function fillGlobalControls(" in page
 
 
+def test_the_controller_panel_is_manual_and_explicit(client):
+    page = client.get("/server").text
+    assert 'id="ctrl-consent"' in page
+    assert "function scanHardware(" in page
+    assert "function proposeController(" in page
+    assert "function applyController(" in page
+    assert "function revertController(" in page
+    assert "/v1/controller/apply" in page
+    assert "confirm=true" in page or "confirm: true" in page
+
+
 def test_the_settings_carry_the_four_blocks(client):
     body = client.get("/v1/studio/settings").json()
     for block in ("memory_defaults", "quality_defaults", "mcp", "runtime_defaults"):

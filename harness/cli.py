@@ -984,6 +984,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
     print(f"  {termui.dim('next')}")
     print(f"    {termui.accent('›')} hive models download <repo>[:<file>]")
     print(f"    {termui.accent('›')} hive serve --model <repo:file> --cards 1")
+    print(f"    {termui.accent('›')} hive profile scan --consent hardware")
     print(f"    {termui.accent('›')} hive doctor")
     return 0
 
@@ -1150,6 +1151,306 @@ def cmd_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def _state_paths(args: argparse.Namespace):
+    from harness.state_store import StatePaths
+
+    raw = getattr(args, "state_dir", None)
+    return StatePaths(Path(raw).expanduser()) if raw else StatePaths.default()
+
+
+def _print_profile(profile: dict) -> None:
+    termui.header("hardware profile", str(profile.get("profile_id") or "-"))
+    cpu = profile.get("cpu") or {}
+    ram = profile.get("ram") or {}
+    termui.kv([
+        ("scanned", profile.get("scanned_at") or "-"),
+        ("cpu", f"{cpu.get('model') or 'unknown'} · "
+                f"{cpu.get('physical') or '?'} physical / "
+                f"{cpu.get('logical') or '?'} logical"),
+        ("ram", f"{ram.get('available_gb') or '?'} available / "
+                f"{ram.get('total_gb') or '?'} GiB"),
+        ("consent", ", ".join(k for k, v in (profile.get("consent") or {}).items() if v)
+         or "none"),
+    ])
+    for card in profile.get("gpus") or []:
+        state = (f"{card.get('used_gb')} used / {card.get('free_gb')} free GiB"
+                 if card.get("free_gb") is not None else
+                 f"{card.get('memory_gb')} GiB")
+        print(f"  {termui.accent('›')} card {card.get('index')}: {state}"
+              f"{' (display)' if card.get('display') else ''}")
+
+
+def cmd_profile_scan(args: argparse.Namespace) -> int:
+    from harness.controller.profile import Consent, ConsentRequired, HardwareProfiler
+
+    try:
+        consent = Consent.parse(args.consent)
+    except ValueError as exc:
+        print(f"hive profile scan: {exc}", file=sys.stderr)
+        return 2
+    if not consent.hardware:
+        print("hive profile scan: explicit --consent hardware is required",
+              file=sys.stderr)
+        return 2
+    try:
+        profile = HardwareProfiler(_state_paths(args)).scan(
+            consent, profile_id=args.profile_id)
+    except (ConsentRequired, OSError, ValueError) as exc:
+        print(f"hive profile scan: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(profile)
+    else:
+        _print_profile(profile)
+        print(f"\n  {termui.dim('next')}")
+        print(f"    {termui.accent('›')} hive controller propose --model <path.gguf>")
+    return 0
+
+
+def cmd_profile_show(args: argparse.Namespace) -> int:
+    from harness.controller.profile import HardwareProfiler
+
+    profiler = HardwareProfiler(_state_paths(args))
+    profile = profiler.get(args.profile_id) if args.profile_id else profiler.latest()
+    if profile is None:
+        print("hive profile show: no hardware profile saved; run "
+              "`hive profile scan --consent hardware`", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(profile)
+    else:
+        _print_profile(profile)
+    return 0
+
+
+def cmd_profile_list(args: argparse.Namespace) -> int:
+    from harness.controller.profile import HardwareProfiler
+
+    rows = HardwareProfiler(_state_paths(args)).list()
+    if args.as_json:
+        _json(rows)
+    elif not rows:
+        print("  no hardware profiles yet")
+    else:
+        _table(["profile", "scanned", "cpu", "ram"],
+               [[row.get("profile_id"), row.get("scanned_at"),
+                 (row.get("cpu") or {}).get("model"),
+                 (row.get("ram") or {}).get("available_gb")]
+                for row in rows])
+    return 0
+
+
+def cmd_profile_delete(args: argparse.Namespace) -> int:
+    from harness.controller.profile import HardwareProfiler
+
+    if not args.yes:
+        print("hive profile delete: pass --yes to confirm", file=sys.stderr)
+        return 2
+    profiler = HardwareProfiler(_state_paths(args))
+    profile = profiler.get(args.profile_id) if args.profile_id else profiler.latest()
+    if profile is None:
+        print("hive profile delete: no such profile", file=sys.stderr)
+        return 1
+    deleted = profiler.delete(profile["profile_id"])
+    if args.as_json:
+        _json({"deleted": deleted, "profile_id": profile["profile_id"]})
+    else:
+        print(f"  deleted {profile['profile_id']}")
+    return 0
+
+
+def _print_proposal(proposal: dict) -> None:
+    termui.header("controller proposal", str(proposal.get("id") or "-"))
+    termui.kv([
+        ("profile", proposal.get("profile_id") or "-"),
+        ("reason", proposal.get("reason") or "-"),
+        ("confidence", proposal.get("confidence")),
+    ])
+    print(f"\n  {termui.accent('changes')}")
+    for key, value in (proposal.get("changes") or {}).items():
+        print(f"    {key} = {value}")
+    print(f"\n  {termui.accent('evidence')}")
+    for line in proposal.get("evidence") or []:
+        print(f"    · {line}")
+    warnings = proposal.get("warnings") or []
+    if warnings:
+        print(f"\n  {termui.warn('warnings')}")
+        for line in warnings:
+            print(f"    · {line}")
+
+
+def cmd_controller_status(args: argparse.Namespace) -> int:
+    from harness.controller.service import ControllerService
+
+    status = ControllerService(_state_paths(args)).status()
+    if args.as_json:
+        _json(status)
+    else:
+        profile = status.get("profile") or {}
+        latest = status.get("latest_proposal") or {}
+        controller = status.get("controller") or {}
+        termui.header("controller")
+        termui.kv([
+            ("profile", profile.get("profile_id") or "none"),
+            ("last proposal", latest.get("id") or "none"),
+            ("applied", (controller.get("last_apply") or {}).get("proposal_id") or "none"),
+            ("state", status.get("state_dir")),
+        ])
+    return 0
+
+
+def cmd_controller_propose(args: argparse.Namespace) -> int:
+    from harness.controller.service import ControllerError, ControllerService
+
+    service = ControllerService(_state_paths(args))
+    try:
+        proposal = service.propose(
+            profile_id=args.profile,
+            model_path=args.model,
+            model_gib=args.model_gib,
+            native_ctx=args.native_ctx,
+            desired_ctx=args.ctx,
+            kv_type=args.kv_type,
+        )
+    except (ControllerError, OSError, ValueError) as exc:
+        print(f"hive controller propose: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(proposal)
+    else:
+        _print_proposal(proposal)
+        print(f"\n  {termui.dim('apply with')} "
+              f"{termui.accent('hive controller apply ' + proposal['id'] + ' --yes')}")
+    return 0
+
+
+def cmd_controller_apply(args: argparse.Namespace) -> int:
+    from harness.controller.service import (
+        ConfirmationRequired,
+        ControllerError,
+        ControllerService,
+    )
+
+    if not args.yes:
+        print("hive controller apply: pass --yes to confirm a settings change",
+              file=sys.stderr)
+        return 2
+    service = ControllerService(_state_paths(args))
+    proposal_id = args.proposal
+    if not proposal_id:
+        latest = service.status().get("latest_proposal") or {}
+        proposal_id = latest.get("id")
+    if not proposal_id:
+        print("hive controller apply: no proposal to apply", file=sys.stderr)
+        return 1
+    try:
+        result = service.apply(proposal_id, confirmed=True, profile_id=args.profile)
+    except (ConfirmationRequired, ControllerError) as exc:
+        print(f"hive controller apply: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(result)
+    else:
+        termui.header("controller apply", proposal_id)
+        termui.kv([("changes", ", ".join(result["proposal"]["changes"]))])
+        print(f"  {termui.ok('applied')} · revert with "
+              f"{termui.accent('hive controller revert --yes')}")
+    return 0
+
+
+def cmd_controller_revert(args: argparse.Namespace) -> int:
+    from harness.controller.service import ConfirmationRequired, ControllerError, ControllerService
+
+    if not args.yes:
+        print("hive controller revert: pass --yes to confirm rollback", file=sys.stderr)
+        return 2
+    try:
+        result = ControllerService(_state_paths(args)).revert(confirmed=True)
+    except (ConfirmationRequired, ControllerError) as exc:
+        print(f"hive controller revert: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(result)
+    else:
+        print(f"  {termui.ok('reverted')} the last controller change")
+    return 0
+
+
+def cmd_encoder_status(args: argparse.Namespace) -> int:
+    from harness.controller.encoder import (
+        EncoderUnavailable,
+        SentenceTransformerEncoder,
+        encoder_from_settings,
+    )
+    from harness.studio_settings import load_settings
+
+    try:
+        if args.model:
+            encoder = SentenceTransformerEncoder(
+                args.model, local_files_only=not args.allow_download)
+        else:
+            encoder = encoder_from_settings(
+                load_settings(_state_paths(args).root),
+                local_files_only=not args.allow_download)
+        status = encoder.status()
+    except (EncoderUnavailable, ValueError) as exc:
+        print(f"hive encoder status: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(status)
+    else:
+        termui.header("encoder")
+        termui.kv([
+            ("model", status.get("model")),
+            ("backend", status.get("kind")),
+            ("device", status.get("device")),
+            ("available", status.get("available")),
+            ("dimensions", status.get("dimensions") or "not loaded"),
+        ])
+    return 0
+
+
+def cmd_encoder_embed(args: argparse.Namespace) -> int:
+    from harness.controller.encoder import (
+        EncoderError,
+        SentenceTransformerEncoder,
+        encoder_from_settings,
+    )
+    from harness.studio_settings import load_settings
+
+    text = args.text
+    if text is None:
+        text = sys.stdin.read()
+    if not text.strip():
+        print("hive encoder embed: text is empty", file=sys.stderr)
+        return 2
+    try:
+        if args.model:
+            encoder = SentenceTransformerEncoder(
+                args.model, local_files_only=not args.allow_download)
+        else:
+            encoder = encoder_from_settings(
+                load_settings(_state_paths(args).root),
+                local_files_only=not args.allow_download)
+        vector = encoder.encode_one(text)
+    except (EncoderError, OSError, ValueError) as exc:
+        print(f"hive encoder embed: {exc}", file=sys.stderr)
+        return 1
+    payload = {
+        "model": encoder.model,
+        "dimensions": len(vector),
+        "vector": vector,
+    }
+    if args.as_json:
+        _json(payload)
+    else:
+        print(f"  {termui.accent('model')} {payload['model']}")
+        print(f"  {termui.accent('dimensions')} {payload['dimensions']}")
+        preview = ", ".join(f"{value:.4f}" for value in vector[:8])
+        print(f"  {termui.accent('vector')} [{preview}{' …' if len(vector) > 8 else ''}]")
+    return 0
+
+
 def cmd_version(args: argparse.Namespace) -> int:
     payload = {"hive": _version(), "python": platform.python_version(),
                "platform": f"{platform.system()} {platform.machine()}"}
@@ -1172,6 +1473,11 @@ def _add_models_dir(parser: argparse.ArgumentParser) -> None:
 def _add_stacks_dir(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--stacks-dir", default=None,
                         help="directory of stack files (default: <repo>/stacks)")
+
+
+def _add_state_dir(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--state-dir", default=None,
+                        help="state root (default: HIVE_STATE_DIR or harness_state)")
 
 
 def _normalize_help(parser: argparse.ArgumentParser) -> None:
@@ -1556,6 +1862,144 @@ def build_parser() -> argparse.ArgumentParser:
     _add_stacks_dir(config)
     config.add_argument("--json", action="store_true", dest="as_json")
     config.set_defaults(func=cmd_config)
+
+    profile = sub.add_parser(
+        "profile", help="saved hardware profiles",
+        description="Scan or inspect the local hardware snapshot used by the "
+                    "deterministic controller. A scan is opt-in and local-only.")
+    profile_sub = profile.add_subparsers(dest="profile_command",
+                                         metavar="<action>", required=True)
+    ps = profile_sub.add_parser(
+        "scan", help="scan this machine with consent",
+        description="Probe CPU, RAM, GPUs, VRAM/GTT and storage, then save a "
+                    "versioned profile. Nothing leaves the machine.")
+    ps.add_argument("--consent", default="",
+                    help="comma list of permitted reads; hardware is required")
+    ps.add_argument("--profile-id", default=None,
+                    help="stable profile id (default: generated from date + random)")
+    _add_state_dir(ps)
+    ps.add_argument("--json", action="store_true", dest="as_json")
+    ps.set_defaults(func=cmd_profile_scan)
+
+    pshow = profile_sub.add_parser(
+        "show", help="print one saved hardware profile",
+        description="Print the newest saved profile, or the one named by "
+                    "PROFILE_ID.")
+    pshow.add_argument("profile_id", nargs="?",
+                       help="profile id (default: newest)")
+    _add_state_dir(pshow)
+    pshow.add_argument("--json", action="store_true", dest="as_json")
+    pshow.set_defaults(func=cmd_profile_show)
+
+    plist = profile_sub.add_parser(
+        "list", help="list saved hardware profiles",
+        description="List every readable hardware snapshot, oldest first.")
+    _add_state_dir(plist)
+    plist.add_argument("--json", action="store_true", dest="as_json")
+    plist.set_defaults(func=cmd_profile_list)
+
+    pdel = profile_sub.add_parser(
+        "delete", help="delete one saved profile",
+        description="Delete one profile by id, or the newest when omitted. "
+                    "--yes is required.")
+    pdel.add_argument("profile_id", nargs="?",
+                      help="profile id (default: newest)")
+    pdel.add_argument("--yes", action="store_true",
+                      help="confirm the deletion")
+    _add_state_dir(pdel)
+    pdel.add_argument("--json", action="store_true", dest="as_json")
+    pdel.set_defaults(func=cmd_profile_delete)
+
+    controller = sub.add_parser(
+        "controller", help="the deterministic settings controller",
+        description="Propose, inspect, apply, or revert allowlisted harness "
+                    "settings derived from the saved hardware profile.")
+    controller_sub = controller.add_subparsers(
+        dest="controller_command", metavar="<action>", required=True)
+    cstatus = controller_sub.add_parser(
+        "status", help="show the active profile and proposal",
+        description="Show the saved hardware profile, latest proposal, and "
+                    "last applied controller change.")
+    _add_state_dir(cstatus)
+    cstatus.add_argument("--json", action="store_true", dest="as_json")
+    cstatus.set_defaults(func=cmd_controller_status)
+
+    cprop = controller_sub.add_parser(
+        "propose", help="build a settings proposal",
+        description="Build an explainable E0 proposal. A model path or size is "
+                    "optional; without it only a conservative thread count is "
+                    "proposed.")
+    cprop.add_argument("--profile", default=None,
+                       help="hardware profile id (default: newest)")
+    cprop.add_argument("--model", default=None,
+                       help="GGUF path for size and native context")
+    cprop.add_argument("--model-gib", type=float, default=None,
+                       help="model weight size in GiB (when no path is given)")
+    cprop.add_argument("--native-ctx", type=int, default=None,
+                       help="model's native context length")
+    cprop.add_argument("--ctx", type=int, default=None,
+                       help="largest context the proposal may choose")
+    cprop.add_argument("--kv-type", default="q8_0",
+                       help="KV cache type used for the estimate (default q8_0)")
+    _add_state_dir(cprop)
+    cprop.add_argument("--json", action="store_true", dest="as_json")
+    cprop.set_defaults(func=cmd_controller_propose)
+
+    capply = controller_sub.add_parser(
+        "apply", help="apply a proposal with confirmation",
+        description="Validate and apply one allowlisted proposal. The previous "
+                    "values are saved for rollback; --yes is required.")
+    capply.add_argument("proposal", nargs="?",
+                        help="proposal id (default: latest)")
+    capply.add_argument("--profile", default=None,
+                        help="profile id to search (default: all profiles)")
+    capply.add_argument("--yes", action="store_true",
+                        help="confirm the settings change")
+    _add_state_dir(capply)
+    capply.add_argument("--json", action="store_true", dest="as_json")
+    capply.set_defaults(func=cmd_controller_apply)
+
+    crevert = controller_sub.add_parser(
+        "revert", help="roll back the last applied proposal",
+        description="Restore the values captured before the last apply. "
+                    "--yes is required.")
+    crevert.add_argument("--yes", action="store_true",
+                         help="confirm the rollback")
+    _add_state_dir(crevert)
+    crevert.add_argument("--json", action="store_true", dest="as_json")
+    crevert.set_defaults(func=cmd_controller_revert)
+
+    encoder = sub.add_parser(
+        "encoder", help="the local text encoder boundary",
+        description="Inspect or lazy-load the configured text encoder on the "
+                    "CPU. Nothing is downloaded unless --allow-download is set.")
+    encoder_sub = encoder.add_subparsers(dest="encoder_command",
+                                         metavar="<action>", required=True)
+    estatus = encoder_sub.add_parser(
+        "status", help="show the configured encoder without loading it",
+        description="Report the model, backend, cache policy and whether the "
+                    "sentence-transformers backend is importable.")
+    estatus.add_argument("--model", default=None,
+                         help="model id to inspect (default: Studio encoder block)")
+    estatus.add_argument("--allow-download", action="store_true",
+                         help="allow the backend to download a missing model")
+    _add_state_dir(estatus)
+    estatus.add_argument("--json", action="store_true", dest="as_json")
+    estatus.set_defaults(func=cmd_encoder_status)
+
+    eembed = encoder_sub.add_parser(
+        "embed", help="embed one text on the CPU",
+        description="Load the configured encoder lazily and print one vector. "
+                    "Use --allow-download only when a model download is wanted.")
+    eembed.add_argument("text", nargs="?",
+                        help="text to embed (default: read stdin)")
+    eembed.add_argument("--model", default=None,
+                        help="model id (default: Studio encoder block)")
+    eembed.add_argument("--allow-download", action="store_true",
+                        help="allow the backend to download a missing model")
+    _add_state_dir(eembed)
+    eembed.add_argument("--json", action="store_true", dest="as_json")
+    eembed.set_defaults(func=cmd_encoder_embed)
 
     version = sub.add_parser(
         "version", help="print the Hive version",

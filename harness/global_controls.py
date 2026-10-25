@@ -255,6 +255,151 @@ def _group(title: str, note: str, fields: list[tuple[str, str, str, str]],
             f'<div class="row" style="flex-wrap:wrap;gap:.35rem .8rem">{rows}</div>')
 
 
+CONTROLLER_PANEL = """
+<h3>Hardware profile &amp; settings controller</h3>
+<p class="note">The E0 controller is deterministic: it reads a local hardware
+snapshot and proposes only allowlisted runtime settings. Nothing leaves this
+machine. A scan needs the checkbox; applying needs a second confirmation, and
+the last change can be reverted.</p>
+<div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
+  <label class="inline" title="Read CPU, RAM, GPU/VRAM/GTT and storage. No prompts, models or network.">
+    <input type="checkbox" id="ctrl-consent"> allow hardware scan
+  </label>
+  <button onclick="scanHardware(this)" title="POST /v1/profiles/scan with consent=hardware. Saves a local snapshot; it does not change settings.">Scan this machine</button>
+  <button onclick="loadControllerStatus()" title="Reload the saved profile and proposals.">Refresh</button>
+</div>
+<div id="ctrl-profile" class="note" style="margin:.5rem 0">No profile loaded.</div>
+<div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
+  <input id="ctrl-model-gib" type="number" step="0.1" placeholder="model GiB" title="Optional: model weight size for a fit estimate." style="width:8rem">
+  <input id="ctrl-native-ctx" type="number" placeholder="native ctx" title="Optional: the model's native context length." style="width:8rem">
+  <input id="ctrl-ctx" type="number" placeholder="max ctx" title="Optional: the largest context the proposal may choose." style="width:8rem">
+  <button onclick="proposeController(this)" title="POST /v1/controller/propose. Creates a proposal only; it does not apply anything.">Propose</button>
+  <button onclick="revertController(this)" title="POST /v1/controller/revert with confirm=true. Restores the last applied values.">Revert last</button>
+</div>
+<div id="ctrl-proposal" class="note" style="margin-top:.75rem"></div>
+<div id="ctrl-note" class="note" style="margin-top:.35rem"></div>
+"""
+
+CONTROLLER_SCRIPT = """
+<script>
+function ctrlNote(text, bad) {
+  const el = document.getElementById('ctrl-note');
+  if (el) { el.textContent = text || ''; el.style.color = bad ? '#ff6b6b' : ''; }
+}
+function ctrlProfileText(p) {
+  if (!p) return 'No hardware profile yet. Tick consent and scan.';
+  const cpu = p.cpu || {}, ram = p.ram || {};
+  const cards = (p.gpus || []).map(g =>
+    'card ' + g.index + ': ' + (g.free_gb != null ? g.free_gb + ' GiB free' : '?')
+    + (g.display ? ' (display)' : '')).join(' · ');
+  return (p.profile_id || 'profile') + ' · ' + (cpu.model || 'CPU ?')
+    + ' · ' + (ram.available_gb != null ? ram.available_gb : '?') + ' GiB RAM'
+    + (cards ? ' · ' + cards : ' · no GPU');
+}
+function renderControllerProposal(p) {
+  const box = document.getElementById('ctrl-proposal');
+  if (!box) return;
+  box.textContent = '';
+  if (!p) { box.textContent = 'No proposal yet.'; return; }
+  const head = document.createElement('div');
+  head.textContent = (p.id || 'proposal') + ' · confidence ' + p.confidence
+    + ' · ' + (p.reason || '');
+  box.appendChild(head);
+  const list = document.createElement('div');
+  list.className = 'note';
+  list.style.margin = '.35rem 0';
+  for (const [key, value] of Object.entries(p.changes || {})) {
+    const row = document.createElement('div');
+    row.textContent = key + ' = ' + value;
+    list.appendChild(row);
+  }
+  box.appendChild(list);
+  for (const line of (p.evidence || [])) {
+    const row = document.createElement('div');
+    row.className = 'note';
+    row.textContent = '· ' + line;
+    box.appendChild(row);
+  }
+  for (const line of (p.warnings || [])) {
+    const row = document.createElement('div');
+    row.className = 'note';
+    row.style.color = '#FFB703';
+    row.textContent = 'warning: ' + line;
+    box.appendChild(row);
+  }
+  const apply = document.createElement('button');
+  apply.textContent = 'Apply with confirmation';
+  apply.style.marginTop = '.5rem';
+  apply.onclick = () => applyController(p.id);
+  box.appendChild(apply);
+}
+async function loadControllerStatus() {
+  const profile = document.getElementById('ctrl-profile');
+  try {
+    const st = await api('/v1/controller/status');
+    if (profile) profile.textContent = ctrlProfileText(st.profile);
+    renderControllerProposal(st.latest_proposal);
+  } catch (e) {
+    if (profile) profile.textContent = 'controller status unavailable: ' + e.message;
+  }
+}
+async function scanHardware(btn) {
+  const consent = document.getElementById('ctrl-consent');
+  if (!consent || !consent.checked) {
+    ctrlNote('Tick “allow hardware scan” first.', true);
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    await api('/v1/profiles/scan', 'POST', {consent: 'hardware'});
+    ctrlNote('Hardware profile saved locally.');
+    await loadControllerStatus();
+  } catch (e) {
+    ctrlNote('scan failed: ' + e.message, true);
+  } finally { if (btn) btn.disabled = false; }
+}
+async function proposeController(btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const body = {};
+    const gib = num('ctrl-model-gib');
+    const nativeCtx = num('ctrl-native-ctx');
+    const ctx = num('ctrl-ctx');
+    if (gib != null) body.model_gib = gib;
+    if (nativeCtx != null) body.native_ctx = nativeCtx;
+    if (ctx != null) body.desired_ctx = ctx;
+    const r = await api('/v1/controller/propose', 'POST', body);
+    renderControllerProposal(r.proposal);
+    ctrlNote('Proposal created. Review the evidence before applying.');
+  } catch (e) {
+    ctrlNote('proposal failed: ' + e.message, true);
+  } finally { if (btn) btn.disabled = false; }
+}
+async function applyController(id) {
+  if (!confirm('Apply this controller proposal? The previous values are saved for rollback.')) return;
+  try {
+    await api('/v1/controller/apply', 'POST', {proposal_id: id, confirm: true});
+    ctrlNote('Applied. Revert last restores the previous values.');
+    await loadControllerStatus();
+  } catch (e) {
+    ctrlNote('apply failed: ' + e.message, true);
+  }
+}
+async function revertController(btn) {
+  if (!confirm('Revert the last applied controller change?')) return;
+  if (btn) btn.disabled = true;
+  try {
+    await api('/v1/controller/revert', 'POST', {confirm: true});
+    ctrlNote('Reverted the last controller change.');
+    await loadControllerStatus();
+  } catch (e) {
+    ctrlNote('revert failed: ' + e.message, true);
+  } finally { if (btn) btn.disabled = false; }
+}
+</script>
+"""
+
+
 def render_global_pane() -> str:
     """The Global harness controls pane."""
     encoder = _group(
@@ -309,6 +454,8 @@ are the settings, and they apply to the next conversation or run.</p>
 <div class="row" style="flex-wrap:wrap;gap:.35rem .8rem">{toggles}</div>
 {quality}
 {mcp}
+{CONTROLLER_PANEL}
+{CONTROLLER_SCRIPT}
 <div class="row" style="margin-top:1rem">
 <button onclick="saveGlobalControls(this)" title="How: PUT /v1/studio/settings with the control blocks. Does: stores the baseline the harness starts from. Changing: takes effect for the next conversation or cascade run; the encoder takes effect when the Studio restarts.">Save the baseline</button>
 <span class="note" id="global-note"></span>

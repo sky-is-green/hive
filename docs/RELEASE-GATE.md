@@ -60,7 +60,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | ID | Command | Expected | Result |
 |---|---|---|---|
 | C1 | `hive` in a pipe / no TTY | Hive wordmark, version, running/models/stacks/backends, `get started`, `hive --help` footer. No menus or cursor control. | |
-| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, version, help. | |
+| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, profile, controller, encoder, version, help. | |
 | C3 | `hive help models list` | Same body as `hive models list --help`; description and every option present. | |
 | C4 | `hive help --json \| jq .` | Valid JSON; commands and options have descriptions; aliases appear. | |
 | C5 | `hive help models --json \| jq .` | `name=models`, `path="hive models"`, seven subcommands. | |
@@ -72,6 +72,12 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C11 | `hive models list`, `stacks list`, `cascade runs`, `backends list` | Tables render with headers and no clipped essential values. | |
 | C12 | `hive nonsense` | One-line usage error, exit 2, no traceback. | |
 | C13 | `hive stop does-not-exist` | Clear error and exit 1; no signal to the wrong process. | |
+| C14 | `hive profile scan --consent hardware --state-dir /tmp/hive-ui-gate` | Saves a local profile; prints CPU/RAM/cards; makes no settings change. | |
+| C15 | `hive controller propose --state-dir /tmp/hive-ui-gate --model-gib 12 --native-ctx 32768 --ctx 16384` | Proposal only; allowlisted keys, evidence, warnings; no apply. | |
+| C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
+| C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
+| C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
+| C19 | `hive profile scan --consent` with no value | Clear consent error, exit 2. | |
 
 Also check one `--json` command with `FORCE_COLOR=1`: JSON must contain **no ANSI**.
 
@@ -168,6 +174,11 @@ python -m harness --mock --no-open --port 8765
 - [ ] `/runs` lists bundles and opens a report.
 - [ ] `/cascade` launches the form; the Senses panel says it is disabled and never fabricates an embedding.
 - [ ] `POST /v1/cascade/senses` returns **503 unconfigured** while no encoder is attached; this is expected.
+- [ ] Global → **Hardware profile & controller** is visible. **Scan this machine** refuses until the consent checkbox is ticked.
+- [ ] After consent, scan shows the profile summary; no settings are applied by the scan.
+- [ ] **Propose** shows `changes`, `evidence`, and any warnings. **Apply with confirmation** asks first; **Revert last** restores the previous values.
+- [ ] The Global tab's ordinary **Save the baseline** still works and does not overwrite the controller panel state.
+- [ ] `POST /v1/controller/apply` without `confirm=true` is refused.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).
 - [ ] At 1200 px, 760 px, and 390 px wide, the page remains usable; no horizontal scroll except intentional code/tables.
 - [ ] Keyboard focus is visible; the command palette opens with `Ctrl+K`; Escape closes it.
