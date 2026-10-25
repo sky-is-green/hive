@@ -430,8 +430,8 @@ class App:
                 2: "enter details",
                 3: "enter summary",
             }[self.tab]
-        line = (f" {context}  ·  r refresh  ·  ? help  ·  q quit "
-                if context else " r refresh  ·  ? help  ·  q quit ")
+        line = (f" {context}  ·  r refresh  ·  w web  ·  ? help  ·  q quit "
+                if context else " r refresh  ·  w web  ·  ? help  ·  q quit ")
         self.put(height - 1, 0, line[-width:], self.sel_attr)
 
     def _draw_overlay(self, height: int, width: int) -> None:

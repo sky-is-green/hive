@@ -311,6 +311,10 @@ a single hive theme (yellow/black) across every page.
 
 ### Console features
 
+- **Two front doors** — `hive ui terminal` opens the low-overhead dashboard;
+  `hive ui web` opens the full Studio. The TUI's `w` key opens a running Studio,
+  and the Studio's Global tab copies the terminal command back. See
+  [Working modes](../docs/book/01-working-modes.md).
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
 - **Settings tab** — a searchable settings index: 35 settings across 9

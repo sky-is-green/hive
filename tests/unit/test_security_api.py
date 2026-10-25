@@ -60,3 +60,10 @@ def test_audit_endpoint_is_empty_by_default(client):
     body = client.get("/v1/tools/audit").json()
     assert body["records"] == []
     assert body["path"].endswith(".jsonl")
+
+
+def test_agent_status_does_not_claim_gateway_enforcement(client):
+    body = client.get("/v1/agent/status").json()
+    assert body["gateway_enforced"] is False
+    assert body["security_tier"] == "guarded"
+    assert "full-access" in body["permission_policy"]

@@ -154,7 +154,7 @@ operate the surface. A failed gate is not a release.
 
 ## 11. Research lanes
 
-**Status: existing** · [V4.1 ternary lanes](../../scion-v41-dspark/docs/V41-TERNARY-LANES.md) · [DSpark results](../../scion-v41-dspark/docs/V41-DSPARK-RESULTS.md)
+**Status: existing** · [V4.1 ternary lanes](../../../scion-v41-dspark/docs/V41-TERNARY-LANES.md) · [DSpark results](../../../scion-v41-dspark/docs/V41-DSPARK-RESULTS.md)
 
 Research is separate from the serving release. The ternary repack plan lives
 outside the product book so a failed experiment cannot silently become a
