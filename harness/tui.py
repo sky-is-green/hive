@@ -36,7 +36,7 @@ HELP_LINES = (
     "↑/↓, j/k          move",
     "ENTER            details",
     "l                supervisor log (Status)",
-    "x                stop selected serve (Status)",
+    "x                stop selected serve, with confirmation (Status)",
     "r                refresh header and active tab",
     "?                this help",
     "q                quit",
@@ -44,6 +44,25 @@ HELP_LINES = (
     "Header: RAM free · VRAM free · GTT used (best-effort probes).",
     "Data is read through the same modules as the CLI.",
 )
+
+
+def fit_text(text: object, width: int) -> str:
+    """Pad a cell to ``width``; if too long, keep both ends.
+
+    The suffix matters for model shards and run names, so a plain
+    ``text[:width]`` is not enough.  The middle is replaced with ``...``.
+    """
+    value = str(text)
+    if width <= 0:
+        return ""
+    if len(value) <= width:
+        return value.ljust(width)
+    if width <= 3:
+        return value[:width]
+    keep = width - 3
+    left = (keep + 1) // 2
+    right = keep - left
+    return value[:left] + "..." + (value[-right:] if right else "")
 
 
 def format_resources(summary: dict[str, Any] | None) -> str:
@@ -216,8 +235,6 @@ class App:
                      f"ctx {tier.get('ctx') or '?'}", str(tier.get("backend") or ""),
                      tier_state],
                     {"kind": "tier", "record": record, "tier": tier}, False, "tier"))
-        if not self.rows:
-            self.message = "Nothing is running.  Start one with: hive serve <stack> --detach"
 
     def _load_models(self) -> None:
         try:
@@ -327,7 +344,8 @@ class App:
 
         if self.message:
             self.put(height - 2, 2, self.message[:width - 4], self.attr("gray"))
-        self._footer(height, width)
+        if self.mode == "main":
+            self._footer(height, width)
         self.screen.refresh()
 
     def _draw_main(self, height: int, width: int) -> None:
@@ -364,13 +382,16 @@ class App:
             marker = ">" if offset == self.sel else " "
             if row.kind == "serve":
                 text = "  ".join(
-                    [str(row.cells[0])[:widths[0]], row.cells[1].rjust(widths[1]),
-                     row.cells[2][:widths[2]], row.cells[3].rjust(widths[3]),
+                    [fit_text(row.cells[0], widths[0]),
+                     row.cells[1].rjust(widths[1]),
+                     fit_text(row.cells[2], widths[2]),
+                     row.cells[3].rjust(widths[3]),
                      row.cells[4]])
             else:
                 endpoint = row.cells[1]
                 room = max(10, width - widths[0] - 34)
-                text = (f"  {row.cells[0][:widths[0]]}  {endpoint[:room].ljust(room)}  "
+                text = (f"  {fit_text(row.cells[0].strip(), widths[0])}  "
+                        f"{fit_text(endpoint, room)}  "
                         f"{row.cells[2]}  {row.cells[3]:<10} {row.cells[4]}")
             self.put(y, 2, f"{marker} {text}", attr)
             y += 1
@@ -392,20 +413,24 @@ class App:
             cells = []
             for index, cell in enumerate(row.cells):
                 width = widths[index] if index < len(widths) else 20
-                cells.append(str(cell)[:width].ljust(width))
+                cells.append(fit_text(cell, width))
             self.put(y + 1 + (offset - self.top), 2,
                      f"{marker} " + "  ".join(cells), attr)
         if not self.rows:
             self.put(y + 2, 4, "Nothing here yet.", self.attr("gray"))
 
     def _footer(self, height: int, width: int) -> None:
-        context = {
-            0: "enter details  l log  x stop",
-            1: "enter details",
-            2: "enter details",
-            3: "enter report",
-        }[self.tab]
-        line = f" {context}  ·  r refresh  ·  ? help  ·  q quit "
+        if not self.rows:
+            context = ""
+        else:
+            context = {
+                0: "enter details  l log  x stop",
+                1: "enter details",
+                2: "enter details",
+                3: "enter summary",
+            }[self.tab]
+        line = (f" {context}  ·  r refresh  ·  ? help  ·  q quit "
+                if context else " r refresh  ·  ? help  ·  q quit ")
         self.put(height - 1, 0, line[-width:], self.sel_attr)
 
     def _draw_overlay(self, height: int, width: int) -> None:
@@ -418,9 +443,15 @@ class App:
                 break
             self.put(top + index, 3, self.overlay[source][:width - 6],
                      self.attr("text"))
-        self.put(height - 2, 2,
-                 "↑↓ scroll · r reload · q back"[:width - 4],
-                 self.attr("gray"))
+        if self.mode == "help":
+            hint = "q back"
+        elif self.mode == "logs":
+            hint = "↑↓ scroll · r reload · q back"
+        elif self.mode == "confirm":
+            hint = "y stop · any other key cancels"
+        else:
+            hint = "↑↓ scroll · q back"
+        self.put(height - 2, 2, hint[:width - 4], self.attr("gray"))
 
     # ------------------------------------------------------------------
     # actions
@@ -464,9 +495,17 @@ class App:
             self._open_overlay(f"stack {row.data['name']}", lines)
         elif row.kind == "run":
             summary = row.data.get("summary") or {}
-            lines = [f"{key}: {ops._metric(key, value)}"
-                     for key, value in summary.items()]
-            self._open_overlay(f"run {row.data['path'].split('/')[-2]}", lines)
+            lines: list[str] = []
+            for key, value in summary.items():
+                if isinstance(value, (dict, list)):
+                    lines.append(f"{key}:")
+                    lines += ["  " + line for line in json.dumps(
+                        value, indent=2, default=str).splitlines()]
+                else:
+                    lines.append(f"{key}: {ops._metric(key, value)}")
+            name = row.data["path"].split("/")[-2]
+            lines += ["", f"full report: hive cascade report {name}"]
+            self._open_overlay(f"run {name}", lines)
 
     def _open_overlay(self, title: str, lines: list[str]) -> None:
         self.mode = "detail"
@@ -490,9 +529,27 @@ class App:
             return
         self.mode = "logs"
         self.overlay_title = f"log {record.get('name')}"
-        self.offset = max(0, len(self.overlay) - 1)
+        height, _ = self.screen.getmaxyx()
+        view = max(1, height - 7)
+        self.offset = max(0, len(self.overlay) - view)
 
-    def _stop(self) -> None:
+    def _request_stop(self) -> None:
+        row = self.current()
+        if row is None or row.kind != "serve":
+            return
+        record = row.data["record"]
+        self.mode = "confirm"
+        self.overlay_title = f"stop {record.get('name')}?"
+        self.overlay = [
+            f"pid      {record.get('pid')}",
+            f"stack    {record.get('stack')}",
+            "",
+            "Press y or Enter to stop it.",
+            "Any other key cancels.",
+        ]
+        self.offset = 0
+
+    def _stop_now(self) -> None:
         row = self.current()
         if row is None or row.kind != "serve":
             return
@@ -500,18 +557,16 @@ class App:
         name = str(record.get("name"))
         if not serve_state.pid_matches(record):
             serve_state.remove_record(name)
-            self.message = f"removed stale record {name}"
             self._load()
+            self.message = f"removed stale record {name}"
             return
         self.message = f"stopping {name} ..."
         self.draw()
         ok, detail = serve_state.terminate(record["pid"], force=False, timeout=8.0)
         if ok:
             serve_state.remove_record(name)
-            self.message = f"stopped {name}"
-        else:
-            self.message = f"could not stop {name}: {detail}"
         self._load()
+        self.message = f"stopped {name}" if ok else f"could not stop {name}: {detail}"
 
     def _tab(self, delta: int) -> None:
         self.tab = (self.tab + delta) % len(TABS)
@@ -568,6 +623,14 @@ class App:
             if key in (ord("q"), 27, ord("?")):
                 self.mode = "main"
             return False
+        if self.mode == "confirm":
+            if key in (ord("y"), ord("Y"), 10, 13, curses.KEY_ENTER):
+                self.mode = "main"
+                self._stop_now()
+            else:
+                self.mode = "main"
+                self.message = "stop cancelled"
+            return False
         if key in (ord("q"),):
             return True
         if key in (curses.KEY_LEFT, ord("h")):
@@ -593,7 +656,7 @@ class App:
         elif self.tab == 0 and key == ord("l"):
             self._logs()
         elif self.tab == 0 and key == ord("x"):
-            self._stop()
+            self._request_stop()
         elif ord("1") <= key <= ord("4"):
             index = key - ord("1")
             if index != self.tab:

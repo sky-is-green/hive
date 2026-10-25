@@ -16,8 +16,17 @@ def test_run_falls_back_without_a_tty(monkeypatch):
 def test_help_names_the_actions_and_the_resource_strip():
     help_text = "\n".join(tui.HELP_LINES)
     for token in ("switch tab", "ENTER", "supervisor log", "stop selected",
-                  "refresh", "RAM free", "VRAM free", "GTT used", "quit"):
+                  "confirmation", "refresh", "RAM free", "VRAM free",
+                  "GTT used", "quit"):
         assert token in help_text
+
+
+def test_fit_text_keeps_the_suffix_for_long_model_names():
+    assert tui.fit_text("short", 8) == "short   "
+    assert tui.fit_text("Qwen3.8-Flash-Next-00001-of-00002", 24) == (
+        "Qwen3.8-Fla...1-of-00002"
+    )
+    assert tui.fit_text("abc", 2) == "ab"
 
 
 def test_format_resources_is_compact_and_omits_missing_probes():
