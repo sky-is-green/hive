@@ -1,8 +1,10 @@
 """Studio settings — the toggles the console owns.
 
-Persisted next to the conversations (``harness_state/studio_settings.json``)
-so they survive a restart.  The set is small and fixed; unknown keys are
-ignored, so an older sidecar reading a newer file is harmless.
+Persisted under the state root as ``settings/studio.json`` so they survive a
+restart.  The legacy ``harness_state/studio_settings.json`` is still read on
+first start and is left untouched; the next save migrates the effective values
+to the new file.  The set is small and fixed; unknown keys are ignored, so an
+older sidecar reading a newer file is harmless.
 
 The keys:
 
@@ -76,17 +78,37 @@ DEFAULTS: dict[str, Any] = {
 }
 
 
+def _state_base(state_dir: str | Path | None = None) -> Path:
+    return (Path(state_dir) if state_dir
+            else Path(__file__).resolve().parents[1] / "harness_state")
+
+
 def settings_path(state_dir: str | Path | None = None) -> Path:
-    base = Path(state_dir) if state_dir else Path(__file__).resolve().parents[1] / "harness_state"
-    return base / "studio_settings.json"
+    return _state_base(state_dir) / "settings" / "studio.json"
+
+
+def legacy_settings_path(state_dir: str | Path | None = None) -> Path:
+    return _state_base(state_dir) / "studio_settings.json"
+
+
+def _read_raw(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def load_settings(state_dir: str | Path | None = None) -> dict[str, Any]:
-    """The Studio's toggles, with the defaults filled in."""
-    try:
-        raw = json.loads(settings_path(state_dir).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        raw = {}
+    """The Studio's toggles, with the defaults filled in.
+
+    Prefer the migrated file, then fall back to the legacy sidecar.  A corrupt
+    new file is treated as missing by this compatibility reader; the state
+    store owns quarantine for the newer scoped files.
+    """
+    raw = _read_raw(settings_path(state_dir))
+    if not raw:
+        raw = _read_raw(legacy_settings_path(state_dir))
     if not isinstance(raw, dict):
         raw = {}
     out = dict(DEFAULTS)

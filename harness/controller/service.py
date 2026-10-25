@@ -112,6 +112,7 @@ class ControllerService:
         self._remove = settings_remover
         self._encoder_factory = encoder_factory
         self._encoder_lifecycle: EncoderLifecycle | None = None
+        self._encoder_model: str | None = None
         self._now = now or _now
 
     def _recommendations(self, profile_id: str) -> JsonStore:
@@ -132,18 +133,26 @@ class ControllerService:
         AuditLog(self.state.controller_trace_file()).append(
             {"schema_version": 1, "event": event, **fields})
 
-    def _encoder_policy(self) -> tuple[bool, float]:
+    def _encoder_policy(self) -> tuple[bool, float, str]:
         block = (self._load(self.state.root).get("encoder") or {})
         block = block if isinstance(block, Mapping) else {}
         idle_unload = bool(block.get("controller_idle_unload", True))
+        model = str(block.get("embedding_model") or "").strip()
         try:
             idle_seconds = float(block.get("controller_idle_seconds", 300))
         except (TypeError, ValueError):
             idle_seconds = 300.0
-        return idle_unload, max(0.1, idle_seconds)
+        return idle_unload, max(0.1, idle_seconds), model
 
     def _get_encoder(self) -> TextEncoder:
-        idle_unload, idle_seconds = self._encoder_policy()
+        idle_unload, idle_seconds, model = self._encoder_policy()
+        if (self._encoder_lifecycle is not None
+                and self._encoder_model != model):
+            # A changed model must not keep serving vectors from the old one
+            # until the idle timer happens to fire.
+            self.unload_encoder()
+            self._encoder_lifecycle = None
+        self._encoder_model = model
         if self._encoder_lifecycle is None:
             if self._encoder_factory is not None:
                 factory = self._encoder_factory
@@ -217,7 +226,7 @@ class ControllerService:
         if self._encoder_lifecycle is not None:
             encoder = self._encoder_lifecycle.status()
         else:
-            idle_unload, idle_seconds = self._encoder_policy()
+            idle_unload, idle_seconds, _model = self._encoder_policy()
             encoder = {"loaded": False, "idle_unload": idle_unload,
                        "idle_seconds": idle_seconds, "idle_remaining_s": None}
         return {

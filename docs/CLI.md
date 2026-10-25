@@ -309,6 +309,40 @@ backend directory only after verification.  `--force` is required to replace
 an existing install.  The custom ROCm/Scion builds still come from their
 scripts; `fetch` is the portable path a new user needs.
 
+## `hive ui` and `hive tools`
+
+The two working surfaces share the same state:
+
+```bash
+hive ui status              # web URL + whether it is running
+hive ui terminal            # the curses dashboard
+hive ui web                 # Studio in the foreground
+hive ui web --detach        # Studio in the background, opens a browser
+hive ui web --mock          # model-free Studio fixture
+```
+
+`hive ui` never starts a second web server. `hive ui terminal` is the same
+dashboard as `hive tui`; the TUI's `w` key opens a **running** Studio in the
+browser and tells you to run `hive ui web` if it is not running. The web
+Studio's Global tab carries a copyable `hive ui terminal` command. The pros and
+cons of each surface are in the [interface chapter](book/01-working-modes.md).
+
+```bash
+hive tools status
+hive tools policy
+hive tools policy guarded
+hive tools grants
+hive tools revoke hive:bash@1.0.0 --yes
+hive tools audit --limit 20
+```
+
+The policy core is in `harness/security.py`: a side-effect call needs a reason,
+headless calls are denied, session grants disappear with the session, global
+grants are explicit and revocable, and arguments are hashed in the audit. The
+bundled DSH agent does not yet have the pre-execution hook, so `hive tools`
+does **not** currently make the DSH agent safe; see
+[the gateway document](TOOL-GATEWAY.md).
+
 ## `hive profile`, `hive controller`, and `hive encoder`
 
 These are the deterministic E0 lane: a local hardware snapshot, an allowlisted

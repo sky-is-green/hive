@@ -1,15 +1,20 @@
 # Hive tool gateway and permission protocol
 
-**Status:** design locked / implementation pending, 2026-10-25.
+**Status:** policy/grant/audit core implemented; DSH/MCP/browser adapters pending,
+2026-10-25.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
 the agent must not be able to execute a side-effect tool before Hive approves
 it.
 
-The current implementation is the opposite: `harness/agent.py` reports
+The current **agent** is still the opposite: `harness/agent.py` reports
 `full-access`, `tools_enabled` is one global switch, and Docker falls back to a
-local subprocess. That is the gap this closes.
+local subprocess. The policy/grant/audit core is now implemented in
+[`harness/security.py`](../harness/security.py) and exposed through
+`hive tools`; it is the boundary for Hive/MCP/browser adapters and the future
+DSH proxy. Do not treat it as full-agent enforcement until step 5 below is
+wired.
 
 ## Layers
 
@@ -232,6 +237,18 @@ Network policy:
 - `file://` and `data:`: approval; never auto;
 - credentials/autofill: only with explicit profile import.
 
+## Implemented API (core)
+
+```text
+GET  /v1/tools/policy     # tier, master switches, saved grants
+PUT  /v1/tools/policy     # tier and master switches
+POST /v1/tools/revoke     # identity, or all=true
+GET  /v1/tools/audit      # recent append-only decisions
+```
+
+The call/approval endpoints below remain the target for the execution adapters;
+they are not exposed until a real tool can be gated end to end.
+
 ## API shape
 
 The gateway is the only tool execution path:
@@ -266,10 +283,33 @@ request.
 - “Turn all precautions off” requires a typed confirmation and shows the
   non-negotiable list.
 
+## Implementation status
+
+Implemented:
+
+- `ToolSpec` metadata with unknown-tool safe defaults;
+- the `strict` / `guarded` / `trusted` / `open` policy store;
+- reason enforcement for side-effect calls;
+- in-memory session grants and durable global grants;
+- headless denial for side-effect calls;
+- private-network approval gating;
+- pending decisions, deny, timeout, and grant scope;
+- append-only tool audit with argument hashes and secret redaction;
+- `hive tools status|policy|grants|revoke|audit`;
+- unit tests for the above.
+
+Still required before this is an agent security boundary:
+
+- a pre-execution hook/proxy for the bundled DSH runtime;
+- MCP metadata registration and subagent inheritance;
+- Docker sandbox execution with a pinned image and local-fallback approval;
+- browser adapters and origin/SSRF checks;
+- Studio/TUI approval surfaces.
+
 ## Implementation order
 
 1. **Gateway core** — ToolSpec, request/decision, session/global store, audit,
-   headless policy, tests. No UI.
+   headless policy, tests. No UI. **Done.**
 2. **Approval surfaces** — Studio modal/SSE, TUI overlay, CLI prompt; shared
    broker and countdown.
 3. **Docker sandbox** — setup wizard, image, no-network workspace, local

@@ -36,6 +36,22 @@ def test_the_global_tab_is_in_the_console(client):
     assert "function fillGlobalControls(" in page
 
 
+def test_the_interface_switch_is_explained_and_copyable(client):
+    page = client.get("/server").text
+    assert 'id="terminal-command"' in page
+    assert "hive ui terminal" in page
+    assert "function copyTerminalCommand(" in page
+
+
+def test_the_security_panel_is_visible_and_explicit(client):
+    page = client.get("/server").text
+    assert 'id="sec-tier"' in page
+    assert 'id="sec-approval"' in page
+    assert "function saveSecurityPolicy(" in page
+    assert "function revokeAllGrants(" in page
+    assert "pre-execution hook" in page
+
+
 def test_the_controller_panel_is_manual_and_explicit(client):
     page = client.get("/server").text
     assert 'id="ctrl-consent"' in page

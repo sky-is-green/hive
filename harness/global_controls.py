@@ -267,6 +267,17 @@ def _group(title: str, note: str, fields: list[tuple[str, str, str, str]],
 
 
 CONTROLLER_PANEL = """
+<h3>Working modes</h3>
+<p class="note">The web Studio is the visual surface: models, cascade forms,
+graphs, the controller panel and long-form reports. The terminal dashboard is
+the low-overhead surface: live resource health, quick model/stack inspection,
+logs and stop controls, including over SSH. Both read the same state. To switch
+from web to terminal, copy and run:</p>
+<div class="row" style="align-items:center">
+  <code id="terminal-command">hive ui terminal</code>
+  <button onclick="copyTerminalCommand()" title="Copy the terminal command. The web UI cannot start a local terminal for you.">Copy terminal command</button>
+</div>
+
 <h3>Hardware profile &amp; settings controller</h3>
 <p class="note">The E0 controller is deterministic: it reads a local hardware
 snapshot and proposes only allowlisted runtime settings. Nothing leaves this
@@ -295,6 +306,29 @@ deterministic features are written to the trace; the raw text is not stored.
 </div>
 <div id="ctrl-proposal" class="note" style="margin-top:.75rem"></div>
 <div id="ctrl-note" class="note" style="margin-top:.35rem"></div>
+
+<h3>Tool policy &amp; grants</h3>
+<p class="note">The gateway core is implemented; the bundled DSH agent does
+not yet have its pre-execution hook. These controls therefore govern the
+gateway contract and its future adapters, not the current agent loop.</p>
+<div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
+  <label class="inline" title="Strict asks every side-effect call; Guarded is the default; Trusted keeps grants; Open removes prompts but not the hard guards.">tier
+    <select id="sec-tier">
+      <option value="strict">strict</option>
+      <option value="guarded">guarded</option>
+      <option value="trusted">trusted</option>
+      <option value="open">open</option>
+    </select>
+  </label>
+  <label class="inline" title="Show approval dialogs for the gateway's side-effect calls."><input type="checkbox" id="sec-approval"> approval prompts</label>
+  <label class="inline" title="Require the sandbox path; local fallback is always a separate session decision."><input type="checkbox" id="sec-sandbox"> sandbox</label>
+  <label class="inline" title="Private/local/link-local origins always need an explicit grant."><input type="checkbox" id="sec-private"> private-network gate</label>
+  <button onclick="saveSecurityPolicy(this)" title="PUT /v1/tools/policy. Stores the tier and master switches.">Save policy</button>
+  <button onclick="loadSecurityStatus()" title="Reload the policy and grants.">Refresh</button>
+  <button onclick="revokeAllGrants(this)" title="POST /v1/tools/revoke with all=true. Confirms first.">Revoke all grants</button>
+</div>
+<div id="sec-grants" class="note" style="margin-top:.5rem"></div>
+<div id="sec-note" class="note" style="margin-top:.35rem"></div>
 """
 
 CONTROLLER_SCRIPT = """
@@ -302,6 +336,75 @@ CONTROLLER_SCRIPT = """
 function ctrlNote(text, bad) {
   const el = document.getElementById('ctrl-note');
   if (el) { el.textContent = text || ''; el.style.color = bad ? '#ff6b6b' : ''; }
+}
+async function copyTerminalCommand() {
+  const text = 'hive ui terminal';
+  try {
+    await navigator.clipboard.writeText(text);
+    ctrlNote('Copied: ' + text);
+  } catch (e) {
+    ctrlNote('Run in a shell: ' + text);
+  }
+}
+function secNote(text, bad) {
+  const el = document.getElementById('sec-note');
+  if (el) { el.textContent = text || ''; el.style.color = bad ? '#ff6b6b' : ''; }
+}
+function renderGrants(rows) {
+  const box = document.getElementById('sec-grants');
+  if (!box) return;
+  box.textContent = '';
+  if (!rows || !rows.length) { box.textContent = 'No tool grants.'; return; }
+  for (const row of rows) {
+    const line = document.createElement('div');
+    line.textContent = (row.tool_identity || '?') + ' · ' + (row.scope || '?')
+      + (row.session_id ? ' · ' + row.session_id : '');
+    box.appendChild(line);
+  }
+}
+async function loadSecurityStatus() {
+  try {
+    const st = await api('/v1/tools/policy');
+    const p = st.policy || {};
+    const tier = document.getElementById('sec-tier');
+    if (tier) tier.value = p.tier || 'guarded';
+    const master = p.master || {};
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+    set('sec-approval', master.approval_prompts);
+    set('sec-sandbox', master.sandbox);
+    set('sec-private', master.private_network);
+    renderGrants(st.grants || []);
+  } catch (e) {
+    secNote('policy unavailable: ' + e.message, true);
+  }
+}
+async function saveSecurityPolicy(btn) {
+  if (btn) btn.disabled = true;
+  try {
+    await api('/v1/tools/policy', 'PUT', {
+      tier: document.getElementById('sec-tier')?.value || 'guarded',
+      master: {
+        approval_prompts: !!document.getElementById('sec-approval')?.checked,
+        sandbox: !!document.getElementById('sec-sandbox')?.checked,
+        private_network: !!document.getElementById('sec-private')?.checked,
+      },
+    });
+    secNote('Policy saved.');
+    await loadSecurityStatus();
+  } catch (e) {
+    secNote('save failed: ' + e.message, true);
+  } finally { if (btn) btn.disabled = false; }
+}
+async function revokeAllGrants(btn) {
+  if (!confirm('Revoke every saved tool grant?')) return;
+  if (btn) btn.disabled = true;
+  try {
+    await api('/v1/tools/revoke', 'POST', {all: true});
+    secNote('All global grants revoked.');
+    await loadSecurityStatus();
+  } catch (e) {
+    secNote('revoke failed: ' + e.message, true);
+  } finally { if (btn) btn.disabled = false; }
 }
 function ctrlProfileText(p) {
   if (!p) return 'No hardware profile yet. Tick consent and scan.';

@@ -734,6 +734,13 @@ SETTINGS_INDEX = [
     "id": "tab-global"
   },
   {
+    "label": "Safety tier & tool grants",
+    "desc": "Approval policy, session/global grants, audit",
+    "cat": "Security",
+    "tab": "tab-global",
+    "id": "tab-global"
+  },
+  {
     "label": "Memory & RAG baseline",
     "desc": "The curation every conversation starts from",
     "cat": "Splinter",
@@ -2646,6 +2653,7 @@ loadEngines().catch(() => {{}});
 loadLibrarySystem().catch(() => {{}});
 loadStudioSettings();
 loadControllerStatus();
+loadSecurityStatus();
 loadChatToggles();
 loadStudioCommands();
 applyPinnedTabs();

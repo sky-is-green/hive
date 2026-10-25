@@ -375,13 +375,14 @@ Already present:
 - the model-free request-feature baseline and request-aware context cap;
 - privacy-preserving proposal/lifecycle traces for E1 data collection;
 - confirmed apply, rollback presence tracking, and the settings audit log;
-- the lazy local `SentenceTransformerEncoder` adapter;
-- CLI, API and Studio Global-tab surfaces for the E0 flow.
+- the lazy local `SentenceTransformerEncoder` adapter with configurable idle
+  unload;
+- CLI, API and Studio Global-tab surfaces for the E0 flow;
+- migration of Studio settings toward `settings/studio.json` with a legacy
+  read path.
 
 Not wired:
 
-- migration of the legacy `harness_state/studio_settings.json` into
-  `settings/studio.json` (the controller uses the existing store);
 - a first-run `hive setup` prompt for the hardware scan;
 - a controller head or custom encoder package;
 - trace collection/counterfactual labeling;

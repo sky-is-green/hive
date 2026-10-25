@@ -1491,6 +1491,152 @@ def cmd_encoder_embed(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ui(args: argparse.Namespace) -> int:
+    """Switch between the terminal dashboard and the web Studio."""
+    mode = args.mode or "status"
+    if mode == "terminal":
+        return cmd_tui(args)
+    if mode == "web":
+        argv = [sys.executable, "-m", "harness"]
+        if args.host:
+            argv += ["--host", args.host]
+        if args.port:
+            argv += ["--port", str(args.port)]
+        if args.detach:
+            argv.append("--detach")
+        if args.no_open:
+            argv.append("--no-open")
+        if args.mock:
+            argv.append("--mock")
+        state_dir = getattr(args, "state_dir", None) or str(serve_state.state_dir())
+        argv += ["--state-dir", state_dir]
+        return subprocess.call(argv, cwd=str(REPO_ROOT))
+    # status: show the web endpoint and how to switch without starting it
+    url = f"http://{args.host or '127.0.0.1'}:{args.port or 8765}"
+    alive = False
+    try:
+        with urllib.request.urlopen(f"{url}/health", timeout=0.8) as response:
+            alive = response.status == 200
+    except Exception:  # noqa: BLE001 - "not running" is the useful answer
+        alive = False
+    payload = {
+        "web": {"running": alive, "url": url},
+        "terminal": {"command": "hive ui terminal"},
+        "switch": {"web": "hive ui web", "terminal": "hive ui terminal"},
+    }
+    if args.as_json:
+        _json(payload)
+    else:
+        termui.header("interfaces")
+        termui.kv([
+            ("web", f"{url} · {'running' if alive else 'not running'}"),
+            ("terminal", "hive ui terminal"),
+            ("start web", "hive ui web"),
+        ])
+        print(f"  {termui.dim('hive ui web --detach starts the Studio and opens the browser')}")
+    return 0
+
+
+def cmd_tools_status(args: argparse.Namespace) -> int:
+    from harness.security import GrantStore, SecurityStore
+
+    state = _state_paths(args)
+    policy = SecurityStore(state).read()
+    grants = GrantStore(state).list()
+    payload = {"tier": policy["tier"], "master": policy["master"],
+               "grants": grants, "state_dir": str(state.root)}
+    if args.as_json:
+        _json(payload)
+    else:
+        termui.header("tools")
+        termui.kv([("tier", payload["tier"]),
+                   ("approval prompts", policy["master"].get("approval_prompts")),
+                   ("sandbox", policy["master"].get("sandbox")),
+                   ("private network", policy["master"].get("private_network")),
+                   ("grants", len(grants)),
+                   ("state", payload["state_dir"])])
+    return 0
+
+
+def cmd_tools_policy(args: argparse.Namespace) -> int:
+    from harness.security import InvalidTier, SecurityStore
+
+    store = SecurityStore(_state_paths(args))
+    if args.tier:
+        try:
+            policy = store.set_tier(args.tier)
+        except InvalidTier as exc:
+            print(f"hive tools policy: {exc}", file=sys.stderr)
+            return 2
+    else:
+        policy = store.read()
+    if args.as_json:
+        _json(policy)
+    else:
+        termui.header("tool policy")
+        termui.kv([("tier", policy["tier"]),
+                   ("updated", policy.get("updated_at") or "never")])
+    return 0
+
+
+def cmd_tools_grants(args: argparse.Namespace) -> int:
+    from harness.security import GrantStore
+
+    rows = GrantStore(_state_paths(args)).list(session_id=args.session)
+    if args.as_json:
+        _json(rows)
+    elif not rows:
+        print("  no tool grants")
+    else:
+        _table(["tool", "scope", "session", "granted"],
+               [[row.get("tool_identity"), row.get("scope"),
+                 row.get("session_id") or "-", row.get("granted_at")]
+                for row in rows])
+    return 0
+
+
+def cmd_tools_revoke(args: argparse.Namespace) -> int:
+    from harness.security import GrantStore
+
+    if not args.identity and not args.all:
+        print("hive tools revoke: name a tool or pass --all", file=sys.stderr)
+        return 2
+    if not args.yes:
+        print("hive tools revoke: pass --yes to confirm", file=sys.stderr)
+        return 2
+    result = GrantStore(_state_paths(args)).revoke(
+        args.identity, session_id=args.session)
+    if args.as_json:
+        _json(result)
+    else:
+        print(f"  revoked {result['global']} global and "
+              f"{result['session']} session grant(s)")
+    return 0
+
+
+def cmd_tools_audit(args: argparse.Namespace) -> int:
+    from harness.state_store import StatePaths
+
+    path = StatePaths(_state_paths(args).root).tool_audit_file()
+    rows: list[dict] = []
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines()[-args.limit:]:
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                continue
+    if args.as_json:
+        _json(rows)
+    elif not rows:
+        print("  no tool audit records")
+    else:
+        _table(["when", "event", "tool", "decision"],
+               [[row.get("ts"), row.get("event"), row.get("tool_identity") or "-",
+                 row.get("decision") or row.get("status") or "-"]
+                for row in rows])
+    return 0
+
+
 def cmd_version(args: argparse.Namespace) -> int:
     payload = {"hive": _version(), "python": platform.python_version(),
                "platform": f"{platform.system()} {platform.machine()}"}
@@ -2058,6 +2204,86 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(eembed)
     eembed.add_argument("--json", action="store_true", dest="as_json")
     eembed.set_defaults(func=cmd_encoder_embed)
+
+    ui = sub.add_parser(
+        "ui", help="switch between terminal and web interfaces",
+        description="Use the terminal dashboard or the web Studio. With no "
+                    "mode, report the web endpoint and the switch commands.")
+    ui.add_argument("mode", nargs="?", choices=("web", "terminal", "status"),
+                    default="status",
+                    help="target interface (default: status)")
+    ui.add_argument("--host", default="127.0.0.1",
+                    help="web bind host (default 127.0.0.1)")
+    ui.add_argument("--port", type=int, default=8765,
+                    help="web port (default 8765)")
+    ui.add_argument("--detach", action="store_true",
+                    help="start the web Studio in the background")
+    ui.add_argument("--no-open", action="store_true",
+                    help="do not open a browser")
+    ui.add_argument("--mock", action="store_true",
+                    help="start the Studio in model-free mock mode")
+    ui.add_argument("--state-dir", default=None,
+                    help="studio state directory (passed through to the web UI)")
+    ui.add_argument("--json", action="store_true", dest="as_json")
+    ui.set_defaults(func=cmd_ui)
+
+    tools = sub.add_parser(
+        "tools", help="tool policy, grants and audit",
+        description="Inspect or change the tool gateway policy. The gateway "
+                    "owns approvals; this command never executes a tool.")
+    tools_sub = tools.add_subparsers(dest="tools_command", metavar="<action>",
+                                     required=True)
+    tstatus = tools_sub.add_parser(
+        "status", help="show the policy and grant count",
+        description="Show the current safety tier, master switches, and grants.")
+    _add_state_dir(tstatus)
+    tstatus.add_argument("--json", action="store_true", dest="as_json")
+    tstatus.set_defaults(func=cmd_tools_status)
+
+    tpolicy = tools_sub.add_parser(
+        "policy", help="show or set the safety tier",
+        description="Show the current policy, or set strict/guarded/trusted/open. "
+                    "Open still keeps the hard guards.")
+    tpolicy.add_argument("tier", nargs="?", choices=(
+        "strict", "guarded", "trusted", "open"),
+        help="new tier (omit to show the current policy)")
+    _add_state_dir(tpolicy)
+    tpolicy.add_argument("--json", action="store_true", dest="as_json")
+    tpolicy.set_defaults(func=cmd_tools_policy)
+
+    tgrants = tools_sub.add_parser(
+        "grants", help="list persistent and session grants",
+        description="List global grants and, with --session, in-memory grants "
+                    "for one session.")
+    tgrants.add_argument("--session", default=None,
+                         help="also show this session's grants")
+    _add_state_dir(tgrants)
+    tgrants.add_argument("--json", action="store_true", dest="as_json")
+    tgrants.set_defaults(func=cmd_tools_grants)
+
+    trevoke = tools_sub.add_parser(
+        "revoke", help="revoke a tool grant",
+        description="Remove one tool identity, or every grant with --all. "
+                    "--yes is required.")
+    trevoke.add_argument("identity", nargs="?",
+                         help="source:name@version identity")
+    trevoke.add_argument("--all", action="store_true", help="revoke every grant")
+    trevoke.add_argument("--session", default=None,
+                         help="also revoke this session's grants")
+    trevoke.add_argument("--yes", action="store_true", help="confirm the removal")
+    _add_state_dir(trevoke)
+    trevoke.add_argument("--json", action="store_true", dest="as_json")
+    trevoke.set_defaults(func=cmd_tools_revoke)
+
+    taudit = tools_sub.add_parser(
+        "audit", help="show recent tool decisions",
+        description="Print the newest tool-gateway audit records. Arguments "
+                    "are stored as hashes, not raw values.")
+    taudit.add_argument("--limit", type=int, default=20,
+                        help="number of recent records (default 20)")
+    _add_state_dir(taudit)
+    taudit.add_argument("--json", action="store_true", dest="as_json")
+    taudit.set_defaults(func=cmd_tools_audit)
 
     version = sub.add_parser(
         "version", help="print the Hive version",
