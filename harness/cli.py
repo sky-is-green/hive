@@ -1311,6 +1311,7 @@ def cmd_controller_propose(args: argparse.Namespace) -> int:
             native_ctx=args.native_ctx,
             desired_ctx=args.ctx,
             kv_type=args.kv_type,
+            request=args.request,
         )
     except (ControllerError, OSError, ValueError) as exc:
         print(f"hive controller propose: {exc}", file=sys.stderr)
@@ -1355,6 +1356,36 @@ def cmd_controller_apply(args: argparse.Namespace) -> int:
         termui.kv([("changes", ", ".join(result["proposal"]["changes"]))])
         print(f"  {termui.ok('applied')} · revert with "
               f"{termui.accent('hive controller revert --yes')}")
+    return 0
+
+
+def cmd_controller_outcome(args: argparse.Namespace) -> int:
+    from harness.controller.service import ControllerError, ControllerService
+
+    metrics: dict[str, Any] = {}
+    for item in args.metric or []:
+        key, sep, raw = str(item).partition("=")
+        if not sep or not key.strip():
+            print("hive controller outcome: --metric needs key=value",
+                  file=sys.stderr)
+            return 2
+        try:
+            value = json.loads(raw)
+        except ValueError:
+            value = raw
+        metrics[key.strip()] = value
+    try:
+        ControllerService(_state_paths(args)).record_outcome(
+            args.proposal, args.outcome, metrics=metrics)
+    except ControllerError as exc:
+        print(f"hive controller outcome: {exc}", file=sys.stderr)
+        return 1
+    payload = {"ok": True, "proposal_id": args.proposal,
+               "outcome": args.outcome, "metrics": metrics}
+    if args.as_json:
+        _json(payload)
+    else:
+        print(f"  recorded {args.outcome} for {args.proposal}")
     return 0
 
 
@@ -1941,6 +1972,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="largest context the proposal may choose")
     cprop.add_argument("--kv-type", default="q8_0",
                        help="KV cache type used for the estimate (default q8_0)")
+    cprop.add_argument("--request", default=None,
+                       help="request text for the deterministic feature baseline")
     _add_state_dir(cprop)
     cprop.add_argument("--json", action="store_true", dest="as_json")
     cprop.set_defaults(func=cmd_controller_propose)
@@ -1958,6 +1991,20 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(capply)
     capply.add_argument("--json", action="store_true", dest="as_json")
     capply.set_defaults(func=cmd_controller_apply)
+
+    coutcome = controller_sub.add_parser(
+        "outcome", help="label a proposal for the E1 training trace",
+        description="Append an accepted/rejected/wrong label and optional "
+                    "metrics to the privacy-preserving controller trace.")
+    coutcome.add_argument("proposal", help="proposal id to label")
+    coutcome.add_argument("outcome", choices=(
+        "accepted", "rejected", "wrong", "unknown", "abandoned"),
+        help="the observed result")
+    coutcome.add_argument("--metric", action="append", default=[],
+                          help="key=value metric; repeatable")
+    _add_state_dir(coutcome)
+    coutcome.add_argument("--json", action="store_true", dest="as_json")
+    coutcome.set_defaults(func=cmd_controller_outcome)
 
     crevert = controller_sub.add_parser(
         "revert", help="roll back the last applied proposal",

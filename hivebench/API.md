@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **106 paths, 115 operations** (97
+no longer exists, or if a method is wrong. **107 paths, 116 operations** (98
 of the paths under `/v1/`).
 
 ```sh
@@ -150,6 +150,7 @@ curl http://127.0.0.1:8765/health
 | `POST` | `/v1/controller/propose` | Build an allowlisted E0 proposal; never applies it. |
 | `POST` | `/v1/controller/apply` | Apply one proposal only with `confirm=true`; captures rollback values. |
 | `POST` | `/v1/controller/revert` | Roll back the last confirmed controller change with `confirm=true`. |
+| `POST` | `/v1/controller/outcome` | Append an accepted/rejected/wrong label and metrics to a proposal trace. |
 | `GET` | `/v1/encoder/status` | Report the configured text encoder without loading its weights. |
 
 ### Studio — the console's own toggles

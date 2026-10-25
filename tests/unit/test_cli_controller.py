@@ -52,9 +52,16 @@ def test_profile_scan_show_and_controller_flow(tmp_path, capsys, monkeypatch):
 
     assert cli.main(["controller", "propose", "--state-dir", state,
                      "--model-gib", "12", "--native-ctx", "32768",
-                     "--ctx", "16384", "--json"]) == 0
+                     "--ctx", "16384", "--request", "How do I test this?",
+                     "--json"]) == 0
     proposal = json.loads(capsys.readouterr().out)
     assert proposal["changes"]["runtime_defaults.ngl"] == 999
+    assert proposal["request_features"]["intent"] == "qa"
+
+    assert cli.main(["controller", "outcome", proposal["id"], "accepted",
+                     "--metric", "latency_ms=12", "--state-dir", state,
+                     "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["outcome"] == "accepted"
 
     assert cli.main(["controller", "apply", proposal["id"], "--state-dir", state,
                      "--yes", "--json"]) == 0

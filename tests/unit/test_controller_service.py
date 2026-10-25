@@ -121,6 +121,35 @@ def test_apply_and_revert_are_audited(tmp_path):
     assert events == ["controller.propose", "controller.apply", "controller.revert"]
 
 
+def test_request_features_are_traced_but_raw_text_is_not(tmp_path):
+    service, _settings, state = _service(tmp_path)
+    proposal = service.propose(
+        model_gib=12.0, native_ctx=32768, desired_ctx=32768,
+        request="delete production with sudo; this text must not be stored")
+    assert proposal["request_features"]["risk"] == "high"
+    trace = state.controller_trace_file().read_text(encoding="utf-8")
+    assert "delete production" not in trace
+    assert "request_features" in trace
+    assert "controller.proposal" in trace
+
+    service.apply(proposal["id"], confirmed=True)
+    service.revert(confirmed=True)
+    trace = state.controller_trace_file().read_text(encoding="utf-8")
+    assert '"outcome": "applied"' in trace
+    assert '"outcome": "reverted"' in trace
+
+
+def test_record_outcome_is_append_only_and_typed(tmp_path):
+    service, _settings, state = _service(tmp_path)
+    with pytest.raises(ControllerError, match="outcome must be"):
+        service.record_outcome("rec-x", "maybe")
+    service.record_outcome("rec-x", "accepted", metrics={"latency_ms": 12})
+    row = json.loads(state.controller_trace_file().read_text(
+        encoding="utf-8").splitlines()[-1])
+    assert row["outcome"] == "accepted"
+    assert row["metrics"]["latency_ms"] == 12
+
+
 def test_unknown_proposal_is_a_clear_error(tmp_path):
     service, _settings, _state = _service(tmp_path)
     with pytest.raises(ControllerError, match="no saved recommendation"):

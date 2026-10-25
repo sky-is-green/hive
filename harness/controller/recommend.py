@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
+from harness.controller.features import TextFeatures
 from harness.hardware import KV_GB_PER_1K, fit_plan
 
 GIB = 1024.0 ** 3
@@ -166,8 +167,8 @@ def _thread_count(profile: Mapping[str, Any]) -> tuple[int, str]:
     return 4, "CPU topology is unknown; using the conservative 4 threads"
 
 
-def _ctx_options(model: ModelRequest) -> list[int]:
-    limit = MAX_E0_CTX
+def _ctx_options(model: ModelRequest, cap: int = MAX_E0_CTX) -> list[int]:
+    limit = min(MAX_E0_CTX, max(1024, int(cap)))
     if model.native_ctx:
         limit = min(limit, int(model.native_ctx))
     if model.desired_ctx:
@@ -176,6 +177,22 @@ def _ctx_options(model: ModelRequest) -> list[int]:
     if limit >= 4096 and limit not in steps:
         steps.insert(0, limit)
     return steps
+
+
+def request_ctx_cap(request: TextFeatures | None) -> int:
+    """The largest context a request class should reserve.
+
+    This is the deterministic request baseline, not a learned head.  It exists
+    so a short chat does not reserve a 32k KV cache merely because the card can
+    afford it, and so code/reasoning gets room before a human has to tune it.
+    """
+    if request is None:
+        return MAX_E0_CTX
+    cap = {"short": 8192, "medium": 16384, "long": MAX_E0_CTX}.get(
+        request.context_pressure, MAX_E0_CTX)
+    if request.intent in ("code", "reasoning"):
+        cap = max(cap, 16384)
+    return cap
 
 
 def _kv_gib(ctx: int, kv_type: str) -> float:
@@ -225,6 +242,7 @@ def validate_changes(changes: Mapping[str, Any],
 
 def propose(profile: Mapping[str, Any], *,
             model: ModelRequest | None = None,
+            request: TextFeatures | None = None,
             now: datetime | None = None) -> dict[str, Any]:
     """Build one E0 proposal from a saved hardware profile.
 
@@ -242,6 +260,20 @@ def propose(profile: Mapping[str, Any], *,
     warnings: list[str] = []
     confidence = 0.55
     reason = "conservative hardware-only baseline"
+    request_cap = request_ctx_cap(request)
+    if request is not None:
+        evidence.append(
+            f"request baseline: intent={request.intent}, "
+            f"context={request.context_pressure}, risk={request.risk} "
+            "(features only; no raw text is stored)")
+        if request.risk == "high":
+            warnings.append(
+                "the request baseline flags high risk; this proposal still "
+                "changes runtime settings only and requires confirmation")
+        if request_cap < MAX_E0_CTX:
+            evidence.append(
+                f"request context cap {request_cap} limits over-reserving KV "
+                "for this request class")
 
     if model is None or model.weights_gib is None:
         warnings.append(
@@ -265,7 +297,7 @@ def propose(profile: Mapping[str, Any], *,
                 f"model {model.name or '(unnamed)'}: {weights:.2f} GiB weights; "
                 f"VRAM budget {budget:.2f} GiB after the {reserve:.1f} GiB reserve")
             chosen: tuple[int, float, dict[str, Any]] | None = None
-            for ctx in _ctx_options(model):
+            for ctx in _ctx_options(model, request_cap):
                 kv = _kv_gib(ctx, model.kv_type)
                 fit = fit_plan(weights, ctx, vram_gb=budget, ram_gb=ram_budget,
                                kv_type=model.kv_type)
@@ -305,6 +337,8 @@ def propose(profile: Mapping[str, Any], *,
                 reason = (
                     f"{'code/long-context' if ctx >= 16384 else 'short-context'} "
                     f"model fit on card {card['index']}")
+                if request is not None:
+                    reason = f"{request.intent}/{request.context_pressure}; {reason}"
     changes = validate_changes(changes, profile)
     proposal_id = f"rec-{stamp.strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:6]}"
     return {
@@ -321,6 +355,7 @@ def propose(profile: Mapping[str, Any], *,
         "requires_confirmation": True,
         "revert": "previous studio settings snapshot",
         "model": model.as_dict() if model is not None else None,
+        "request_features": request.as_dict() if request is not None else None,
     }
 
 

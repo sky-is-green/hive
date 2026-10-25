@@ -324,7 +324,9 @@ hive profile list
 # propose: only runtime_defaults.threads / ctx_size / ngl / resident_gib
 hive controller propose --model models/gguf/model.gguf --ctx 16384
 hive controller propose --model-gib 12 --native-ctx 32768 --ctx 16384
+hive controller propose --model-gib 12 --request "How do I test this?"
 hive controller apply <proposal-id> --yes
+hive controller outcome <proposal-id> accepted --metric latency_ms=42
 hive controller revert --yes
 hive controller status
 
@@ -338,9 +340,15 @@ hive encoder embed "the request to classify"
 an immutable recommendation under `HIVE_STATE_DIR/profiles/`; applying it
 requires `--yes` (or `confirm=true` through the API), records the previous
 present/absent values under `settings/controller.json`, and appends a redacted
-audit record. `revert` restores the previous values and removes keys that did
-not exist before. The E0 allowlist deliberately excludes memory, quality,
-launch, encoder and MCP blocks.
+audit record. The optional `--request` uses the deterministic feature baseline
+to cap context for short work and give code/reasoning more room; only the
+feature dictionary is written to `profiles/controller-traces-*.jsonl`, never
+the raw request text. `controller outcome` appends the human/evaluation label
+(`accepted`, `rejected`, `wrong`, `unknown` or `abandoned`) and optional
+`key=value` metrics to the same trace; apply/revert append their lifecycle
+events automatically. `revert` restores the previous values and removes keys
+that did not exist before. The E0 allowlist deliberately excludes memory,
+quality, launch, encoder and MCP blocks.
 
 The Studio's **Global** tab exposes the same scan → propose → review → apply →
 revert flow. `hive encoder embed` passes `--allow-download` only when asked;

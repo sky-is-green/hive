@@ -147,6 +147,11 @@ class StatePaths:
         token = month or datetime.now(timezone.utc).strftime("%Y%m")
         return self.audit_dir / f"settings-{_safe_token(token, 'audit month')}.jsonl"
 
+    def controller_trace_file(self, month: str | None = None) -> Path:
+        token = month or datetime.now(timezone.utc).strftime("%Y%m")
+        return self.profiles_dir / (
+            f"controller-traces-{_safe_token(token, 'trace month')}.jsonl")
+
 
 def _chmod(path: Path, mode: int) -> None:
     try:

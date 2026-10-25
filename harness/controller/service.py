@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
+from harness.controller.features import text_features
 from harness.controller.profile import HardwareProfiler
 from harness.controller.recommend import (
     ModelRequest,
@@ -115,6 +116,27 @@ class ControllerService:
     def _audit(self, event: str, **fields: Any) -> None:
         AuditLog(self.state.audit_file()).append({"event": event, **fields})
 
+    def _trace(self, event: str, **fields: Any) -> None:
+        """Append a proposal/outcome record; no raw request text is stored."""
+        AuditLog(self.state.controller_trace_file()).append(
+            {"schema_version": 1, "event": event, **fields})
+
+    def record_outcome(self, proposal_id: str, outcome: str, *,
+                       metrics: Mapping[str, Any] | None = None) -> None:
+        """Attach a training/evaluation label to a proposal trace.
+
+        Outcomes are append-only so the proposal record is never rewritten.
+        ``accepted``/``rejected`` are human labels; ``applied``/``reverted``
+        are lifecycle facts and are recorded automatically.
+        """
+        allowed = {"applied", "reverted", "accepted", "rejected", "wrong",
+                   "unknown", "abandoned"}
+        if outcome not in allowed:
+            raise ControllerError(
+                f"outcome must be one of {', '.join(sorted(allowed))}")
+        self._trace("controller.outcome", proposal_id=proposal_id,
+                    outcome=outcome, metrics=dict(metrics or {}))
+
     def status(self) -> dict[str, Any]:
         profile = self.profiler.latest()
         proposals: list[dict[str, Any]] = []
@@ -135,6 +157,7 @@ class ControllerService:
             controller = {**_default_controller(), "error": str(exc)}
         return {
             "state_dir": str(self.state.root),
+            "trace_file": str(self.state.controller_trace_file()),
             "profile": profile,
             "proposals": proposals,
             "latest_proposal": latest,
@@ -150,6 +173,7 @@ class ControllerService:
         native_ctx: int | None = None,
         desired_ctx: int | None = None,
         kv_type: str = "q8_0",
+        request: str | None = None,
     ) -> dict[str, Any]:
         profile = self.profiler.get(profile_id) if profile_id else self.profiler.latest()
         if profile is None:
@@ -182,8 +206,10 @@ class ControllerService:
                 desired_ctx=desired_ctx,
                 kv_type=str(kv_type or "q8_0"),
             )
+        features = text_features(request) if request and request.strip() else None
         try:
-            proposal = propose(profile, model=model, now=self._now())
+            proposal = propose(profile, model=model, request=features,
+                               now=self._now())
         except (ProposalError, ValueError) as exc:
             raise ControllerError(str(exc)) from exc
         store = self._recommendations(profile["profile_id"])
@@ -205,6 +231,15 @@ class ControllerService:
             profile_id=profile["profile_id"],
             changes=proposal["changes"],
             confidence=proposal["confidence"],
+        )
+        self._trace(
+            "controller.proposal",
+            proposal_id=proposal["id"],
+            profile_id=profile["profile_id"],
+            request_features=proposal.get("request_features"),
+            changes=proposal["changes"],
+            confidence=proposal["confidence"],
+            model=proposal.get("model"),
         )
         return proposal
 
@@ -281,6 +316,8 @@ class ControllerService:
             changes=proposal["changes"],
             previous=previous,
         )
+        self.record_outcome(proposal_id, "applied",
+                            metrics={"changes": proposal["changes"]})
         return {
             "ok": True,
             "proposal": proposal,
@@ -334,4 +371,7 @@ class ControllerService:
             proposal_id=last.get("proposal_id"),
             changes=previous,
         )
+        if last.get("proposal_id"):
+            self.record_outcome(str(last["proposal_id"]), "reverted",
+                                metrics={"changes": previous})
         return {"ok": True, "settings": updated, "controller": controller}

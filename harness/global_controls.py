@@ -260,7 +260,9 @@ CONTROLLER_PANEL = """
 <p class="note">The E0 controller is deterministic: it reads a local hardware
 snapshot and proposes only allowlisted runtime settings. Nothing leaves this
 machine. A scan needs the checkbox; applying needs a second confirmation, and
-the last change can be reverted.</p>
+the last change can be reverted. If you include request text, only its
+deterministic features are written to the trace; the raw text is not stored.
+“Mark accepted/rejected” appends a label to that trace.</p>
 <div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
   <label class="inline" title="Read CPU, RAM, GPU/VRAM/GTT and storage. No prompts, models or network.">
     <input type="checkbox" id="ctrl-consent"> allow hardware scan
@@ -273,6 +275,7 @@ the last change can be reverted.</p>
   <input id="ctrl-model-gib" type="number" step="0.1" placeholder="model GiB" title="Optional: model weight size for a fit estimate." style="width:8rem">
   <input id="ctrl-native-ctx" type="number" placeholder="native ctx" title="Optional: the model's native context length." style="width:8rem">
   <input id="ctrl-ctx" type="number" placeholder="max ctx" title="Optional: the largest context the proposal may choose." style="width:8rem">
+  <input id="ctrl-request" type="text" placeholder="request text (optional)" title="Used only for deterministic features (intent, context pressure, risk). Raw text is not stored in the trace." style="min-width:16rem">
   <button onclick="proposeController(this)" title="POST /v1/controller/propose. Creates a proposal only; it does not apply anything.">Propose</button>
   <button onclick="revertController(this)" title="POST /v1/controller/revert with confirm=true. Restores the last applied values.">Revert last</button>
 </div>
@@ -332,6 +335,16 @@ function renderControllerProposal(p) {
   apply.style.marginTop = '.5rem';
   apply.onclick = () => applyController(p.id);
   box.appendChild(apply);
+  const accepted = document.createElement('button');
+  accepted.textContent = 'Mark accepted';
+  accepted.style.margin = '.5rem .35rem 0 0';
+  accepted.onclick = () => outcomeController(p.id, 'accepted');
+  box.appendChild(accepted);
+  const rejected = document.createElement('button');
+  rejected.textContent = 'Mark rejected';
+  rejected.style.marginTop = '.5rem';
+  rejected.onclick = () => outcomeController(p.id, 'rejected');
+  box.appendChild(rejected);
 }
 async function loadControllerStatus() {
   const profile = document.getElementById('ctrl-profile');
@@ -365,15 +378,25 @@ async function proposeController(btn) {
     const gib = num('ctrl-model-gib');
     const nativeCtx = num('ctrl-native-ctx');
     const ctx = num('ctrl-ctx');
+    const request = document.getElementById('ctrl-request')?.value || '';
     if (gib != null) body.model_gib = gib;
     if (nativeCtx != null) body.native_ctx = nativeCtx;
     if (ctx != null) body.desired_ctx = ctx;
+    if (request.trim()) body.request = request;
     const r = await api('/v1/controller/propose', 'POST', body);
     renderControllerProposal(r.proposal);
     ctrlNote('Proposal created. Review the evidence before applying.');
   } catch (e) {
     ctrlNote('proposal failed: ' + e.message, true);
   } finally { if (btn) btn.disabled = false; }
+}
+async function outcomeController(id, outcome) {
+  try {
+    await api('/v1/controller/outcome', 'POST', {proposal_id: id, outcome: outcome});
+    ctrlNote('Recorded ' + outcome + ' for ' + id + '.');
+  } catch (e) {
+    ctrlNote('outcome failed: ' + e.message, true);
+  }
 }
 async function applyController(id) {
   if (!confirm('Apply this controller proposal? The previous values are saved for rollback.')) return;

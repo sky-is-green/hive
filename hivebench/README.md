@@ -17,7 +17,7 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **115 REST operations** across 106 paths (106 operations under `/v1/`).
+Studio serves **116 REST operations** across 107 paths (107 operations under `/v1/`).
 The suite is green (**1183 unit + 126 integration** tests, verified Oct 22); the
 live batteries and the Studio are under active development.
 
@@ -368,7 +368,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (106 operations across 97 paths under `/v1/`)
+### API surface (107 operations across 98 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -380,7 +380,7 @@ a single hive theme (yellow/black) across every page.
 | Agent | `/v1/agent/stream`, `/status`, `/cancel`, `/v1/agent-presets/*` |
 | Commands | `/v1/commands`, `/v1/commands/run` |
 | Studio | `/v1/studio/settings`, `/v1/studio/strata` |
-| Controller | `/v1/profiles/hardware`, `/v1/profiles/scan`, `/v1/controller/status`, `/v1/controller/propose`, `/v1/controller/apply`, `/v1/controller/revert`, `/v1/encoder/status` |
+| Controller | `/v1/profiles/hardware`, `/v1/profiles/scan`, `/v1/controller/status`, `/v1/controller/propose`, `/v1/controller/apply`, `/v1/controller/revert`, `/v1/controller/outcome`, `/v1/encoder/status` |
 | Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
 | Chat | `/v1/splinter/stream`, `/v1/chat/stop` |
