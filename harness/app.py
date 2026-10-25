@@ -4723,6 +4723,7 @@ def create_app(
                              if body.get("desired_ctx") is not None else None),
                 kv_type=str(body.get("kv_type") or "q8_0"),
                 request=body.get("request"),
+                embed_request=body.get("embed_request") is True,
             )
         except (ControllerError, OSError, ValueError, TypeError) as exc:
             raise HTTPException(422, str(exc)) from exc

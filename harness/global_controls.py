@@ -276,6 +276,9 @@ deterministic features are written to the trace; the raw text is not stored.
   <input id="ctrl-native-ctx" type="number" placeholder="native ctx" title="Optional: the model's native context length." style="width:8rem">
   <input id="ctrl-ctx" type="number" placeholder="max ctx" title="Optional: the largest context the proposal may choose." style="width:8rem">
   <input id="ctrl-request" type="text" placeholder="request text (optional)" title="Used only for deterministic features (intent, context pressure, risk). Raw text is not stored in the trace." style="min-width:16rem">
+  <label class="inline" title="Load the configured sentence-transformer on CPU and trace a 384/768-dimensional vector. Raw text is still not stored. This is explicit and can be slow.">
+    <input type="checkbox" id="ctrl-embed-request"> trace encoder vector
+  </label>
   <button onclick="proposeController(this)" title="POST /v1/controller/propose. Creates a proposal only; it does not apply anything.">Propose</button>
   <button onclick="revertController(this)" title="POST /v1/controller/revert with confirm=true. Restores the last applied values.">Revert last</button>
 </div>
@@ -379,10 +382,12 @@ async function proposeController(btn) {
     const nativeCtx = num('ctrl-native-ctx');
     const ctx = num('ctrl-ctx');
     const request = document.getElementById('ctrl-request')?.value || '';
+    const embed = document.getElementById('ctrl-embed-request')?.checked || false;
     if (gib != null) body.model_gib = gib;
     if (nativeCtx != null) body.native_ctx = nativeCtx;
     if (ctx != null) body.desired_ctx = ctx;
     if (request.trim()) body.request = request;
+    if (embed) body.embed_request = true;
     const r = await api('/v1/controller/propose', 'POST', body);
     renderControllerProposal(r.proposal);
     ctrlNote('Proposal created. Review the evidence before applying.');

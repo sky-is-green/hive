@@ -1312,6 +1312,7 @@ def cmd_controller_propose(args: argparse.Namespace) -> int:
             desired_ctx=args.ctx,
             kv_type=args.kv_type,
             request=args.request,
+            embed_request=args.embed_request,
         )
     except (ControllerError, OSError, ValueError) as exc:
         print(f"hive controller propose: {exc}", file=sys.stderr)
@@ -1974,6 +1975,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="KV cache type used for the estimate (default q8_0)")
     cprop.add_argument("--request", default=None,
                        help="request text for the deterministic feature baseline")
+    cprop.add_argument("--embed-request", action="store_true",
+                       help="also encode the request on CPU and trace the vector")
     _add_state_dir(cprop)
     cprop.add_argument("--json", action="store_true", dest="as_json")
     cprop.set_defaults(func=cmd_controller_propose)
