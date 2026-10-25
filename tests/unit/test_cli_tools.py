@@ -54,3 +54,38 @@ def test_tools_audit_is_empty_then_readable(tmp_path, capsys):
     state = str(tmp_path / "state")
     assert cli.main(["tools", "audit", "--state-dir", state, "--json"]) == 0
     assert json.loads(capsys.readouterr().out) == []
+
+
+def test_tools_pending_and_decide_use_the_live_studio(monkeypatch, capsys):
+    calls = []
+
+    def fake_api(args, path, *, method="GET", body=None):
+        calls.append((path, method, body))
+        if path.startswith("/v1/tools/pending"):
+            return {"requests": [{"request_id": "req-1", "session_id": "conv-1",
+                                  "tool_identity": "dsh:bash@1.0.0",
+                                  "action": "bash: rg TODO", "reason": "find"}]}
+        return {"status": "approved", "reason": "once"}
+
+    monkeypatch.setattr(cli, "_tool_api", fake_api)
+    assert cli.main(["tools", "pending", "--json"]) == 0
+    rows = json.loads(capsys.readouterr().out)
+    assert rows[0]["request_id"] == "req-1"
+    assert calls[0][0] == "/v1/tools/pending"
+
+    assert cli.main(["tools", "decide", "req-1", "--session", "conv-1",
+                     "--choice", "once", "--json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "approved"
+    assert calls[1] == ("/v1/tools/decide", "POST", {
+        "session_id": "conv-1", "request_id": "req-1",
+        "choice": "once", "scope": "session"})
+
+
+def test_tools_pending_is_readable_when_gateway_is_down(monkeypatch, capsys):
+    def fail(*args, **kwargs):
+        raise RuntimeError("gateway unreachable")
+
+    monkeypatch.setattr(cli, "_tool_api", fail)
+    assert cli.main(["tools", "pending"]) == 1
+    assert "unreachable" in capsys.readouterr().err

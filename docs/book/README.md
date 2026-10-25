@@ -22,7 +22,6 @@ written.
 - [8. The harness controller](#8-the-harness-controller)
 - [9. State, security and the tool gateway](#9-state-security-and-the-tool-gateway)
 - [10. Evidence, evaluation and release](#10-evidence-evaluation-and-release)
-- [11. Research lanes](#11-research-lanes)
 - [Appendix: command and file index](#appendix-command-and-file-index)
 
 ## How to read this book
@@ -136,12 +135,14 @@ and browser profiles. Studio settings now migrate from the legacy
 `studio_settings.json` to `settings/studio.json`; the security policy and global
 grants live in their own files.
 
-The gateway core already enforces reason checks, headless denial,
-session/global grants, private-network approval, pending decisions, timeouts
-and append-only audit. `hive tools status|policy|grants|revoke|audit` and the
-Studio Global panel expose the state. The bundled DSH runtime still lacks a
-pre-execution hook, so full-agent enforcement remains the release blocker. Do
-not describe the current agent as sandboxed or permissioned.
+The gateway core enforces reason checks, headless denial, session/global
+grants, private-network approval, pending decisions, timeouts and append-only
+audit. `hive tools status|policy|grants|pending|decide|revoke|audit` and the
+Studio Global panel expose the state. A DSH `PreToolUse` hook posts the
+concrete tool call to Hive, waits for the approval decision, and fails closed if
+the gateway is unreachable; if the hook cannot be installed, agent turns are
+refused. The hook path has been tested against a live Studio API. A live DSH
+runtime smoke test and MCP/browser adapters remain the release blockers.
 
 ## 10. Evidence, evaluation and release
 
@@ -151,15 +152,6 @@ Hive treats claims as things to measure. Unit and integration tests cover the
 components; the A/B campaign records the model tiers; `HG-1` is the manual
 release gate because a person must be able to find, understand and safely
 operate the surface. A failed gate is not a release.
-
-## 11. Research lanes
-
-**Status: existing** · [V4.1 ternary lanes](../../../scion-v41-dspark/docs/V41-TERNARY-LANES.md) · [DSpark results](../../../scion-v41-dspark/docs/V41-DSPARK-RESULTS.md)
-
-Research is separate from the serving release. The ternary repack plan lives
-outside the product book so a failed experiment cannot silently become a
-production default. DSpark compatibility is target-specific; the released
-stack is unchanged.
 
 ## Appendix: command and file index
 

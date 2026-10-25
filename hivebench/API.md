@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **110 paths, 120 operations** (101
+no longer exists, or if a method is wrong. **114 paths, 124 operations** (105
 of the paths under `/v1/`).
 
 ```sh
@@ -160,6 +160,10 @@ curl http://127.0.0.1:8765/health
 | `GET` | `/v1/tools/policy` | Show the safety tier, master switches, and saved grants. |
 | `PUT` | `/v1/tools/policy` | Set the safety tier and master switches. |
 | `POST` | `/v1/tools/revoke` | Revoke one global tool grant, or all with `all=true`. |
+| `POST` | `/v1/tools/call` | Authorize a concrete tool call; returns approved, pending, or denied. |
+| `GET` | `/v1/tools/pending` | Pending requests, optionally for one session. |
+| `POST` | `/v1/tools/decide` | Resolve a pending request: once, session, always, or deny. |
+| `GET` | `/v1/tools/decision` | Settled decision for a waiting PreToolUse hook. |
 | `GET` | `/v1/tools/audit` | Recent tool decisions; arguments are stored as hashes, not raw values. |
 
 ### Studio — the console's own toggles

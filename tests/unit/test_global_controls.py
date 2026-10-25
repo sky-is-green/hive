@@ -49,7 +49,10 @@ def test_the_security_panel_is_visible_and_explicit(client):
     assert 'id="sec-approval"' in page
     assert "function saveSecurityPolicy(" in page
     assert "function revokeAllGrants(" in page
-    assert "pre-execution hook" in page
+    assert 'id="sec-pending"' in page
+    assert "function decideTool(" in page
+    assert "PreToolUse hook bridge" in page
+    assert "live DSH runtime smoke test" in page
 
 
 def test_the_controller_panel_is_manual_and_explicit(client):

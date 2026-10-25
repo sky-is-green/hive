@@ -386,6 +386,46 @@ class _Pending:
     expires_at: float
 
 
+class GatewayHub:
+    """Process-local gateways that share session grants and pending requests."""
+
+    def __init__(self, state: StatePaths | None = None) -> None:
+        self.state = (state or StatePaths.default()).ensure()
+        self.security = SecurityStore(self.state)
+        self.grants = GrantStore(self.state, sessions=SessionGrants())
+        self._gateways: dict[str, ApprovalGateway] = {}
+
+    def gateway(self, session_id: str, *,
+                headless: bool = False) -> "ApprovalGateway":
+        key = str(session_id)
+        gateway = self._gateways.get(key)
+        if gateway is None:
+            gateway = ApprovalGateway(
+                self.state, session_id=key, security=self.security,
+                grants=self.grants, headless=headless)
+            self._gateways[key] = gateway
+        else:
+            gateway.headless = bool(headless)
+        return gateway
+
+    def pending(self, session_id: str | None = None) -> list[dict[str, Any]]:
+        if session_id is not None:
+            return self.gateway(session_id).pending()
+        rows: list[dict[str, Any]] = []
+        for gateway in self._gateways.values():
+            rows.extend(gateway.pending())
+        return rows
+
+    def decide(self, session_id: str, request_id: str, choice: str, *,
+               scope: str = "session") -> dict[str, Any]:
+        return self.gateway(session_id).decide(
+            request_id, choice, scope=scope)
+
+    def decision(self, session_id: str,
+                 request_id: str) -> dict[str, Any] | None:
+        return self.gateway(session_id).decision(request_id)
+
+
 class ApprovalGateway:
     """Evaluate and optionally execute one tool call.
 
@@ -405,6 +445,7 @@ class ApprovalGateway:
         self.headless = bool(headless)
         self._now = now
         self._pending: dict[str, _Pending] = {}
+        self._decisions: dict[str, dict[str, Any]] = {}
 
     def _audit(self, event: str, **fields: Any) -> None:
         AuditLog(self.state.tool_audit_file()).append(
@@ -491,16 +532,20 @@ class ApprovalGateway:
             self._audit("tool.expired", request_id=request_id,
                         session_id=self.session_id,
                         tool_identity=pending.spec.identity)
-            return {"status": "denied", "reason": "timeout",
-                    "request_id": request_id}
+            result = {"status": "denied", "reason": "timeout",
+                      "request_id": request_id}
+            self._decisions[request_id] = result
+            return result
         choice = str(choice or "").strip().lower()
         if choice == "deny":
             self._audit("tool.denied", request_id=request_id,
                         session_id=self.session_id,
                         tool_identity=pending.spec.identity,
                         reason="user denied")
-            return {"status": "denied", "reason": "user denied",
-                    "request_id": request_id}
+            result = {"status": "denied", "reason": "user denied",
+                      "request_id": request_id}
+            self._decisions[request_id] = result
+            return result
         if choice not in ("once", "session", "always"):
             raise ApprovalError("choice must be once, session, always, or deny")
         if choice == "session":
@@ -517,9 +562,15 @@ class ApprovalGateway:
                     session_id=self.session_id,
                     tool_identity=pending.spec.identity,
                     decision=choice, grant_scope=scope if choice == "always" else None)
-        return {"status": "approved", "reason": choice,
-                "request_id": request_id,
-                "tool_identity": pending.spec.identity}
+        result = {"status": "approved", "reason": choice,
+                  "request_id": request_id,
+                  "tool_identity": pending.spec.identity}
+        self._decisions[request_id] = result
+        return result
+
+    def decision(self, request_id: str) -> dict[str, Any] | None:
+        """The settled decision for a request, if the hook is still waiting."""
+        return self._decisions.get(request_id)
 
     def pending(self) -> list[dict[str, Any]]:
         now = self._now()

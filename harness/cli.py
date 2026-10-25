@@ -1510,7 +1510,9 @@ def cmd_ui(args: argparse.Namespace) -> int:
             argv.append("--mock")
         state_dir = getattr(args, "state_dir", None) or str(serve_state.state_dir())
         argv += ["--state-dir", state_dir]
-        return subprocess.call(argv, cwd=str(REPO_ROOT))
+        env = dict(os.environ)
+        env["HIVE_TOOL_URL"] = f"http://127.0.0.1:{args.port or 8765}"
+        return subprocess.call(argv, cwd=str(REPO_ROOT), env=env)
     # status: show the web endpoint and how to switch without starting it
     url = f"http://{args.host or '127.0.0.1'}:{args.port or 8765}"
     alive = False
@@ -1534,6 +1536,75 @@ def cmd_ui(args: argparse.Namespace) -> int:
             ("start web", "hive ui web"),
         ])
         print(f"  {termui.dim('hive ui web --detach starts the Studio and opens the browser')}")
+    return 0
+
+
+def _tool_api(args: argparse.Namespace, path: str, *,
+              method: str = "GET", body: dict | None = None) -> dict:
+    base = (getattr(args, "url", None)
+            or os.environ.get("HIVE_STUDIO_URL")
+            or "http://127.0.0.1:8765").rstrip("/")
+    headers = {"content-type": "application/json"}
+    token = os.environ.get("HARNESS_TOKEN", "").strip()
+    if token:
+        headers["x-splinter-token"] = token
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    request = urllib.request.Request(base + path, data=data, method=method,
+                                     headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"gateway HTTP {exc.code}: {detail[:300]}") from exc
+    except OSError as exc:
+        raise RuntimeError(f"gateway unreachable at {base}: {exc}") from exc
+    try:
+        result = json.loads(raw)
+    except ValueError as exc:
+        raise RuntimeError("gateway returned invalid JSON") from exc
+    if not isinstance(result, dict):
+        raise RuntimeError("gateway returned a non-object")
+    return result
+
+
+def cmd_tools_pending(args: argparse.Namespace) -> int:
+    try:
+        payload = _tool_api(args, "/v1/tools/pending"
+                            + (f"?session_id={args.session}" if args.session else ""))
+    except RuntimeError as exc:
+        print(f"hive tools pending: {exc}", file=sys.stderr)
+        return 1
+    rows = payload.get("requests") or []
+    if args.as_json:
+        _json(rows)
+    elif not rows:
+        print("  no pending tool approvals")
+    else:
+        _table(["request", "session", "tool", "action", "why"],
+               [[row.get("request_id"), row.get("session_id"),
+                 row.get("tool_identity"), row.get("action"),
+                 row.get("reason")] for row in rows])
+    return 0
+
+
+def cmd_tools_decide(args: argparse.Namespace) -> int:
+    try:
+        payload = _tool_api(args, "/v1/tools/decide", method="POST", body={
+            "session_id": args.session,
+            "request_id": args.request,
+            "choice": args.choice,
+            "scope": args.scope,
+        })
+    except RuntimeError as exc:
+        print(f"hive tools decide: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(payload)
+    else:
+        termui.header("tool decision", args.request)
+        termui.kv([("result", payload.get("status") or "?"),
+                   ("reason", payload.get("reason") or "-")])
     return 0
 
 
@@ -2239,6 +2310,32 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(tstatus)
     tstatus.add_argument("--json", action="store_true", dest="as_json")
     tstatus.set_defaults(func=cmd_tools_status)
+
+    tpending = tools_sub.add_parser(
+        "pending", help="list pending tool approvals from a running Studio",
+        description="Ask the local Studio gateway for pending approval requests. "
+                    "The Studio must be running.")
+    tpending.add_argument("--session", default=None,
+                          help="only show this session")
+    tpending.add_argument("--url", default=None,
+                          help="Studio URL (default HIVE_STUDIO_URL or :8765)")
+    tpending.add_argument("--json", action="store_true", dest="as_json")
+    tpending.set_defaults(func=cmd_tools_pending)
+
+    tdecide = tools_sub.add_parser(
+        "decide", help="approve or deny a pending tool request",
+        description="Resolve a pending request in a running Studio: once, "
+                    "session, always (with --scope global), or deny.")
+    tdecide.add_argument("request", help="pending request id")
+    tdecide.add_argument("--session", required=True, help="requesting session id")
+    tdecide.add_argument("--choice", required=True, choices=(
+        "once", "session", "always", "deny"), help="decision")
+    tdecide.add_argument("--scope", default="session", choices=(
+        "session", "global"), help="grant scope for always (default session)")
+    tdecide.add_argument("--url", default=None,
+                         help="Studio URL (default HIVE_STUDIO_URL or :8765)")
+    tdecide.add_argument("--json", action="store_true", dest="as_json")
+    tdecide.set_defaults(func=cmd_tools_decide)
 
     tpolicy = tools_sub.add_parser(
         "policy", help="show or set the safety tier",

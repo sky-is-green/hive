@@ -1,20 +1,22 @@
 # Hive tool gateway and permission protocol
 
-**Status:** policy/grant/audit core implemented; DSH/MCP/browser adapters pending,
-2026-10-25.
+**Status:** policy/grant/audit core and DSH PreToolUse hook implemented; live
+runtime smoke test and MCP/browser adapters pending, 2026-10-25.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
 the agent must not be able to execute a side-effect tool before Hive approves
 it.
 
-The current **agent** is still the opposite: `harness/agent.py` reports
-`full-access`, `tools_enabled` is one global switch, and Docker falls back to a
-local subprocess. The policy/grant/audit core is now implemented in
+The policy/grant/audit core is implemented in
 [`harness/security.py`](../harness/security.py) and exposed through
-`hive tools`; it is the boundary for Hive/MCP/browser adapters and the future
-DSH proxy. Do not treat it as full-agent enforcement until step 5 below is
-wired.
+`hive tools`. `harness/agent_hooks.py` installs the DSH
+`hooks-claude-code` bridge with a `PreToolUse` command that calls
+`harness/tool_hook.py`; the hook posts the concrete call to the Hive gateway
+and blocks on the human decision. If the hook cannot be installed, the agent
+refuses to start unless `HIVE_DSH_HOOK=off` is set for an explicitly
+unguarded development run. The hook bridge has been tested against a live
+model-free Studio API; a live DSH runtime smoke test is still required.
 
 ## Layers
 
@@ -242,6 +244,10 @@ Network policy:
 ```text
 GET  /v1/tools/policy     # tier, master switches, saved grants
 PUT  /v1/tools/policy     # tier and master switches
+POST /v1/tools/call       # concrete call -> approved/pending/denied
+GET  /v1/tools/pending    # pending requests
+POST /v1/tools/decide     # once/session/always/deny
+GET  /v1/tools/decision   # settled decision for a waiting hook
 POST /v1/tools/revoke     # identity, or all=true
 GET  /v1/tools/audit      # recent append-only decisions
 ```
@@ -296,15 +302,20 @@ Implemented:
 - pending decisions, deny, timeout, and grant scope;
 - append-only tool audit with argument hashes and secret redaction;
 - `hive tools status|policy|grants|revoke|audit`;
+- the DSH `PreToolUse` hook bridge and Hive web approval panel;
+- a live hook → gateway → approve/deny smoke test against a model-free Studio;
 - unit tests for the above.
 
-Still required before this is an agent security boundary:
+Still required before this is a release-complete agent security boundary:
 
-- a pre-execution hook/proxy for the bundled DSH runtime;
+- a live DSH runtime smoke test with the hook mounted (the bridge itself has
+  been exercised against a live Studio API);
 - MCP metadata registration and subagent inheritance;
-- Docker sandbox execution with a pinned image and local-fallback approval;
+- Docker-specific execution policy; the current DSH composition uses its
+  workspace-write sandbox (bwrap/Landlock on Linux), and a pinned Docker image
+  plus local-fallback approval is still pending;
 - browser adapters and origin/SSRF checks;
-- Studio/TUI approval surfaces.
+- TUI/CLI approval surfaces (the web panel is implemented).
 
 ## Implementation order
 

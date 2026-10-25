@@ -462,7 +462,7 @@ class App:
         import urllib.request
         import webbrowser
 
-        url = "http://127.0.0.1:8765"
+        url = os.environ.get("HIVE_STUDIO_URL", "http://127.0.0.1:8765")
         try:
             with urllib.request.urlopen(f"{url}/health", timeout=0.5) as response:
                 if response.status != 200:

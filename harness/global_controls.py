@@ -308,9 +308,10 @@ deterministic features are written to the trace; the raw text is not stored.
 <div id="ctrl-note" class="note" style="margin-top:.35rem"></div>
 
 <h3>Tool policy &amp; grants</h3>
-<p class="note">The gateway core is implemented; the bundled DSH agent does
-not yet have its pre-execution hook. These controls therefore govern the
-gateway contract and its future adapters, not the current agent loop.</p>
+<p class="note">The gateway core and PreToolUse hook bridge are implemented. The
+hook still needs a live DSH runtime smoke test before release; if the hook
+cannot be installed, agent turns are refused. These controls govern the
+gateway contract and its adapters.</p>
 <div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
   <label class="inline" title="Strict asks every side-effect call; Guarded is the default; Trusted keeps grants; Open removes prompts but not the hard guards.">tier
     <select id="sec-tier">
@@ -328,6 +329,7 @@ gateway contract and its future adapters, not the current agent loop.</p>
   <button onclick="revokeAllGrants(this)" title="POST /v1/tools/revoke with all=true. Confirms first.">Revoke all grants</button>
 </div>
 <div id="sec-grants" class="note" style="margin-top:.5rem"></div>
+<div id="sec-pending" class="note" style="margin-top:.5rem"></div>
 <div id="sec-note" class="note" style="margin-top:.35rem"></div>
 """
 
@@ -374,8 +376,74 @@ async function loadSecurityStatus() {
     set('sec-sandbox', master.sandbox);
     set('sec-private', master.private_network);
     renderGrants(st.grants || []);
+    await loadPending();
   } catch (e) {
     secNote('policy unavailable: ' + e.message, true);
+  }
+}
+function renderPending(rows) {
+  const box = document.getElementById('sec-pending');
+  if (!box) return;
+  box.textContent = '';
+  if (!rows || !rows.length) { box.textContent = 'No pending tool approvals.'; return; }
+  for (const row of rows) {
+    const card = document.createElement('div');
+    card.style.border = '1px solid #FFB703';
+    card.style.padding = '.5rem';
+    card.style.margin = '.35rem 0';
+    const title = document.createElement('div');
+    title.textContent = (row.tool_identity || 'tool') + ' · ' + (row.risk || '?')
+      + ' risk · ' + (row.network || 'none') + ' network';
+    card.appendChild(title);
+    const action = document.createElement('div');
+    action.className = 'note';
+    action.textContent = row.action || '';
+    card.appendChild(action);
+    const why = document.createElement('div');
+    why.className = 'note';
+    why.textContent = 'why: ' + (row.reason || '(missing)');
+    card.appendChild(why);
+    const scope = document.createElement('div');
+    scope.className = 'note';
+    scope.textContent = 'sandbox: ' + (row.sandbox || '?')
+      + ' · filesystem: ' + (row.filesystem || '?')
+      + ' · expires: ' + (row.expires_at ? new Date(row.expires_at * 1000).toLocaleTimeString() : '?');
+    card.appendChild(scope);
+    const buttons = document.createElement('div');
+    const add = (label, choice, grantScope) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.style.marginRight = '.35rem';
+      b.onclick = () => decideTool(row.session_id, row.request_id, choice, grantScope);
+      buttons.appendChild(b);
+    };
+    add('Allow once', 'once', 'session');
+    add('Allow for session', 'session', 'session');
+    add('Always allow (global)', 'always', 'global');
+    add('Deny', 'deny', 'session');
+    card.appendChild(buttons);
+    box.appendChild(card);
+  }
+}
+async function loadPending() {
+  try {
+    const st = await api('/v1/tools/pending');
+    renderPending(st.requests || []);
+  } catch (e) {
+    const box = document.getElementById('sec-pending');
+    if (box) box.textContent = 'pending requests unavailable: ' + e.message;
+  }
+}
+async function decideTool(sessionId, requestId, choice, grantScope) {
+  try {
+    await api('/v1/tools/decide', 'POST', {
+      session_id: sessionId, request_id: requestId,
+      choice: choice, scope: grantScope || 'session',
+    });
+    secNote('Tool decision recorded.');
+    await loadSecurityStatus();
+  } catch (e) {
+    secNote('decision failed: ' + e.message, true);
   }
 }
 async function saveSecurityPolicy(btn) {

@@ -65,5 +65,50 @@ def test_audit_endpoint_is_empty_by_default(client):
 def test_agent_status_does_not_claim_gateway_enforcement(client):
     body = client.get("/v1/agent/status").json()
     assert body["gateway_enforced"] is False
+    assert body["gateway_configured"] is False
     assert body["security_tier"] == "guarded"
-    assert "full-access" in body["permission_policy"]
+    assert "blocked" in body["permission_policy"]
+
+
+def _call(client, **overrides):
+    body = {
+        "session_id": "conv-1",
+        "tool": {
+            "name": "bash", "source": "dsh", "version": "1.0.0",
+            "read_only": False, "side_effect": True, "reason_required": True,
+            "network": "none", "filesystem": "workspace",
+            "risk": "high", "sandbox": "required",
+        },
+        "action": "bash: rg -n TODO .",
+        "reason": "find the TODO markers",
+        "args": {"command": "rg -n TODO ."},
+    }
+    body.update(overrides)
+    return client.post("/v1/tools/call", json=body)
+
+
+def test_call_pending_decision_and_grant(client):
+    pending = _call(client)
+    assert pending.status_code == 200
+    body = pending.json()
+    assert body["status"] == "pending"
+    request_id = body["request_id"]
+
+    assert client.get("/v1/tools/pending", params={
+        "session_id": "conv-1"}).json()["requests"][0]["request_id"] == request_id
+    decided = client.post("/v1/tools/decide", json={
+        "session_id": "conv-1", "request_id": request_id,
+        "choice": "session"})
+    assert decided.status_code == 200
+    settled = client.get("/v1/tools/decision", params={
+        "session_id": "conv-1", "request_id": request_id})
+    assert settled.json()["status"] == "approved"
+    assert _call(client).json()["status"] == "approved"
+
+
+def test_call_missing_reason_and_headless_are_denied(client):
+    denied = _call(client, reason="").json()
+    assert denied["status"] == "denied"
+    headless = _call(client, headless=True).json()
+    assert headless["status"] == "denied"
+    assert headless["reason"] == "headless side-effect"

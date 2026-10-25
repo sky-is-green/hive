@@ -291,6 +291,11 @@ def _runtime_env(session_root: str | None = None,
         env["DSH_SESSION_ROOT"] = session_root
     if cordis:
         env["DSH_CORDIS_CONFIG"] = cordis
+    if os.environ.get("HIVE_TOOL_URL"):
+        env["HIVE_TOOL_URL"] = os.environ["HIVE_TOOL_URL"]
+    # The DSH base composition already defaults to workspace-write; make the
+    # safe default explicit for the Hive-owned runtime environment.
+    env.setdefault("DSH_PERMISSION_MODE", "workspace-write")
     if os.name == "nt":
         git_bin = _windows_bash_path()
         if git_bin:
@@ -332,6 +337,10 @@ class DshAgentService:
         #: turn the user has to ask for.
         self._pending_context: dict[str, list[str]] = {}
         self._context_lock = threading.Lock()
+        self._hook_installed = False
+        self._hook_disabled = False
+        self._hook_reason = "not initialized"
+        self._hook_paths: dict[str, str] = {}
 
     def _init_generation(self) -> None:
         """Seed the generation counter from durable session dirs so a fresh
@@ -430,9 +439,21 @@ class DshAgentService:
 
     @property
     def permission_policy(self) -> str:
-        # the bundled jsonrpc-agent composition mounts no approval/permission
-        # plugin: tools run with the runtime process's full access
-        return "full-access (auto-approve; the runtime's own permissions apply)"
+        if self._hook_installed:
+            return "gateway-hook (PreToolUse requires a Hive approval decision)"
+        if self._hook_disabled:
+            return "full-access (HIVE_DSH_HOOK explicitly disabled)"
+        return f"blocked (hook not configured: {self._hook_reason})"
+
+    @property
+    def gateway_configured(self) -> bool:
+        return bool(self._hook_installed)
+
+    @property
+    def hook_status(self) -> dict:
+        return {"installed": self._hook_installed,
+                "disabled": self._hook_disabled,
+                "reason": self._hook_reason, **self._hook_paths}
 
     def _ensure(self, base_url: str, api_key: str, model: str):
         cordis = self._runtime_cordis()
@@ -459,6 +480,31 @@ class DshAgentService:
             dsh_home = REPO_ROOT / ".dsh-home"
             dsh_home.mkdir(parents=True, exist_ok=True)
             self.session_root.mkdir(parents=True, exist_ok=True)
+            self._hook_disabled = os.environ.get(
+                "HIVE_DSH_HOOK", "").strip().lower() in (
+                    "0", "off", "false", "no")
+            if self._hook_disabled:
+                self._hook_installed = False
+                self._hook_reason = "disabled by HIVE_DSH_HOOK"
+            else:
+                try:
+                    from harness.agent_hooks import ensure_hook_profile
+
+                    hook = ensure_hook_profile(dsh_home, self.default_cwd)
+                    self._hook_installed = bool(hook.get("installed"))
+                    self._hook_reason = str(hook.get("reason") or "")
+                    self._hook_paths = {
+                        "hooks_file": str(hook.get("hooks") or ""),
+                        "patch_file": str(hook.get("patch") or ""),
+                    }
+                except Exception as exc:  # noqa: BLE001 - report, don't hide
+                    self._hook_installed = False
+                    self._hook_reason = f"hook install failed: {exc}"
+            if not self._hook_installed and not self._hook_disabled:
+                raise RuntimeError(
+                    "refusing the DSH agent: the PreToolUse approval hook is "
+                    f"not installed ({self._hook_reason}); set HIVE_DSH_HOOK=off "
+                    "only for an explicitly unguarded development run")
             self._harness = DeepSeekHarness(
                 provider="deepseek-official",
                 base_url=base_url,
