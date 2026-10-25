@@ -2654,6 +2654,7 @@ loadLibrarySystem().catch(() => {{}});
 loadStudioSettings();
 loadControllerStatus();
 loadSecurityStatus();
+setInterval(() => {{ loadPending().catch(() => {{}}); }}, 3000);
 loadChatToggles();
 loadStudioCommands();
 applyPinnedTabs();

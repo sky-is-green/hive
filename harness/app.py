@@ -2948,9 +2948,12 @@ def create_app(
 
         return {"runtime_running": agent_service.runtime_running,
                 "permission_policy": agent_service.permission_policy,
-                # Honest release signal: the policy core exists, but the
-                # bundled DSH runtime has no pre-execution hook yet.
+                # Honest release signal: the hook can be configured, but a
+                # live DSH runtime test is still required before claiming
+                # end-to-end enforcement.
                 "gateway_enforced": False,
+                "gateway_configured": agent_service.gateway_configured,
+                "gateway_hook": agent_service.hook_status,
                 "security_tier": SecurityStore(_state_paths()).read()["tier"],
                 "busy": agent_service._inflight}
 
@@ -4677,6 +4680,15 @@ def create_app(
 
         return ControllerService(_state_paths())
 
+    def _tool_hub():
+        from harness.security import GatewayHub
+
+        hub = getattr(app.state, "tool_hub", None)
+        if hub is None:
+            hub = GatewayHub(_state_paths())
+            app.state.tool_hub = hub
+        return hub
+
     @app.get("/v1/profiles/hardware")
     def profile_hardware(profile_id: Optional[str] = Query(default=None)):
         """The newest saved hardware profile, or the one named by profile_id."""
@@ -4834,6 +4846,63 @@ def create_app(
         removed = GrantStore(_state_paths()).revoke(
             identity, session_id=body.get("session_id"))
         return {"ok": True, "removed": removed}
+
+    @app.post("/v1/tools/call")
+    def tools_call(body: dict[str, Any] = Body(default={})):
+        """Authorize one tool call; return approved, pending, or denied."""
+        from harness.security import SecurityError, ToolRequest
+
+        session_id = str(body.get("session_id") or "").strip()
+        spec = body.get("tool")
+        if not session_id or not isinstance(spec, dict):
+            raise HTTPException(422, "session_id and tool metadata are required")
+        try:
+            request = ToolRequest(
+                session_id=session_id,
+                action=str(body.get("action") or ""),
+                reason=str(body.get("reason") or ""),
+                args=(body.get("args") if isinstance(body.get("args"), dict)
+                      else {}),
+                turn_id=body.get("turn_id"),
+                timeout_s=float(body.get("timeout_s") or 600),
+            )
+            result = _tool_hub().gateway(
+                session_id, headless=body.get("headless") is True
+            ).authorize(spec, request, headless=body.get("headless") is True)
+        except (SecurityError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return result
+
+    @app.get("/v1/tools/pending")
+    def tools_pending(session_id: Optional[str] = Query(default=None)):
+        """List pending gateway requests, optionally for one session."""
+        return {"requests": _tool_hub().pending(session_id)}
+
+    @app.post("/v1/tools/decide")
+    def tools_decide(body: dict[str, Any] = Body(default={})):
+        """Resolve a pending request: once, session, always, or deny."""
+        from harness.security import ApprovalError, SecurityError
+
+        session_id = str(body.get("session_id") or "").strip()
+        request_id = str(body.get("request_id") or "").strip()
+        choice = str(body.get("choice") or "").strip()
+        if not session_id or not request_id or not choice:
+            raise HTTPException(422, "session_id, request_id and choice are required")
+        try:
+            return _tool_hub().decide(
+                session_id, request_id, choice,
+                scope=str(body.get("scope") or "session"))
+        except (ApprovalError, SecurityError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/v1/tools/decision")
+    def tools_decision(session_id: str = Query(...),
+                       request_id: str = Query(...)):
+        """Return a settled pending decision for the hook poller."""
+        result = _tool_hub().decision(session_id, request_id)
+        if result is None:
+            raise HTTPException(404, "decision not ready")
+        return result
 
     @app.get("/v1/tools/audit")
     def tools_audit(limit: int = Query(default=50, ge=1, le=1000)):

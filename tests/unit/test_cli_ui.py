@@ -30,14 +30,15 @@ def test_ui_help_names_the_modes(capsys):
 def test_ui_web_passes_the_shared_state_root(monkeypatch):
     calls = []
 
-    def fake_call(argv, cwd=None):
-        calls.append((argv, cwd))
+    def fake_call(argv, cwd=None, env=None):
+        calls.append((argv, cwd, env))
         return 0
 
     monkeypatch.setattr(cli.subprocess, "call", fake_call)
     assert cli.main(["ui", "web", "--mock", "--no-open", "--port", "9999"]) == 0
-    argv, cwd = calls[0]
+    argv, cwd, env = calls[0]
     assert argv[:3] == [cli.sys.executable, "-m", "harness"]
     assert "--state-dir" in argv
     assert argv[argv.index("--state-dir") + 1] == str(cli.serve_state.state_dir())
     assert cwd == str(cli.REPO_ROOT)
+    assert env["HIVE_TOOL_URL"] == "http://127.0.0.1:9999"

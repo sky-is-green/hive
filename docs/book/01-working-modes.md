@@ -93,7 +93,7 @@ service and it does not upload the hardware profile or prompt text by default.
 | **Remote use** | Natural over SSH; no port forwarding needed for the UI | Needs a browser path to `127.0.0.1:8765`, usually an SSH tunnel |
 | **Visual density** | Compact, text-first | Forms, cards, tables, reports |
 | **Best for** | Live health, logs, quick inspection, stop controls | Setup, cascade forms, controller review, reports, API docs |
-| **Approval dialogs** | Not implemented for tool approvals yet | Shared broker planned; current gateway is CLI/API-only |
+| **Approval dialogs** | Open the running Studio with `w`; approvals are in its Global panel | Pending approval cards for the gateway/DSH hook |
 | **Cascade** | Can launch the runner from the shell; no visual report | Full launch form and report pages |
 | **Senses** | Not exposed | Senses panel exists; returns `503` until an encoder is attached |
 | **Controller** | `hive controller ...` and `hive profile ...` | Global-tab panel with evidence, apply and revert |

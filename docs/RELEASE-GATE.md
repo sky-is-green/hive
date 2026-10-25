@@ -81,9 +81,11 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C20 | `hive tools status` / `policy` / `grants` | Guarded default; tier changes persist; no grants initially. | |
 | C21 | `hive tools revoke --all --yes` | Requires confirmation; existing grants disappear. | |
 | C22 | `hive tools audit` | Append-only records show decisions; arguments are hashes, not raw values. | |
-| C23 | Global → **Tool policy & grants** | Tier/master controls and revoke-all work; page states that DSH enforcement is still pending. | |
+| C23 | Global → **Tool policy & grants** | Tier/master controls, pending approval cards, and revoke-all work; page states the live DSH runtime smoke test is still pending. | |
+| C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | |
 | C24 | `hive ui status --json` | Reports web running/not running and both switch commands; starts nothing. | |
 | C25 | `hive ui web --mock --detach` then `hive ui status` | Studio starts, status sees it, and the TUI `w` opens it. | |
+| C27 | With Studio running: `hive tools pending`; `hive tools decide <id> --session <id> --choice deny` | Pending request appears; deny is recorded and the waiting hook exits 2. | |
 | C16 | `hive controller apply <id> --state-dir /tmp/hive-ui-gate` | Refused without `--yes`; no settings change. | |
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
@@ -192,7 +194,8 @@ python -m harness --mock --no-open --port 8765
 - [ ] `POST /v1/controller/apply` without `confirm=true` is refused.
 - [ ] Global → **Tool policy & grants** shows the Guarded default; saving Strict/Trusted/Open persists.
 - [ ] **Revoke all grants** asks first and clears the list.
-- [ ] The panel states that the bundled DSH agent is **not yet** behind the gateway. A release must not claim agent tool enforcement without a separate PASS.
+- [ ] The panel states that the live DSH runtime smoke test is still pending. A release must not claim agent tool enforcement without a separate PASS.
+- [ ] The PreToolUse hook is installed under the DSH home; if it is not, agent turns are refused.
 - [ ] Global → **Working modes** explains the two surfaces and copies `hive ui terminal`.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).
 - [ ] At 1200 px, 760 px, and 390 px wide, the page remains usable; no horizontal scroll except intentional code/tables.

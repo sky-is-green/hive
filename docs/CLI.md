@@ -334,14 +334,23 @@ hive tools policy guarded
 hive tools grants
 hive tools revoke hive:bash@1.0.0 --yes
 hive tools audit --limit 20
+hive tools pending --session conv-123
+hive tools decide req-abc --session conv-123 --choice once
 ```
+
+`tools pending` and `tools decide` talk to a running Studio
+(`HIVE_STUDIO_URL`, default `http://127.0.0.1:8765`). The Studio's Global panel
+shows the same pending request with **Allow once / Allow for session / Always
+allow / Deny**; use whichever surface is in front of you.
 
 The policy core is in `harness/security.py`: a side-effect call needs a reason,
 headless calls are denied, session grants disappear with the session, global
-grants are explicit and revocable, and arguments are hashed in the audit. The
-bundled DSH agent does not yet have the pre-execution hook, so `hive tools`
-does **not** currently make the DSH agent safe; see
-[the gateway document](TOOL-GATEWAY.md).
+grants are explicit and revocable, and arguments are hashed in the audit.
+`harness/agent_hooks.py` installs a DSH `PreToolUse` hook that blocks on a
+Hive approval decision; if it cannot install, agent turns are refused. Set
+`HIVE_DSH_HOOK=off` only for an explicitly unguarded development run. The
+Studio Global panel shows pending approvals; a live DSH runtime smoke test is
+still part of the release gate. See [the gateway document](TOOL-GATEWAY.md).
 
 ## `hive profile`, `hive controller`, and `hive encoder`
 
