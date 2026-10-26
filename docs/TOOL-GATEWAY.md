@@ -1,7 +1,8 @@
 # Hive tool gateway and permission protocol
 
-**Status:** policy/grant/audit core and DSH PreToolUse hook implemented; live
-runtime smoke test and MCP/browser adapters pending, 2026-10-25.
+**Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
+surfaces, and pinned Docker sandbox policy implemented; MCP/browser adapters
+and the source-runtime release rerun pending, 2026-10-26.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -15,8 +16,12 @@ The policy/grant/audit core is implemented in
 `harness/tool_hook.py`; the hook posts the concrete call to the Hive gateway
 and blocks on the human decision. If the hook cannot be installed, the agent
 refuses to start unless `HIVE_DSH_HOOK=off` is set for an explicitly
-unguarded development run. The hook bridge has been tested against a live
-model-free Studio API; a live DSH runtime smoke test is still required.
+unguarded development run. When an external runtime is selected with
+`HIVE_DSH_BIN`, Hive boots it once before the first turn and refuses the agent
+if DSH reports that the hook failed to import or activate. The hook path has
+been exercised end-to-end against DSH 0.2.1-rc.2 (approve ran a workspace
+write; deny left the workspace untouched). The source-built product runtime
+still needs the same run in the release gate.
 
 ## Layers
 
@@ -194,24 +199,25 @@ There is no background “auto-answer” for a human prompt.
 
 ## Sandbox
 
-Docker is the default for bash, file writes and code execution:
+Docker is the default for bash, file writes and code execution. The policy
+lives in `settings/sandbox.json` and is managed with `hive sandbox`:
 
-- image: a pinned Hive sandbox image (the existing `python:3.12-slim` is only a
-  fallback for local development);
+- image: a pinned Hive sandbox image; `hive sandbox pin` resolves and stores the
+  sha256 digest. A mutable tag without a digest is refused, not silently
+  pulled;
 - `--network none` for shell/code;
-- workspace mounted at a disposable path, not the host home;
-- memory/CPU/PID limits;
+- `--memory`, `--cpus`, `--pids-limit`, `--cap-drop ALL`, and
+  `--security-opt no-new-privileges`;
 - no Docker socket, no host device, no privileged mode;
 - output cap and timeout;
 - the sandbox result records `backend: docker` or `backend: local`.
 
-Docker setup belongs in `hive setup` and the Studio setup page. If Docker is
-missing:
-
-1. explain why;
-2. offer install/setup;
-3. allow **this session only** local fallback after a warning and approval;
-4. never make local fallback the default.
+If Docker is missing or its daemon is down, `/v1/sandbox/exec` returns `409`
+with `requires_local_fallback_approval: true`. The caller must retry with
+`allow_local_fallback: true` **and** a `session_id`; that explicit approval is
+audited as `sandbox.local_fallback`. A policy of `deny` forbids the host path
+entirely; `allow` is a deliberate development-box choice. A missing or unpinned
+Docker image is a sandbox failure, never a reason to use the host.
 
 The browser is outside Docker because it needs a display and a real network
 stack. It uses a separate profile and the network gate.
@@ -301,36 +307,39 @@ Implemented:
 - private-network approval gating;
 - pending decisions, deny, timeout, and grant scope;
 - append-only tool audit with argument hashes and secret redaction;
-- `hive tools status|policy|grants|revoke|audit`;
-- the DSH `PreToolUse` hook bridge and Hive web approval panel;
-- a live hook → gateway → approve/deny smoke test against a model-free Studio;
+- `hive tools status|policy|grants|pending|decide|revoke|audit`;
+- the DSH `PreToolUse` hook bridge, the Studio pending cards, the TUI `a`
+  overlay, and the CLI `pending` / `decide` commands;
+- a live DSH 0.2.1-rc.2 hook test: approve ran the tool, deny blocked it;
+- a pinned-image Docker sandbox policy with explicit local-fallback approval
+  (`hive sandbox status|policy|pin`);
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
 
-- a live DSH runtime smoke test with the hook mounted (the bridge itself has
-  been exercised against a live Studio API);
+- the same live hook test against the source-built product runtime that ships
+  with Hive, and a real Docker-daemon execution run (the policy and tests are
+  implemented, but this host has no daemon);
 - MCP metadata registration and subagent inheritance;
-- Docker-specific execution policy; the current DSH composition uses its
-  workspace-write sandbox (bwrap/Landlock on Linux), and a pinned Docker image
-  plus local-fallback approval is still pending;
 - browser adapters and origin/SSRF checks;
-- TUI/CLI approval surfaces (the web panel is implemented).
+- a packaged-runtime check that the hook plugin is present, not only the
+  external-runtime preflight.
 
 ## Implementation order
 
 1. **Gateway core** — ToolSpec, request/decision, session/global store, audit,
    headless policy, tests. No UI. **Done.**
-2. **Approval surfaces** — Studio modal/SSE, TUI overlay, CLI prompt; shared
-   broker and countdown.
-3. **Docker sandbox** — setup wizard, image, no-network workspace, local
-   fallback approval.
+2. **Approval surfaces** — Studio pending cards, TUI `a` overlay, CLI
+   `pending` / `decide`; shared broker and countdown. **Done.**
+3. **Docker sandbox** — pinned image, no-network execution, resource limits,
+   explicit local-fallback approval. **Done in policy/API; real-daemon run
+   pending.**
 4. **Browser adapters** — bundled Chromium visible/headless, system browser,
-   private-origin gate.
-5. **DSH/MCP wiring** — expose gateway tools, disable/proxy native DSH tools,
-   import MCP metadata.
+   private-origin gate. **Pending.**
+5. **DSH/MCP wiring** — the DSH PreToolUse hook is mounted and verified;
+   MCP metadata registration and subagent inheritance remain. **Partial.**
 6. **Release gate additions** — permission denial, timeout, headless block,
-   private network, sandbox fallback, audit redaction.
+   private network, sandbox fallback, audit redaction. **Partial.**
 
 The current agent cannot be made safe by UI alone; step 5 is the enforcement
 step. Do not ship a prompt-only gate as if it were a security boundary.

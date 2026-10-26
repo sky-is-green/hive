@@ -1184,7 +1184,12 @@ class SandboxExecRequest(BaseModel):
     command: str = Field(..., min_length=1, description="Shell command to execute.")
     timeout: int = Field(30, ge=1, le=120, description="Hard timeout in seconds.")
     use_docker: bool = Field(True, description="Use Docker isolation when the daemon is up.")
-    image: str = Field("python:3.12-slim", description="Container image for the Docker path.")
+    image: Optional[str] = Field(
+        None, description="Deprecated; must match the pinned sandbox image.")
+    session_id: Optional[str] = Field(
+        None, description="Session receiving a local-fallback approval.")
+    allow_local_fallback: bool = Field(
+        False, description="Explicitly approve a host subprocess for this call.")
 
 
 class ServerStartRequest(BaseModel):
@@ -2948,10 +2953,9 @@ def create_app(
 
         return {"runtime_running": agent_service.runtime_running,
                 "permission_policy": agent_service.permission_policy,
-                # Honest release signal: the hook can be configured, but a
-                # live DSH runtime test is still required before claiming
-                # end-to-end enforcement.
-                "gateway_enforced": False,
+                # True only after an external DSH runtime passed the hook
+                # preflight; a configured-but-unverified hook stays false.
+                "gateway_enforced": agent_service.gateway_enforced,
                 "gateway_configured": agent_service.gateway_configured,
                 "gateway_hook": agent_service.hook_status,
                 "security_tier": SecurityStore(_state_paths()).read()["tier"],
@@ -4941,35 +4945,62 @@ def create_app(
 
     @app.post("/v1/sandbox/exec")
     def sandbox_exec(req: SandboxExecRequest):
-        """Run a command in the sandbox (Docker when the daemon is up, else a local subprocess)."""
-        import shutil, subprocess as _sp
+        """Run in the pinned Docker sandbox, or a host command only after approval."""
+        import subprocess as _sp
+        from harness import sandbox as sandbox_mod
+
         if not _load_studio_settings()["sandbox_enabled"]:
             raise HTTPException(403, "the sandbox is off (Studio settings)")
         command = req.command
         if not command.strip():
             raise HTTPException(422, "command is required")
-        timeout = max(1, min(int(req.timeout), 120))
-        use_docker = bool(req.use_docker)
-        image = req.image
-        docker_bin = shutil.which("docker")
-        daemon_ok = False
-        if use_docker and docker_bin:
+        policy = sandbox_mod.SandboxPolicy(_state_paths())
+        data = policy.read()
+        if req.image and req.image != data["docker_image"]:
+            raise HTTPException(
+                403, "the sandbox image is fixed by policy; use /v1/sandbox/status")
+        timeout = max(1, min(int(req.timeout),
+                             int(data.get("timeout_s") or 60), 120))
+        docker = sandbox_mod.docker_status()
+        backend = "local"
+        image_ref = ""
+        fallback_reason = ""
+        if req.use_docker and docker["daemon"]:
             try:
-                _sp.run([docker_bin, "info"], capture_output=True, timeout=5, check=True)
-                daemon_ok = True
-            except Exception:  # noqa: BLE001
-                daemon_ok = False
-
-        CAP = 10000
-        if daemon_ok:
-            cmd = [docker_bin, "run", "--rm", "--network", "none",
-                   "--memory", "512m", "--cpus", "1", image,
-                   "sh", "-c", command]
+                image_ref = policy.image_ref()
+            except sandbox_mod.SandboxError as exc:
+                raise HTTPException(409, str(exc)) from exc
+            cmd = [
+                docker["binary"], "run", "--rm",
+                "--network", str(data.get("network") or "none"),
+                "--memory", str(data.get("memory") or "512m"),
+                "--cpus", str(data.get("cpus") or "1"),
+                "--pids-limit", str(int(data.get("pids_limit") or 128)),
+                "--cap-drop", "ALL",
+                "--security-opt", "no-new-privileges",
+                image_ref, "sh", "-c", command,
+            ]
             backend = "docker"
         else:
-            cmd = local_shell_command(command)
-            backend = "local"
+            allowed, why = policy.local_fallback(
+                req.session_id, approved=req.allow_local_fallback)
+            if not allowed:
+                raise HTTPException(409, detail={
+                    "error": why,
+                    "docker": docker,
+                    "requires_local_fallback_approval":
+                        data.get("local_fallback") == "approval",
+                })
+            try:
+                cmd = local_shell_command(command)
+            except OSError as exc:
+                raise HTTPException(
+                    500, f"local shell is unavailable: {exc}") from exc
+            fallback_reason = why
+            if req.session_id:
+                policy.record_fallback(req.session_id, command, why)
 
+        CAP = 10000
         try:
             proc = _sp.run(cmd, capture_output=True, text=True, timeout=timeout)
             timed_out = False
@@ -4983,10 +5014,14 @@ def create_app(
             err = ((exc.stderr or "") if isinstance(exc.stderr, str) else (exc.stderr or b"").decode("utf-8", "replace"))[:CAP]
         except Exception as exc:  # noqa: BLE001
             return {"backend": backend, "error": str(exc), "exit_code": 1,
-                    "stdout": "", "stderr": str(exc), "timed_out": False}
+                    "stdout": "", "stderr": str(exc), "timed_out": False,
+                    "image": image_ref, "sandbox_policy": data}
         return {
             "backend": backend,
-            "docker_available": daemon_ok,
+            "docker_available": docker["daemon"],
+            "image": image_ref,
+            "sandbox_policy": data,
+            "fallback_reason": fallback_reason,
             "exit_code": rc,
             "timed_out": timed_out,
             "stdout": out,
@@ -4995,18 +5030,21 @@ def create_app(
 
     @app.get("/v1/sandbox/status")
     def sandbox_status():
-        """Sandbox availability: docker installed, daemon up, fallback mode."""
-        import shutil, subprocess as _sp
-        docker_bin = shutil.which("docker")
-        daemon_ok = False
-        if docker_bin:
-            try:
-                _sp.run([docker_bin, "info"], capture_output=True, timeout=5, check=True)
-                daemon_ok = True
-            except Exception:  # noqa: BLE001
-                daemon_ok = False
-        return {"docker_installed": bool(docker_bin), "docker_daemon": daemon_ok,
-                "fallback": "local subprocess (no isolation)"}
+        """Sandbox availability, image pin state, and fallback policy."""
+        from harness import sandbox as sandbox_mod
+
+        info = sandbox_mod.status(sandbox_mod.SandboxPolicy(_state_paths()))
+        fallback = ("local subprocess allowed by policy"
+                    if info["policy"]["local_fallback"] == "allow" else
+                    "local subprocess requires explicit approval"
+                    if info["policy"]["local_fallback"] == "approval" else
+                    "local subprocess is disabled")
+        return {
+            "docker_installed": info["installed"],
+            "docker_daemon": info["daemon"],
+            "fallback": fallback,
+            **info,
+        }
 
     @app.get("/cascade", response_class=HTMLResponse)
     def view_cascade():

@@ -23,6 +23,11 @@ Record these in the gate log before touching the UI.
       `hive status --no-probe`; `pgrep -af 'ds41_generate|run_cascade|ui_gate_fixture'`.
 - [ ] Disk and memory recorded: `df -h .`, `free -h`.
 - [ ] `hive doctor --json` succeeds and records cards/RAM/backends.
+- [ ] `hive sandbox status` reports Docker, the pin state, and the fallback rule;
+      either pin the image with `hive sandbox pin` or record why the real-daemon
+      run is blocked.
+- [ ] If `HIVE_DSH_BIN` is set, the agent preflight passes and the hook plugin is
+      visible to that runtime profile.
 - [ ] A disposable state root exists: `/tmp/hive-ui-gate` (do not use the real state).
 - [ ] The tester has another terminal available for the UI fixture.
 - [ ] No credentials or personal paths appear in screenshots.
@@ -60,7 +65,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | ID | Command | Expected | Result |
 |---|---|---|---|
 | C1 | `hive` in a pipe / no TTY | Hive wordmark, version, running/models/stacks/backends, `get started`, `hive --help` footer. No menus or cursor control. | |
-| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, profile, controller, encoder, ui, tools, version, help. | |
+| C2 | `hive --help` | Commands include serve, tui, status, stop, logs, models, stacks, cascade, backends, setup, doctor, config, profile, controller, encoder, ui, tools, sandbox, version, help. | |
 | C3 | `hive help models list` | Same body as `hive models list --help`; description and every option present. | |
 | C4 | `hive help --json \| jq .` | Valid JSON; commands and options have descriptions; aliases appear. | |
 | C5 | `hive help models --json \| jq .` | `name=models`, `path="hive models"`, seven subcommands. | |
@@ -81,8 +86,10 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C20 | `hive tools status` / `policy` / `grants` | Guarded default; tier changes persist; no grants initially. | |
 | C21 | `hive tools revoke --all --yes` | Requires confirmation; existing grants disappear. | |
 | C22 | `hive tools audit` | Append-only records show decisions; arguments are hashes, not raw values. | |
-| C23 | Global → **Tool policy & grants** | Tier/master controls, pending approval cards, and revoke-all work; page states the live DSH runtime smoke test is still pending. | |
-| C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | |
+| C23 | Global → **Tool policy & grants** | Tier/master controls, pending approval cards, and revoke-all work; page names the runtime preflight and the remaining source-runtime rerun. | |
+| C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | PASS against DSH 0.2.1-rc.2 on 2026-10-26; source-built runtime rerun pending. |
+| C28 | `hive sandbox status`; `hive sandbox pin --image hive-sandbox:1 --digest <64-hex>`; `POST /v1/sandbox/exec` without approval, then with `allow_local_fallback` + `session_id` | Status shows the pin/fallback rule; unpinned images are refused; the first host call is 409; the explicit retry runs and writes `sandbox.local_fallback` to the audit. | |
+| C29 | TUI `a` → approve once; repeat → deny | The overlay shows the same request as the Studio/CLI; approve lets the tool run; deny blocks it; the list refreshes. | |
 | C24 | `hive ui status --json` | Reports web running/not running and both switch commands; starts nothing. | |
 | C25 | `hive ui web --mock --detach` then `hive ui status` | Studio starts, status sees it, and the TUI `w` opens it. | |
 | C27 | With Studio running: `hive tools pending`; `hive tools decide <id> --session <id> --choice deny` | Pending request appears; deny is recorded and the waiting hook exits 2. | |
@@ -90,6 +97,12 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C17 | Apply with `--yes`, then `hive controller revert --yes` | Applied values restored; newly added keys are absent, not `null`; audit files exist. | |
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
 | C19 | `hive profile scan --consent` with no value | Clear consent error, exit 2. | |
+
+**C26 evidence (2026-10-26):** DSH 0.2.1-rc.2 with the Hive `PreToolUse` hook.
+Through `/v1/agent/stream`, approve produced `hook/result: pass` and
+`tool/result: hive-approved`; deny produced `hook/result: block` (exit 2) and
+`tool/result: Error: blocked: user denied`. The source-built product runtime
+still needs the same rerun.
 
 Also check one `--json` command with `FORCE_COLOR=1`: JSON must contain **no ANSI**.
 

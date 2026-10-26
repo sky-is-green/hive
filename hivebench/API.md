@@ -135,10 +135,15 @@ curl http://127.0.0.1:8765/health
 
 ### Sandbox — isolated code execution
 
+The Docker image is fixed by policy and must be pinned by digest. If Docker is
+unavailable, `exec` returns `409`; retry with `allow_local_fallback: true` and
+a `session_id` to record an explicit host-fallback approval. A missing image is
+never a reason to use the host.
+
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/v1/sandbox/exec` | Run a command in the sandbox (Docker when the daemon is up, else a local subprocess). — body: `#/components/schemas/SandboxExecRequest` |
-| `GET` | `/v1/sandbox/status` | Sandbox availability: docker installed, daemon up, fallback mode. |
+| `POST` | `/v1/sandbox/exec` | Run a command in the pinned Docker sandbox, or a host subprocess after explicit approval. — body: `#/components/schemas/SandboxExecRequest` |
+| `GET` | `/v1/sandbox/status` | Docker availability, image pin state, and local-fallback policy. |
 
 ### Controller — hardware profile and E0 settings proposal
 

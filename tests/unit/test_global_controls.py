@@ -52,7 +52,8 @@ def test_the_security_panel_is_visible_and_explicit(client):
     assert 'id="sec-pending"' in page
     assert "function decideTool(" in page
     assert "PreToolUse hook bridge" in page
-    assert "live DSH runtime smoke test" in page
+    assert "live DSH runtime" in page
+    assert "hive tools pending" in page
 
 
 def test_the_controller_panel_is_manual_and_explicit(client):

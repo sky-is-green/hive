@@ -70,6 +70,16 @@ def test_agent_status_does_not_claim_gateway_enforcement(client):
     assert "blocked" in body["permission_policy"]
 
 
+def test_agent_status_claims_enforcement_only_after_preflight(client):
+    service = client.app.state.agent
+    service._hook_installed = True
+    service._hook_preflight_key = ("/usr/bin/dsh", "/tmp/dsh-home")
+    body = client.get("/v1/agent/status").json()
+    assert body["gateway_enforced"] is True
+    assert body["gateway_configured"] is True
+    assert body["gateway_hook"]["verified"] is True
+
+
 def _call(client, **overrides):
     body = {
         "session_id": "conv-1",

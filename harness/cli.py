@@ -1541,31 +1541,14 @@ def cmd_ui(args: argparse.Namespace) -> int:
 
 def _tool_api(args: argparse.Namespace, path: str, *,
               method: str = "GET", body: dict | None = None) -> dict:
-    base = (getattr(args, "url", None)
-            or os.environ.get("HIVE_STUDIO_URL")
-            or "http://127.0.0.1:8765").rstrip("/")
-    headers = {"content-type": "application/json"}
-    token = os.environ.get("HARNESS_TOKEN", "").strip()
-    if token:
-        headers["x-splinter-token"] = token
-    data = json.dumps(body).encode("utf-8") if body is not None else None
-    request = urllib.request.Request(base + path, data=data, method=method,
-                                     headers=headers)
+    from harness import studio_api
+
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
-            raw = response.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"gateway HTTP {exc.code}: {detail[:300]}") from exc
-    except OSError as exc:
-        raise RuntimeError(f"gateway unreachable at {base}: {exc}") from exc
-    try:
-        result = json.loads(raw)
-    except ValueError as exc:
-        raise RuntimeError("gateway returned invalid JSON") from exc
-    if not isinstance(result, dict):
-        raise RuntimeError("gateway returned a non-object")
-    return result
+        return studio_api.call(
+            path, method=method, body=body,
+            url=getattr(args, "url", None))
+    except studio_api.StudioAPIError as exc:
+        raise RuntimeError(str(exc)) from exc
 
 
 def cmd_tools_pending(args: argparse.Namespace) -> int:
@@ -1705,6 +1688,75 @@ def cmd_tools_audit(args: argparse.Namespace) -> int:
                [[row.get("ts"), row.get("event"), row.get("tool_identity") or "-",
                  row.get("decision") or row.get("status") or "-"]
                 for row in rows])
+    return 0
+
+
+def cmd_sandbox_status(args: argparse.Namespace) -> int:
+    from harness import sandbox
+
+    info = sandbox.status(sandbox.SandboxPolicy(_state_paths(args)))
+    if args.as_json:
+        _json(info)
+        return 0
+    termui.header("sandbox")
+    termui.kv([
+        ("docker", "installed" if info["installed"] else "missing"),
+        ("daemon", "running" if info["daemon"] else info["detail"]),
+        ("image", info["policy"]["docker_image"]),
+        ("pinned", "yes" if info["pinned"] else info["pin_error"] or "no"),
+        ("network", info["policy"]["network"]),
+        ("fallback", info["policy"]["local_fallback"]),
+    ])
+    if not info["pinned"]:
+        print("  pin it with: hive sandbox pin")
+    return 0
+
+
+def cmd_sandbox_policy(args: argparse.Namespace) -> int:
+    from harness import sandbox
+
+    policy = sandbox.SandboxPolicy(_state_paths(args))
+    fields = {
+        "docker_image": args.image,
+        "image_digest": args.digest,
+        "local_fallback": args.local_fallback,
+        "network": args.network,
+        "memory": args.memory,
+        "cpus": args.cpus,
+        "pids_limit": args.pids_limit,
+        "timeout_s": args.timeout,
+    }
+    try:
+        data = policy.update(**fields) if any(
+            value is not None for value in fields.values()) else policy.read()
+    except sandbox.SandboxError as exc:
+        print(f"hive sandbox policy: {exc}", file=sys.stderr)
+        return 2
+    if args.as_json:
+        _json(data)
+    else:
+        termui.header("sandbox policy")
+        termui.kv([(key, data.get(key)) for key in (
+            "docker_image", "image_digest", "network", "memory", "cpus",
+            "pids_limit", "timeout_s", "local_fallback", "updated_at")])
+    return 0
+
+
+def cmd_sandbox_pin(args: argparse.Namespace) -> int:
+    from harness import sandbox
+
+    policy = sandbox.SandboxPolicy(_state_paths(args))
+    try:
+        data = sandbox.pin_image(policy, args.image, args.digest)
+    except sandbox.SandboxError as exc:
+        print(f"hive sandbox pin: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(data)
+    else:
+        termui.header("sandbox image pinned")
+        termui.kv([("image", data["docker_image"]),
+                   ("digest", data["image_digest"])])
     return 0
 
 
@@ -2381,6 +2433,55 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(taudit)
     taudit.add_argument("--json", action="store_true", dest="as_json")
     taudit.set_defaults(func=cmd_tools_audit)
+
+    sandbox = sub.add_parser(
+        "sandbox", help="Docker sandbox policy and image pinning",
+        description="Inspect the sandbox, pin the container image by digest, "
+                    "or change the local-fallback rule. A host fallback is "
+                    "never silent.")
+    sandbox_sub = sandbox.add_subparsers(
+        dest="sandbox_command", metavar="<action>", required=True)
+    sstatus = sandbox_sub.add_parser(
+        "status", help="show Docker, image pin, and fallback state",
+        description="Probe Docker live and show the image pin, network and "
+                    "local-fallback policy.")
+    _add_state_dir(sstatus)
+    sstatus.add_argument("--json", action="store_true", dest="as_json")
+    sstatus.set_defaults(func=cmd_sandbox_status)
+
+    spolicy = sandbox_sub.add_parser(
+        "policy", help="show or change the sandbox policy",
+        description="Show or change the pinned image, resource limits, network, "
+                    "and the approval rule for a local host fallback.")
+    spolicy.add_argument("--image", default=None, help="container image name")
+    spolicy.add_argument("--digest", default=None,
+                         help="sha256 digest (64 hex characters)")
+    spolicy.add_argument("--local-fallback", default=None,
+                         choices=("approval", "allow", "deny"),
+                         help="host fallback rule")
+    spolicy.add_argument("--network", default=None,
+                         help="Docker network mode (default none)")
+    spolicy.add_argument("--memory", default=None, help="memory limit")
+    spolicy.add_argument("--cpus", default=None, help="CPU limit")
+    spolicy.add_argument("--pids-limit", type=int, default=None,
+                         dest="pids_limit", help="process limit")
+    spolicy.add_argument("--timeout", type=int, default=None,
+                         dest="timeout", help="maximum timeout in seconds")
+    _add_state_dir(spolicy)
+    spolicy.add_argument("--json", action="store_true", dest="as_json")
+    spolicy.set_defaults(func=cmd_sandbox_policy)
+
+    spin = sandbox_sub.add_parser(
+        "pin", help="resolve and save the image digest",
+        description="Resolve the image's sha256 digest with Docker, or record "
+                    "a digest supplied offline, so the tag cannot move.")
+    spin.add_argument("--image", default=None,
+                      help="image to pin (default: the policy image)")
+    spin.add_argument("--digest", default=None,
+                      help="pin this 64-character sha256 digest offline")
+    _add_state_dir(spin)
+    spin.add_argument("--json", action="store_true", dest="as_json")
+    spin.set_defaults(func=cmd_sandbox_pin)
 
     version = sub.add_parser(
         "version", help="print the Hive version",

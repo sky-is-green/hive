@@ -16,6 +16,7 @@ import json
 import locale
 import os
 import sys
+import textwrap
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -26,7 +27,7 @@ except ImportError:  # pragma: no cover - platform dependent
     curses = None  # type: ignore
 
 from harness import cli as ops
-from harness import hardware, serve_state, termui
+from harness import hardware, serve_state, studio_api, termui
 from harness.stack import schema
 
 TABS = ("Status", "Models", "Stacks", "Runs")
@@ -37,6 +38,7 @@ HELP_LINES = (
     "ENTER            details",
     "l                supervisor log (Status)",
     "x                stop selected serve, with confirmation (Status)",
+    "a                tool approvals from the running Studio",
     "w                open the running web Studio",
     "r                refresh header and active tab",
     "?                this help",
@@ -90,6 +92,37 @@ def format_resources(summary: dict[str, Any] | None) -> str:
     return " · ".join(parts)
 
 
+def approval_lines(row: dict[str, Any], width: int = 78) -> list[str]:
+    """Render one pending approval as wrapped, readable terminal lines."""
+    width = max(30, int(width))
+    lines: list[str] = []
+
+    def add(label: str, value: Any) -> None:
+        text = str(value).strip() if value not in (None, "") else "?"
+        prefix = f"{label:<9} "
+        wrapped = textwrap.wrap(
+            text, width=width, initial_indent=prefix,
+            subsequent_indent=" " * len(prefix), break_long_words=False,
+            break_on_hyphens=False)
+        lines.extend(wrapped or [prefix.rstrip()])
+
+    add("request", row.get("request_id"))
+    add("session", row.get("session_id"))
+    add("tool", row.get("tool_identity"))
+    add("action", row.get("action"))
+    add("why", row.get("reason"))
+    add("risk", f"{row.get('risk') or '?'} risk · "
+               f"{row.get('network') or '?'} network · "
+               f"{row.get('filesystem') or '?'} filesystem · "
+               f"sandbox {row.get('sandbox') or '?'}")
+    expires = row.get("expires_at")
+    if isinstance(expires, (int, float)):
+        left = max(0, int(expires - time.time()))
+        add("expires", f"{time.strftime('%H:%M:%S', time.localtime(expires))} "
+                       f"(in {left // 60}m {left % 60:02d}s)")
+    return lines
+
+
 @dataclass
 class Row:
     cells: list[str]
@@ -112,10 +145,13 @@ class App:
         self.rows: list[Row] = []
         self.resources: dict[str, Any] = {}
         self.message = ""
-        self.mode = "main"          # main | detail | logs | help
+        self.mode = "main"          # main | detail | logs | help | confirm | approvals
         self.overlay_title = ""
         self.overlay: list[str] = []
         self.offset = 0
+        self.approvals: list[dict[str, Any]] = []
+        self.approval_index = 0
+        self.approval_error = ""
         self.color = bool(termui.color_enabled())
         self._init_colors()
         self.sel_attr = (self.pairs.get("sel", 0) if self.color
@@ -340,6 +376,8 @@ class App:
 
         if self.mode == "main":
             self._draw_main(height, width)
+        elif self.mode == "approvals":
+            self._draw_approvals(height, width)
         else:
             self._draw_overlay(height, width)
 
@@ -430,9 +468,43 @@ class App:
                 2: "enter details",
                 3: "enter summary",
             }[self.tab]
-        line = (f" {context}  ·  r refresh  ·  w web  ·  ? help  ·  q quit "
-                if context else " r refresh  ·  w web  ·  ? help  ·  q quit ")
+        line = (f" {context}  ·  r refresh  ·  a approvals  ·  w web  ·  ? help  ·  q quit "
+                if context else
+                " r refresh  ·  a approvals  ·  w web  ·  ? help  ·  q quit ")
         self.put(height - 1, 0, line[-width:], self.sel_attr)
+
+    def _draw_approvals(self, height: int, width: int) -> None:
+        title = f" tool approvals ({len(self.approvals)}) "
+        self.put(4, 2, title, self.sel_attr)
+        top, bottom = 6, height - 3
+        if self.approval_error:
+            self.put(top, 4, "Studio unavailable:", self.attr("red"))
+            for index, line in enumerate(textwrap.wrap(
+                    self.approval_error, max(20, width - 8))[:4]):
+                self.put(top + 1 + index, 4, line, self.attr("gray"))
+            self.put(top + 6, 4, "Start it with:  hive ui web", self.attr("amber"))
+            hint = "r retry · q close"
+            self.put(height - 2, 2, hint, self.attr("gray"))
+            return
+        if not self.approvals:
+            self.put(top, 4, "No pending tool approvals.", self.attr("gray"))
+            hint = "r refresh · q close"
+            self.put(height - 2, 2, hint, self.attr("gray"))
+            return
+
+        self.approval_index = max(0, min(self.approval_index,
+                                         len(self.approvals) - 1))
+        row = self.approvals[self.approval_index]
+        lines = approval_lines(row, width - 8)
+        for index, line in enumerate(lines):
+            if top + index >= bottom:
+                break
+            self.put(top + index, 4, line, self.attr("text"))
+        position = f"request {self.approval_index + 1}/{len(self.approvals)}"
+        self.put(bottom - 1, 4, position, self.attr("gray"))
+        hint = ("↑↓ select · o allow once · s allow session · "
+                "g always · d deny · r refresh · q close")
+        self.put(height - 2, 2, hint[:width - 4], self.attr("gray"))
 
     def _draw_overlay(self, height: int, width: int) -> None:
         top, bottom = 4, height - 3
@@ -462,7 +534,7 @@ class App:
         import urllib.request
         import webbrowser
 
-        url = os.environ.get("HIVE_STUDIO_URL", "http://127.0.0.1:8765")
+        url = studio_api.base_url()
         try:
             with urllib.request.urlopen(f"{url}/health", timeout=0.5) as response:
                 if response.status != 200:
@@ -474,6 +546,49 @@ class App:
             self.message = "opened the web UI"
         else:
             self.message = f"open {url} in a browser"
+
+    def _open_approvals(self) -> None:
+        self.mode = "approvals"
+        self.approval_index = 0
+        self._refresh_approvals()
+
+    def _refresh_approvals(self) -> None:
+        try:
+            payload = studio_api.call("/v1/tools/pending", timeout=2.0)
+            self.approvals = list(payload.get("requests") or [])
+            self.approval_error = ""
+        except studio_api.StudioAPIError as exc:
+            self.approvals = []
+            self.approval_error = str(exc)
+        if self.approvals:
+            self.approval_index = min(self.approval_index,
+                                      len(self.approvals) - 1)
+        else:
+            self.approval_index = 0
+
+    def _decide_approval(self, choice: str, scope: str = "session") -> None:
+        if not self.approvals:
+            return
+        row = self.approvals[self.approval_index]
+        try:
+            result = studio_api.call(
+                "/v1/tools/decide", method="POST", timeout=5.0, body={
+                    "session_id": row.get("session_id"),
+                    "request_id": row.get("request_id"),
+                    "choice": choice,
+                    "scope": scope,
+                })
+        except studio_api.StudioAPIError as exc:
+            self.message = f"approval failed: {exc}"
+            return
+        label = {
+            "once": "allowed once",
+            "session": "allowed for this session",
+            "always": "allowed always",
+            "deny": "denied",
+        }.get(choice, str(result.get("status") or choice))
+        self.message = f"{label}: {row.get('action') or row.get('request_id')}"
+        self._refresh_approvals()
 
     def _detail(self) -> None:
         row = self.current()
@@ -638,6 +753,25 @@ class App:
                         except OSError:
                             pass
             return False
+        if self.mode == "approvals":
+            if key in (ord("q"), 27):
+                self.mode = "main"
+            elif key in (curses.KEY_UP, ord("k")):
+                self.approval_index = max(0, self.approval_index - 1)
+            elif key in (curses.KEY_DOWN, ord("j")):
+                self.approval_index = min(
+                    max(0, len(self.approvals) - 1), self.approval_index + 1)
+            elif key == ord("r"):
+                self._refresh_approvals()
+            elif key == ord("o"):
+                self._decide_approval("once", "session")
+            elif key == ord("s"):
+                self._decide_approval("session", "session")
+            elif key == ord("g"):
+                self._decide_approval("always", "global")
+            elif key == ord("d"):
+                self._decide_approval("deny", "session")
+            return False
         if self.mode == "help":
             if key in (ord("q"), 27, ord("?")):
                 self.mode = "main"
@@ -667,6 +801,8 @@ class App:
             self.message = "refreshed"
         elif key == ord("w"):
             self._open_web()
+        elif key == ord("a"):
+            self._open_approvals()
         elif key in (10, 13, curses.KEY_ENTER):
             self._detail()
         elif key == ord("?") or key == curses.KEY_F1:
