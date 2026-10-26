@@ -11,8 +11,10 @@ subprocess without importing the Studio or any model code.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
+import socket
 import sys
 import time
 import urllib.error
@@ -25,8 +27,19 @@ DEFAULT_TIMEOUT_S = 300.0
 READ_ONLY_TOOLS = frozenset({
     "read", "read_file", "readimage", "read_image", "list", "list_directory",
     "grep", "glob", "search", "fs_search", "todo", "skill", "web_search",
-    "websearch", "inspect", "status",
+    "websearch", "web_fetch", "webfetch", "fetch", "browse", "http_get",
+    "get_url", "inspect", "status",
 })
+_PRIVATE_HOSTS = frozenset({
+    "localhost", "localhost.localdomain", "metadata", "instance-data",
+    "metadata.google.internal", "host.docker.internal",
+    "gateway.docker.internal", "host.containers.internal",
+    "kubernetes.default.svc",
+})
+_PRIVATE_SUFFIXES = (
+    ".localhost", ".local", ".localdomain", ".internal", ".svc",
+    ".cluster.local", ".home.arpa", ".lan", ".corp",
+)
 
 
 class HookError(RuntimeError):
@@ -58,10 +71,81 @@ def _action(name: str, args: dict[str, Any]) -> str:
     return f"{name}: {detail[:1200]}"
 
 
-def _spec(name: str) -> dict[str, Any]:
+def _urls_from_args(args: dict[str, Any]) -> list[str]:
+    found: list[str] = []
+    for key in ("url", "uri", "href", "target", "address", "urls"):
+        value = args.get(key)
+        if isinstance(value, str) and value.strip():
+            found.append(value.strip())
+        elif isinstance(value, list):
+            found.extend(str(item).strip() for item in value
+                         if isinstance(item, str) and item.strip())
+    return found
+
+
+def _ip_is_private(value: str) -> bool:
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return True
+    mapped = getattr(address, "ipv4_mapped", None)
+    if mapped is not None:
+        address = mapped
+    return not address.is_global
+
+
+def _host_is_private(host: str) -> bool:
+    host = host.strip().strip(".").lower()
+    if not host:
+        return True
+    if host in _PRIVATE_HOSTS or any(
+            host.endswith(suffix) for suffix in _PRIVATE_SUFFIXES):
+        return True
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        try:
+            resolved = socket.getaddrinfo(host, None)
+        except OSError:
+            # An unresolvable target must not be treated as public.
+            return True
+        return any(_ip_is_private(info[4][0]) for info in resolved)
+    return _ip_is_private(host)
+
+
+def _url_is_private(url: str) -> bool:
+    text = url if "://" in url else f"http://{url}"
+    try:
+        parts = urllib.parse.urlsplit(text)
+    except ValueError:
+        return True
+    if parts.scheme not in ("http", "https"):
+        return True
+    if not parts.hostname:
+        return True
+    return _host_is_private(parts.hostname)
+
+
+def _network_for(name: str, args: dict[str, Any]) -> str:
+    low = name.lower().replace("-", "_")
+    web = any(token in low for token in ("web", "fetch", "http", "browse"))
+    if not web:
+        return "none"
+    urls = _urls_from_args(args)
+    if urls:
+        return ("private" if any(_url_is_private(url) for url in urls)
+                else "public")
+    # Search-style calls carry a query, not an arbitrary destination.
+    if any(key in args for key in ("query", "q", "search", "prompt")):
+        return "public"
+    # A web tool with no visible destination is not assumed public.
+    return "private"
+
+
+def _spec(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
     low = name.lower().replace("-", "_")
     read_only = low in READ_ONLY_TOOLS
-    network = "public" if "web" in low or "fetch" in low else "none"
+    network = _network_for(name, args or {})
     return {
         "name": name, "source": "dsh", "version": "1.0.0",
         "description": f"DSH tool {name}",
@@ -70,8 +154,10 @@ def _spec(name: str) -> dict[str, Any]:
         "reason_required": not read_only,
         "network": network,
         "filesystem": "none" if read_only else "workspace",
-        "risk": "low" if read_only else ("high" if low in (
-            "bash", "shell", "code_runtime", "subagent", "write_file") else "medium"),
+        "risk": "high" if network == "private" else (
+            "low" if read_only else ("high" if low in (
+                "bash", "shell", "code_runtime", "subagent", "write_file")
+                else "medium")),
         "sandbox": "optional" if read_only else "required",
     }
 
@@ -93,7 +179,7 @@ def _request(payload: dict[str, Any]) -> dict[str, Any]:
               else f"DSH requested {name}; review the displayed action")
     return {
         "session_id": _session(payload),
-        "tool": _spec(name),
+        "tool": _spec(name, args),
         "action": _action(name, args),
         "reason": reason,
         "args": args,

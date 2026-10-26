@@ -35,6 +35,69 @@ def test_read_only_tools_are_marked_read_only():
     assert request["tool"]["side_effect"] is False
 
 
+def _web(url):
+    return tool_hook._request({
+        "hook_event_name": "PreToolUse", "session_id": "conv-web",
+        "tool_name": "web_fetch", "tool_input": {"url": url},
+    })
+
+
+def test_public_web_fetch_is_public_and_read_only():
+    request = _web("https://example.com/docs")
+    assert request["tool"]["network"] == "public"
+    assert request["tool"]["read_only"] is True
+
+
+def test_loopback_literal_is_private():
+    request = _web("http://127.0.0.1:8765/server")
+    assert request["tool"]["network"] == "private"
+    assert request["tool"]["risk"] == "high"
+
+
+def test_private_and_metadata_hosts_are_private():
+    for url in (
+        "http://localhost:8080",
+        "http://[::1]/",
+        "http://169.254.169.254/latest/meta-data",
+        "http://10.1.2.3/",
+        "http://192.168.1.1/",
+        "http://metadata.google.internal/",
+        "file:///etc/passwd",
+    ):
+        assert _web(url)["tool"]["network"] == "private", url
+
+
+def test_a_hostname_resolving_to_loopback_is_private(monkeypatch):
+    monkeypatch.setattr(
+        tool_hook.socket, "getaddrinfo",
+        lambda host, port: [(2, 1, 6, "", ("127.0.0.1", 0))])
+    assert _web("https://rebind.example/")["tool"]["network"] == "private"
+
+
+def test_a_hostname_resolving_to_a_public_address_is_public(monkeypatch):
+    monkeypatch.setattr(
+        tool_hook.socket, "getaddrinfo",
+        lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))])
+    assert _web("https://example.com/")["tool"]["network"] == "public"
+
+
+def test_web_fetch_without_a_destination_is_private():
+    request = tool_hook._request(_payload("web_fetch", tool_input={}))
+    assert request["tool"]["network"] == "private"
+
+
+def test_a_url_list_is_private_if_any_member_is_private():
+    request = tool_hook._request(_payload("web_fetch", tool_input={
+        "urls": ["https://example.com", "http://127.0.0.1:8765"]}))
+    assert request["tool"]["network"] == "private"
+
+
+def test_web_search_with_a_query_is_public():
+    request = tool_hook._request(_payload("web_search",
+                                          tool_input={"query": "hive docs"}))
+    assert request["tool"]["network"] == "public"
+
+
 def test_approved_call_exits_zero():
     out = tool_hook.decide(
         _payload(),

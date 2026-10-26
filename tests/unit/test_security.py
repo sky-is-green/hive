@@ -88,6 +88,15 @@ def test_read_only_headless_is_allowed(tmp_path):
     assert result["reason"] == "read-only"
 
 
+def test_private_read_only_needs_approval_even_in_open(tmp_path):
+    gateway = _gateway(tmp_path, tier="open")
+    spec = _spec(name="web_fetch", read_only=True, side_effect=False,
+                 reason_required=False, network="private")
+    pending = gateway.authorize(spec, _req(reason="read the private page"))
+    assert pending["status"] == "pending"
+    assert gateway.decide(pending["request_id"], "once")["status"] == "approved"
+
+
 def test_side_effect_headless_is_denied(tmp_path):
     gateway = _gateway(tmp_path, headless=True)
     result = gateway.authorize(_spec(), _req())

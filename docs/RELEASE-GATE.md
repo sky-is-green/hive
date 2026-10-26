@@ -90,6 +90,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | PASS against DSH 0.2.1-rc.2 on 2026-10-26; source-built runtime rerun pending. |
 | C28 | `hive sandbox status`; `hive sandbox pin --image hive-sandbox:1 --digest <64-hex>`; `POST /v1/sandbox/exec` without approval, then with `allow_local_fallback` + `session_id` | Status shows the pin/fallback rule; unpinned images are refused; the first host call is 409; the explicit retry runs and writes `sandbox.local_fallback` to the audit. | |
 | C29 | TUI `a` → approve once; repeat → deny | The overlay shows the same request as the Studio/CLI; approve lets the tool run; deny blocks it; the list refreshes. | |
+| C30 | Ask the DSH agent to fetch `http://127.0.0.1:8765/` and `http://169.254.169.254/latest/meta-data` | Both are classified private and require approval even in the Open tier; a public URL does not prompt as private. | |
 | C24 | `hive ui status --json` | Reports web running/not running and both switch commands; starts nothing. | |
 | C25 | `hive ui web --mock --detach` then `hive ui status` | Studio starts, status sees it, and the TUI `w` opens it. | |
 | C27 | With Studio running: `hive tools pending`; `hive tools decide <id> --session <id> --choice deny` | Pending request appears; deny is recorded and the waiting hook exits 2. | |
