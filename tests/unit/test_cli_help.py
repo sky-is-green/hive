@@ -19,7 +19,8 @@ def test_command_catalog_has_descriptions_and_option_help():
     assert [node["name"] for node in schema["commands"]] == [
         "serve", "tui", "status", "stop", "logs", "models", "stacks",
         "cascade", "backends", "setup", "doctor", "config", "profile",
-        "controller", "encoder", "ui", "tools", "sandbox", "version", "help",
+        "controller", "encoder", "ui", "tools", "sandbox", "web", "version",
+        "help",
     ]
     for node in nodes:
         assert node["description"], f"{node['path']} has no description"

@@ -11,16 +11,20 @@ subprocess without importing the Studio or any model code.
 
 from __future__ import annotations
 
-import ipaddress
 import json
 import os
-import socket
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Any, Callable
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from harness.net_policy import UrlError, classify_url, origin_of
 
 DEFAULT_URL = "http://127.0.0.1:8765"
 DEFAULT_TIMEOUT_S = 300.0
@@ -30,16 +34,6 @@ READ_ONLY_TOOLS = frozenset({
     "websearch", "web_fetch", "webfetch", "fetch", "browse", "http_get",
     "get_url", "inspect", "status",
 })
-_PRIVATE_HOSTS = frozenset({
-    "localhost", "localhost.localdomain", "metadata", "instance-data",
-    "metadata.google.internal", "host.docker.internal",
-    "gateway.docker.internal", "host.containers.internal",
-    "kubernetes.default.svc",
-})
-_PRIVATE_SUFFIXES = (
-    ".localhost", ".local", ".localdomain", ".internal", ".svc",
-    ".cluster.local", ".home.arpa", ".lan", ".corp",
-)
 
 
 class HookError(RuntimeError):
@@ -83,62 +77,18 @@ def _urls_from_args(args: dict[str, Any]) -> list[str]:
     return found
 
 
-def _ip_is_private(value: str) -> bool:
-    try:
-        address = ipaddress.ip_address(value)
-    except ValueError:
-        return True
-    mapped = getattr(address, "ipv4_mapped", None)
-    if mapped is not None:
-        address = mapped
-    return not address.is_global
-
-
-def _host_is_private(host: str) -> bool:
-    host = host.strip().strip(".").lower()
-    if not host:
-        return True
-    if host in _PRIVATE_HOSTS or any(
-            host.endswith(suffix) for suffix in _PRIVATE_SUFFIXES):
-        return True
-    try:
-        ipaddress.ip_address(host)
-    except ValueError:
-        try:
-            resolved = socket.getaddrinfo(host, None)
-        except OSError:
-            # An unresolvable target must not be treated as public.
-            return True
-        return any(_ip_is_private(info[4][0]) for info in resolved)
-    return _ip_is_private(host)
-
-
 def _url_is_private(url: str) -> bool:
-    text = url if "://" in url else f"http://{url}"
     try:
-        parts = urllib.parse.urlsplit(text)
-    except ValueError:
+        return classify_url(url).private
+    except (UrlError, ValueError):
         return True
-    if parts.scheme not in ("http", "https"):
-        return True
-    if not parts.hostname:
-        return True
-    return _host_is_private(parts.hostname)
 
 
 def _origin(url: str) -> str:
-    text = url if "://" in url else f"http://{url}"
     try:
-        parts = urllib.parse.urlsplit(text)
-        port = parts.port
-    except ValueError:
+        return origin_of(url)
+    except UrlError:
         return ""
-    if parts.scheme not in ("http", "https") or not parts.hostname:
-        return ""
-    host = parts.hostname
-    if ":" in host and not host.startswith("["):
-        host = f"[{host}]"
-    return f"{parts.scheme}://{host}" + (f":{port}" if port else "")
 
 
 def _resource_for(name: str, args: dict[str, Any]) -> str:

@@ -373,6 +373,29 @@ A Docker image tag without a digest is refused. If Docker is unavailable,
 `/v1/sandbox/exec` returns `409` until the caller retries with an explicit
 `allow_local_fallback` and a session id; every such host execution is audited.
 
+## `hive web` — secure fetch
+
+`hive web` is a stateless HTTP(S) fetcher, not a JavaScript browser. It
+classifies every redirect hop, blocks private hosts and DNS answers, refuses
+URL credentials and sensitive request headers, and caps response/upload size.
+
+```bash
+hive web status
+hive web policy --allow-downloads
+hive web grant http://127.0.0.1:8765 --access private --scope global
+hive web grants
+hive web fetch https://example.com/docs
+hive web fetch http://127.0.0.1:8765/server --allow-private --session s1
+hive web fetch https://example.com/file --download file.bin
+hive web revoke http://127.0.0.1:8765
+```
+
+Private origins need an exact-origin grant. `--allow-private` with a session
+id records a session grant for that original origin only; a redirect to a
+different private origin still fails and names it. Downloads and uploads are
+separate explicit gates. The full contract, including residual DNS-rebinding
+limits, is in [Secure fetch](WEB-FETCH.md).
+
 ## `hive profile`, `hive controller`, and `hive encoder`
 
 These are the deterministic E0 lane: a local hardware snapshot, an allowlisted

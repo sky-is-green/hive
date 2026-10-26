@@ -147,8 +147,10 @@ approve/deny path has passed against both the source-built and published DSH
 runtimes. The Docker sandbox uses a pinned image and an explicit, audited
 local-fallback approval. DSH web tools classify loopback, private, metadata and
 DNS-private destinations as private; a read-only private fetch still needs
-approval and grants are scoped to the exact origin. Full browser adapters and
-MCP remain the release blockers.
+approval and grants are scoped to the exact origin. `hive web` adds a
+stateless secure fetch with per-hop redirect checks, size/type limits, and
+explicit download/upload gates. Full browser adapters (JavaScript, cookies,
+redirect-time proxy enforcement) and MCP remain the release blockers.
 
 ## 10. Evidence, evaluation and release
 
@@ -162,6 +164,7 @@ operate the surface. A failed gate is not a release.
 ## Appendix: command and file index
 
 - [Full CLI reference](../CLI.md)
+- [Secure fetch contract](../WEB-FETCH.md)
 - [Studio API map](../../hivebench/API.md)
 - [README capabilities and API counts](../../hivebench/README.md)
 - [Release gate](../RELEASE-GATE.md)
