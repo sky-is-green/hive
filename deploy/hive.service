@@ -1,32 +1,37 @@
 [Unit]
 Description=Hive Studio (dedicated AI user)
-Documentation=file:///srv/hive/app/docs/AI-USER.md
+Documentation=file:///srv/hive-ai/app/docs/AI-USER.md
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=hive
-Group=hive
+# The whole application runs as the disposable AI user.  GUARD keeps the
+# separate 'hive' account, so this must never be User=hive.
+User=hive-ai
+Group=hive-ai
 SupplementaryGroups=video render
-WorkingDirectory=/srv/hive/app
-EnvironmentFile=-/srv/hive/hive.env
-Environment=HOME=/srv/hive/home
-Environment=HIVE_HOME=/srv/hive
-Environment=HIVE_STATE_DIR=/srv/hive/state
-Environment=DSH_HOME=/srv/hive/dsh
+WorkingDirectory=/srv/hive-ai/app
+EnvironmentFile=-/etc/hive/hive.env
+Environment=HOME=/srv/hive-ai/home
+Environment=HIVE_HOME=/srv/hive-ai
+Environment=HIVE_STATE_DIR=/srv/hive-ai/state
+Environment=DSH_HOME=/srv/hive-ai/dsh
 Environment=HIVE_TOOL_URL=http://127.0.0.1:8765
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/srv/hive/venv/bin/python -m harness --host 127.0.0.1 --port 8765
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/srv/hive-ai/venv/bin/python -m harness --host 127.0.0.1 --port 8765
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
-# read-only, not yes: /run/user must stay visible for the rootless Docker
-# socket.  /home/penis is still unreadable because the human home is 0700/0750
-# and hive is not in its group.
-ProtectHome=read-only
+# ProtectHome=read-only would also make /run/user read-only, and systemd does
+# not expand %U inside ReadWritePaths.  Hide the human and root homes directly
+# instead; /run/user is a per-user tmpfs that remains writable under
+# ProtectSystem=strict, so the rootless Docker socket keeps working.
+ProtectHome=no
+InaccessiblePaths=/home -/root
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
@@ -36,7 +41,7 @@ LockPersonality=yes
 CapabilityBoundingSet=
 AmbientCapabilities=
 UMask=0077
-ReadWritePaths=/srv/hive -/run/user/952
+ReadWritePaths=/srv/hive-ai
 
 [Install]
 WantedBy=multi-user.target

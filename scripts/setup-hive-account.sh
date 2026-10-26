@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Prepare the dedicated Hive AI account and /srv/hive layout.
+# Prepare the dedicated Hive AI account and /srv/hive-ai layout.
 #
 # This script is intentionally root-only and deliberately does NOT:
+#   - reuse GUARD's 'hive' account or touch /home/penis/.guard;
 #   - add the AI user to the docker group;
 #   - start or modify the human system Docker daemon;
 #   - install or start a rootless Docker daemon automatically.
@@ -9,8 +10,8 @@
 # Run it with sudo, review the printed rootless-Docker step, then start Hive.
 set -euo pipefail
 
-HIVE_USER="${HIVE_USER:-hive}"
-HIVE_BASE="${HIVE_BASE:-/srv/hive}"
+HIVE_USER="${HIVE_USER:-hive-ai}"
+HIVE_BASE="${HIVE_BASE:-/srv/hive-ai}"
 REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 DRY_RUN=0
 WITH_VENV=1
@@ -19,9 +20,12 @@ usage() {
   cat <<'EOF'
 Usage: sudo ./scripts/setup-hive-account.sh [--dry-run] [--no-venv] [REPO]
 
-Creates/updates the dedicated Hive user and /srv/hive layout, copies the
+Creates/updates the dedicated Hive AI user and /srv/hive-ai layout, copies the
 tracked application tree, and installs the optional Studio environment.
 It never adds the user to the docker group and never starts system Docker.
+
+The default account is hive-ai.  GUARD already owns the 'hive' account, so
+using User=hive for Hive would share GUARD's queue, approvals, and allowlist.
 EOF
 }
 
@@ -55,9 +59,22 @@ if [[ "$DRY_RUN" -eq 0 && "$EUID" -ne 0 ]]; then
   echo "run this with sudo: sudo $0" >&2
   exit 1
 fi
+if [[ "$HIVE_USER" == "hive" ]]; then
+  cat >&2 <<'EOF'
+refusing to use the 'hive' account: it is owned by GUARD.
+
+GUARD runs as hive with HOME=/home/penis and owns /home/penis/.guard.  Giving
+Hive the same UID would let it read GUARD's queue, approvals, and allowlist.
+Use the default hive-ai account, or set HIVE_USER to a different unused name.
+EOF
+  exit 1
+fi
 if [[ ! -f "$REPO/pyproject.toml" ]]; then
   echo "repository not found: $REPO" >&2
   exit 1
+fi
+if [[ "$HIVE_BASE" != "/srv/hive" && -e /srv/hive ]]; then
+  echo "note: leaving the existing /srv/hive tree alone; this deployment uses $HIVE_BASE" >&2
 fi
 if ! id "$HIVE_USER" >/dev/null 2>&1; then
   if ! command -v useradd >/dev/null 2>&1; then
@@ -67,20 +84,42 @@ if ! id "$HIVE_USER" >/dev/null 2>&1; then
   run useradd --system --user-group --home-dir "$HIVE_BASE/home" \
     --shell /usr/sbin/nologin "$HIVE_USER"
 fi
-HIVE_GROUP="$(id -gn "$HIVE_USER")"
-HIVE_UID="$(id -u "$HIVE_USER")"
+if id "$HIVE_USER" >/dev/null 2>&1; then
+  HIVE_GROUP="$(id -gn "$HIVE_USER")"
+  HIVE_UID="$(id -u "$HIVE_USER")"
+  CURRENT_HOME="$(getent passwd "$HIVE_USER" | cut -d: -f6 || true)"
+  if [[ "$CURRENT_HOME" != "$HIVE_BASE/home" ]]; then
+    echo "note: $HIVE_USER passwd home is $CURRENT_HOME; the unit uses $HIVE_BASE/home via HOME=" >&2
+  fi
+else
+  # --dry-run did not execute useradd; keep printing a plausible plan.
+  HIVE_GROUP="$HIVE_USER"
+  HIVE_UID="<new>"
+fi
+if [[ "$HIVE_UID" =~ ^[0-9]+$ ]] && [[ "$HIVE_UID" -eq 0 ]]; then
+  echo "AI user '$HIVE_USER' resolved to uid 0; refusing" >&2
+  exit 1
+fi
 
-# Account home and the per-user writable tree.
-run install -d -o "$HIVE_USER" -g "$HIVE_GROUP" -m 0700 "$HIVE_BASE"
+# Do not call usermod here.  GUARD's process already runs as 'hive', and
+# usermod refuses to change a home while the account is in use.  The unit
+# sets HOME explicitly, so the passwd home is informational only.
+
+# The base and the code/venv are root-owned, so the AI cannot rename them
+# even though it can write the state directories below.  Only the named
+# per-user directories belong to the AI.
+run install -d -o root -g "$HIVE_GROUP" -m 0750 "$HIVE_BASE"
 for directory in home state dsh models stacks logs tools; do
   run install -d -o "$HIVE_USER" -g "$HIVE_GROUP" -m 0700 "$HIVE_BASE/$directory"
 done
-run usermod -d "$HIVE_BASE/home" "$HIVE_USER"
 
 # Rootless container prerequisites.  The AI user must never join the system
 # docker group; its own daemon gets its own socket and data root.
 if ! grep -q "^${HIVE_USER}:" /etc/subuid 2>/dev/null; then
-  run usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$HIVE_USER"
+  run usermod --add-subuids 100000-165535 "$HIVE_USER"
+fi
+if ! grep -q "^${HIVE_USER}:" /etc/subgid 2>/dev/null; then
+  run usermod --add-subgids 100000-165535 "$HIVE_USER"
 fi
 run loginctl enable-linger "$HIVE_USER"
 if command -v pacman >/dev/null 2>&1; then
@@ -92,6 +131,7 @@ fi
 # Copy the committed application tree.  The deployment is read-only for the
 # AI user after the optional install; mutable state lives in $HIVE_BASE.
 run install -d -o root -g "$HIVE_GROUP" -m 0750 "$HIVE_BASE/app"
+run install -d -o root -g "$HIVE_GROUP" -m 0750 "$HIVE_BASE/venv"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   find "$HIVE_BASE/app" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 fi
@@ -99,6 +139,11 @@ run_shell "git -C '$REPO' archive --format=tar HEAD | tar -x -C '$HIVE_BASE/app'
 
 if [[ "$WITH_VENV" -eq 1 ]]; then
   if [[ ! -x "$HIVE_BASE/venv/bin/python" ]]; then
+    # pip needs a writable window inside the venv; lock it again below.
+    if [[ "$DRY_RUN" -eq 0 ]]; then
+      chown "$HIVE_USER:$HIVE_GROUP" "$HIVE_BASE/venv"
+      chmod 0700 "$HIVE_BASE/venv"
+    fi
     run runuser -u "$HIVE_USER" -- env HOME="$HIVE_BASE/home" \
       python -m venv "$HIVE_BASE/venv"
     run runuser -u "$HIVE_USER" -- env HOME="$HIVE_BASE/home" \
@@ -113,24 +158,31 @@ if [[ "$WITH_VENV" -eq 1 ]]; then
   fi
 fi
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  chown -R root:"$HIVE_GROUP" "$HIVE_BASE/app"
-  chmod -R g+rX,o-rwx "$HIVE_BASE/app"
+  chown -R root:"$HIVE_GROUP" "$HIVE_BASE/app" "$HIVE_BASE/venv"
+  chmod -R g+rX,o-rwx "$HIVE_BASE/app" "$HIVE_BASE/venv"
 fi
 
+# Keep the service environment outside the AI-writable tree.  A root-owned
+# file inside $HIVE_BASE could still be unlinked and replaced, because the
+# directory belongs to the AI user.
+run install -d -o root -g root -m 0755 /etc/hive
 cat > "/tmp/hive.env.$$" <<EOF
 DOCKER_HOST=unix:///run/user/${HIVE_UID}/docker.sock
 EOF
-run install -o root -g "$HIVE_GROUP" -m 0640 "/tmp/hive.env.$$" "$HIVE_BASE/hive.env"
+run install -o root -g root -m 0600 "/tmp/hive.env.$$" /etc/hive/hive.env
 rm -f "/tmp/hive.env.$$"
 
-if [[ "$HIVE_USER" == "hive" && "$HIVE_BASE" == "/srv/hive" ]]; then
+UNIT_INSTALLED=0
+if [[ "$HIVE_USER" == "hive-ai" && "$HIVE_BASE" == "/srv/hive-ai" ]]; then
   run install -o root -g root -m 0644 "$REPO/deploy/hive.service" \
     /etc/systemd/system/hive.service
   run systemctl daemon-reload
+  UNIT_INSTALLED=1
 else
   echo "Custom user/base: copy deploy/hive.service and adjust User/WorkingDirectory." >&2
 fi
 
+ROOTLESS_SETUP="$(command -v dockerd-rootless-setuptool.sh 2>/dev/null || true)"
 cat <<EOF
 
 Prepared:
@@ -138,18 +190,33 @@ Prepared:
   app         $HIVE_BASE/app
   state       $HIVE_BASE/state
   DSH home    $HIVE_BASE/dsh
-  env         $HIVE_BASE/hive.env
-  unit        /etc/systemd/system/hive.service (defaults only)
+  env         /etc/hive/hive.env
+  unit        $([[ "$UNIT_INSTALLED" -eq 1 ]] && echo '/etc/systemd/system/hive.service' || echo 'not installed (custom user/base)')
 
 Next, set up the AI user's OWN rootless Docker daemon. Do not add $HIVE_USER
 to the docker group and do not point DOCKER_HOST at /var/run/docker.sock.
 
+EOF
+if [[ -n "$ROOTLESS_SETUP" ]]; then
+  cat <<EOF
+  sudo -u $HIVE_USER -H env \\
+    HOME=$HIVE_BASE/home \\
+    XDG_RUNTIME_DIR=/run/user/$HIVE_UID \\
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$HIVE_UID/bus \\
+    $ROOTLESS_SETUP install
+
+EOF
+else
+  cat <<EOF
   sudo -u $HIVE_USER -H env \\
     HOME=$HIVE_BASE/home \\
     XDG_RUNTIME_DIR=/run/user/$HIVE_UID \\
     DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$HIVE_UID/bus \\
     bash -c 'curl -fsSL https://get.docker.com/rootless | sh'
 
+EOF
+fi
+cat <<EOF
 Verify from the same environment:
 
   sudo -u $HIVE_USER -H env \\
@@ -165,6 +232,10 @@ If the installer did not start the user service, start it as the AI user:
     XDG_RUNTIME_DIR=/run/user/$HIVE_UID \\
     DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$HIVE_UID/bus \\
     systemctl --user enable --now docker
+
+Then run the destructive blast-radius test:
+
+  sudo ./scripts/test-blast-radius.sh --yes
 
 Then start Hive:
 

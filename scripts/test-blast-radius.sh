@@ -3,21 +3,26 @@
 #
 # Run as root AFTER scripts/setup-hive-account.sh and the rootless daemon setup.
 # It creates disposable sentinels, runs a destructive shell inside the same
-# systemd hardening as hive.service as the hive user, and verifies that only
+# systemd hardening as hive.service as the hive-ai user, and verifies that only
 # the AI writable tree was damaged.
 #
 # It never deletes real user files. The only AI file it removes is
-# /srv/hive/state/HIVE-BLAST-AI-<pid>, created by this script.
+# /srv/hive-ai/state/HIVE-BLAST-AI-<pid>, created by this script.
 set -euo pipefail
 
-HIVE_USER="${HIVE_USER:-hive}"
-HIVE_BASE="${HIVE_BASE:-/srv/hive}"
+HIVE_USER="${HIVE_USER:-hive-ai}"
+HIVE_BASE="${HIVE_BASE:-/srv/hive-ai}"
 HUMAN_USER="${HUMAN_USER:-penis}"
 HUMAN_HOME="${HUMAN_HOME:-/home/$HUMAN_USER}"
 YES=0
 if [[ "${1:-}" == "--yes" ]]; then YES=1; fi
 if [[ "$EUID" -ne 0 ]]; then
   echo "run this with sudo: sudo $0 --yes" >&2
+  exit 1
+fi
+if [[ "$HIVE_USER" == "hive" ]]; then
+  echo "refusing to test 'hive': that account belongs to GUARD, not Hive." >&2
+  echo "Use the default hive-ai user." >&2
   exit 1
 fi
 if [[ "$YES" -ne 1 ]]; then
@@ -41,12 +46,23 @@ if [[ ! -d "$HIVE_BASE" ]]; then
   exit 1
 fi
 HIVE_UID="$(id -u "$HIVE_USER")"
+HIVE_GROUP="$(id -gn "$HIVE_USER")"
+if id -nG "$HIVE_USER" | tr ' ' '\n' | grep -qx docker; then
+  echo "FAIL: '$HIVE_USER' is in the human docker group" >&2
+  exit 1
+fi
+if id hive >/dev/null 2>&1 && [[ "$(id -u hive)" == "$HIVE_UID" ]]; then
+  echo "FAIL: '$HIVE_USER' shares GUARD's uid; they must be separate accounts" >&2
+  exit 1
+fi
 HUMAN="$HUMAN_HOME/HIVE-BLAST-HUMAN-$$"
 APP="$HIVE_BASE/app/HIVE-BLAST-APP-$$"
 AI="$HIVE_BASE/state/HIVE-BLAST-AI-$$"
 TMPH="/tmp/HIVE-BLAST-HUMAN-$$"
+GUARD="${GUARD_DIR:-$HUMAN_HOME/.guard}"
 cleanup() {
-  rm -f "$HUMAN" "$APP" "$AI" "$TMPH" 2>/dev/null || true
+  rm -f "$HUMAN" "$APP" "$AI" "$TMPH" \
+    "${GUARD:-}/HIVE-BLAST-GUARD-$$" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -54,31 +70,54 @@ for path in "$HUMAN" "$APP" "$AI" "$TMPH"; do
   printf 'sentinel %s\n' "$$" > "$path"
   chmod 600 "$path"
 done
-chown "$HIVE_USER:$HIVE_USER" "$AI"
+# Make the human sentinel readable in principle so the test also proves the
+# AI user cannot traverse the human home.  The path remains inaccessible to
+# hive-ai; the file being readable to its owner is harmless.
+chmod 644 "$HUMAN"
+chown "$HIVE_USER:$HIVE_GROUP" "$AI"
 
 out="$(mktemp)"
 trap 'rm -f "$out"; cleanup' EXIT
 systemd-run --wait --pipe --collect \
   --unit="hive-blast-$$" \
-  --uid="$HIVE_USER" --gid="$HIVE_USER" \
+  --uid="$HIVE_USER" --gid="$HIVE_GROUP" \
   --setenv=HUMAN="$HUMAN" \
   --setenv=APP="$APP" \
   --setenv=AI="$AI" \
   --setenv=TMPH="$TMPH" \
+  --setenv=GUARD="$GUARD" \
   --property=ProtectSystem=strict \
-  --property=ProtectHome=read-only \
+  --property=ProtectHome=no \
+  --property=InaccessiblePaths="/home -/root" \
   --property=PrivateTmp=yes \
   --property=NoNewPrivileges=yes \
+  --property=ProtectKernelTunables=yes \
+  --property=ProtectKernelModules=yes \
+  --property=ProtectControlGroups=yes \
+  --property=RestrictRealtime=yes \
+  --property=RestrictSUIDSGID=yes \
+  --property=LockPersonality=yes \
   --property=CapabilityBoundingSet= \
   --property=AmbientCapabilities= \
-  --property=ReadWritePaths="$HIVE_BASE /run/user/$HIVE_UID" \
+  --property=ReadWritePaths="$HIVE_BASE" \
   --property=UMask=0077 \
   /bin/bash -c '
     set +e
-    rm -f "$HUMAN"; echo "human_rc=$?"
-    rm -f "$APP"; echo "app_rc=$?"
-    rm -f "$TMPH"; echo "tmp_rc=$?"
-    rm -f "$AI"; echo "ai_rc=$?"
+    test -e /home; echo "home_visible_rc=$?"
+    rm "$HUMAN"; echo "human_rc=$?"
+    cat "$HUMAN" >/dev/null 2>&1; echo "human_read_rc=$?"
+    rm "$APP"; echo "app_rc=$?"
+    rm "$TMPH"; echo "tmp_rc=$?"
+    rm "$AI"; echo "ai_rc=$?"
+    touch "/run/user/$(id -u)/HIVE-BLAST-RUNTIME-$$"
+    echo "runtime_write_rc=$?"
+    rm -f "/run/user/$(id -u)/HIVE-BLAST-RUNTIME-$$"
+    if [ -d "$GUARD" ]; then
+      ls "$GUARD" >/dev/null 2>&1; echo "guard_list_rc=$?"
+      touch "$GUARD/HIVE-BLAST-GUARD-$$" 2>/dev/null
+      echo "guard_touch_rc=$?"
+      rm -f "$GUARD/HIVE-BLAST-GUARD-$$" 2>/dev/null
+    fi
     docker --host unix:///var/run/docker.sock info >/dev/null 2>&1
     echo "human_docker_rc=$?"
     docker --host "unix:///run/user/$(id -u)/docker.sock" info >/dev/null 2>&1
@@ -88,18 +127,38 @@ systemd-run --wait --pipe --collect \
 cat "$out"
 get() { sed -n "s/^$1=//p" "$out" | tail -1; }
 fail=0
-for name in human_rc app_rc; do
+for name in human_rc app_rc tmp_rc; do
   if [[ "$(get "$name")" == "0" ]]; then
-    echo "FAIL: $name was writable" >&2
+    echo "FAIL: $name was removable (host boundary failed)" >&2
     fail=1
   fi
 done
+if [[ "$(get home_visible_rc)" == "0" ]]; then
+  echo "FAIL: /home is visible inside the AI unit" >&2
+  fail=1
+fi
+if [[ "$(get human_read_rc)" == "0" ]]; then
+  echo "FAIL: hive-ai could read the human-home sentinel" >&2
+  fail=1
+fi
 if [[ "$(get ai_rc)" != "0" ]]; then
   echo "FAIL: AI sentinel was not removable (AI environment is not writable)" >&2
   fail=1
 fi
+if [[ "$(get runtime_write_rc)" != "0" ]]; then
+  echo "FAIL: AI could not write its own /run/user socket directory" >&2
+  fail=1
+fi
+if [[ -n "$(get guard_list_rc)" && "$(get guard_list_rc)" == "0" ]]; then
+  echo "FAIL: hive-ai could list GUARD's directory" >&2
+  fail=1
+fi
+if [[ -n "$(get guard_touch_rc)" && "$(get guard_touch_rc)" == "0" ]]; then
+  echo "FAIL: hive-ai could write in GUARD's directory" >&2
+  fail=1
+fi
 if [[ "$(get human_docker_rc)" == "0" ]]; then
-  echo "FAIL: hive can reach the human system Docker socket" >&2
+  echo "FAIL: hive-ai can reach the human system Docker socket" >&2
   fail=1
 fi
 for path in "$HUMAN" "$APP" "$TMPH"; do
