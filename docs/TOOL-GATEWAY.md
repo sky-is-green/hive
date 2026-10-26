@@ -3,10 +3,9 @@
 **Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
 surfaces, pinned Docker sandbox policy, private-origin classification for DSH
 web tools, a stateless secure fetch adapter, an optional validating-proxy
-Chromium adapter, MCP metadata registration, and child-session grant
-inheritance implemented; a live MCP-server smoke test remains, 2026-10-26. The
-hook passes end-to-end against both the source-built and published DSH
-runtimes.
+Chromium adapter, MCP metadata registration, child-session grant inheritance,
+and a live stdio MCP smoke test implemented, 2026-10-26. The hook passes
+end-to-end against both the source-built and published DSH runtimes.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -338,14 +337,15 @@ Implemented:
 - parent-session lineage for DSH subagents: a child inherits a parent's
   session grant for the same identity/origin, never a different identity, and
   the lineage is cycle-guarded;
+- a live stdio MCP server test: unregistered `mcp__hive__echo` prompted;
+  verified read-only/public metadata auto-approved it; both calls returned the
+  MCP echo result;
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
 
 - a real Docker-daemon execution run (the policy and mocked tests are
   implemented, but this host has no daemon and no passwordless root);
-- a live MCP-server smoke test through the DSH runtime (the metadata registry
-  and hook classification are implemented);
 - browser page-level download/upload automation (the adapter deliberately does
   not write downloads or set file inputs; use secure fetch for those gates).
 
@@ -366,8 +366,9 @@ addition to the external-runtime preflight.
    download/upload automation remains deliberately disabled; secure fetch owns
    those explicit gates.
 5. **DSH/MCP wiring** — the DSH PreToolUse hook is mounted and verified;
-   MCP metadata registration and subagent grant inheritance are implemented.
-   A live MCP-server smoke test remains. **Partial.**
+   MCP metadata registration, a live stdio MCP server, and subagent grant
+   inheritance are implemented. **Done for tools; MCP resources/prompts are
+   not bridged by DSH.**
 6. **Release gate additions** — permission denial, timeout, headless block,
    private network, sandbox fallback, audit redaction. **Partial.**
 

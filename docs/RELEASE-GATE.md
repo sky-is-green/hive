@@ -121,6 +121,12 @@ granted private page. A redirect and a subresource to a second private origin
 were blocked by the validating proxy; the second server recorded zero requests.
 The browser tests are skipped automatically when the optional binary is absent.
 
+**C34 evidence (2026-10-26):** a live stdio MCP server exposed
+`mcp__hive__echo`. Without registered metadata the hook classified it
+conservative/private and Hive prompted; after verified read-only/public
+metadata was registered, the same tool passed without a prompt. Both MCP calls
+returned `mcp-echo: hello mcp`.
+
 Also check one `--json` command with `FORCE_COLOR=1`: JSON must contain **no ANSI**.
 
 ---

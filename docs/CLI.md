@@ -345,6 +345,12 @@ hive tools decide req-abc --session conv-123 --choice once
 shows the same pending request with **Allow once / Allow for session / Always
 allow / Deny**; use whichever surface is in front of you.
 
+External-tool metadata is registered through `/v1/tools/register` and listed
+at `/v1/tools`. This is how an MCP tool gets verified read-only/public
+metadata; until then `mcp__<server>__<tool>` stays conservative and prompts.
+Subagent sessions inherit a parent's session grant only for the same
+identity/origin.
+
 The policy core is in `harness/security.py`: a side-effect call needs a reason,
 headless calls are denied, session grants disappear with the session, global
 grants are explicit and revocable, and arguments are hashed in the audit.
