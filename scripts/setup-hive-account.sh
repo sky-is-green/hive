@@ -100,6 +100,14 @@ if [[ "$HIVE_UID" =~ ^[0-9]+$ ]] && [[ "$HIVE_UID" -eq 0 ]]; then
   echo "AI user '$HIVE_USER' resolved to uid 0; refusing" >&2
   exit 1
 fi
+if id hive >/dev/null 2>&1 && [[ "$(id -u hive)" == "$HIVE_UID" ]]; then
+  echo "AI user '$HIVE_USER' shares GUARD's uid; refusing" >&2
+  exit 1
+fi
+if id -nG "$HIVE_USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+  echo "AI user '$HIVE_USER' is in the human docker group; refusing" >&2
+  exit 1
+fi
 
 # Do not call usermod here.  GUARD's process already runs as 'hive', and
 # usermod refuses to change a home while the account is in use.  The unit
