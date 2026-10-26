@@ -112,7 +112,8 @@ systemd-run --wait --pipe --collect \
     # -f prevents rm from waiting at an interactive "write-protected file?"
     # prompt.  The timeout is a belt-and-braces bound on a slow filesystem.
     timeout 5 rm -f "$APP"; echo "app_rc=$?"
-    rm -f "$TMPH"; echo "tmp_rc=$?"
+    # PrivateTmp makes the host sentinel absent; -f would hide that with rc 0.
+    if [ -e "$TMPH" ]; then rm -f "$TMPH"; echo "tmp_rc=$?"; else echo "tmp_rc=1"; fi
     rm -f "$AI"; echo "ai_rc=$?"
     touch "/run/user/$(id -u)/HIVE-BLAST-RUNTIME-$$"
     echo "runtime_write_rc=$?"
