@@ -116,9 +116,11 @@ class ActivityShaper:
     nest (ADR-L6).
     """
 
-    def __init__(self, session_id: str, on_event: Callable[[dict], None]) -> None:
+    def __init__(self, session_id: str, on_event: Callable[[dict], None],
+                 on_subagent: Callable[[str, str], None] | None = None) -> None:
         self._root = session_id
         self._on_event = on_event
+        self._on_subagent = on_subagent
         self._spans: dict[str, _ModelSpan] = {}
         self._seq = _count(1)
 
@@ -172,6 +174,11 @@ class ActivityShaper:
             return
         if parent != self._root and parent not in self._spans:
             return  # another tree's child (or a nested one we do not own)
+        if self._on_subagent is not None:
+            try:
+                self._on_subagent(str(parent or self._root), child)
+            except Exception:  # noqa: BLE001 - activity must not break the run
+                pass
         self._spans[child] = _ModelSpan(
             agent_events.new_model_id(next(self._seq)),
             str(parent or self._root),
@@ -344,6 +351,8 @@ class DshAgentService:
         self._hook_paths: dict[str, str] = {}
         self._hook_preflight_key: tuple[str, str] | None = None
         self._hook_runtime_verified = False
+        #: Called with (parent_session_id, child_session_id) for subagents.
+        self.lineage_sink: Optional[Callable[[str, str], None]] = None
 
     def _init_generation(self) -> None:
         """Seed the generation counter from durable session dirs so a fresh
@@ -657,7 +666,9 @@ class DshAgentService:
         prefix = handoff + context
         message_to_send = prefix + message if prefix else message
 
-        shaper = ActivityShaper(session_id, on_event) if on_event is not None else None
+        shaper = (ActivityShaper(session_id, on_event,
+                                 on_subagent=self.lineage_sink)
+                  if on_event is not None else None)
 
         def on_notification(notification) -> None:
             if shaper is not None:

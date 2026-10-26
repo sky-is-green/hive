@@ -35,7 +35,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 import psutil
 import requests
@@ -1221,6 +1221,14 @@ class BrowserBrowseRequest(BaseModel):
     wait_until: str = Field("domcontentloaded")
     timeout_s: float = Field(30, ge=1, le=120)
     max_text: int = Field(20000, ge=1, le=200000)
+
+
+class ToolRegisterRequest(BaseModel):
+    tool: dict[str, Any] = Field(..., description="ToolSpec fields.")
+    verified: bool = Field(
+        False, description="Only verified metadata overrides conservative defaults.")
+    server: str = Field("", description="MCP server name, when applicable.")
+    note: str = Field("", description="Operator note.")
 
 
 class WebGrantRequest(BaseModel):
@@ -4748,6 +4756,9 @@ def create_app(
             app.state.tool_hub = hub
         return hub
 
+    agent_service.lineage_sink = (
+        lambda parent, child: _tool_hub().claim_child(parent, child))
+
     @app.get("/v1/profiles/hardware")
     def profile_hardware(profile_id: Optional[str] = Query(default=None)):
         """The newest saved hardware profile, or the one named by profile_id."""
@@ -4866,6 +4877,41 @@ def create_app(
         return {"ok": True, "proposal_id": proposal_id, "outcome": outcome,
                 "metrics": metrics or {}}
 
+    @app.get("/v1/tools")
+    def tools_registry():
+        """List verified and unverified external tool metadata."""
+        from harness.security import ToolRegistry
+
+        return {"tools": ToolRegistry(_state_paths()).list()}
+
+    @app.post("/v1/tools/register")
+    def tools_register(req: ToolRegisterRequest):
+        """Register external (for example MCP) tool metadata."""
+        from harness.security import SecurityError, ToolRegistry, ToolSpec
+
+        try:
+            spec = ToolSpec.from_dict(req.tool)
+            return ToolRegistry(_state_paths()).register(
+                spec, verified=req.verified, server=req.server, note=req.note)
+        except SecurityError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/v1/tools/unregister")
+    def tools_unregister(body: dict[str, Any] = Body(default={})):
+        """Remove one registered tool identity."""
+        from harness.security import SecurityError, ToolRegistry
+
+        source = str(body.get("source") or "").strip()
+        name = str(body.get("name") or "").strip()
+        version = str(body.get("version") or "1.0.0").strip()
+        if not source or not name:
+            raise HTTPException(422, "source and name are required")
+        try:
+            return {"removed": ToolRegistry(_state_paths()).revoke(
+                source, name, version)}
+        except SecurityError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.get("/v1/tools/policy")
     def tools_policy():
         """Show the safety tier, master switches, and saved grants."""
@@ -4909,13 +4955,23 @@ def create_app(
     @app.post("/v1/tools/call")
     def tools_call(body: dict[str, Any] = Body(default={})):
         """Authorize one tool call; return approved, pending, or denied."""
-        from harness.security import SecurityError, ToolRequest
+        from harness.security import (
+            SecurityError,
+            ToolRegistry,
+            ToolRequest,
+            ToolSpec,
+        )
 
         session_id = str(body.get("session_id") or "").strip()
         spec = body.get("tool")
         if not session_id or not isinstance(spec, dict):
             raise HTTPException(422, "session_id and tool metadata are required")
         try:
+            spec_object = ToolSpec.from_dict(spec)
+            registered = ToolRegistry(_state_paths()).get(
+                spec_object.source, spec_object.name, spec_object.version)
+            if registered is not None:
+                spec_object = registered
             request = ToolRequest(
                 session_id=session_id,
                 action=str(body.get("action") or ""),
@@ -4928,7 +4984,8 @@ def create_app(
             )
             result = _tool_hub().gateway(
                 session_id, headless=body.get("headless") is True
-            ).authorize(spec, request, headless=body.get("headless") is True)
+            ).authorize(spec_object, request,
+                        headless=body.get("headless") is True)
         except (SecurityError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
         return result

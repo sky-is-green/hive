@@ -54,6 +54,18 @@ def _tool_call(session_id: str, name: str, arguments: str = "{}") -> _N:
 # ---------------------------------------------------------------------------
 
 
+def test_subagent_lineage_callback_tracks_only_this_tree():
+    events: list[dict] = []
+    lineage: list[tuple[str, str]] = []
+    shaper = ActivityShaper(
+        "root", events.append,
+        on_subagent=lambda parent, child: lineage.append((parent, child)))
+    shaper(_started("root", "child"))
+    shaper(_started("child", "grandchild"))
+    shaper(_started("other", "stranger"))
+    assert lineage == [("root", "child"), ("child", "grandchild")]
+
+
 def test_face_events_keep_the_existing_shape():
     shaper, events = _collect()
 

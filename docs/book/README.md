@@ -151,8 +151,8 @@ approval and grants are scoped to the exact origin. `hive web` adds a
 stateless secure fetch with per-hop redirect checks, size/type limits, and
 explicit download/upload gates. The optional browser adapter adds a fresh
 Chromium context behind a validating local proxy, so redirects and subresources
-are checked before a socket opens. MCP metadata/subagent inheritance remains
-the release blocker.
+are checked before a socket opens. MCP metadata registration and child-session
+grant inheritance are also in place; a live MCP-server smoke test remains.
 
 ## 10. Evidence, evaluation and release
 

@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **122 paths, 132 operations** (113
+no longer exists, or if a method is wrong. **125 paths, 135 operations** (116
 of the paths under `/v1/`).
 
 ```sh
@@ -187,10 +187,18 @@ before opening a socket. Requires the optional `browser` extra and
 | `POST` | `/v1/controller/outcome` | Append an accepted/rejected/wrong label and metrics to a proposal trace. |
 | `GET` | `/v1/encoder/status` | Report the configured text encoder without loading its weights. |
 
-### Tools — policy, grants, and audit
+### Tools — registry, policy, grants, and audit
+
+MCP tool names are `mcp__<server>__<tool>`. Unregistered MCP tools are treated
+as side-effecting, private-network, high-risk calls. Registering verified
+metadata can relax only what the registry explicitly states. Child sessions
+inherit a parent's session grants for the same tool identity/origin.
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/v1/tools` | Registered external-tool metadata. |
+| `POST` | `/v1/tools/register` | Register verified external (for example MCP) metadata. |
+| `POST` | `/v1/tools/unregister` | Remove one registered tool identity. |
 | `GET` | `/v1/tools/policy` | Show the safety tier, master switches, and saved grants. |
 | `PUT` | `/v1/tools/policy` | Set the safety tier and master switches. |
 | `POST` | `/v1/tools/revoke` | Revoke one global tool grant, or all with `all=true`. |

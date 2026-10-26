@@ -120,6 +120,16 @@ def _network_for(name: str, args: dict[str, Any]) -> str:
 
 def _spec(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
     low = name.lower().replace("-", "_")
+    if low.startswith("mcp__"):
+        # MCP tool names are mcp__<server>__<raw>.  Until verified metadata is
+        # registered, do not trust the name to imply read-only or public.
+        return {
+            "name": name, "source": "mcp", "version": "1.0.0",
+            "description": f"MCP tool {name} (unregistered metadata)",
+            "read_only": False, "side_effect": True, "reason_required": True,
+            "network": "private", "filesystem": "host", "risk": "high",
+            "sandbox": "required",
+        }
     read_only = low in READ_ONLY_TOOLS
     network = _network_for(name, args or {})
     return {

@@ -112,6 +112,18 @@ def test_web_search_with_a_query_is_public():
     assert request["tool"]["network"] == "public"
 
 
+def test_mcp_tools_are_conservative_until_registered():
+    request = tool_hook._request(_payload(
+        "mcp__github__search", tool_input={"query": "repos"}))
+    tool = request["tool"]
+    assert tool["source"] == "mcp"
+    assert tool["network"] == "private"
+    assert tool["read_only"] is False
+    assert tool["side_effect"] is True
+    assert tool["risk"] == "high"
+    assert tool["sandbox"] == "required"
+
+
 def test_approved_call_exits_zero():
     out = tool_hook.decide(
         _payload(),
