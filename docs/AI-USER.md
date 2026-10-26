@@ -47,7 +47,9 @@ uses a separate `hive-ai` account and leaves GUARD, its `hive` account, and
 
 The service environment lives outside the deployment tree at
 `/etc/hive/hive.env` (root-owned, `0600`), so a future permission mistake in
-`/srv/hive-ai` cannot let the AI replace the service configuration.
+`/srv/hive-ai` cannot let the AI replace the service configuration. The venv
+contains both `hivebench[studio]` and the absorbed `splinter-memory` project,
+because the Studio imports `cortex`, `sieve`, and `backend` from it.
 
 `HIVE_HOME=/srv/hive-ai`, `HIVE_STATE_DIR=/srv/hive-ai/state`,
 `DSH_HOME=/srv/hive-ai/dsh`, and
