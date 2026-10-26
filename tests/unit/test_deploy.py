@@ -50,6 +50,8 @@ def test_unit_uses_the_ai_rootless_socket_not_the_human_socket():
     # The AI-writable base would allow renaming the read-only app/venv.
     assert 'install -d -o root -g "$HIVE_GROUP" -m 0750 "$HIVE_BASE"' in SETUP
     assert 'chown -R root:"$HIVE_GROUP" "$HIVE_BASE/app" "$HIVE_BASE/venv"' in SETUP
+    assert "shares GUARD's uid" in SETUP
+    assert "is in the human docker group" in SETUP
     assert "usermod -aG docker" not in SETUP
     assert "gpasswd -a" not in SETUP
 
