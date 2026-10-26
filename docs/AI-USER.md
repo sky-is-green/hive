@@ -5,7 +5,10 @@
 
 Hive can run as a dedicated Unix user (`hive`) instead of the human account.
 That keeps the agent’s state, credentials, and container runtime away from the
-human’s files, shell, and Docker daemon.
+human’s files, shell, and Docker daemon. The systemd unit runs the **entire
+Hive application** as `hive`: Studio, DSH runtime, agent tools, the optional
+browser subprocess, the sandbox client, and the controller. The only separate
+process is the AI user’s own rootless Docker daemon.
 
 The important rule: **do not add `hive` to the `docker` group and do not point
 it at `/var/run/docker.sock`.** That would give the AI control over every human
@@ -91,14 +94,42 @@ curl http://127.0.0.1:8765/health
 curl -s http://127.0.0.1:8765/v1/sandbox/status | python3 -m json.tool
 ```
 
-The unit runs as `hive`, binds only `127.0.0.1`, hides `/home`, and makes only
-`/srv/hive` writable. It uses the user’s rootless Docker socket, not the system
-socket.
+The unit runs as `hive`, binds only `127.0.0.1`, makes `/home` read-only, and
+makes only `/srv/hive` writable. `ProtectHome=read-only` is deliberate: `yes`
+would also hide `/run/user`, which is where the rootless Docker socket lives.
+The human home remains unreadable because it is `0700`/`0750` and `hive` is not
+in its group.
 
-`hive sandbox status` now reports the daemon host and whether it is a rootless
+`hive sandbox status` reports the daemon host and whether it is a rootless
 per-user socket. A human running the command against their own state will not
 see the AI user’s state; use the web Studio, or run the CLI in the AI
 environment.
+
+## Blast-radius test
+
+After the account and rootless daemon are up, run the destructive sentinel test
+as root:
+
+```bash
+sudo scripts/test-blast-radius.sh --yes
+```
+
+It creates disposable files in the human home, the read-only app tree, the AI
+state tree, and host `/tmp`, then runs a destructive shell as `hive` inside a
+transient systemd unit with the same `ProtectSystem`, `ProtectHome`,
+`PrivateTmp`, capability, and writable-path settings as `hive.service`. This
+is the approved-worst-case test: it assumes the agent was allowed to run the
+command, so the remaining boundary is the OS user and unit hardening.
+
+Expected result:
+
+- the human, app, and host `/tmp` sentinels survive;
+- the AI state sentinel is removed;
+- `docker --host unix:///var/run/docker.sock` is refused;
+- the rootless Docker socket is reachable once rootless Docker is running.
+
+The test never deletes a real file; the only AI file it removes is its own
+sentinel.
 
 ## Human Docker remains separate
 
