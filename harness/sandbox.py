@@ -149,6 +149,53 @@ def is_rootless_host(host: str | None = None) -> bool:
     return "/run/user/" in value or "rootless" in value
 
 
+def label_value(value: str) -> str:
+    """A safe Docker label value for a session/conversation id."""
+    return re.sub(r"[^A-Za-z0-9_.:-]", "_", str(value or ""))[:128]
+
+
+def kill_session_containers(session_id: str, *,
+                            timeout: float = 10.0) -> dict[str, Any]:
+    """Kill sandbox containers labelled for one agent session.
+
+    ``/v1/sandbox/exec`` labels every container with ``hive.session``; an
+    emergency cease uses that label to stop work that outlived the runtime.
+    A missing daemon or an empty id is reported, never silently ignored.
+    """
+    session_id = label_value(session_id)
+    if not session_id:
+        return {"killed": [], "error": "no session id"}
+    status = docker_status()
+    if not status["daemon"]:
+        return {"killed": [], "error": status["detail"]}
+    binary = str(status["binary"])
+    label = f"hive.session={session_id}"
+    try:
+        listed = subprocess.run(
+            [binary, "ps", "-q", "--filter", f"label={label}"],
+            capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"killed": [], "error": f"cannot list containers: {exc}"}
+    ids = [line.strip() for line in (listed.stdout or "").splitlines()
+           if line.strip()]
+    killed: list[str] = []
+    errors: list[str] = []
+    for container_id in ids:
+        try:
+            proc = subprocess.run(
+                [binary, "kill", container_id],
+                capture_output=True, text=True, timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as exc:
+            errors.append(f"{container_id}: {exc}")
+            continue
+        if proc.returncode == 0:
+            killed.append(container_id)
+        else:
+            errors.append(
+                f"{container_id}: {(proc.stderr or proc.stdout)[:200]}")
+    return {"killed": killed, "errors": errors, "label": label}
+
+
 def docker_status() -> dict[str, Any]:
     """Probe Docker live; availability is never cached as policy truth."""
     docker_bin = shutil.which("docker")

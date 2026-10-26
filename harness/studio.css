@@ -136,6 +136,7 @@ pre { background: #eef2f6; padding: .7rem; border-radius: 6px; white-space: pre-
 .msg.sys { align-self: center; background: #eef2f6; color: #5a6b7d; font-size: .8rem; padding: .25rem .7rem; border-radius: 999px; }
 #chatin { flex: 1; }
 #stopbtn { background: #b3372c; color: #fff; border: none; }
+#ceasebtn { background: #6b1111; color: #fff; border: none; }
 .inspector-list { max-height: 300px; overflow-y: auto; }
 .chunkrow { background: #FFB703; border: 1.5px solid #000000; border-radius: 6px; padding: .45rem .7rem; margin: .3rem 0; font-size: .85rem; color: #000000; }
 .chunkrow.sel { border-left: 3px solid #157a3e; }
@@ -214,6 +215,7 @@ input, select, textarea { background: #FFB703; color: #000000; border: 1.5px sol
 button { background: #FFB703; color: #000000; border: 1.5px solid #000000; border-radius: 4px; }
 button:hover:not(:disabled) { background: #FFD54F; }
 #stopbtn { background: #b3372c; color: #fff; border: 1.5px solid #000000; }
+#ceasebtn { background: #6b1111; color: #fff; border: 1.5px solid #000000; }
 /* the send and stop buttons are glyphs: a triangle sends, a square stops */
 .iconbtn {
   display: inline-flex;

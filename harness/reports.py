@@ -1162,6 +1162,7 @@ providers.local.json (gitignored).</div>
 <div class="sugbox" id="sug-chat"></div></span>
 <button id="sendbtn" class="iconbtn" onclick="chatSubmit()" aria-label="Send" title="How: Enter sends, Shift+Enter for a new line. Does: the message goes to the model. Changing: while the model is replying, the square next to this stops the turn.">&#9654;</button>
 <button id="stopbtn" class="iconbtn" onclick="cancelStream()" style="display:none" aria-label="Stop" title="Stop the model now. The provider connection is closed, so the engine stops generating (llama.cpp and strata both do) and the GPU is free at once. The turn ends where it is; the conversation stays.">&#9632;</button>
+<button id="ceasebtn" class="iconbtn" onclick="ceaseAgent()" style="display:none" aria-label="Cease" title="Emergency cease: block every tool call in this session, revoke its session grants, force-stop the runtime and its child processes, and kill that session's sandbox containers. Tools stay blocked until you run `hive activity resume`.">&#10006;</button>
 </div>
 </div>
 <div class="chat-hint">Enter sends · Shift+Enter for a new line · <kbd>/</kbd> commands · <kbd>Ctrl</kbd>+<kbd>K</kbd> palette <span id="cfg-note"></span></div>
@@ -2491,6 +2492,7 @@ let streamAbort = null;
 function setBusy(b) {{
   streamBusy = b;
   document.getElementById('stopbtn').style.display = b ? '' : 'none';
+  document.getElementById('ceasebtn').style.display = b ? '' : 'none';
   document.getElementById('sendbtn').disabled = b;
 }}
 
@@ -2547,6 +2549,27 @@ async function cancelAgent() {{
   try {{ await api('/v1/agent/cancel', 'POST'); }} catch (e) {{}}
 }}
 
+async function ceaseAgent() {{
+  const reason = prompt('Cease reason (optional):',
+    'user requested emergency stop');
+  if (reason === null) return;          /* the user cancelled the dialog */
+  const why = reason || 'user requested emergency stop';
+  consoleLine('CEASE requested — stopping this session…');
+  record('console', 'CEASE requested: ' + why);
+  try {{
+    await api('/v1/activity/control', 'POST', {{
+      action: 'cease',
+      conversation_id: convId,
+      reason: why,
+      source: 'studio'
+    }});
+    record('console', 'CEASED — tools are blocked until Resume.');
+    consoleLine('CEASED — tools are blocked until Resume.');
+  }} catch (e) {{
+    consoleLine('cease failed: ' + e.message);
+  }}
+}}
+
 async function sendAgent(query) {{
   bubble('user', query);
   record('user', query);
@@ -2586,15 +2609,36 @@ async function sendAgent(query) {{
           const det = document.createElement('details');
           det.className = 'toolstep';
           const sum = document.createElement('summary');
-          sum.textContent = (ev.phase === 'end' ? '\\u2713 ' : '\\u25b6 ')
-            + ev.tool;
+          const detail = ev.args !== undefined
+            ? JSON.stringify(ev.args)
+            : (ev.result !== undefined ? String(ev.result) : '');
+          sum.textContent = (ev.phase === 'result' ? '\\u2713 ' : '\\u25b6 ')
+            + ev.tool + (detail ? ' \\u00b7 ' + detail.slice(0, 120) : '');
           det.appendChild(sum);
           const pre = document.createElement('pre');
-          pre.textContent = JSON.stringify(ev, null, 1).slice(0, 2000);
+          pre.textContent = JSON.stringify(ev, null, 1).slice(0, 4000);
           det.appendChild(pre);
           document.getElementById('chatlog').appendChild(det);
           record('tool', ev.phase + ': ' + ev.tool);
           log_scroll();
+        }} else if (ev.type === 'model') {{
+          /* tier dispatch: collapsed card with the task, output, and nested
+             tool rows already carried by the shaped event */
+          const det = document.createElement('details');
+          det.className = 'toolstep';
+          const sum = document.createElement('summary');
+          sum.textContent = (ev.phase === 'start' ? '\\u25b6 ' : '\\u2713 ')
+            + (ev.tier || 'model') + ' \\u00b7 ' + (ev.model || '');
+          det.appendChild(sum);
+          const pre = document.createElement('pre');
+          pre.textContent = JSON.stringify(ev, null, 1).slice(0, 4000);
+          det.appendChild(pre);
+          document.getElementById('chatlog').appendChild(det);
+          record('tool', 'model: ' + (ev.tier || '?'));
+          log_scroll();
+        }} else if (ev.type === 'cease') {{
+          finish = 'ceased';
+          consoleLine('CEASED: ' + (ev.reason || 'session blocked until resume'));
         }} else if (ev.type === 'lifecycle') {{
           /* turn/step boundaries stay quiet */
         }} else if (ev.type === 'done') {{

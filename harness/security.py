@@ -397,6 +397,22 @@ class GrantStore:
              "reason": reason})
         return dict(row)
 
+    def revoke_session(self, session_id: str) -> dict[str, int]:
+        """Revoke only one session's in-memory grants.
+
+        ``revoke(None, session_id=...)`` also drops every global grant when
+        the session has no grants, which is too broad for an emergency cease.
+        """
+        session_id = str(session_id or "").strip()
+        if not session_id:
+            raise SecurityError("session id is required")
+        removed = self.sessions.revoke(session_id)
+        AuditLog(self.state.audit_file()).append({
+            "event": "tool.revoke", "tool_identity": None,
+            "session_id": session_id, "global_removed": 0,
+        })
+        return {"session": removed, "global": 0}
+
     def revoke(self, identity: str | None = None, *,
                session_id: str | None = None) -> dict[str, int]:
         removed_session = (self.sessions.revoke(session_id, identity)
@@ -527,6 +543,9 @@ class GatewayHub:
         self.security = SecurityStore(self.state)
         self.grants = GrantStore(self.state, sessions=SessionGrants())
         self.lineage = SessionLineage()
+        from harness.activity import CeaseStore
+
+        self.cease = CeaseStore(self.state)
         self._gateways: dict[str, ApprovalGateway] = {}
 
     def gateway(self, session_id: str, *,
@@ -537,7 +556,7 @@ class GatewayHub:
             gateway = ApprovalGateway(
                 self.state, session_id=key, security=self.security,
                 grants=self.grants, lineage=self.lineage,
-                headless=headless)
+                cease=self.cease, headless=headless)
             self._gateways[key] = gateway
         else:
             gateway.headless = bool(headless)
@@ -576,6 +595,7 @@ class ApprovalGateway:
                  session_id: str, security: SecurityStore | None = None,
                  grants: GrantStore | None = None,
                  lineage: SessionLineage | None = None,
+                 cease: Any | None = None,
                  headless: bool = False,
                  now: Callable[[], float] = time.time) -> None:
         self.state = (state or StatePaths.default()).ensure()
@@ -583,6 +603,7 @@ class ApprovalGateway:
         self.security = security or SecurityStore(self.state)
         self.grants = grants or GrantStore(self.state)
         self.lineage = lineage
+        self.cease = cease
         self.headless = bool(headless)
         self._now = now
         self._pending: dict[str, _Pending] = {}
@@ -612,6 +633,17 @@ class ApprovalGateway:
         policy = self.security.read()
         tier = str(policy.get("tier") or DEFAULT_TIER)
         reason_ok = _safe_reason(request.reason)
+
+        if self.cease is not None:
+            session_ids = [self.session_id]
+            if self.lineage is not None:
+                session_ids += self.lineage.ancestors(self.session_id)
+            if any(self.cease.is_blocked(session_id=sid)
+                   for sid in session_ids):
+                return self._deny(
+                    spec, request,
+                    "cease requested; this session is blocked until resume",
+                    tier)
 
         if spec.is_side_effect and spec.needs_reason and not reason_ok:
             return self._deny(spec, request, "missing reason", tier)

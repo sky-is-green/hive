@@ -381,6 +381,33 @@ image tag without a digest is refused. If Docker is unavailable,
 `/v1/sandbox/exec` returns `409` until the caller retries with an explicit
 `allow_local_fallback` and a session id; every such host execution is audited.
 
+## `hive activity` — observe and cease
+
+The activity ledger records the user prompt, assistant text, exact tool
+arguments, exact tool results, model/tier spans, and errors in
+`$HIVE_STATE_DIR/audit/activity-YYYYMM.jsonl`.
+
+```bash
+hive activity tail --limit 50
+hive activity tail --follow --json
+hive activity rules --json
+hive activity rules --set rules.json --enable
+hive activity rules --disable
+hive activity cease --conversation conv-123 --reason "saw it touch GUARD" --yes
+hive activity resume --conversation conv-123
+```
+
+`cease` is stronger than **Stop**: it blocks every further tool call in that
+session, force-stops the DSH runtime process tree, kills the session's labelled
+sandbox containers, revokes its session grants, and requires an explicit
+resume. `stop` (the Studio square) only ends the current turn.
+
+Tripwire rules are disabled by default. A rule can `warn`, `revoke` session
+grants, or `cease` when a tool call/result or assistant message matches. See
+[Activity, Stop, and Cease](ACTIVITY-CONTROL.md) for the schema and examples.
+`cease` and `resume` talk to a running Studio; `tail` and `rules` read/write the
+state directory directly.
+
 ## `hive web` — secure fetch
 
 `hive web` is a stateless HTTP(S) fetcher, not a JavaScript browser. It

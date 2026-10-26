@@ -47,6 +47,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response, Streamin
 from pydantic import BaseModel, Field
 import queue
 
+from harness.activity import ActivityError, ActivityHub
 from harness.agent import DshAgentService
 from harness.commands import ConsoleCommands
 from harness.commands import local_shell_command
@@ -2617,12 +2618,44 @@ def create_app(
             return None
         return str(generated.path) if generated.path else None
 
+    from harness.state_store import StatePaths
+
+    # ``state_dir=""`` disables persistence; the activity ledger is part of
+    # that state, so do not create even its directories in that mode.
+    activity = (ActivityHub(StatePaths(Path(st.state_dir)))
+                if st.state_dir else None)
+    app.state.activity = activity
     agent_service = DshAgentService(
         default_cwd=REPO_ROOT,
         session_root=REPO_ROOT / "harness_state" / "dsh_sessions",
         runtime_config=_stack_runtime_config,
+        activity=activity,
     )
     app.state.agent = agent_service
+
+    def _cease_stop(*, conversation_id: str = "", session_id: str = "",
+                    reason: str = "", force: bool = True) -> dict[str, Any]:
+        result = agent_service.cease_stop(
+            conversation_id=conversation_id, session_id=session_id,
+            reason=reason, force=force)
+        try:
+            from harness.sandbox import kill_session_containers
+
+            killed: list[str] = []
+            errors: list[str] = []
+            for target in {session_id, conversation_id} - {""}:
+                outcome = kill_session_containers(target)
+                killed.extend(outcome.get("killed") or [])
+                if outcome.get("error"):
+                    errors.append(str(outcome["error"]))
+                errors.extend(str(item) for item in outcome.get("errors") or [])
+            result["containers"] = {"killed": killed, "errors": errors}
+        except Exception as exc:  # noqa: BLE001 - the block is the contract
+            result["containers"] = {"killed": [], "error": str(exc)}
+        return result
+
+    if activity is not None:
+        activity.register_cease_callback(_cease_stop)
 
     commands = ConsoleCommands(
         st=st,
@@ -3022,12 +3055,124 @@ def create_app(
                 "gateway_configured": agent_service.gateway_configured,
                 "gateway_hook": agent_service.hook_status,
                 "security_tier": SecurityStore(_state_paths()).read()["tier"],
-                "busy": agent_service._inflight}
+                "busy": agent_service._inflight,
+                "ceased": (app.state.activity.cease.list()
+                           if app.state.activity else []),
+                "activity_rules_enabled":
+                    (app.state.activity.rules.read()["enabled"]
+                     if app.state.activity else False)}
 
     @app.post("/v1/agent/cancel")
     def agent_cancel():
         """Cancel the in-flight agent turn for a conversation."""
         return agent_service.cancel()
+
+    # ------------------------------------------------------------------
+    # Activity ledger, live feed, tripwires, and emergency cease
+    def _activity_hub() -> ActivityHub:
+        hub = getattr(app.state, "activity", None)
+        if hub is None:
+            raise HTTPException(
+                503, "activity ledger is disabled (no persistent state dir)")
+        return hub
+
+    @app.get("/v1/activity")
+    def activity_recent(
+        conversation_id: Optional[str] = Query(default=None),
+        limit: int = Query(default=200, ge=1, le=2000),
+    ):
+        """Recent activity events, current tripwire rules, and cease blocks."""
+        hub = _activity_hub()
+        return {
+            "events": hub.ledger.read_file(conversation_id, limit=limit),
+            "rules": hub.rules.read(),
+            "blocks": hub.cease.list(),
+        }
+
+    @app.get("/v1/activity/stream")
+    async def activity_stream(
+        request: Request,
+        conversation_id: Optional[str] = Query(default=None),
+    ):
+        """Live activity feed (SSE).  Events are the same records as JSONL."""
+        hub = _activity_hub()
+        subscriber = hub.ledger.subscribe()
+
+        async def sse():
+            try:
+                yield ": connected\n\n"
+                last_keepalive = time.monotonic()
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    try:
+                        event = subscriber.get_nowait()
+                    except queue.Empty:
+                        if time.monotonic() - last_keepalive >= 10:
+                            yield ": keepalive\n\n"
+                            last_keepalive = time.monotonic()
+                        await anyio.sleep(0.2)
+                        continue
+                    if conversation_id and \
+                            event.get("conversation_id") != conversation_id:
+                        continue
+                    yield "data: " + json.dumps(event, default=str) + "\n\n"
+            finally:
+                hub.ledger.unsubscribe(subscriber)
+
+        return StreamingResponse(sse(), media_type="text/event-stream")
+
+    @app.post("/v1/activity/control")
+    def activity_control(body: dict[str, Any] = Body(default={})):
+        """Cease a session (block + stop + revoke) or resume it explicitly."""
+        hub = _activity_hub()
+        action = str(body.get("action") or "cease").strip().lower()
+        conversation_id = str(body.get("conversation_id") or "").strip()
+        session_id = str(body.get("session_id") or "").strip()
+        reason = str(body.get("reason") or "user requested").strip()
+        source = str(body.get("source") or "studio").strip()
+        try:
+            if action == "cease":
+                return hub.cease_now(
+                    conversation_id=conversation_id,
+                    session_id=session_id,
+                    reason=reason or "user requested",
+                    source=source,
+                    rule=str(body.get("rule") or ""),
+                    revoke_grants=body.get("revoke_grants") is not False,
+                    revoke_all=body.get("revoke_all") is True,
+                    force=body.get("force") is not False,
+                )
+            if action == "resume":
+                return hub.resume(
+                    conversation_id=conversation_id,
+                    session_id=session_id,
+                    source=source,
+                )
+        except ActivityError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        raise HTTPException(422, "action must be cease or resume")
+
+    @app.get("/v1/activity/rules")
+    def activity_rules():
+        """The tripwire rules and whether automatic evaluation is enabled."""
+        return _activity_hub().rules.read()
+
+    @app.put("/v1/activity/rules")
+    def activity_rules_put(body: dict[str, Any] = Body(default={})):
+        """Replace the tripwire rules, or toggle them with ``enabled``."""
+        hub = _activity_hub()
+        rules = body.get("rules")
+        try:
+            if rules is None:
+                if body.get("enabled") is None:
+                    raise HTTPException(422, "rules or enabled is required")
+                return hub.rules.set_enabled(bool(body["enabled"]))
+            if not isinstance(rules, list):
+                raise HTTPException(422, "rules must be a list")
+            return hub.rules.write(rules, enabled=body.get("enabled"))
+        except ActivityError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     # ------------------------------------------------------------------
     # Preset trainer (X15-X18)
@@ -4754,6 +4899,10 @@ def create_app(
         if hub is None:
             hub = GatewayHub(_state_paths())
             app.state.tool_hub = hub
+            # Session grants live in this GatewayHub's GrantStore.  A cease
+            # must revoke those exact in-memory grants, not a fresh store.
+            if app.state.activity is not None:
+                app.state.activity.grants = hub.grants
         return hub
 
     agent_service.lineage_sink = (
@@ -4941,15 +5090,25 @@ def create_app(
 
     @app.post("/v1/tools/revoke")
     def tools_revoke(body: dict[str, Any] = Body(default={})):
-        """Revoke one global tool grant, or all of them with all=true."""
+        """Revoke one global tool grant, all grants, or one session's grants."""
         from harness.security import GrantStore
 
         identity = str(body.get("identity") or "").strip() or None
+        session_id = str(body.get("session_id") or "").strip() or None
         all_grants = body.get("all") is True
+        session_only = body.get("session_only") is True
+        # Session grants are held in memory by the live GatewayHub.  A fresh
+        # GrantStore would remove the durable file but miss them completely.
+        store = _tool_hub().grants
+        if session_only:
+            if not session_id:
+                raise HTTPException(
+                    422, "session_only needs a session_id")
+            removed = store.revoke_session(session_id)
+            return {"ok": True, "removed": removed}
         if not identity and not all_grants:
             raise HTTPException(422, "identity or all=true is required")
-        removed = GrantStore(_state_paths()).revoke(
-            identity, session_id=body.get("session_id"))
+        removed = store.revoke(identity, session_id=session_id)
         return {"ok": True, "removed": removed}
 
     @app.post("/v1/tools/call")
@@ -5091,6 +5250,10 @@ def create_app(
                 "--pids-limit", str(int(data.get("pids_limit") or 128)),
                 "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges",
+                "--label", "hive.managed=1",
+                "--label",
+                "hive.session=" + sandbox_mod.label_value(
+                    req.session_id or "global"),
             ]
             runtime = str(data.get("runtime") or "").strip()
             if runtime:
