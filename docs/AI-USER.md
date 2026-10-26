@@ -49,12 +49,15 @@ The service environment lives outside the deployment tree at
 `/etc/hive/hive.env` (root-owned, `0600`), so a future permission mistake in
 `/srv/hive-ai` cannot let the AI replace the service configuration.
 
-`HIVE_HOME=/srv/hive-ai`, `HIVE_STATE_DIR=/srv/hive-ai/state`, and
-`DSH_HOME=/srv/hive-ai/dsh`. The base directory, app copy, and venv are
-root-owned and read-only to the AI user after installation, so the agent cannot
-rename the app or rewrite its own harness code. The writable state directories
-(`home`, `state`, `dsh`, `models`, `stacks`, `logs`, `tools`) are owned by
-`hive-ai`.
+`HIVE_HOME=/srv/hive-ai`, `HIVE_STATE_DIR=/srv/hive-ai/state`,
+`DSH_HOME=/srv/hive-ai/dsh`, and
+`HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions`. The unit also passes
+absolute `--state-dir`, `--log-dir`, and `--providers-file` paths: the app copy
+is read-only, so the CLI's relative defaults would try to write inside it. The
+base directory, app copy, and venv are root-owned and read-only to the AI user
+after installation, so the agent cannot rename the app or rewrite its own
+harness code. The writable state directories (`home`, `state`, `dsh`, `models`,
+`stacks`, `logs`, `tools`) are owned by `hive-ai`.
 
 ## Prepare the account
 
