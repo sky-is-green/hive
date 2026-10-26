@@ -152,6 +152,18 @@ RESEARCH_QUEUE = Path(os.environ.get(
 DEFAULT_RUNS_ROOT = REPO_ROOT / "runs"
 DEFAULT_PORT = 8765
 
+
+def dsh_session_root() -> Path:
+    """Where DSH persists session logs.
+
+    A deployment must not write under the read-only application tree, so the
+    unit sets ``HIVE_DSH_SESSION_ROOT`` to the AI user's ``dsh/sessions``.
+    A source checkout keeps the historical ``harness_state/dsh_sessions``.
+    """
+    override = os.environ.get("HIVE_DSH_SESSION_ROOT", "").strip()
+    return (Path(override).expanduser() if override
+            else REPO_ROOT / "harness_state" / "dsh_sessions")
+
 # generate_data flags the sidecar may forward (whitelist: no arbitrary CLI).
 PROTOCOL_FLAGS_INT = {"max_convs": "--max-convs", "max_turns": "--max-turns",
                       "checkpoint_every": "--checkpoint-every"}
@@ -2627,7 +2639,7 @@ def create_app(
     app.state.activity = activity
     agent_service = DshAgentService(
         default_cwd=REPO_ROOT,
-        session_root=REPO_ROOT / "harness_state" / "dsh_sessions",
+        session_root=dsh_session_root(),
         runtime_config=_stack_runtime_config,
         activity=activity,
     )
@@ -3179,7 +3191,7 @@ def create_app(
     @app.get("/v1/trainer/evidence")
     def trainer_evidence():
         """Mine session logs for tool-use patterns and outcomes."""
-        session_root = REPO_ROOT / "harness_state" / "dsh_sessions"
+        session_root = dsh_session_root()
         all_tools = ["bash", "str_replace_editor", "fs_search", "web",
                      "subagent", "todo", "code_runtime", "skill"]
         evidences = mine_evidence(session_root, all_tools)
@@ -3190,7 +3202,7 @@ def create_app(
     def trainer_draft(body: dict):
         """Draft a candidate preset from the evidence."""
         name = body.get("name") or f"candidate-{int(time.time())}"
-        session_root = REPO_ROOT / "harness_state" / "dsh_sessions"
+        session_root = dsh_session_root()
         all_tools = body.get("all_tools") or [
             "bash", "str_replace_editor", "fs_search", "web",
             "subagent", "todo", "code_runtime", "skill"]
@@ -3223,7 +3235,7 @@ def create_app(
                 api_key="lm-studio",
                 model=os.environ.get("HARNESS_AGENT_MODEL", "default"),
                 cwd=str(REPO_ROOT),
-                session_root=str(REPO_ROOT / "harness_state" / "dsh_sessions"),
+                session_root=str(dsh_session_root()),
                 cordis=str(config_path),
             )
 

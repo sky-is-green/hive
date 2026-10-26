@@ -25,6 +25,11 @@ def test_unit_runs_the_whole_app_as_hive_ai_with_hardening():
     assert "HIVE_HOME=/srv/hive-ai" in UNIT
     assert "HIVE_STATE_DIR=/srv/hive-ai/state" in UNIT
     assert "DSH_HOME=/srv/hive-ai/dsh" in UNIT
+    assert "HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions" in UNIT
+    # Relative defaults would resolve under the read-only app tree.
+    assert "--state-dir /srv/hive-ai/state" in UNIT
+    assert "--log-dir /srv/hive-ai/logs" in UNIT
+    assert "--providers-file /srv/hive-ai/state/providers.local.json" in UNIT
     assert "ProtectSystem=strict" in UNIT
     # ProtectHome=yes/read-only would hide or freeze /run/user and break the
     # rootless socket; the homes are hidden with InaccessiblePaths instead.

@@ -17,10 +17,14 @@ Environment=HOME=/srv/hive-ai/home
 Environment=HIVE_HOME=/srv/hive-ai
 Environment=HIVE_STATE_DIR=/srv/hive-ai/state
 Environment=DSH_HOME=/srv/hive-ai/dsh
+Environment=HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions
+Environment=HARNESS_PROVIDERS_FILE=/srv/hive-ai/state/providers.local.json
 Environment=HIVE_TOOL_URL=http://127.0.0.1:8765
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/srv/hive-ai/venv/bin/python -m harness --host 127.0.0.1 --port 8765
+# The application copy is read-only, so pass absolute mutable paths instead
+# of letting the CLI defaults resolve under WorkingDirectory.
+ExecStart=/srv/hive-ai/venv/bin/python -m harness --host 127.0.0.1 --port 8765 --state-dir /srv/hive-ai/state --log-dir /srv/hive-ai/logs --providers-file /srv/hive-ai/state/providers.local.json
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=yes
