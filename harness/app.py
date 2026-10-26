@@ -1192,6 +1192,47 @@ class SandboxExecRequest(BaseModel):
         False, description="Explicitly approve a host subprocess for this call.")
 
 
+class WebFetchRequest(BaseModel):
+    """One secure fetch. Private origins need a grant or explicit approval."""
+
+    url: str = Field(..., min_length=1)
+    method: str = Field("GET", description="GET or POST.")
+    body: Optional[str] = Field(None, description="Text body for POST.")
+    headers: dict[str, str] = Field(default_factory=dict)
+    session_id: Optional[str] = None
+    allow_private: bool = Field(
+        False, description="Explicitly approve the original private origin.")
+    allow_download: bool = Field(False, description="Write the response to disk.")
+    download_name: Optional[str] = None
+    upload_path: Optional[str] = Field(
+        None, description="File under the configured upload directory.")
+    allow_upload: bool = Field(False, description="Send upload_path as the body.")
+
+
+class WebGrantRequest(BaseModel):
+    origin: str = Field(..., min_length=1)
+    access: str = Field("private", description="public or private.")
+    scope: str = Field("global", description="global or session.")
+    session_id: Optional[str] = None
+    reason: str = ""
+    expires_at: Optional[float] = None
+
+
+class WebRevokeRequest(BaseModel):
+    origin: Optional[str] = None
+    session_id: Optional[str] = None
+
+
+class WebPolicyRequest(BaseModel):
+    max_bytes: Optional[int] = None
+    max_upload_bytes: Optional[int] = None
+    max_redirects: Optional[int] = None
+    timeout_s: Optional[int] = None
+    allow_public: Optional[bool] = None
+    allow_downloads: Optional[bool] = None
+    allow_uploads: Optional[bool] = None
+
+
 class ServerStartRequest(BaseModel):
     model: Optional[str] = None  # local library name or path
     hf_repo: Optional[str] = None  # passthrough to llama-server --hf-repo
@@ -5046,6 +5087,80 @@ def create_app(
             "fallback": fallback,
             **info,
         }
+
+    @app.post("/v1/web/fetch")
+    def web_fetch_call(req: WebFetchRequest):
+        """Fetch one URL with per-hop SSRF checks and explicit file gates."""
+        from harness import web_fetch as web
+
+        try:
+            return web.fetch(
+                req.url, method=req.method, body=req.body,
+                headers=req.headers, session_id=req.session_id,
+                allow_private=req.allow_private,
+                allow_download=req.allow_download,
+                download_name=req.download_name,
+                upload_path=req.upload_path,
+                allow_upload=req.allow_upload,
+                state=_state_paths())
+        except web.WebFetchError as exc:
+            raise HTTPException(exc.status, detail={
+                "code": exc.code, "message": str(exc), **exc.detail}) from exc
+
+    @app.get("/v1/web/status")
+    def web_fetch_status(session_id: Optional[str] = Query(default=None)):
+        """Fetch policy, directories, and grants for this state root."""
+        from harness import web_fetch as web
+
+        body = web.status(_state_paths())
+        if session_id:
+            body["grants"] = web.BrowserGrantStore(
+                _state_paths()).list(session_id=session_id)
+        return body
+
+    @app.get("/v1/web/grants")
+    def web_fetch_grants(session_id: Optional[str] = Query(default=None)):
+        from harness import web_fetch as web
+
+        return {"grants": web.BrowserGrantStore(
+            _state_paths()).list(session_id=session_id)}
+
+    @app.post("/v1/web/grant")
+    def web_fetch_grant(req: WebGrantRequest):
+        from harness import web_fetch as web
+
+        try:
+            row = web.BrowserGrantStore(_state_paths()).grant(
+                req.origin, access=req.access, scope=req.scope,
+                session_id=req.session_id, reason=req.reason,
+                expires_at=req.expires_at)
+        except web.WebFetchError as exc:
+            raise HTTPException(exc.status, detail={
+                "code": exc.code, "message": str(exc), **exc.detail}) from exc
+        return row
+
+    @app.post("/v1/web/revoke")
+    def web_fetch_revoke(req: WebRevokeRequest):
+        from harness import web_fetch as web
+
+        try:
+            return web.BrowserGrantStore(_state_paths()).revoke(
+                req.origin, session_id=req.session_id)
+        except web.WebFetchError as exc:
+            raise HTTPException(exc.status, detail={
+                "code": exc.code, "message": str(exc), **exc.detail}) from exc
+
+    @app.post("/v1/web/policy")
+    def web_fetch_policy(req: WebPolicyRequest):
+        from harness import web_fetch as web
+
+        try:
+            return web.WebFetchPolicy(_state_paths()).update(**{
+                key: value for key, value in req.model_dump().items()
+                if value is not None})
+        except web.WebFetchError as exc:
+            raise HTTPException(422, detail={
+                "code": exc.code, "message": str(exc), **exc.detail}) from exc
 
     @app.get("/cascade", response_class=HTMLResponse)
     def view_cascade():

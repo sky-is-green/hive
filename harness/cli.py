@@ -1761,6 +1761,155 @@ def cmd_sandbox_pin(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_web_status(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    body = web_fetch.status(_state_paths(args))
+    if args.as_json:
+        _json(body)
+        return 0
+    policy = body["policy"]
+    termui.header("secure fetch")
+    termui.kv([
+        ("max bytes", policy["max_bytes"]),
+        ("max upload", policy["max_upload_bytes"]),
+        ("redirects", policy["max_redirects"]),
+        ("timeout", f"{policy['timeout_s']}s"),
+        ("public", "allowed" if policy["allow_public"] else "grant only"),
+        ("downloads", "allowed" if policy["allow_downloads"] else "off"),
+        ("uploads", "allowed" if policy["allow_uploads"] else "off"),
+        ("downloads dir", body["download_dir"]),
+        ("uploads dir", body["upload_dir"]),
+        ("grants", len(body["grants"])),
+    ])
+    return 0
+
+
+def cmd_web_fetch(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    headers: dict[str, str] = {}
+    for raw in args.header or []:
+        if "=" not in raw:
+            print("hive web fetch: --header expects NAME=VALUE", file=sys.stderr)
+            return 2
+        name, value = raw.split("=", 1)
+        headers[name.strip()] = value.strip()
+    try:
+        result = web_fetch.fetch(
+            args.url, method=args.method, body=args.body, headers=headers,
+            session_id=args.session, allow_private=args.allow_private,
+            allow_download=bool(args.download),
+            download_name=args.download, upload_path=args.upload,
+            allow_upload=args.allow_upload, state=_state_paths(args))
+    except web_fetch.WebFetchError as exc:
+        print(f"hive web fetch: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(result)
+        return 0
+    termui.header("fetch", result["url"])
+    termui.kv([
+        ("status", result["status"]),
+        ("content type", result["content_type"] or "-"),
+        ("bytes", result["bytes"]),
+    ])
+    if result.get("download"):
+        download = result["download"]
+        termui.kv([("saved", download["path"]),
+                   ("sha256", download["sha256"])])
+    if result.get("upload"):
+        upload = result["upload"]
+        termui.kv([("uploaded", upload["name"]),
+                   ("upload bytes", upload["bytes"])])
+    if result.get("body") is not None:
+        print()
+        print(result["body"])
+    return 0
+
+
+def cmd_web_grants(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    rows = web_fetch.BrowserGrantStore(_state_paths(args)).list(
+        session_id=args.session)
+    if args.as_json:
+        _json(rows)
+    elif not rows:
+        print("  no fetch grants")
+    else:
+        _table(["origin", "access", "scope", "session"],
+               [[row.get("origin"), row.get("access"), row.get("scope"),
+                 row.get("session_id") or "-"] for row in rows])
+    return 0
+
+
+def cmd_web_grant(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    try:
+        row = web_fetch.BrowserGrantStore(_state_paths(args)).grant(
+            args.origin, access=args.access, scope=args.scope,
+            session_id=args.session, reason=args.reason,
+            expires_at=args.expires)
+    except web_fetch.WebFetchError as exc:
+        print(f"hive web grant: {exc}", file=sys.stderr)
+        return 2
+    if args.as_json:
+        _json(row)
+    else:
+        termui.header("fetch grant", row["origin"])
+        termui.kv([("access", row["access"]), ("scope", row["scope"]),
+                   ("session", row.get("session_id") or "-")])
+    return 0
+
+
+def cmd_web_revoke(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    try:
+        result = web_fetch.BrowserGrantStore(_state_paths(args)).revoke(
+            args.origin, session_id=args.session)
+    except web_fetch.WebFetchError as exc:
+        print(f"hive web revoke: {exc}", file=sys.stderr)
+        return 2
+    if args.as_json:
+        _json(result)
+    else:
+        print(f"  revoked {result['global']} global and "
+              f"{result['session']} session grant(s)")
+    return 0
+
+
+def cmd_web_policy(args: argparse.Namespace) -> int:
+    from harness import web_fetch
+
+    fields = {
+        "max_bytes": args.max_bytes,
+        "max_upload_bytes": args.max_upload_bytes,
+        "max_redirects": args.max_redirects,
+        "timeout_s": args.timeout,
+        "allow_public": args.allow_public,
+        "allow_downloads": args.allow_downloads,
+        "allow_uploads": args.allow_uploads,
+    }
+    try:
+        policy = web_fetch.WebFetchPolicy(_state_paths(args))
+        body = (policy.update(**fields) if any(
+            value is not None for value in fields.values()) else policy.read())
+    except web_fetch.WebFetchError as exc:
+        print(f"hive web policy: {exc}", file=sys.stderr)
+        return 2
+    if args.as_json:
+        _json(body)
+    else:
+        termui.header("fetch policy")
+        termui.kv([(key, body.get(key)) for key in (
+            "max_bytes", "max_upload_bytes", "max_redirects", "timeout_s",
+            "allow_public", "allow_downloads", "allow_uploads", "updated_at")])
+    return 0
+
+
 def cmd_version(args: argparse.Namespace) -> int:
     payload = {"hive": _version(), "python": platform.python_version(),
                "platform": f"{platform.system()} {platform.machine()}"}
@@ -2483,6 +2632,128 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(spin)
     spin.add_argument("--json", action="store_true", dest="as_json")
     spin.set_defaults(func=cmd_sandbox_pin)
+
+    web = sub.add_parser(
+        "web", help="secure HTTP fetch and per-origin grants",
+        description="Fetch public/private HTTP(S) URLs with manual redirect "
+                    "checks, size/type limits, and explicit download/upload "
+                    "gates. This is not a JavaScript browser.")
+    web_sub = web.add_subparsers(dest="web_command", metavar="<action>",
+                                 required=True)
+    wstatus = web_sub.add_parser(
+        "status", help="show fetch limits, directories, and grants",
+        description="Show the secure fetch policy and the current grants.")
+    _add_state_dir(wstatus)
+    wstatus.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wstatus.set_defaults(func=cmd_web_status)
+
+    wfetch = web_sub.add_parser(
+        "fetch", help="fetch one URL with per-hop SSRF checks",
+        description="Fetch a URL. A private origin needs a grant or "
+                    "--allow-private with --session. Redirects are checked "
+                    "again before each hop.")
+    wfetch.add_argument("url", help="http(s) URL to fetch")
+    wfetch.add_argument("--method", default="GET", choices=("GET", "POST"),
+                         help="HTTP method (default GET)")
+    wfetch.add_argument("--body", default=None, help="text body for POST")
+    wfetch.add_argument("--header", action="append", default=[],
+                        metavar="NAME=VALUE",
+                        help="safe request header (repeatable)")
+    wfetch.add_argument("--session", default=None,
+                        help="session id for a private-origin approval")
+    wfetch.add_argument("--allow-private", action="store_true",
+                        help="approve the original private origin")
+    wfetch.add_argument("--download", default=None, metavar="NAME",
+                        help="write the response to the downloads directory")
+    wfetch.add_argument("--upload", default=None, metavar="PATH",
+                        help="read the POST body from the uploads directory")
+    wfetch.add_argument("--allow-upload", action="store_true",
+                         help="send --upload as the POST body")
+    _add_state_dir(wfetch)
+    wfetch.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wfetch.set_defaults(func=cmd_web_fetch)
+
+    wgrants = web_sub.add_parser(
+        "grants", help="list per-origin fetch grants",
+        description="List global grants and, with --session, session grants.")
+    wgrants.add_argument("--session", default=None,
+                          help="also show this session's grants")
+    _add_state_dir(wgrants)
+    wgrants.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wgrants.set_defaults(func=cmd_web_grants)
+
+    wgrant = web_sub.add_parser(
+        "grant", help="grant public/private access to one origin",
+        description="Approve one exact origin for public or private fetches. "
+                    "Session grants stay in this process; global grants persist.")
+    wgrant.add_argument("origin", help="origin such as https://example.com")
+    wgrant.add_argument("--access", default="private",
+                        choices=("public", "private"),
+                        help="which access class this grant covers")
+    wgrant.add_argument("--scope", default="global",
+                        choices=("global", "session"),
+                        help="persist globally or only for this process session")
+    wgrant.add_argument("--session", default=None,
+                         help="session id for a session-scoped grant")
+    wgrant.add_argument("--reason", default="user approved fetch origin",
+                         help="reason recorded in the audit log")
+    wgrant.add_argument("--expires", type=float, default=None,
+                         help="optional Unix expiry time")
+    _add_state_dir(wgrant)
+    wgrant.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wgrant.set_defaults(func=cmd_web_grant)
+
+    wrevoke = web_sub.add_parser(
+        "revoke", help="revoke one origin, or all with no origin",
+        description="Remove one exact-origin grant, or every grant when no "
+                    "origin is supplied.")
+    wrevoke.add_argument("origin", nargs="?", default=None,
+                          help="origin to revoke (omit to revoke all)")
+    wrevoke.add_argument("--session", default=None,
+                          help="also revoke this session's grants")
+    _add_state_dir(wrevoke)
+    wrevoke.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wrevoke.set_defaults(func=cmd_web_revoke)
+
+    wpolicy = web_sub.add_parser(
+        "policy", help="show or change fetch limits and gates",
+        description="Show or change response/upload limits, redirects, timeout, "
+                    "and the public/download/upload gates.")
+    wpolicy.add_argument("--max-bytes", type=int, default=None,
+                         dest="max_bytes", help="response byte limit")
+    wpolicy.add_argument("--max-upload-bytes", type=int, default=None,
+                         dest="max_upload_bytes", help="upload/body byte limit")
+    wpolicy.add_argument("--max-redirects", type=int, default=None,
+                         dest="max_redirects", help="redirect hop limit")
+    wpolicy.add_argument("--timeout", type=int, default=None,
+                         help="per-request timeout in seconds")
+    wpolicy.add_argument("--allow-public", dest="allow_public",
+                         action="store_true", default=None,
+                         help="allow public origins without a grant")
+    wpolicy.add_argument("--no-public", dest="allow_public",
+                         action="store_false",
+                         help="require a public-origin grant")
+    wpolicy.add_argument("--allow-downloads", dest="allow_downloads",
+                         action="store_true", default=None,
+                         help="permit explicit downloads")
+    wpolicy.add_argument("--no-downloads", dest="allow_downloads",
+                         action="store_false",
+                         help="refuse all downloads")
+    wpolicy.add_argument("--allow-uploads", dest="allow_uploads",
+                         action="store_true", default=None,
+                         help="permit explicit uploads")
+    wpolicy.add_argument("--no-uploads", dest="allow_uploads",
+                         action="store_false",
+                         help="refuse all uploads")
+    _add_state_dir(wpolicy)
+    wpolicy.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    wpolicy.set_defaults(func=cmd_web_policy)
 
     version = sub.add_parser(
         "version", help="print the Hive version",

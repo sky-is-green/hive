@@ -1,10 +1,10 @@
 # Hive tool gateway and permission protocol
 
 **Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
-surfaces, pinned Docker sandbox policy, and private-origin classification for
-DSH web tools implemented; full browser adapters and MCP pending, 2026-10-26.
-The hook passes end-to-end against both the source-built and published DSH
-runtimes.
+surfaces, pinned Docker sandbox policy, private-origin classification for DSH
+web tools, and a stateless secure fetch adapter implemented; full browser
+adapters and MCP pending, 2026-10-26. The hook passes end-to-end against both
+the source-built and published DSH runtimes.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -323,6 +323,9 @@ Implemented:
   literal private/loopback/metadata hosts, private suffixes, and DNS answers
   that resolve private are `network=private`; a read-only private fetch still
   needs approval, including in the Open tier;
+- the stateless secure fetch adapter (`hive web`): manual per-hop redirect
+  checks, safe headers only, byte/content-type limits, explicit download and
+  upload gates, and exact-origin grants; see [Secure fetch](WEB-FETCH.md);
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
@@ -330,9 +333,9 @@ Still required before this is a release-complete agent security boundary:
 - a real Docker-daemon execution run (the policy and mocked tests are
   implemented, but this host has no daemon and no passwordless root);
 - MCP metadata registration and subagent inheritance;
-- full browser adapters (visible/headless automation, redirect-time origin
-  checks, download/upload destination gates); the DSH web-tool SSRF gate above
-  is not a browser sandbox.
+- full browser adapters (JavaScript, cookies/profile isolation, a proxy or
+  connection-time guard for redirect-time SSRF, page downloads/uploads); the
+  DSH web-tool gate and stateless secure fetch are not a browser sandbox.
 
 Bundled-runtime verification is implemented as a start-up stderr check, in
 addition to the external-runtime preflight.

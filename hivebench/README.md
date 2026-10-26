@@ -17,11 +17,11 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **124 REST operations** across 114 paths (115 operations under `/v1/`).
+Studio serves **130 REST operations** across 120 paths (121 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1183 unit + 126 integration** tests, verified Oct 22); the
-live batteries and the Studio are under active development.
+The suite is green (**1611 tests pass, 5 skipped**, verified Oct 26); the live
+batteries and the Studio are under active development.
 
 ---
 
@@ -320,6 +320,7 @@ a single hive theme (yellow/black) across every page.
 |---|---|
 | [`docs/AB-PLAN.md`](../docs/AB-PLAN.md) | The scope: the comparisons, their metrics, their falsification conditions and their costs, ordered by information per hour |
 | [`docs/AB-RESULTS.md`](../docs/AB-RESULTS.md) | The results so far: the two Scions head to head, the cascade's arms in the multi-sample regime, the curation against the FIFO window, and the encoder's three jobs |
+| [`docs/WEB-FETCH.md`](../docs/WEB-FETCH.md) | The stateless secure fetch contract: per-hop SSRF checks, exact-origin grants, and download/upload gates |
 | [`splinter/docs/ENCODER-NOTES.md`](../splinter/docs/ENCODER-NOTES.md) | Which encoder the harness should use: the sweep, the held-out test, and the falsified hypothesis about the membrane's thresholds |
 
 ### Console features
@@ -385,13 +386,16 @@ a single hive theme (yellow/black) across every page.
 - **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution (pinned
   image, network off, resource limits, hard timeout); the host fallback
   requires an explicit approval and is audited.
+- **Secure fetch** (`/v1/web/fetch`, `hive web`) — stateless HTTP(S) with
+  per-hop SSRF checks, exact-origin private grants, size/type limits, and
+  explicit download/upload gates. Not a JavaScript browser.
 - **Escalation lane** — every ladder-resolved item is harvested to
   `escalation.jsonl` next to the report: task, draft, findings, repair, and the
   resolution. Training-side only; the runtime never reads it.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (115 operations across 105 paths under `/v1/`)
+### API surface (121 operations across 111 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -407,6 +411,7 @@ a single hive theme (yellow/black) across every page.
 | Tools | `/v1/tools/policy`, `/v1/tools/call`, `/v1/tools/pending`, `/v1/tools/decide`, `/v1/tools/decision`, `/v1/tools/revoke`, `/v1/tools/audit` |
 | Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
+| Secure fetch | `/v1/web/fetch`, `/v1/web/status`, `/v1/web/grants`, `/v1/web/grant`, `/v1/web/revoke`, `/v1/web/policy` |
 | Chat | `/v1/splinter/stream`, `/v1/chat/stop` |
 | Strata | `/v1/strata/configs`, `/v1/strata/launch` |
 | Stacks | `/v1/stacks`, `/v1/stacks/{name}`, `/apply`, `/unload`, `/validate`, `/v1/stacks/status` |

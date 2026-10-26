@@ -199,29 +199,34 @@ availability is **probed live**, never stored as truth. An unpinned image is a
 sandbox failure, not a host fallback. `hive sandbox pin` resolves and stores the
 digest.
 
-## Browser grants
+## Secure fetch grants
 
 ```jsonc
 {
   "schema_version": 1,
-  "origins": [
+  "grants": [
     {
-      "pattern": "https://example.com",
-      "scope": "global|session",
-      "access": "public",
-      "granted_at": "2026-10-25T21:00:00Z",
-      "expires_at": null
+      "origin": "http://127.0.0.1:8765",
+      "access": "private",
+      "scope": "global",
+      "session_id": null,
+      "granted_at": "2026-10-26T17:00:00Z",
+      "expires_at": null,
+      "reason": "local Studio fetch"
     }
-  ],
-  "private": [
-    {"pattern": "http://127.0.0.1:8765", "scope": "session"}
   ]
 }
 ```
 
-Cookies, local storage, downloads and passwords are **not** here. They live in
-`browser/profiles/<id>/` with mode `0700`; the bundled browser starts with a
-fresh profile unless the user explicitly imports one.
+Origins are canonical `scheme://host[:port]` values. A global grant persists
+here; a session grant is process-local and never written. Access is `public`
+or `private`. A private grant covers only that exact origin; a redirect to a
+different private origin needs its own grant.
+
+Secure-fetch downloads and uploads live under `browser/downloads/` and
+`browser/uploads/` with mode `0700`. Cookies, browser profiles and passwords
+are **not** here; a future JavaScript browser adapter must keep those isolated
+and explicitly imported.
 
 ## Hardware profile and recommendations
 
@@ -372,5 +377,5 @@ raw audit payloads by default.
 3. Wire the tool gateway to this store and the audit log.
 4. `sandbox.json` and Docker/local-fallback approvals. **Done.**
 5. Add hardware profile/recommendation storage.
-6. Add browser grants and profile isolation.
+6. Secure-fetch grants. **Done.** Browser profile isolation remains.
 7. Add CLI/API state commands and export/import.

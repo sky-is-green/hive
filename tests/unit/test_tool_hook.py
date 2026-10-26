@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from harness import tool_hook
+from harness import net_policy, tool_hook
 
 
 def _payload(name="bash", **extra):
@@ -83,14 +83,14 @@ def test_private_and_metadata_hosts_are_private():
 
 def test_a_hostname_resolving_to_loopback_is_private(monkeypatch):
     monkeypatch.setattr(
-        tool_hook.socket, "getaddrinfo",
+        net_policy.socket, "getaddrinfo",
         lambda host, port: [(2, 1, 6, "", ("127.0.0.1", 0))])
     assert _web("https://rebind.example/")["tool"]["network"] == "private"
 
 
 def test_a_hostname_resolving_to_a_public_address_is_public(monkeypatch):
     monkeypatch.setattr(
-        tool_hook.socket, "getaddrinfo",
+        net_policy.socket, "getaddrinfo",
         lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))])
     assert _web("https://example.com/")["tool"]["network"] == "public"
 

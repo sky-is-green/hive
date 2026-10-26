@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **114 paths, 124 operations** (105
+no longer exists, or if a method is wrong. **120 paths, 130 operations** (111
 of the paths under `/v1/`).
 
 ```sh
@@ -144,6 +144,22 @@ never a reason to use the host.
 |---|---|---|
 | `POST` | `/v1/sandbox/exec` | Run a command in the pinned Docker sandbox, or a host subprocess after explicit approval. — body: `#/components/schemas/SandboxExecRequest` |
 | `GET` | `/v1/sandbox/status` | Docker availability, image pin state, and local-fallback policy. |
+
+### Secure fetch — SSRF-checked HTTP and file gates
+
+Fetch is stateless: no cookies, no browser profile, manual redirects. Every hop
+is classified before the socket opens. A private origin needs a per-origin
+grant or `allow_private` plus a session id. Downloads and uploads are separate
+explicit gates.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/web/fetch` | Fetch one URL with per-hop SSRF checks, size/type limits, and download/upload gates. — body: `#/components/schemas/WebFetchRequest` |
+| `GET` | `/v1/web/status` | Fetch policy, download/upload directories, and grants. |
+| `GET` | `/v1/web/grants` | List public/private per-origin grants. |
+| `POST` | `/v1/web/grant` | Grant public/private access to one origin. — body: `#/components/schemas/WebGrantRequest` |
+| `POST` | `/v1/web/revoke` | Revoke one origin or all grants. — body: `#/components/schemas/WebRevokeRequest` |
+| `POST` | `/v1/web/policy` | Change fetch limits and the download/upload gates. — body: `#/components/schemas/WebPolicyRequest` |
 
 ### Controller — hardware profile and E0 settings proposal
 
