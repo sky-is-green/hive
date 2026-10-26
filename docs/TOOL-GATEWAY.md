@@ -219,8 +219,9 @@ lives in `settings/sandbox.json` and is managed with `hive sandbox`:
 - output cap and timeout;
 - the sandbox result records `backend: docker` or `backend: local`.
 
-For separation from human Docker, run Hive as a dedicated `hive` user with its
-own rootless daemon and `DOCKER_HOST=unix:///run/user/<uid>/docker.sock`; see
+For separation from human Docker, run Hive as the dedicated `hive-ai` user with
+its own rootless daemon and
+`DOCKER_HOST=unix:///run/user/<uid>/docker.sock`; see
 [Dedicated AI user](AI-USER.md). Never add that user to the system `docker`
 group or point it at `/var/run/docker.sock`.
 
