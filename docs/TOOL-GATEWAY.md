@@ -1,8 +1,9 @@
 # Hive tool gateway and permission protocol
 
 **Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
-surfaces, and pinned Docker sandbox policy implemented; MCP/browser adapters
-and the source-runtime release rerun pending, 2026-10-26.
+surfaces, pinned Docker sandbox policy, and private-origin classification for
+DSH web tools implemented; full browser adapters, MCP, and the source-runtime
+release rerun pending, 2026-10-26.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -313,6 +314,10 @@ Implemented:
 - a live DSH 0.2.1-rc.2 hook test: approve ran the tool, deny blocked it;
 - a pinned-image Docker sandbox policy with explicit local-fallback approval
   (`hive sandbox status|policy|pin`);
+- private-origin classification for DSH web tools: literal private/loopback/
+  metadata hosts, private suffixes, and DNS answers that resolve private are
+  `network=private`; a read-only private fetch still needs approval, including
+  in the Open tier;
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
@@ -321,7 +326,9 @@ Still required before this is a release-complete agent security boundary:
   with Hive, and a real Docker-daemon execution run (the policy and tests are
   implemented, but this host has no daemon);
 - MCP metadata registration and subagent inheritance;
-- browser adapters and origin/SSRF checks;
+- full browser adapters (visible/headless automation, redirect-time origin
+  checks, download/upload destination gates); the DSH web-tool SSRF gate above
+  is not a browser sandbox;
 - a packaged-runtime check that the hook plugin is present, not only the
   external-runtime preflight.
 
@@ -335,7 +342,8 @@ Still required before this is a release-complete agent security boundary:
    explicit local-fallback approval. **Done in policy/API; real-daemon run
    pending.**
 4. **Browser adapters** — bundled Chromium visible/headless, system browser,
-   private-origin gate. **Pending.**
+   redirect-time origin gate, download/upload gates. **Pending.** The DSH
+   web-tool private-origin gate is implemented.
 5. **DSH/MCP wiring** — the DSH PreToolUse hook is mounted and verified;
    MCP metadata registration and subagent inheritance remain. **Partial.**
 6. **Release gate additions** — permission denial, timeout, headless block,

@@ -473,7 +473,7 @@ class ApprovalGateway:
 
         if spec.is_side_effect and spec.needs_reason and not reason_ok:
             return self._deny(spec, request, "missing reason", tier)
-        if not spec.is_side_effect:
+        if not spec.is_side_effect and spec.network != "private":
             self._audit("tool.approved", session_id=self.session_id,
                         tool_identity=spec.identity, action=request.action,
                         args_sha256=_json_hash(request.args),

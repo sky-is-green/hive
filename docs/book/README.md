@@ -143,9 +143,10 @@ hook posts the concrete tool call to Hive, waits for the approval decision, and
 fails closed if the gateway is unreachable; if the hook cannot be installed or
 an external runtime preflight cannot load it, agent turns are refused. The
 approve/deny path has passed against a live DSH runtime. The Docker sandbox
-uses a pinned image and an explicit, audited local-fallback approval.
-MCP/browser adapters and the source-built runtime rerun remain the release
-blockers.
+uses a pinned image and an explicit, audited local-fallback approval. DSH web
+tools classify loopback, private, metadata and DNS-private destinations as
+private; a read-only private fetch still needs approval. MCP/full browser
+adapters and the source-built runtime rerun remain the release blockers.
 
 ## 10. Evidence, evaluation and release
 
