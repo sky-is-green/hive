@@ -2,10 +2,11 @@
 
 **Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
 surfaces, pinned Docker sandbox policy, private-origin classification for DSH
-web tools, a stateless secure fetch adapter, and an optional validating-proxy
-Chromium adapter implemented; MCP metadata/subagent inheritance remains,
-2026-10-26. The hook passes end-to-end against both the source-built and
-published DSH runtimes.
+web tools, a stateless secure fetch adapter, an optional validating-proxy
+Chromium adapter, MCP metadata registration, and child-session grant
+inheritance implemented; a live MCP-server smoke test remains, 2026-10-26. The
+hook passes end-to-end against both the source-built and published DSH
+runtimes.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -331,13 +332,20 @@ Implemented:
   context, no persistent profile, service workers blocked, and a validating
   local proxy that checks every HTTP request and HTTPS CONNECT, including
   redirects and subresources; see [Browser adapter](BROWSER.md);
+- registered external-tool metadata (`/v1/tools`, `/v1/tools/register`,
+  `/v1/tools/unregister`): unverified metadata never overrides the hook's
+  conservative defaults;
+- parent-session lineage for DSH subagents: a child inherits a parent's
+  session grant for the same identity/origin, never a different identity, and
+  the lineage is cycle-guarded;
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
 
 - a real Docker-daemon execution run (the policy and mocked tests are
   implemented, but this host has no daemon and no passwordless root);
-- MCP metadata registration and subagent inheritance;
+- a live MCP-server smoke test through the DSH runtime (the metadata registry
+  and hook classification are implemented);
 - browser page-level download/upload automation (the adapter deliberately does
   not write downloads or set file inputs; use secure fetch for those gates).
 
@@ -358,7 +366,8 @@ addition to the external-runtime preflight.
    download/upload automation remains deliberately disabled; secure fetch owns
    those explicit gates.
 5. **DSH/MCP wiring** — the DSH PreToolUse hook is mounted and verified;
-   MCP metadata registration and subagent inheritance remain. **Partial.**
+   MCP metadata registration and subagent grant inheritance are implemented.
+   A live MCP-server smoke test remains. **Partial.**
 6. **Release gate additions** — permission denial, timeout, headless block,
    private network, sandbox fallback, audit redaction. **Partial.**
 
@@ -424,8 +433,11 @@ grants than their parent. A delegated worker cannot:
 - bypass the private-network gate;
 - inherit a “session” grant from a different session.
 
-The current `agent_subagents.py` nested loop must be covered explicitly; a
-gateway that only wraps the face agent is not a boundary.
+`SessionLineage` registers `subagent.started` parent/child pairs and
+`ApprovalGateway` checks the child plus its ancestors for session grants. The
+match is still by exact identity and resource, and a cycle-guard rejects a
+parent edge that would loop back to the child. A live nested-subagent smoke
+test is still required.
 
 ### Approval flooding and turn control
 

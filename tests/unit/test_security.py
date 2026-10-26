@@ -9,10 +9,13 @@ import pytest
 from harness.security import (
     ApprovalError,
     ApprovalGateway,
+    GatewayHub,
     GrantStore,
     SecurityError,
     SecurityStore,
     SessionGrants,
+    SessionLineage,
+    ToolRegistry,
     ToolRequest,
     ToolSpec,
     TIERS,
@@ -236,3 +239,46 @@ def test_tool_spec_unknown_metadata_defaults_to_side_effect():
     assert spec.network == "private"
     assert spec.filesystem == "host"
     assert spec.risk == "high"
+
+
+def test_tool_registry_only_returns_verified_metadata(tmp_path):
+    state = _state(tmp_path)
+    registry = ToolRegistry(state)
+    spec = _spec(name="mcp__github__search", source="mcp",
+                 read_only=True, side_effect=False, reason_required=False,
+                 network="public", filesystem="none", risk="low",
+                 sandbox="optional")
+    registry.register(spec, verified=False, server="github")
+    assert registry.get("mcp", "mcp__github__search") is None
+    registry.register(spec, verified=True, server="github")
+    found = registry.get("mcp", "mcp__github__search")
+    assert found is not None
+    assert found.read_only is True
+    assert found.network == "public"
+    assert registry.list()[0]["verified"] is True
+    assert registry.revoke("mcp", "mcp__github__search") is True
+    assert registry.get("mcp", "mcp__github__search") is None
+
+
+def test_session_lineage_is_acyclic_and_downward(tmp_path):
+    lineage = SessionLineage()
+    lineage.claim("parent", "child")
+    lineage.claim("child", "grandchild")
+    lineage.claim("grandchild", "parent")  # ignored cycle
+    assert lineage.ancestors("grandchild") == ["child", "parent"]
+    assert lineage.ancestors("parent") == []
+    assert lineage.parent("child") == "parent"
+
+
+def test_child_inherits_parent_session_grant_but_not_identity(tmp_path):
+    hub = GatewayHub(_state(tmp_path))
+    parent = hub.gateway("parent")
+    child = hub.gateway("child")
+    hub.claim_child("parent", "child")
+    pending = parent.authorize(_spec(), _req("parent"))
+    parent.decide(pending["request_id"], "session")
+    inherited = child.authorize(_spec(), _req("child"))
+    assert inherited["status"] == "approved"
+    other = _spec(name="write_file")
+    assert child.authorize(other, _req("child"))["status"] == "pending"
+    assert parent.authorize(other, _req("parent"))["status"] == "pending"

@@ -70,6 +70,47 @@ def test_agent_status_does_not_claim_gateway_enforcement(client):
     assert "blocked" in body["permission_policy"]
 
 
+def test_registered_mcp_metadata_overrides_conservative_defaults(client):
+    body = {
+        "session_id": "conv-mcp",
+        "tool": {
+            "name": "mcp__github__search", "source": "mcp",
+            "version": "1.0.0", "read_only": False, "side_effect": True,
+            "reason_required": True, "network": "private",
+            "filesystem": "host", "risk": "high", "sandbox": "required",
+        },
+        "action": "mcp__github__search: repos",
+        "reason": "search the issue tracker", "args": {"query": "repos"},
+    }
+    pending = client.post("/v1/tools/call", json=body)
+    assert pending.status_code == 200
+    assert pending.json()["status"] == "pending"
+
+    registered = client.post("/v1/tools/register", json={
+        "tool": {
+            "name": "mcp__github__search", "source": "mcp",
+            "version": "1.0.0", "description": "Search GitHub",
+            "read_only": True, "side_effect": False,
+            "reason_required": False, "network": "public",
+            "filesystem": "none", "risk": "low", "sandbox": "optional",
+        },
+        "verified": True, "server": "github", "note": "test",
+    })
+    assert registered.status_code == 200
+    assert registered.json()["verified"] is True
+    assert client.get("/v1/tools").json()["tools"]
+
+    approved = client.post("/v1/tools/call", json=body)
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "approved"
+    assert approved.json()["reason"] == "read-only"
+
+    removed = client.post("/v1/tools/unregister", json={
+        "source": "mcp", "name": "mcp__github__search"})
+    assert removed.json()["removed"] is True
+    assert client.post("/v1/tools/call", json=body).json()["status"] == "pending"
+
+
 def test_agent_status_claims_enforcement_only_after_preflight(client):
     service = client.app.state.agent
     service._hook_installed = True

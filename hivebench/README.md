@@ -17,10 +17,10 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **132 REST operations** across 122 paths (123 operations under `/v1/`).
+Studio serves **135 REST operations** across 125 paths (126 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1617 tests pass, 5 skipped**, verified Oct 26); the live
+The suite is green (**1623 tests pass, 5 skipped**, verified Oct 26); the live
 batteries and the Studio are under active development.
 
 ---
@@ -394,13 +394,17 @@ a single hive theme (yellow/black) across every page.
   Chromium in a fresh context, with a validating local proxy that checks every
   request and CONNECT, including redirects. Requires the optional `browser`
   extra and a Chromium install.
+- **Tool registry** (`/v1/tools`) — verified external metadata, including
+  `mcp__<server>__<tool>` entries. Unregistered MCP tools stay conservative,
+  and subagent sessions inherit parent session grants only for the same
+  identity/origin.
 - **Escalation lane** — every ladder-resolved item is harvested to
   `escalation.jsonl` next to the report: task, draft, findings, repair, and the
   resolution. Training-side only; the runtime never reads it.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (123 operations across 113 paths under `/v1/`)
+### API surface (126 operations across 116 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -413,7 +417,7 @@ a single hive theme (yellow/black) across every page.
 | Commands | `/v1/commands`, `/v1/commands/run` |
 | Studio | `/v1/studio/settings`, `/v1/studio/strata` |
 | Controller | `/v1/profiles/hardware`, `/v1/profiles/scan`, `/v1/controller/status`, `/v1/controller/propose`, `/v1/controller/apply`, `/v1/controller/revert`, `/v1/controller/outcome`, `/v1/encoder/status` |
-| Tools | `/v1/tools/policy`, `/v1/tools/call`, `/v1/tools/pending`, `/v1/tools/decide`, `/v1/tools/decision`, `/v1/tools/revoke`, `/v1/tools/audit` |
+| Tools | `/v1/tools`, `/v1/tools/register`, `/v1/tools/unregister`, `/v1/tools/policy`, `/v1/tools/call`, `/v1/tools/pending`, `/v1/tools/decide`, `/v1/tools/decision`, `/v1/tools/revoke`, `/v1/tools/audit` |
 | Compaction | `/v1/compaction/run`, `/surgery`, `/status` |
 | Sandbox | `/v1/sandbox/exec`, `/v1/sandbox/status` |
 | Secure fetch | `/v1/web/fetch`, `/v1/web/status`, `/v1/web/grants`, `/v1/web/grant`, `/v1/web/revoke`, `/v1/web/policy` |

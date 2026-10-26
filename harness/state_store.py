@@ -158,6 +158,9 @@ class StatePaths:
     def grants_file(self) -> Path:
         return self.settings_file("tool-grants")
 
+    def tool_registry_file(self) -> Path:
+        return self.settings_file("tool-registry")
+
     def sandbox_file(self) -> Path:
         return self.settings_file("sandbox")
 

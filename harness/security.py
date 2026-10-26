@@ -54,6 +54,7 @@ DEFAULT_SECURITY = {
 }
 
 DEFAULT_GRANTS = {"schema_version": 1, "grants": []}
+DEFAULT_REGISTRY = {"schema_version": 1, "tools": []}
 
 
 class SecurityError(RuntimeError):
@@ -289,6 +290,40 @@ class SessionGrants:
                 if session_id is None or sid == session_id]
 
 
+class SessionLineage:
+    """Parent links for subagent sessions; grants inherit downward only."""
+
+    def __init__(self) -> None:
+        self._parents: dict[str, str] = {}
+
+    def claim(self, parent: str, child: str) -> None:
+        parent = str(parent or "").strip()
+        child = str(child or "").strip()
+        if not parent or not child or parent == child:
+            return
+        # Refuse an edge that would make the parent a descendant of the child.
+        if child in self.ancestors(parent):
+            return
+        # A child may be announced more than once; keep the first authority.
+        self._parents.setdefault(child, parent)
+
+    def parent(self, session_id: str) -> str | None:
+        return self._parents.get(str(session_id))
+
+    def ancestors(self, session_id: str) -> list[str]:
+        current = self._parents.get(str(session_id))
+        rows: list[str] = []
+        seen = {str(session_id)}
+        while current and current not in seen and len(rows) < 32:
+            rows.append(current)
+            seen.add(current)
+            current = self._parents.get(current)
+        return rows
+
+    def clear(self) -> None:
+        self._parents.clear()
+
+
 class GrantStore:
     """Global grants are durable; session grants are explicitly in memory."""
 
@@ -397,6 +432,84 @@ class GrantStore:
         return rows
 
 
+class ToolRegistry:
+    """Verified external-tool metadata, keyed by source:name@version.
+
+    Unverified tools are deliberately not returned; the hook's conservative
+    defaults stay in force until an operator registers and verifies metadata.
+    """
+
+    def __init__(self, state: StatePaths | None = None) -> None:
+        self.state = (state or StatePaths.default()).ensure()
+        self._store = JsonStore(self.state.tool_registry_file(),
+                                default=DEFAULT_REGISTRY)
+
+    def _rows(self) -> list[dict[str, Any]]:
+        return [dict(row) for row in
+                (self._store.read().get("tools") or [])
+                if isinstance(row, dict)]
+
+    def register(self, spec: ToolSpec | Mapping[str, Any], *,
+                 verified: bool = False, server: str = "",
+                 note: str = "") -> dict[str, Any]:
+        spec = spec if isinstance(spec, ToolSpec) else ToolSpec.from_dict(spec)
+        row = {
+            "tool": spec.to_dict(), "tool_identity": spec.identity,
+            "verified": bool(verified), "server": str(server or "")[:160],
+            "note": str(note or "")[:500], "registered_at": _utc(),
+        }
+
+        def update(state: dict[str, Any]) -> dict[str, Any]:
+            rows = [r for r in (state.get("tools") or [])
+                    if isinstance(r, dict)
+                    and r.get("tool_identity") != spec.identity]
+            rows.append(row)
+            return {"schema_version": 1, "tools": rows}
+
+        self._store.update(update)
+        AuditLog(self.state.audit_file()).append(
+            {"event": "tool.register", "tool_identity": spec.identity,
+             "verified": bool(verified), "server": server})
+        return dict(row)
+
+    def get(self, source: str, name: str,
+            version: str = "1.0.0") -> ToolSpec | None:
+        identity = f"{source}:{name}@{version}"
+        for row in reversed(self._rows()):
+            if row.get("tool_identity") != identity or not row.get("verified"):
+                continue
+            tool = row.get("tool")
+            if not isinstance(tool, Mapping):
+                continue
+            try:
+                return ToolSpec.from_dict(tool)
+            except SecurityError:
+                continue
+        return None
+
+    def revoke(self, source: str, name: str,
+               version: str = "1.0.0") -> bool:
+        identity = f"{source}:{name}@{version}"
+        removed = {"value": False}
+
+        def update(state: dict[str, Any]) -> dict[str, Any]:
+            before = [r for r in (state.get("tools") or [])
+                      if isinstance(r, dict)]
+            after = [r for r in before
+                     if r.get("tool_identity") != identity]
+            removed["value"] = len(after) != len(before)
+            return {"schema_version": 1, "tools": after}
+
+        self._store.update(update)
+        if removed["value"]:
+            AuditLog(self.state.audit_file()).append(
+                {"event": "tool.unregister", "tool_identity": identity})
+        return bool(removed["value"])
+
+    def list(self) -> list[dict[str, Any]]:
+        return self._rows()
+
+
 @dataclass
 class _Pending:
     request_id: str
@@ -413,6 +526,7 @@ class GatewayHub:
         self.state = (state or StatePaths.default()).ensure()
         self.security = SecurityStore(self.state)
         self.grants = GrantStore(self.state, sessions=SessionGrants())
+        self.lineage = SessionLineage()
         self._gateways: dict[str, ApprovalGateway] = {}
 
     def gateway(self, session_id: str, *,
@@ -422,11 +536,16 @@ class GatewayHub:
         if gateway is None:
             gateway = ApprovalGateway(
                 self.state, session_id=key, security=self.security,
-                grants=self.grants, headless=headless)
+                grants=self.grants, lineage=self.lineage,
+                headless=headless)
             self._gateways[key] = gateway
         else:
             gateway.headless = bool(headless)
         return gateway
+
+    def claim_child(self, parent: str, child: str) -> None:
+        """Register a DSH subagent child for downward grant inheritance."""
+        self.lineage.claim(parent, child)
 
     def pending(self, session_id: str | None = None) -> list[dict[str, Any]]:
         if session_id is not None:
@@ -456,12 +575,14 @@ class ApprovalGateway:
     def __init__(self, state: StatePaths | None = None, *,
                  session_id: str, security: SecurityStore | None = None,
                  grants: GrantStore | None = None,
+                 lineage: SessionLineage | None = None,
                  headless: bool = False,
                  now: Callable[[], float] = time.time) -> None:
         self.state = (state or StatePaths.default()).ensure()
         self.session_id = _safe(session_id, "session id")
         self.security = security or SecurityStore(self.state)
         self.grants = grants or GrantStore(self.state)
+        self.lineage = lineage
         self.headless = bool(headless)
         self._now = now
         self._pending: dict[str, _Pending] = {}
@@ -507,8 +628,11 @@ class ApprovalGateway:
 
         private = spec.network == "private"
         resource = request.resource or ("private" if private else "")
-        granted = self.grants.has(spec.identity, self.session_id,
-                                  resource=resource)
+        session_ids = [self.session_id]
+        if self.lineage is not None:
+            session_ids += self.lineage.ancestors(self.session_id)
+        granted = any(self.grants.has(spec.identity, sid, resource=resource)
+                      for sid in session_ids)
         if granted and tier in ("guarded", "trusted", "open"):
             self._audit("tool.approved", session_id=self.session_id,
                         tool_identity=spec.identity, action=request.action,
