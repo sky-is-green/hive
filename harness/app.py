@@ -5091,8 +5091,11 @@ def create_app(
                 "--pids-limit", str(int(data.get("pids_limit") or 128)),
                 "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges",
-                image_ref, "sh", "-c", command,
             ]
+            runtime = str(data.get("runtime") or "").strip()
+            if runtime:
+                cmd += ["--runtime", runtime]
+            cmd += [image_ref, "sh", "-c", command]
             backend = "docker"
         else:
             allowed, why = policy.local_fallback(

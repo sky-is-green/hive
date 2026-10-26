@@ -69,6 +69,15 @@ def test_host_network_mode_is_rejected(state):
         policy.update(network="host")
 
 
+def test_runtime_policy_accepts_gvisor_or_kata_names(state):
+    policy = sandbox.SandboxPolicy(state)
+    assert policy.read()["runtime"] == ""
+    assert policy.update(runtime="runsc")["runtime"] == "runsc"
+    assert policy.update(runtime="kata-runtime")["runtime"] == "kata-runtime"
+    with pytest.raises(sandbox.SandboxError, match="runtime"):
+        policy.update(runtime="bad runtime!")
+
+
 def test_local_fallback_modes(state):
     policy = sandbox.SandboxPolicy(state)
     assert policy.local_fallback(None, approved=False)[0] is False
@@ -137,7 +146,8 @@ def test_docker_run_uses_the_pinned_image_and_hardening(
         client, monkeypatch):
     state = StatePaths(client.app.state.harness.state_dir)
     sandbox.SandboxPolicy(state).update(
-        docker_image="hive-sandbox:1", image_digest="c" * 64)
+        docker_image="hive-sandbox:1", image_digest="c" * 64,
+        runtime="runsc")
     monkeypatch.setattr(sandbox, "docker_status", lambda: {
         "installed": True, "daemon": True, "binary": "/usr/bin/docker",
         "detail": "docker daemon is running"})
@@ -160,6 +170,7 @@ def test_docker_run_uses_the_pinned_image_and_hardening(
                         ("--cap-drop", "ALL")):
         assert flag in command and command[command.index(flag) + 1] == value
     assert "--security-opt" in command
+    assert command[command.index("--runtime") + 1] == "runsc"
     assert f"hive-sandbox:1@sha256:{'c' * 64}" in command
 
 

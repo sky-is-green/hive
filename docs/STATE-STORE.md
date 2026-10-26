@@ -214,6 +214,7 @@ grant execution by itself.
   "mode": "docker",
   "docker_image": "hive-sandbox:1",
   "image_digest": "<64 hex characters>",
+  "runtime": "",
   "network": "none",
   "memory": "512m",
   "cpus": "1",
@@ -223,6 +224,11 @@ grant execution by itself.
   "updated_at": "2026-10-25T21:00:00Z"
 }
 ```
+
+`runtime` is empty for the daemon default, or names an installed Docker
+runtime such as `runsc` (gVisor) or `kata-runtime` (Kata Containers). The
+runtime is passed as `docker run --runtime <name>`; the host must have it
+registered.
 
 `local_fallback: approval` means `/v1/sandbox/exec` refuses a host subprocess
 until the caller retries with `allow_local_fallback: true` and a `session_id`;

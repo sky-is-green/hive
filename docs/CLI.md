@@ -370,6 +370,7 @@ DSH 0.2.1-rc.2. See [the gateway document](TOOL-GATEWAY.md).
 ```bash
 hive sandbox status
 hive sandbox policy --local-fallback approval
+hive sandbox policy --runtime runsc   # optional gVisor runtime
 hive sandbox pin                 # resolve and save the image digest
 hive sandbox pin --image hive-sandbox:1 --digest <64-hex>
 ```

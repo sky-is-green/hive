@@ -214,6 +214,7 @@ lives in `settings/sandbox.json` and is managed with `hive sandbox`:
 - `--network none` for shell/code;
 - `--memory`, `--cpus`, `--pids-limit`, `--cap-drop ALL`, and
   `--security-opt no-new-privileges`;
+- optional `--runtime runsc` (gVisor) or `--runtime kata-runtime` (Kata);
 - no Docker socket, no host device, no privileged mode;
 - output cap and timeout;
 - the sandbox result records `backend: docker` or `backend: local`.
