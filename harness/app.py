@@ -1209,6 +1209,20 @@ class WebFetchRequest(BaseModel):
     allow_upload: bool = Field(False, description="Send upload_path as the body.")
 
 
+class BrowserBrowseRequest(BaseModel):
+    """One optional Playwright/Chromium page load behind the validating proxy."""
+
+    url: str = Field(..., min_length=1)
+    session_id: Optional[str] = None
+    allow_private: bool = Field(
+        False, description="Explicitly approve the original private origin.")
+    screenshot_name: Optional[str] = Field(
+        None, description="Plain filename under browser/screenshots.")
+    wait_until: str = Field("domcontentloaded")
+    timeout_s: float = Field(30, ge=1, le=120)
+    max_text: int = Field(20000, ge=1, le=200000)
+
+
 class WebGrantRequest(BaseModel):
     origin: str = Field(..., min_length=1)
     access: str = Field("private", description="public or private.")
@@ -5161,6 +5175,31 @@ def create_app(
         except web.WebFetchError as exc:
             raise HTTPException(422, detail={
                 "code": exc.code, "message": str(exc), **exc.detail}) from exc
+
+    @app.post("/v1/browser/browse")
+    def browser_browse(req: BrowserBrowseRequest):
+        """Open a fresh Chromium context behind the validating local proxy."""
+        from harness import browser_adapter
+        from harness.web_fetch import WebFetchError
+
+        try:
+            return browser_adapter.browse(
+                req.url, session_id=req.session_id,
+                allow_private=req.allow_private,
+                screenshot_name=req.screenshot_name,
+                wait_until=req.wait_until, timeout_s=req.timeout_s,
+                max_text=req.max_text, state=_state_paths())
+        except WebFetchError as exc:
+            raise HTTPException(exc.status, detail={
+                "code": exc.code, "message": str(exc),
+                **exc.detail}) from exc
+
+    @app.get("/v1/browser/status")
+    def browser_status():
+        """Whether the optional Playwright/Chromium adapter is available."""
+        from harness import browser_adapter
+
+        return browser_adapter.status()
 
     @app.get("/cascade", response_class=HTMLResponse)
     def view_cascade():

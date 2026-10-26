@@ -61,6 +61,9 @@ $HIVE_STATE_DIR/                    # default: $HIVE_HOME/harness_state
       encoder.*
       head.*
   browser/
+    downloads/                      # secure-fetch downloads; mode 0700
+    uploads/                        # secure-fetch upload sources; mode 0700
+    screenshots/                    # optional browser screenshots; mode 0700
     profiles/<id>/                  # cookies, cache; mode 0700
   audit/
     tool-calls-YYYYMM.jsonl         # append-only; rotated

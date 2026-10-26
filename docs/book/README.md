@@ -149,8 +149,10 @@ local-fallback approval. DSH web tools classify loopback, private, metadata and
 DNS-private destinations as private; a read-only private fetch still needs
 approval and grants are scoped to the exact origin. `hive web` adds a
 stateless secure fetch with per-hop redirect checks, size/type limits, and
-explicit download/upload gates. Full browser adapters (JavaScript, cookies,
-redirect-time proxy enforcement) and MCP remain the release blockers.
+explicit download/upload gates. The optional browser adapter adds a fresh
+Chromium context behind a validating local proxy, so redirects and subresources
+are checked before a socket opens. MCP metadata/subagent inheritance remains
+the release blocker.
 
 ## 10. Evidence, evaluation and release
 
@@ -165,6 +167,7 @@ operate the surface. A failed gate is not a release.
 
 - [Full CLI reference](../CLI.md)
 - [Secure fetch contract](../WEB-FETCH.md)
+- [Browser adapter](../BROWSER.md)
 - [Studio API map](../../hivebench/API.md)
 - [README capabilities and API counts](../../hivebench/README.md)
 - [Release gate](../RELEASE-GATE.md)

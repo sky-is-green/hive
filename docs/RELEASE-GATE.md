@@ -93,6 +93,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C30 | Ask the DSH agent to fetch `http://127.0.0.1:8765/` and `http://169.254.169.254/latest/meta-data` | Both are classified private and require approval even in the Open tier; a public URL does not prompt as private. | |
 | C31 | `hive web grant http://127.0.0.1:8765 --access private --scope global`; `hive web fetch http://127.0.0.1:8765/` without/with the grant; a redirect to a second private origin; `--download`/`--upload` without and with their policy gates | Each hop is rechecked; the second private origin is refused until granted; downloads/uploads are refused without their explicit switches; a path traversal name is refused. | |
 | C32 | `POST /v1/web/fetch` with `Cookie`/`Authorization`, an over-limit response, and a redirect to a private origin | Sensitive headers are rejected; the size limit is enforced; the redirect names the missing origin and does not make the request. | |
+| C33 | With the optional browser extra installed: `hive browser status`; browse a granted private page; browse a page that redirects or links to a second private origin | Status resolves Chromium; the granted page renders; the second private origin is blocked before its server sees a request; the error names the blocked origin. | |
 | C24 | `hive ui status --json` | Reports web running/not running and both switch commands; starts nothing. | |
 | C25 | `hive ui web --mock --detach` then `hive ui status` | Studio starts, status sees it, and the TUI `w` opens it. | |
 | C27 | With Studio running: `hive tools pending`; `hive tools decide <id> --session <id> --choice deny` | Pending request appears; deny is recorded and the waiting hook exits 2. | |
@@ -113,6 +114,11 @@ private localhost fetch without a grant, returned `200 text/html` after a
 global grant, and `hive web status` showed the grant. Unit/API tests cover the
 second-private-origin redirect, sensitive headers, size/type limits, and
 download/upload gates. Human UI sign-off is still pending.
+
+**C33 evidence (2026-10-26):** Playwright Chromium resolved and rendered a
+granted private page. A redirect and a subresource to a second private origin
+were blocked by the validating proxy; the second server recorded zero requests.
+The browser tests are skipped automatically when the optional binary is absent.
 
 Also check one `--json` command with `FORCE_COLOR=1`: JSON must contain **no ANSI**.
 

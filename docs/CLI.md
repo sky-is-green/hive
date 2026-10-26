@@ -396,6 +396,25 @@ different private origin still fails and names it. Downloads and uploads are
 separate explicit gates. The full contract, including residual DNS-rebinding
 limits, is in [Secure fetch](WEB-FETCH.md).
 
+## `hive browser` — optional Chromium
+
+The browser adapter is a real Chromium page, not secure fetch. It is optional:
+
+```bash
+pip install 'hivebench[browser]'
+python -m playwright install chromium
+hive browser status
+hive browser browse https://example.com/docs
+hive browser browse http://127.0.0.1:8765/ --allow-private --session s1
+hive browser browse https://example.com --screenshot example.png
+```
+
+It uses a fresh context, no persistent cookies/profile, service workers
+blocked, and a validating local proxy. The proxy checks every HTTP request and
+HTTPS `CONNECT`, including redirects and subresources, before opening a socket.
+Downloads and file uploads are intentionally not automated; use secure fetch
+for those explicit gates. See [Browser adapter](BROWSER.md).
+
 ## `hive profile`, `hive controller`, and `hive encoder`
 
 These are the deterministic E0 lane: a local hardware snapshot, an allowlisted
