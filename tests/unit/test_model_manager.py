@@ -460,6 +460,46 @@ def test_agent_stream_shapes_sdk_activity(agent_client, monkeypatch):
     assert "session_id" not in harness.kwargs  # sessions are per-run, not per-runtime
 
 
+def test_agent_activity_is_recorded_and_cease_blocks_the_next_turn(
+        agent_client, monkeypatch):
+    c, app = agent_client
+    import harness.sandbox as sandbox
+    monkeypatch.setattr(sandbox, "docker_status", lambda: {
+        "installed": False, "daemon": False, "binary": "",
+        "detail": "docker is not installed", "host": "unix:///none",
+        "rootless": False,
+    })
+    _configure_provider(c)
+    with c.stream("POST", "/v1/agent/stream", json={
+        "message": "list the files", "conversation_id": "c-activity",
+    }) as resp:
+        assert resp.status_code == 200, resp.read()[:300]
+        for line in resp.iter_lines():
+            pass
+    rows = app.state.activity.ledger.read_file("c-activity")
+    kinds = [row["type"] for row in rows]
+    assert kinds[0] == "user"
+    assert "tool" in kinds
+    assert "assistant" in kinds
+    assert kinds[-1] == "turn"
+
+    ceased = c.post("/v1/activity/control", json={
+        "action": "cease", "conversation_id": "c-activity",
+        "reason": "test cease",
+    })
+    assert ceased.status_code == 200, ceased.text
+    assert ceased.json()["ok"] is True
+
+    with c.stream("POST", "/v1/agent/stream", json={
+        "message": "try again", "conversation_id": "c-activity",
+    }) as resp:
+        events = [json.loads(line[6:]) for line in resp.iter_lines()
+                  if line.startswith("data: ")]
+    assert events[-1]["type"] == "done"
+    assert events[-1]["finish_reason"] == "ceased"
+    assert "ceased" in events[-1]["final"]
+
+
 def test_agent_runtime_rebuilds_on_model_change(agent_client):
     c, app = agent_client
     _configure_provider(c, "http://mock-llama")

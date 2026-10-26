@@ -1697,6 +1697,170 @@ def cmd_tools_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _activity_line(row: dict) -> str:
+    """One readable line for the activity tail."""
+    kind = str(row.get("type") or "?")
+    ts = str(row.get("ts") or "")
+    if kind == "tool":
+        return f"{ts}  tool {row.get('tool') or '?'} {row.get('phase') or ''}".strip()
+    if kind == "assistant":
+        return f"{ts}  assistant  {str(row.get('text') or '')[:140]}"
+    if kind == "user":
+        return f"{ts}  user       {str(row.get('message') or row.get('text') or '')[:140]}"
+    if kind == "model":
+        return (f"{ts}  model {row.get('tier') or '?'}/{row.get('model') or '?'} "
+                f"{row.get('phase') or ''}").strip()
+    if kind == "tripwire":
+        return (f"{ts}  TRIPWIRE  {row.get('rule') or '?'} -> "
+                f"{row.get('action') or '?'}")
+    if kind == "cease":
+        return f"{ts}  CEASE      {str(row.get('reason') or '')[:140]}"
+    if kind == "resume":
+        return f"{ts}  resume     removed={row.get('removed')}"
+    if kind == "error":
+        return f"{ts}  error      {str(row.get('error') or '')[:140]}"
+    return f"{ts}  {kind}"
+
+
+def cmd_activity_tail(args: argparse.Namespace) -> int:
+    from harness.activity import ActivityLedger
+
+    ledger = ActivityLedger(_state_paths(args))
+    if not args.follow:
+        rows = ledger.read_file(args.conversation, limit=args.limit)
+        if args.as_json:
+            _json(rows)
+        elif not rows:
+            print("  no activity records yet")
+        else:
+            for row in rows:
+                print(_activity_line(row))
+        return 0
+
+    # Follow the current month's file.  A month rollover is picked up on the
+    # next poll; the CLI never writes to the ledger.
+    path = ledger.path()
+    offset = path.stat().st_size if path.is_file() else 0
+    try:
+        while True:
+            current = ledger.path()
+            if current.is_file():
+                with open(current, "r", encoding="utf-8",
+                          errors="replace") as handle:
+                    handle.seek(offset)
+                    for line in handle:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            row = json.loads(line)
+                        except ValueError:
+                            continue
+                        if args.conversation and \
+                                row.get("conversation_id") != args.conversation:
+                            continue
+                        if args.as_json:
+                            print(json.dumps(row, sort_keys=True))
+                        else:
+                            print(_activity_line(row))
+                    offset = handle.tell()
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        return 0
+
+
+def cmd_activity_cease(args: argparse.Namespace) -> int:
+    if not args.yes:
+        print("hive activity cease: pass --yes to confirm", file=sys.stderr)
+        return 2
+    if not args.conversation and not args.session:
+        print("hive activity cease: name --conversation or --session",
+              file=sys.stderr)
+        return 2
+    body = {
+        "action": "cease",
+        "conversation_id": args.conversation or "",
+        "session_id": args.session or "",
+        "reason": args.reason or "user requested emergency cease",
+        "revoke_all": bool(args.revoke_all),
+        "source": "cli",
+    }
+    try:
+        payload = _tool_api(args, "/v1/activity/control",
+                            method="POST", body=body)
+    except RuntimeError as exc:
+        print(f"hive activity cease: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(payload)
+    else:
+        print("  ceased; tools are blocked until `hive activity resume`")
+    return 0
+
+
+def cmd_activity_resume(args: argparse.Namespace) -> int:
+    if not args.conversation and not args.session:
+        print("hive activity resume: name --conversation or --session",
+              file=sys.stderr)
+        return 2
+    body = {
+        "action": "resume",
+        "conversation_id": args.conversation or "",
+        "session_id": args.session or "",
+        "source": "cli",
+    }
+    try:
+        payload = _tool_api(args, "/v1/activity/control",
+                            method="POST", body=body)
+    except RuntimeError as exc:
+        print(f"hive activity resume: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(payload)
+    else:
+        print(f"  resumed; removed {payload.get('removed', 0)} block(s)")
+    return 0
+
+
+def cmd_activity_rules(args: argparse.Namespace) -> int:
+    from harness.activity import ActivityError, ActivityRules
+
+    store = ActivityRules(_state_paths(args))
+    try:
+        if args.set:
+            payload = json.loads(Path(args.set).read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                rules = payload.get("rules")
+                enabled = payload.get("enabled")
+            elif isinstance(payload, list):
+                rules, enabled = payload, None
+            else:
+                raise ValueError("rules file must be a list or an object")
+            if not isinstance(rules, list):
+                raise ValueError("rules must be a list")
+            out = store.write(rules, enabled=enabled)
+        elif args.enable:
+            out = store.set_enabled(True)
+        elif args.disable:
+            out = store.set_enabled(False)
+        else:
+            out = store.read()
+    except (ActivityError, ValueError, OSError) as exc:
+        print(f"hive activity rules: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(out)
+    else:
+        termui.header("activity rules")
+        termui.kv([("enabled", "yes" if out.get("enabled") else "no"),
+                   ("rules", len(out.get("rules") or [])),
+                   ("invalid", out.get("invalid", 0))])
+        for rule in out.get("rules") or []:
+            print(f"  {rule['id']}: {rule['action']}  "
+                  f"{rule.get('reason') or ''}")
+    return 0
+
+
 def cmd_sandbox_status(args: argparse.Namespace) -> int:
     from harness import sandbox
 
@@ -2637,6 +2801,77 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state_dir(taudit)
     taudit.add_argument("--json", action="store_true", dest="as_json")
     taudit.set_defaults(func=cmd_tools_audit)
+
+    activity = sub.add_parser(
+        "activity", help="live AI activity, tripwires, and emergency cease",
+        description="Inspect the durable activity ledger, manage tripwire "
+                    "rules, or cease a session. A cease blocks tools, stops "
+                    "the runtime, and revokes that session's grants until "
+                    "you explicitly resume.")
+    activity_sub = activity.add_subparsers(
+        dest="activity_command", metavar="<action>", required=True)
+
+    atail = activity_sub.add_parser(
+        "tail", help="show or follow recorded activity",
+        description="Print recent activity events from the durable JSONL "
+                    "ledger. With --follow, stream new events as they are "
+                    "written; a script can consume --json lines.")
+    atail.add_argument("--conversation", default=None,
+                       help="only this conversation id")
+    atail.add_argument("--limit", type=int, default=50,
+                       help="number of recent events (default 50)")
+    atail.add_argument("--follow", action="store_true",
+                       help="follow new events until Ctrl-C")
+    _add_state_dir(atail)
+    atail.add_argument("--json", action="store_true", dest="as_json")
+    atail.set_defaults(func=cmd_activity_tail)
+
+    acease = activity_sub.add_parser(
+        "cease", help="block tools, stop the runtime, and revoke grants",
+        description="Emergency stop for one conversation or session. The "
+                    "block is durable; tools stay off until `activity resume`. "
+                    "--yes is required.")
+    acease.add_argument("--conversation", default=None,
+                        help="conversation id to cease")
+    acease.add_argument("--session", default=None,
+                        help="agent session id to cease")
+    acease.add_argument("--reason", default=None,
+                        help="why the session is being ceased")
+    acease.add_argument("--revoke-all", action="store_true", dest="revoke_all",
+                        help="also revoke every global tool grant")
+    acease.add_argument("--yes", action="store_true", help="confirm the cease")
+    acease.add_argument("--url", default=None,
+                        help="Studio URL (default HIVE_STUDIO_URL or :8765)")
+    acease.add_argument("--json", action="store_true", dest="as_json")
+    acease.set_defaults(func=cmd_activity_cease)
+
+    aresume = activity_sub.add_parser(
+        "resume", help="clear a cease block after an explicit review",
+        description="Remove the durable cease block for a conversation or "
+                    "session. The runtime is not restarted automatically.")
+    aresume.add_argument("--conversation", default=None,
+                         help="conversation id to resume")
+    aresume.add_argument("--session", default=None,
+                         help="agent session id to resume")
+    aresume.add_argument("--url", default=None,
+                         help="Studio URL (default HIVE_STUDIO_URL or :8765)")
+    aresume.add_argument("--json", action="store_true", dest="as_json")
+    aresume.set_defaults(func=cmd_activity_resume)
+
+    arules = activity_sub.add_parser(
+        "rules", help="show or replace tripwire rules",
+        description="Tripwire rules are disabled by default. A rule can warn, "
+                    "revoke session grants, or cease the session when a tool "
+                    "input, tool result, or assistant text matches.")
+    arules.add_argument("--set", default=None,
+                        help="JSON file with a rules list or {rules, enabled}")
+    arules.add_argument("--enable", action="store_true",
+                        help="enable evaluation of the current rules")
+    arules.add_argument("--disable", action="store_true",
+                        help="disable evaluation without deleting the rules")
+    _add_state_dir(arules)
+    arules.add_argument("--json", action="store_true", dest="as_json")
+    arules.set_defaults(func=cmd_activity_rules)
 
     sandbox = sub.add_parser(
         "sandbox", help="Docker sandbox policy and image pinning",

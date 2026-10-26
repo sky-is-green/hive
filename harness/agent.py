@@ -122,6 +122,7 @@ class ActivityShaper:
         self._on_event = on_event
         self._on_subagent = on_subagent
         self._spans: dict[str, _ModelSpan] = {}
+        self._root_calls: dict[str, str] = {}
         self._seq = _count(1)
 
     def __call__(self, notification) -> None:
@@ -210,12 +211,9 @@ class ActivityShaper:
         if not isinstance(event, dict):
             return
         if session_id is None or session_id == self._root:
-            # No sessionId is the legacy/fake shape: shape it as a face event,
-            # exactly as before delegation existed.  Real notifications always
-            # carry the id.
-            shaped = _shape_notification(notification)
-            if shaped is not None:
-                self._emit(shaped)
+            # No sessionId is the legacy/fake shape: shape it as a face event.
+            # Real notifications always carry the id.
+            self._face_event(payload, notification)
             return
         span = self._spans.get(session_id) if isinstance(session_id, str) else None
         if span is None:
@@ -263,6 +261,47 @@ class ActivityShaper:
                 "phase": "result",
                 "result": result,
             })
+
+    def _face_event(self, payload: dict, notification) -> None:
+        """Face-level events, including the concrete tool input and result.
+
+        The old face shape dropped ``args`` and ``result``; the activity feed
+        needs them to show what the agent actually did.  Keep the old keys
+        absent when the runtime did not provide them, so the frozen face
+        shape still holds for the no-payload case.
+        """
+        event = payload.get("event")
+        if not isinstance(event, dict):
+            return
+        kind = event.get("type", "")
+        data = event.get("data") or {}
+        if kind == "tool/call":
+            name = str(data.get("name") or data.get("tool") or "tool")
+            call_id = str(data.get("callId") or "")
+            if call_id:
+                self._root_calls[call_id] = name
+            shaped = {"type": "tool", "tool": name, "phase": "call"}
+            args = _json_or_text(data.get("arguments", data.get("input")))
+            if args not in (None, "", {}, []):
+                shaped["args"] = args
+            self._emit(shaped)
+            return
+        if kind == "tool/result":
+            message = data.get("message") or {}
+            source = message.get("source") if isinstance(message, dict) else None
+            call_id = str((source or {}).get("callId") or "") \
+                if isinstance(source, dict) else ""
+            name = self._root_calls.pop(call_id, None) if call_id else None
+            result = _content_text(message.get("content")) \
+                if isinstance(message, dict) else ""
+            shaped = {"type": "tool", "tool": name or "tool", "phase": "result"}
+            if result:
+                shaped["result"] = result
+            self._emit(shaped)
+            return
+        shaped = _shape_notification(notification)
+        if shaped is not None:
+            self._emit(shaped)
 
     def _resolve(self, span: _ModelSpan, provider, model) -> None:
         if span.role is not None:
@@ -324,9 +363,13 @@ class DshAgentService:
     """
 
     def __init__(self, default_cwd: Path, session_root: Path, *,
-                 runtime_config: Optional[Callable[[], Optional[str]]] = None) -> None:
+                 runtime_config: Optional[Callable[[], Optional[str]]] = None,
+                 activity: Optional[object] = None) -> None:
         self.default_cwd = Path(default_cwd)
         self.session_root = Path(session_root)
+        #: Optional harness.activity.ActivityHub.  Kept duck-typed so the
+        #: agent module does not import the Studio state layer.
+        self.activity = activity
         #: Called before each runtime build; returns the profile config path for
         #: the currently applied stack (``None`` = the runtime's own default).
         self._runtime_config = runtime_config
@@ -620,24 +663,68 @@ class DshAgentService:
         self._cordis_path = str(path) if path else None
         return self._cordis_path
 
-    def cancel(self) -> dict:
+    def cancel(self, *, force: bool = False) -> dict:
         """Request cancellation of the in-flight run.
 
-        With no graceful cancel in the SDK protocol this kills the runtime;
-        the blocked run() raises, the worker reports 'cancelled', and the
-        durable session continues on the next message.
+        ``force=False`` is the normal Stop: ask the runtime to shut down, then
+        terminate it.  ``force=True`` is Cease: terminate the runtime and its
+        child process tree immediately, without waiting for a graceful flush.
         """
-        if not self._inflight:
+        inflight = self._inflight
+        if not inflight and not self.runtime_running:
             return {"ok": False, "note": "nothing in flight"}
-        self._cancel_requested.set()
+        if inflight:
+            self._cancel_requested.set()
         with self._lock:
             harness = self._harness
         if harness is None:
-            self._cancel_requested.clear()
+            if inflight:
+                self._cancel_requested.clear()
             return {"ok": False, "note": "no runtime running"}
-        # close() terminates the subprocess; run() unblocks with an error
-        threading.Thread(target=self.close, daemon=True).start()
-        return {"ok": True, "note": "runtime terminated; run will settle as cancelled"}
+        target = self._force_stop_runtime if force else self.close
+        threading.Thread(target=target, daemon=True).start()
+        note = ("runtime process tree terminated"
+                if force else "runtime terminated; run will settle as cancelled")
+        return {"ok": True, "note": note}
+
+    def cease_stop(self, *, conversation_id: str = "", session_id: str = "",
+                   reason: str = "", force: bool = True) -> dict:
+        """Callback used by ActivityHub.cease_now()."""
+        result = self.cancel(force=force)
+        result["reason"] = reason
+        return result
+
+    def _force_stop_runtime(self) -> None:
+        """Kill the runtime and its descendants without a graceful wait."""
+        with self._lock:
+            harness = self._harness
+            self._harness = None
+            self._target = None
+        proc = getattr(getattr(harness, "client", None), "_proc", None)
+        if proc is not None and proc.poll() is None:
+            try:
+                import psutil
+
+                parent = psutil.Process(proc.pid)
+                tree = parent.children(recursive=True) + [parent]
+                for child in tree:
+                    try:
+                        child.terminate()
+                    except Exception:  # noqa: BLE001 - already gone
+                        pass
+                _, alive = psutil.wait_procs(tree, timeout=1.0)
+                for child in alive:
+                    try:
+                        child.kill()
+                    except Exception:  # noqa: BLE001 - already gone
+                        pass
+            except Exception:  # noqa: BLE001 - close() is the fallback
+                pass
+        if harness is not None:
+            try:
+                harness.close()
+            except Exception:  # noqa: BLE001 - the process is already dead
+                pass
 
     def close(self) -> None:
         with self._lock:
@@ -647,7 +734,6 @@ class DshAgentService:
                 finally:
                     self._harness = None
                     self._target = None
-        self._cancel_requested.clear()
 
     def run_turn(
         self,
@@ -659,16 +745,61 @@ class DshAgentService:
         on_event: Optional[Callable[[dict], None]] = None,
     ) -> dict:
         """Run one agent turn (blocking); stream activity via on_event."""
+        activity = self.activity
+        session_id = self._session_id(conversation_id)
+        if activity is not None and activity.is_blocked(
+                conversation_id=conversation_id, session_id=session_id):
+            return {
+                "final": "(ceased by user; resume before sending again)",
+                "finish_reason": "ceased",
+                "session_id": session_id,
+                "events": 0,
+            }
+
         harness = self._ensure(base_url, api_key, model)
+        # ``_ensure`` can rebuild the runtime and bump the generation, so the
+        # durable session id must be read after it.
         session_id = self._session_id(conversation_id)
         handoff = self._handoff_prefix(conversation_id)
         context = self._take_context(conversation_id)
         prefix = handoff + context
         message_to_send = prefix + message if prefix else message
 
-        shaper = (ActivityShaper(session_id, on_event,
+        if activity is not None:
+            activity.bind(conversation_id, session_id, sink=on_event)
+            try:
+                activity.record({
+                    "type": "user",
+                    "text": message_to_send,
+                    "message": message,
+                    "context": prefix,
+                }, conversation_id=conversation_id, session_id=session_id)
+            except Exception:  # noqa: BLE001 - activity must not block the turn
+                pass
+            if activity.is_blocked(conversation_id=conversation_id,
+                                   session_id=session_id):
+                activity.unbind(conversation_id, session_id)
+                return {
+                    "final": "(ceased by user; resume before sending again)",
+                    "finish_reason": "ceased",
+                    "session_id": session_id,
+                    "events": 0,
+                }
+
+        def emit(event: dict) -> None:
+            if activity is not None:
+                try:
+                    event = activity.record(
+                        event, conversation_id=conversation_id,
+                        session_id=session_id)
+                except Exception:  # noqa: BLE001 - keep the stream alive
+                    pass
+            if on_event is not None:
+                on_event(event)
+
+        shaper = (ActivityShaper(session_id, emit,
                                  on_subagent=self.lineage_sink)
-                  if on_event is not None else None)
+                  if (on_event is not None or activity is not None) else None)
 
         def on_notification(notification) -> None:
             if shaper is not None:
@@ -682,21 +813,63 @@ class DshAgentService:
                     session_id=session_id,
                     on_notification=on_notification,
                 )
-            except Exception as exc:  # noqa: BLE001 - cancel surfaces here
+            except Exception as exc:  # noqa: BLE001 - cancel/cease surface here
                 if self._cancel_requested.is_set():
                     self._cancel_requested.clear()
+                    ceased = (activity is not None and activity.is_blocked(
+                        conversation_id=conversation_id,
+                        session_id=session_id))
+                    final = ("(ceased by user; resume before sending again)"
+                             if ceased else "(cancelled by user)")
+                    reason = "ceased" if ceased else "cancelled"
+                    if activity is not None:
+                        try:
+                            activity.record({
+                                "type": "turn", "phase": "end",
+                                "finish_reason": reason, "final": final,
+                            }, conversation_id=conversation_id,
+                                session_id=session_id)
+                        except Exception:  # noqa: BLE001
+                            pass
                     return {
-                        "final": "(cancelled by user)",
-                        "finish_reason": "cancelled",
+                        "final": final,
+                        "finish_reason": reason,
                         "session_id": session_id,
                         "events": 0,
                     }
+                if activity is not None:
+                    try:
+                        activity.record({
+                            "type": "error", "error": str(exc),
+                        }, conversation_id=conversation_id,
+                            session_id=session_id)
+                    except Exception:  # noqa: BLE001
+                        pass
                 raise
             finally:
                 self._inflight = False
+                if activity is not None:
+                    activity.unbind(conversation_id, session_id)
+
+        ceased = (activity is not None and activity.is_blocked(
+            conversation_id=conversation_id, session_id=session_id))
+        finish = "ceased" if ceased else result.finish_reason
+        final = (result.final_response if not ceased
+                 else "(ceased by user; resume before sending again)")
+        if activity is not None:
+            try:
+                activity.record({
+                    "type": "turn", "phase": "end",
+                    "finish_reason": finish, "final": final,
+                }, conversation_id=conversation_id, session_id=session_id)
+            except Exception:  # noqa: BLE001
+                pass
+        # A cease can terminate the runtime after the model already returned;
+        # do not let that flag cancel the next turn.
+        self._cancel_requested.clear()
         return {
-            "final": result.final_response,
-            "finish_reason": result.finish_reason,
+            "final": final,
+            "finish_reason": finish,
             "session_id": result.session_id,
             "events": len(result.events or []),
         }

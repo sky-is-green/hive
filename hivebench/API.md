@@ -117,6 +117,11 @@ curl http://127.0.0.1:8765/health
 | `POST` | `/v1/agent/cancel` | Cancel the in-flight agent turn for a conversation. |
 | `GET` | `/v1/agent/status` | Agent service state: running, model, last error. |
 | `POST` | `/v1/agent/stream` | Stream an agent (dsh) turn with tool use over SSE. — body: `#/components/schemas/AgentMessageRequest` |
+| `GET` | `/v1/activity` | Recent activity events, tripwire rules, and cease blocks. |
+| `GET` | `/v1/activity/stream` | Live activity feed over SSE. |
+| `POST` | `/v1/activity/control` | Cease (block, stop, revoke) or resume a session. |
+| `GET` | `/v1/activity/rules` | Tripwire rules and whether evaluation is enabled. |
+| `PUT` | `/v1/activity/rules` | Replace tripwire rules or toggle evaluation. |
 
 ### Chat — one turn, and how to stop it
 
@@ -201,7 +206,7 @@ inherit a parent's session grants for the same tool identity/origin.
 | `POST` | `/v1/tools/unregister` | Remove one registered tool identity. |
 | `GET` | `/v1/tools/policy` | Show the safety tier, master switches, and saved grants. |
 | `PUT` | `/v1/tools/policy` | Set the safety tier and master switches. |
-| `POST` | `/v1/tools/revoke` | Revoke one global tool grant, or all with `all=true`. |
+| `POST` | `/v1/tools/revoke` | Revoke one grant, all with `all=true`, or one session with `session_only=true`. |
 | `POST` | `/v1/tools/call` | Authorize a concrete tool call; returns approved, pending, or denied. |
 | `GET` | `/v1/tools/pending` | Pending requests, optionally for one session. |
 | `POST` | `/v1/tools/decide` | Resolve a pending request: once, session, always, or deny. |

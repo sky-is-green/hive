@@ -85,6 +85,30 @@ def test_face_events_keep_the_existing_shape():
 # ---------------------------------------------------------------------------
 
 
+def test_face_tool_events_keep_the_concrete_args_and_result():
+    shaper, events = _collect()
+
+    shaper(_event("root", "tool/call", {
+        "callId": "c-root", "name": "bash",
+        "arguments": '{"command": "ls -la"}',
+    }))
+    shaper(_event("root", "tool/result", {
+        "message": {
+            "content": [{"type": "text", "text": "a.txt\nb.txt"}],
+            "source": {"kind": "tool", "callId": "c-root"},
+        },
+    }))
+
+    assert events[0] == {
+        "type": "tool", "tool": "bash", "phase": "call",
+        "args": {"command": "ls -la"},
+    }
+    assert events[1]["type"] == "tool"
+    assert events[1]["tool"] == "bash"
+    assert events[1]["phase"] == "result"
+    assert events[1]["result"] == "a.txt\nb.txt"
+
+
 def test_dispatch_becomes_model_span_with_parented_tools():
     shaper, events = _collect()
 

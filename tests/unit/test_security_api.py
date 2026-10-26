@@ -51,6 +51,23 @@ def test_global_grant_can_be_revoked(client):
     assert client.get("/v1/tools/policy").json()["grants"] == []
 
 
+def test_revoke_can_target_only_one_session(client):
+    from harness.security import GatewayHub
+
+    state = StatePaths(client.app.state.harness.state_dir)
+    hub = GatewayHub(state)
+    client.app.state.tool_hub = hub
+    grants = hub.grants
+    grants.grant("dsh:bash@1.0.0", scope="session", session_id="s1",
+                 reason="test grant")
+    assert grants.list(session_id="s1")
+    body = client.post("/v1/tools/revoke", json={
+        "session_id": "s1", "session_only": True,
+    }).json()
+    assert body["removed"] == {"session": 1, "global": 0}
+    assert grants.list(session_id="s1") == []
+
+
 def test_revoke_needs_a_target(client):
     r = client.post("/v1/tools/revoke", json={})
     assert r.status_code == 422

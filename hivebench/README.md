@@ -17,10 +17,10 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **135 REST operations** across 125 paths (126 operations under `/v1/`).
+Studio serves **140 REST operations** across 129 paths (131 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1630 tests pass, 5 skipped**, verified Oct 26); the live
+The suite is green (**1648 tests pass, 5 skipped**, verified Oct 26); the live
 batteries and the Studio are under active development.
 
 ---
@@ -323,6 +323,7 @@ a single hive theme (yellow/black) across every page.
 | [`docs/WEB-FETCH.md`](../docs/WEB-FETCH.md) | The stateless secure fetch contract: per-hop SSRF checks, exact-origin grants, and download/upload gates |
 | [`docs/BROWSER.md`](../docs/BROWSER.md) | The optional Chromium adapter and its validating proxy |
 | [`docs/AI-USER.md`](../docs/AI-USER.md) | Running Hive as a dedicated AI user with its own rootless Docker daemon |
+| [`docs/ACTIVITY-CONTROL.md`](../docs/ACTIVITY-CONTROL.md) | Live activity ledger, Stop, emergency Cease, and tripwire rules |
 | [`splinter/docs/ENCODER-NOTES.md`](../splinter/docs/ENCODER-NOTES.md) | Which encoder the harness should use: the sweep, the held-out test, and the falsified hypothesis about the membrane's thresholds |
 
 ### Console features
@@ -405,7 +406,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (126 operations across 116 paths under `/v1/`)
+### API surface (131 operations across 120 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
