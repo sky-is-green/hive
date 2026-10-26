@@ -164,6 +164,10 @@ if [[ "$WITH_VENV" -eq 1 ]]; then
     run runuser -u "$HIVE_USER" -- env HOME="$HIVE_BASE/home" \
       "$HIVE_BASE/venv/bin/pip" install "$HIVE_BASE/app[studio]"
   fi
+  # The Studio imports the absorbed splinter project (cortex/sieve/backend).
+  # Install it into the root-owned venv as root so a pre-existing venv is
+  # upgraded too; the app tree is read-only by this point.
+  run "$HIVE_BASE/venv/bin/pip" install "$HIVE_BASE/app/splinter"
 fi
 if [[ "$DRY_RUN" -eq 0 ]]; then
   chown -R root:"$HIVE_GROUP" "$HIVE_BASE/app" "$HIVE_BASE/venv"
