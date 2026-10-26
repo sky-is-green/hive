@@ -97,6 +97,22 @@ def test_private_read_only_needs_approval_even_in_open(tmp_path):
     assert gateway.decide(pending["request_id"], "once")["status"] == "approved"
 
 
+def test_private_grants_are_scoped_to_one_origin(tmp_path):
+    gateway = _gateway(tmp_path)
+    spec = _spec(name="web_fetch", read_only=True, side_effect=False,
+                 reason_required=False, network="private")
+    local = _req(reason="read the local console",
+                 resource="http://localhost:8765")
+    pending = gateway.authorize(spec, local)
+    assert pending["resource"] == "http://localhost:8765"
+    gateway.decide(pending["request_id"], "always", scope="global")
+    assert gateway.authorize(spec, local)["status"] == "approved"
+
+    metadata = _req(reason="read instance metadata",
+                    resource="http://169.254.169.254")
+    assert gateway.authorize(spec, metadata)["status"] == "pending"
+
+
 def test_side_effect_headless_is_denied(tmp_path):
     gateway = _gateway(tmp_path, headless=True)
     result = gateway.authorize(_spec(), _req())

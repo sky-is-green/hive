@@ -1642,9 +1642,10 @@ def cmd_tools_grants(args: argparse.Namespace) -> int:
     elif not rows:
         print("  no tool grants")
     else:
-        _table(["tool", "scope", "session", "granted"],
+        _table(["tool", "scope", "resource", "session", "granted"],
                [[row.get("tool_identity"), row.get("scope"),
-                 row.get("session_id") or "-", row.get("granted_at")]
+                 row.get("resource") or "-", row.get("session_id") or "-",
+                 row.get("granted_at")]
                 for row in rows])
     return 0
 

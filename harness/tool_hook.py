@@ -126,6 +126,32 @@ def _url_is_private(url: str) -> bool:
     return _host_is_private(parts.hostname)
 
 
+def _origin(url: str) -> str:
+    text = url if "://" in url else f"http://{url}"
+    try:
+        parts = urllib.parse.urlsplit(text)
+        port = parts.port
+    except ValueError:
+        return ""
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return ""
+    host = parts.hostname
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    return f"{parts.scheme}://{host}" + (f":{port}" if port else "")
+
+
+def _resource_for(name: str, args: dict[str, Any]) -> str:
+    low = name.lower().replace("-", "_")
+    if not any(token in low for token in ("web", "fetch", "http", "browse")):
+        return ""
+    origins = [_origin(url) for url in _urls_from_args(args)]
+    origins = sorted({origin for origin in origins if origin})
+    if not origins:
+        return ""
+    return ",".join(origins)[:240]
+
+
 def _network_for(name: str, args: dict[str, Any]) -> str:
     low = name.lower().replace("-", "_")
     web = any(token in low for token in ("web", "fetch", "http", "browse"))
@@ -183,6 +209,7 @@ def _request(payload: dict[str, Any]) -> dict[str, Any]:
         "action": _action(name, args),
         "reason": reason,
         "args": args,
+        "resource": _resource_for(name, args),
         "headless": os.environ.get("HIVE_TOOL_HEADLESS", "").strip().lower()
         in ("1", "true", "yes"),
         "timeout_s": float(os.environ.get("HIVE_TOOL_HOOK_TIMEOUT", "600")),

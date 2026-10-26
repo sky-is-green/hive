@@ -343,6 +343,7 @@ class DshAgentService:
         self._hook_reason = "not initialized"
         self._hook_paths: dict[str, str] = {}
         self._hook_preflight_key: tuple[str, str] | None = None
+        self._hook_runtime_verified = False
 
     def _init_generation(self) -> None:
         """Seed the generation counter from durable session dirs so a fresh
@@ -453,8 +454,10 @@ class DshAgentService:
 
     @property
     def gateway_enforced(self) -> bool:
-        """True only after an external runtime has passed the hook preflight."""
-        return bool(self._hook_installed and self._hook_preflight_key)
+        """True only after a runtime has demonstrably loaded the hook."""
+        return bool(self._hook_installed
+                    and (self._hook_preflight_key
+                         or self._hook_runtime_verified))
 
     @property
     def hook_status(self) -> dict:
@@ -531,6 +534,7 @@ class DshAgentService:
                             "refusing the DSH agent: the approval hook did not "
                             f"load in the selected runtime ({exc})") from exc
                     self._hook_preflight_key = preflight_key
+            self._hook_runtime_verified = False
             self._harness = DeepSeekHarness(
                 provider="deepseek-official",
                 base_url=base_url,
@@ -550,8 +554,47 @@ class DshAgentService:
                 env=_runtime_env(session_root=str(self.session_root),
                                  cordis=cordis),
             )
+            if not dsh_bin and not self._hook_disabled:
+                self._verify_packaged_runtime()
             self._target = key
             return self._harness
+
+    def _verify_packaged_runtime(self) -> None:
+        """Start the bundled runtime once and reject an inactive hook.
+
+        The external-runtime path has ``preflight_runtime``.  A bundled
+        runtime has no separate executable path, so its stderr is the only
+        activation signal available before the first tool call.
+        """
+        starter = getattr(self._harness, "start", None)
+        if not callable(starter):
+            return
+        try:
+            starter()
+        except Exception as exc:  # noqa: BLE001 - refuse, don't hide
+            self._harness = None
+            raise RuntimeError(
+                f"refusing the DSH agent: the bundled runtime did not start "
+                f"({exc})") from exc
+        time.sleep(0.05)
+        client = getattr(self._harness, "client", None)
+        lines = getattr(client, "_stderr_lines", None)
+        if lines is None:
+            return
+        from harness.agent_hooks import runtime_hook_error
+
+        error = runtime_hook_error("\n".join(str(line) for line in list(lines)))
+        if not error:
+            self._hook_runtime_verified = True
+            return
+        try:
+            self._harness.close()
+        except Exception:  # noqa: BLE001 - preserve the original failure
+            pass
+        self._harness = None
+        raise RuntimeError(
+            f"refusing the DSH agent: the bundled runtime did not load the "
+            f"approval hook ({error})")
 
     def _runtime_cordis(self) -> Optional[str]:
         """The applied-stack profile path, refreshed before each runtime build.

@@ -109,8 +109,11 @@ The same path handles the older `settings.json` naming if found.
 | Serve record | `serve/*.json` | process lifetime | system |
 
 Session IDs are explicit. A session grant is keyed by
-`(session_id, tool_identity)` and never written to disk. A global grant is keyed
-by `tool_identity` and stored.
+`(session_id, tool_identity, resource)` and never written to disk. A global
+grant is keyed by `(tool_identity, resource)` and stored. `resource` is empty
+for ordinary tools and an exact origin such as
+`https://example.com:8443` for private web tools, so approving one private URL
+does not approve another.
 
 `tool_identity = source:name@version`. A version bump invalidates the grant.
 
@@ -149,6 +152,7 @@ hard policy. `open` only relaxes approvals and sandbox friction.
     {
       "tool_identity": "hive:bash@1.0.0",
       "scope": "global",
+      "resource": "",
       "display_name": "bash",
       "granted_at": "2026-10-25T21:00:00Z",
       "last_used_at": "2026-10-25T21:04:00Z",
@@ -164,7 +168,8 @@ Rules:
 - only `Always allow` reaches this file;
 - `Always allow` asks **global** or **session**; a session choice stays in
   memory;
-- the file is read on startup and grants are matched by exact identity;
+- the file is read on startup and grants are matched by exact identity and
+  resource (origin for private web tools);
 - revocation removes the row; future calls prompt again;
 - a corrupt file means **no grants**, not “allow all”;
 - the audit log records the grant/revoke event, not just the tool call.

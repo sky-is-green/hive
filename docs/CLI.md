@@ -355,10 +355,11 @@ Studio Global panel shows pending approvals. An external runtime selected with
 `HIVE_DSH_BIN=/path/to/dsh` is preflighted; its selected profile must provide
 `@deepseek-ai/dsh-hooks-claude-code` and its peer packages. If DSH cannot load
 the hook, the agent refuses to start. `DSH_HOME` selects the runtime home, and
-`/v1/agent/status` reports `gateway_enforced: true` only after that preflight.
-The live DSH 0.2.1-rc.2 test has passed; the source-built runtime rerun is
-still part of the release gate. See
-[the gateway document](TOOL-GATEWAY.md).
+`/v1/agent/status` reports `gateway_enforced: true` only after the runtime has
+demonstrably loaded the hook (external preflight, or the bundled runtime's
+start-up stderr check).
+The live hook test has passed against both the source-built DSH runtime and
+DSH 0.2.1-rc.2. See [the gateway document](TOOL-GATEWAY.md).
 
 ```bash
 hive sandbox status
