@@ -1708,6 +1708,8 @@ def cmd_sandbox_status(args: argparse.Namespace) -> int:
     termui.kv([
         ("docker", "installed" if info["installed"] else "missing"),
         ("daemon", "running" if info["daemon"] else info["detail"]),
+        ("host", info.get("host") or "-"),
+        ("rootless", "yes" if info.get("rootless") else "no"),
         ("image", info["policy"]["docker_image"]),
         ("pinned", "yes" if info["pinned"] else info["pin_error"] or "no"),
         ("network", info["policy"]["network"]),

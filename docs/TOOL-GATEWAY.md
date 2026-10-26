@@ -218,6 +218,11 @@ lives in `settings/sandbox.json` and is managed with `hive sandbox`:
 - output cap and timeout;
 - the sandbox result records `backend: docker` or `backend: local`.
 
+For separation from human Docker, run Hive as a dedicated `hive` user with its
+own rootless daemon and `DOCKER_HOST=unix:///run/user/<uid>/docker.sock`; see
+[Dedicated AI user](AI-USER.md). Never add that user to the system `docker`
+group or point it at `/var/run/docker.sock`.
+
 If Docker is missing or its daemon is down, `/v1/sandbox/exec` returns `409`
 with `requires_local_fallback_approval: true`. The caller must retry with
 `allow_local_fallback: true` **and** a `session_id`; that explicit approval is

@@ -169,6 +169,7 @@ operate the surface. A failed gate is not a release.
 - [Full CLI reference](../CLI.md)
 - [Secure fetch contract](../WEB-FETCH.md)
 - [Browser adapter](../BROWSER.md)
+- [Dedicated AI user and rootless Docker](../AI-USER.md)
 - [Studio API map](../../hivebench/API.md)
 - [README capabilities and API counts](../../hivebench/README.md)
 - [Release gate](../RELEASE-GATE.md)
