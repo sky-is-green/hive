@@ -309,7 +309,7 @@ backend directory only after verification.  `--force` is required to replace
 an existing install.  The custom ROCm/Scion builds still come from their
 scripts; `fetch` is the portable path a new user needs.
 
-## `hive ui` and `hive tools`
+## `hive ui`, `hive tools`, and `hive sandbox`
 
 The two working surfaces share the same state:
 
@@ -323,7 +323,9 @@ hive ui web --mock          # model-free Studio fixture
 
 `hive ui` never starts a second web server. `hive ui terminal` is the same
 dashboard as `hive tui`; the TUI's `w` key opens a **running** Studio in the
-browser and tells you to run `hive ui web` if it is not running. The web
+browser and tells you to run `hive ui web` if it is not running. Press `a` in
+the TUI to open pending tool approvals: `o` allows once, `s` allows the
+session, `g` allows always (global), `d` denies, and `r` refreshes. The web
 Studio's Global tab carries a copyable `hive ui terminal` command. The pros and
 cons of each surface are in the [interface chapter](book/01-working-modes.md).
 
@@ -349,8 +351,26 @@ grants are explicit and revocable, and arguments are hashed in the audit.
 `harness/agent_hooks.py` installs a DSH `PreToolUse` hook that blocks on a
 Hive approval decision; if it cannot install, agent turns are refused. Set
 `HIVE_DSH_HOOK=off` only for an explicitly unguarded development run. The
-Studio Global panel shows pending approvals; a live DSH runtime smoke test is
-still part of the release gate. See [the gateway document](TOOL-GATEWAY.md).
+Studio Global panel shows pending approvals. An external runtime selected with
+`HIVE_DSH_BIN=/path/to/dsh` is preflighted; its selected profile must provide
+`@deepseek-ai/dsh-hooks-claude-code` and its peer packages. If DSH cannot load
+the hook, the agent refuses to start. `DSH_HOME` selects the runtime home, and
+`/v1/agent/status` reports `gateway_enforced: true` only after that preflight.
+The live DSH 0.2.1-rc.2 test has passed; the source-built runtime rerun is
+still part of the release gate. See
+[the gateway document](TOOL-GATEWAY.md).
+
+```bash
+hive sandbox status
+hive sandbox policy --local-fallback approval
+hive sandbox pin                 # resolve and save the image digest
+hive sandbox pin --image hive-sandbox:1 --digest <64-hex>
+```
+
+`hive sandbox status` reports Docker, the pinned image, and the fallback rule.
+A Docker image tag without a digest is refused. If Docker is unavailable,
+`/v1/sandbox/exec` returns `409` until the caller retries with an explicit
+`allow_local_fallback` and a session id; every such host execution is audited.
 
 ## `hive profile`, `hive controller`, and `hive encoder`
 

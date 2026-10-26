@@ -308,10 +308,11 @@ deterministic features are written to the trace; the raw text is not stored.
 <div id="ctrl-note" class="note" style="margin-top:.35rem"></div>
 
 <h3>Tool policy &amp; grants</h3>
-<p class="note">The gateway core and PreToolUse hook bridge are implemented. The
-hook still needs a live DSH runtime smoke test before release; if the hook
-cannot be installed, agent turns are refused. These controls govern the
-gateway contract and its adapters.</p>
+<p class="note">The gateway core and PreToolUse hook bridge are implemented; the
+approve/deny path has passed against a live DSH runtime. Pending requests also
+appear in the TUI with <strong>a</strong> and in <code>hive tools pending</code>.
+If the hook cannot be installed or an external runtime preflight cannot load
+it, agent turns are refused.</p>
 <div class="row" style="flex-wrap:wrap;gap:.35rem .8rem;align-items:center">
   <label class="inline" title="Strict asks every side-effect call; Guarded is the default; Trusted keeps grants; Open removes prompts but not the hard guards.">tier
     <select id="sec-tier">

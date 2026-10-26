@@ -128,7 +128,7 @@ future E1 head privacy-preserving training data. E1 is not trained yet.
 
 ## 9. State, security and the tool gateway
 
-**Status: core complete; agent enforcement pending** · [State store](../STATE-STORE.md) · [Tool gateway](../TOOL-GATEWAY.md)
+**Status: core and DSH hook complete; MCP/browser adapters pending** · [State store](../STATE-STORE.md) · [Tool gateway](../TOOL-GATEWAY.md)
 
 State is split by scope: settings, grants, profiles, controller traces, audit
 and browser profiles. Studio settings now migrate from the legacy
@@ -137,12 +137,15 @@ grants live in their own files.
 
 The gateway core enforces reason checks, headless denial, session/global
 grants, private-network approval, pending decisions, timeouts and append-only
-audit. `hive tools status|policy|grants|pending|decide|revoke|audit` and the
-Studio Global panel expose the state. A DSH `PreToolUse` hook posts the
-concrete tool call to Hive, waits for the approval decision, and fails closed if
-the gateway is unreachable; if the hook cannot be installed, agent turns are
-refused. The hook path has been tested against a live Studio API. A live DSH
-runtime smoke test and MCP/browser adapters remain the release blockers.
+audit. `hive tools status|policy|grants|pending|decide|revoke|audit`, the TUI
+`a` overlay, and the Studio Global panel expose the state. A DSH `PreToolUse`
+hook posts the concrete tool call to Hive, waits for the approval decision, and
+fails closed if the gateway is unreachable; if the hook cannot be installed or
+an external runtime preflight cannot load it, agent turns are refused. The
+approve/deny path has passed against a live DSH runtime. The Docker sandbox
+uses a pinned image and an explicit, audited local-fallback approval.
+MCP/browser adapters and the source-built runtime rerun remain the release
+blockers.
 
 ## 10. Evidence, evaluation and release
 

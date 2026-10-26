@@ -481,6 +481,22 @@ def test_agent_runtime_rebuilds_on_model_change(agent_client):
     assert FakeHarness.instances[1].kwargs["model"] == "other-model"
 
 
+def test_agent_honors_an_explicit_dsh_home(agent_client, monkeypatch,
+                                            tmp_path):
+    c, app = agent_client
+    home = tmp_path / "explicit-dsh-home"
+    monkeypatch.setenv("DSH_HOME", str(home))
+    monkeypatch.setenv("HIVE_DSH_HOOK", "off")
+    app.state.agent._harness = None
+    app.state.agent._target = None
+    app.state.agent._generation_initialized = False
+    _configure_provider(c, "http://mock-llama")
+    with c.stream("POST", "/v1/agent/stream", json={
+        "message": "one", "conversation_id": "c-home"}) as r:
+        r.read()
+    assert FakeHarness.instances[-1].kwargs["dsh_home"] == str(home)
+
+
 def test_agent_sessions_map_to_conversation_ids(agent_client):
     c, _app = agent_client
     _configure_provider(c)

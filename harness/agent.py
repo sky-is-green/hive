@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import sys
 import threading
 import time
@@ -341,6 +342,7 @@ class DshAgentService:
         self._hook_disabled = False
         self._hook_reason = "not initialized"
         self._hook_paths: dict[str, str] = {}
+        self._hook_preflight_key: tuple[str, str] | None = None
 
     def _init_generation(self) -> None:
         """Seed the generation counter from durable session dirs so a fresh
@@ -450,9 +452,15 @@ class DshAgentService:
         return bool(self._hook_installed)
 
     @property
+    def gateway_enforced(self) -> bool:
+        """True only after an external runtime has passed the hook preflight."""
+        return bool(self._hook_installed and self._hook_preflight_key)
+
+    @property
     def hook_status(self) -> dict:
         return {"installed": self._hook_installed,
                 "disabled": self._hook_disabled,
+                "verified": self._hook_preflight_key is not None,
                 "reason": self._hook_reason, **self._hook_paths}
 
     def _ensure(self, base_url: str, api_key: str, model: str):
@@ -475,9 +483,10 @@ class DshAgentService:
             # the dev node carrier is opt-in by design; the sidecar always
             # wants it (Windows has no exe carrier)
             os.environ["DSH_RUNTIME_MODE"] = "node"
-            os.environ.setdefault("DSH_HOME",
-                                  str(REPO_ROOT / ".dsh-home"))
-            dsh_home = REPO_ROOT / ".dsh-home"
+            configured_home = os.environ.get("DSH_HOME", "").strip()
+            dsh_home = (Path(configured_home).expanduser()
+                        if configured_home else REPO_ROOT / ".dsh-home")
+            os.environ.setdefault("DSH_HOME", str(dsh_home))
             dsh_home.mkdir(parents=True, exist_ok=True)
             self.session_root.mkdir(parents=True, exist_ok=True)
             self._hook_disabled = os.environ.get(
@@ -505,11 +514,32 @@ class DshAgentService:
                     "refusing the DSH agent: the PreToolUse approval hook is "
                     f"not installed ({self._hook_reason}); set HIVE_DSH_HOOK=off "
                     "only for an explicitly unguarded development run")
+            dsh_bin = (os.environ.get("HIVE_DSH_BIN")
+                       or shutil.which("dsh"))
+            if dsh_bin and not self._hook_disabled:
+                preflight_key = (
+                    str(Path(dsh_bin).expanduser().resolve()),
+                    str(dsh_home.expanduser().resolve()))
+                if self._hook_preflight_key != preflight_key:
+                    try:
+                        from harness.agent_hooks import preflight_runtime
+
+                        preflight_runtime(dsh_bin, dsh_home,
+                                          self.default_cwd)
+                    except Exception as exc:  # noqa: BLE001 - refuse, don't hide
+                        raise RuntimeError(
+                            "refusing the DSH agent: the approval hook did not "
+                            f"load in the selected runtime ({exc})") from exc
+                    self._hook_preflight_key = preflight_key
             self._harness = DeepSeekHarness(
                 provider="deepseek-official",
                 base_url=base_url,
                 api_key=api_key or "lm-studio",
                 model=model,
+                # A packaged Hive ships the runtime wheel; a development box
+                # can point at an installed dsh (the npm package or a source
+                # checkout) without changing the agent service.
+                dsh_bin=dsh_bin,
                 cwd=str(self.default_cwd),
                 # the profile owns the runtime composition, the persistence
                 # and the tools; the home is explicit (the SDK never guesses

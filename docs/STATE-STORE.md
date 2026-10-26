@@ -176,16 +176,23 @@ Rules:
   "schema_version": 1,
   "mode": "docker",
   "docker_image": "hive-sandbox:1",
+  "image_digest": "<64 hex characters>",
   "network": "none",
+  "memory": "512m",
+  "cpus": "1",
+  "pids_limit": 128,
+  "timeout_s": 60,
   "local_fallback": "approval",
-  "fallback_session": null,
   "updated_at": "2026-10-25T21:00:00Z"
 }
 ```
 
-`local_fallback: approval` means the UI must ask once for the session before a
-local subprocess is used. Docker availability is **probed live**, never stored
-as truth. When Docker disappears mid-session, the next call re-enters approval.
+`local_fallback: approval` means `/v1/sandbox/exec` refuses a host subprocess
+until the caller retries with `allow_local_fallback: true` and a `session_id`;
+the approval is written to the tool audit as `sandbox.local_fallback`. Docker
+availability is **probed live**, never stored as truth. An unpinned image is a
+sandbox failure, not a host fallback. `hive sandbox pin` resolves and stores the
+digest.
 
 ## Browser grants
 
@@ -358,7 +365,7 @@ raw audit payloads by default.
 1. `JsonStore`/`StatePaths` with locks, atomic writes, schema and quarantine.
 2. Migrate `studio_settings.json`; add `security.json` and `tool-grants.json`.
 3. Wire the tool gateway to this store and the audit log.
-4. Add `sandbox.json` and Docker/local-fallback approvals.
+4. `sandbox.json` and Docker/local-fallback approvals. **Done.**
 5. Add hardware profile/recommendation storage.
 6. Add browser grants and profile isolation.
 7. Add CLI/API state commands and export/import.

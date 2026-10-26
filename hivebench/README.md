@@ -248,14 +248,27 @@ FastAPI API; the endpoint contract lives in `harness/app.py`, and the
 
 ## Sandbox (optional, Docker-backed)
 
-The Studio ships a `/v1/sandbox/exec` endpoint: run a command in an isolated
-container when the Docker daemon is up (network disabled, 512 MiB / 1 CPU,
-hard timeout), and fall back to a local subprocess otherwise. It backs the
-cascade's `code_exec` detector and gives the agent a safe execution surface.
-Check availability with `GET /v1/sandbox/status`.
+`/v1/sandbox/exec` runs a command in a pinned Docker image when the daemon is
+up: network disabled, memory/CPU/PID limits, `--cap-drop ALL`, and
+`no-new-privileges`. It backs the cascade's `code_exec` detector and gives the
+agent a safe execution surface. Check the live state with
+`GET /v1/sandbox/status`, or from the terminal:
 
-```powershell
-curl -X POST http://127.0.0.1:8765/v1/sandbox/exec -H "Content-Type: application/json" -d '{"command":"python -c \"print(42)\"", "timeout":10}'
+```bash
+hive sandbox status
+hive sandbox pin                 # resolve and save the image sha256
+hive sandbox policy --local-fallback approval
+```
+
+A tag without a digest is refused. If Docker is unavailable, the endpoint
+returns `409`; a caller may retry with `allow_local_fallback: true` and a
+`session_id`, which records an explicit host-fallback approval in the audit.
+`hive sandbox policy --local-fallback deny` forbids the host path entirely.
+
+```bash
+curl -X POST http://127.0.0.1:8765/v1/sandbox/exec \
+  -H "Content-Type: application/json" \
+  -d '{"command":"python -c \"print(42)\"", "timeout":10, "session_id":"demo"}'
 ```
 
 ## Hive Cascade (core feature)
@@ -313,7 +326,8 @@ a single hive theme (yellow/black) across every page.
 
 - **Two front doors** — `hive ui terminal` opens the low-overhead dashboard;
   `hive ui web` opens the full Studio. The TUI's `w` key opens a running Studio,
-  and the Studio's Global tab copies the terminal command back. See
+  and `a` opens the pending-approval overlay. The Studio's Global tab copies
+  the terminal command back. See
   [Working modes](../docs/book/01-working-modes.md).
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
@@ -368,8 +382,9 @@ a single hive theme (yellow/black) across every page.
   reference) instead of re-typing launch settings each time.
 - **Provider references** — engine profiles point at a provider by name; raw
   credentials live in exactly one place.
-- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution (network off,
-  512 MiB / 1 CPU, hard timeout) with a local-subprocess fallback.
+- **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution (pinned
+  image, network off, resource limits, hard timeout); the host fallback
+  requires an explicit approval and is audited.
 - **Escalation lane** — every ladder-resolved item is harvested to
   `escalation.jsonl` next to the report: task, draft, findings, repair, and the
   resolution. Training-side only; the runtime never reads it.
