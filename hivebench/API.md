@@ -8,7 +8,7 @@ hand-maintained map; the live docs carry the request/response schemas.
 
 The map is checked against the running app: `tests/unit/test_api_docs.py`
 fails if an endpoint is missing from it, if it documents an endpoint that
-no longer exists, or if a method is wrong. **120 paths, 130 operations** (111
+no longer exists, or if a method is wrong. **122 paths, 132 operations** (113
 of the paths under `/v1/`).
 
 ```sh
@@ -160,6 +160,19 @@ explicit gates.
 | `POST` | `/v1/web/grant` | Grant public/private access to one origin. — body: `#/components/schemas/WebGrantRequest` |
 | `POST` | `/v1/web/revoke` | Revoke one origin or all grants. — body: `#/components/schemas/WebRevokeRequest` |
 | `POST` | `/v1/web/policy` | Change fetch limits and the download/upload gates. — body: `#/components/schemas/WebPolicyRequest` |
+
+### Browser — optional Chromium over a validating proxy
+
+A fresh Chromium context per call, no persistent cookies/profile, service
+workers blocked, and all HTTP(S) traffic forced through a local validating
+proxy. The proxy checks every request and HTTPS CONNECT, including redirects,
+before opening a socket. Requires the optional `browser` extra and
+`python -m playwright install chromium`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/browser/browse` | Open one URL in a fresh browser context; returns title, text, and optional screenshot. — body: `#/components/schemas/BrowserBrowseRequest` |
+| `GET` | `/v1/browser/status` | Whether Playwright can resolve a Chromium binary. |
 
 ### Controller — hardware profile and E0 settings proposal
 

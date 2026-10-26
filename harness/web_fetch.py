@@ -285,7 +285,7 @@ def _safe_headers(raw: Mapping[str, Any] | None) -> dict[str, str]:
     return headers
 
 
-def _authorize(info, *, session_id: str | None, allow_private: bool,
+def authorize_origin(info, *, session_id: str | None, allow_private: bool,
                grants: BrowserGrantStore, policy: WebFetchPolicy,
                hop: int) -> None:
     data = policy.read()
@@ -470,7 +470,7 @@ def fetch(url: str, *, method: str = "GET", body: Any = None,
             info = classify_url(current)
         except UrlError as exc:
             raise WebFetchError(str(exc), code="bad_url") from exc
-        _authorize(info, session_id=session, allow_private=allow_private,
+        authorize_origin(info, session_id=session, allow_private=allow_private,
                    grants=grants, policy=policy, hop=hop)
         status, response_headers, payload = _request(
             info, current_method, current_body, request_headers,

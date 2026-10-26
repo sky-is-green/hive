@@ -68,11 +68,11 @@ The API equivalents are `/v1/web/fetch`, `/v1/web/status`,
 ## Residual limits
 
 - DNS rebinding between classification and the actual socket connection is a
-  residual risk. The fetcher does not pin the resolved address; a future
-  browser/proxy adapter should use a connection-time guard.
+  residual risk in secure fetch: it does not pin the resolved address. The
+  optional browser adapter's proxy does pin the validated address.
 - It does not render JavaScript, run a browser engine, store cookies, or
-  support browser downloads/uploads from a page. Those remain full browser
-  adapter work.
+  support page-level downloads/uploads. Use the optional
+  [browser adapter](BROWSER.md) when JavaScript or page rendering is required.
 - It is not a substitute for the DSH `PreToolUse` approval hook. The hook gates
   the agent's tools; secure fetch is a separate network primitive and API.
 - A TLS error is reported as a transport failure; the fetcher does not offer a

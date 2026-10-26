@@ -1915,6 +1915,50 @@ def cmd_web_policy(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_browser_status(args: argparse.Namespace) -> int:
+    from harness import browser_adapter
+
+    body = browser_adapter.status()
+    if args.as_json:
+        _json(body)
+        return 0
+    termui.header("browser")
+    if body.get("available"):
+        termui.kv([("backend", body.get("browser", "chromium")),
+                   ("executable", body.get("executable", "-"))])
+    else:
+        termui.kv([("available", "no"), ("reason", body.get("reason") or "?")])
+        print(f"  install: {body.get('install')}")
+    return 0
+
+
+def cmd_browser_browse(args: argparse.Namespace) -> int:
+    from harness import browser_adapter
+    from harness.web_fetch import WebFetchError
+
+    try:
+        body = browser_adapter.browse(
+            args.url, session_id=args.session, allow_private=args.allow_private,
+            screenshot_name=args.screenshot, wait_until=args.wait_until,
+            timeout_s=args.timeout, max_text=args.max_text,
+            state=_state_paths(args))
+    except WebFetchError as exc:
+        print(f"hive browser browse: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        _json(body)
+        return 0
+    termui.header("browser", body["url"])
+    termui.kv([("title", body["title"] or "-"),
+               ("bytes", len(body["text"]))])
+    if body.get("screenshot"):
+        termui.kv([("screenshot", body["screenshot"]["path"])])
+    if body["text"]:
+        print()
+        print(body["text"])
+    return 0
+
+
 def cmd_version(args: argparse.Namespace) -> int:
     payload = {"hive": _version(), "python": platform.python_version(),
                "platform": f"{platform.system()} {platform.machine()}"}
@@ -2759,6 +2803,42 @@ def build_parser() -> argparse.ArgumentParser:
     wpolicy.add_argument("--json", action="store_true", dest="as_json",
                          help="machine-readable JSON on stdout")
     wpolicy.set_defaults(func=cmd_web_policy)
+
+    browser = sub.add_parser(
+        "browser", help="optional Playwright browser over a validating proxy",
+        description="Open a page in a fresh Chromium context. Every HTTP "
+                    "request and HTTPS CONNECT is checked by the local proxy, "
+                    "including redirects. Requires the optional browser extra.")
+    browser_sub = browser.add_subparsers(
+        dest="browser_command", metavar="<action>", required=True)
+    bstatus = browser_sub.add_parser(
+        "status", help="check the optional browser dependency",
+        description="Report whether Playwright can resolve a Chromium binary.")
+    bstatus.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    bstatus.set_defaults(func=cmd_browser_status)
+    bbrowse = browser_sub.add_parser(
+        "browse", help="open one URL in a fresh browser context",
+        description="Open a page through the validating proxy. Private "
+                    "origins need a grant or --allow-private with --session.")
+    bbrowse.add_argument("url", help="http(s) URL to open")
+    bbrowse.add_argument("--session", default=None,
+                         help="session id for a private-origin approval")
+    bbrowse.add_argument("--allow-private", action="store_true",
+                         help="approve the original private origin")
+    bbrowse.add_argument("--screenshot", default=None, metavar="NAME",
+                         help="save a screenshot under browser/screenshots")
+    bbrowse.add_argument("--wait-until", default="domcontentloaded",
+                         choices=("domcontentloaded", "load", "networkidle"),
+                         help="navigation readiness event")
+    bbrowse.add_argument("--timeout", type=int, default=30,
+                         help="navigation timeout in seconds")
+    bbrowse.add_argument("--max-text", type=int, default=20000,
+                         help="maximum body text characters returned")
+    _add_state_dir(bbrowse)
+    bbrowse.add_argument("--json", action="store_true", dest="as_json",
+                         help="machine-readable JSON on stdout")
+    bbrowse.set_defaults(func=cmd_browser_browse)
 
     version = sub.add_parser(
         "version", help="print the Hive version",
