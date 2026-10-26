@@ -37,11 +37,21 @@ user after installation, so the agent cannot rewrite its own harness code.
 
 ## Prepare the account
 
-Run the setup script with sudo:
+Run the setup script from the repository root with sudo:
 
 ```bash
-sudo scripts/setup-hive-account.sh --dry-run   # inspect the plan
-sudo scripts/setup-hive-account.sh
+cd /path/to/hivebench
+sudo ./scripts/setup-hive-account.sh --dry-run   # inspect the plan
+sudo ./scripts/setup-hive-account.sh
+```
+
+If `sudo` says `command not found`, you are not in the repository root or
+you are on a branch without the script. Use the absolute path instead:
+
+```bash
+sudo /absolute/path/hivebench/scripts/setup-hive-account.sh --dry-run
+# or, if the checkout is mounted noexec:
+sudo bash /absolute/path/hivebench/scripts/setup-hive-account.sh --dry-run
 ```
 
 It creates/updates the existing `hive` account, `/srv/hive`, subuid/subgid
@@ -111,7 +121,7 @@ After the account and rootless daemon are up, run the destructive sentinel test
 as root:
 
 ```bash
-sudo scripts/test-blast-radius.sh --yes
+sudo ./scripts/test-blast-radius.sh --yes
 ```
 
 It creates disposable files in the human home, the read-only app tree, the AI
@@ -156,11 +166,47 @@ If a human downloads models, copy them into `/srv/hive/models/gguf` with
 explicit ownership. Do not make `/srv/hive/state` or `/srv/hive/dsh` human
 group-writable; those contain grants, audit, and session state.
 
+## Kernel boundary
+
+Rootless Docker and the `hive` user bound **application** damage: a destructive
+command can only remove files the AI user can write, and cannot touch the
+human home, the read-only app tree, the host `/tmp`, or the human Docker
+socket. They do **not** protect against a host-kernel exploit: the AI’s
+containers and the Hive process still share the host kernel.
+
+Without a dedicated VM, the realistic options are:
+
+1. **Separate physical host.** Strongest hard boundary without virtualization;
+   the AI simply has no path to the human machine.
+2. **gVisor (`runsc`).** A user-space application kernel intercepts container
+   syscalls and reduces host-kernel attack surface. It is not a formal
+   guarantee and rootless/GPU compatibility must be tested, but it is much
+   stronger than plain `runc`.
+3. **Kata Containers / Firecracker.** Per-workload microVMs. They are
+   virtualization, but not a dedicated full VM host; they give a separate
+   kernel per workload.
+4. **Host hardening without a VM.** Seccomp, LSM/AppArmor, patched/minimal
+   kernel, no unneeded modules, and the systemd restrictions above reduce the
+   attack surface. They do not eliminate a kernel bug.
+
+Hive can select a Docker runtime without code changes:
+
+```bash
+hive sandbox policy --runtime runsc        # gVisor
+hive sandbox policy --runtime kata-runtime # Kata
+hive sandbox status                        # shows the selected runtime
+```
+
+The runtime must be installed and registered with the AI user’s Docker daemon;
+`runsc` and Kata are not installed by this repository. The default empty value
+uses the daemon’s default (`runc`).
+
+For a truly adversarial AI, treat the Hive host as expendable and put it on a
+separate physical machine or a microVM. The app/user split is a large
+improvement, not a proof against kernel exploits.
+
 ## Security notes
 
-- Rootless Docker uses user namespaces and shares the host kernel. It is a
-  strong separation from the human Docker daemon, but it is not a VM. For
-  hostile code, use a dedicated VM/microVM or separate machine.
 - The AI user’s home and state are not a secret store. Do not put human SSH
   keys, browser profiles, or cloud credentials there.
 - The Studio binds localhost. If you expose it beyond localhost, set

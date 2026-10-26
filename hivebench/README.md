@@ -20,7 +20,7 @@ The evaluation suite + the Studio sidecar for the
 Studio serves **135 REST operations** across 125 paths (126 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1627 tests pass, 5 skipped**, verified Oct 26); the live
+The suite is green (**1628 tests pass, 5 skipped**, verified Oct 26); the live
 batteries and the Studio are under active development.
 
 ---
@@ -386,8 +386,8 @@ a single hive theme (yellow/black) across every page.
 - **Provider references** — engine profiles point at a provider by name; raw
   credentials live in exactly one place.
 - **Sandbox** (`/v1/sandbox/exec`) — Docker-backed code execution (pinned
-  image, network off, resource limits, hard timeout); the host fallback
-  requires an explicit approval and is audited.
+  image, network off, resource limits, hard timeout, optional `runsc`/Kata
+  runtime); the host fallback requires an explicit approval and is audited.
 - **Secure fetch** (`/v1/web/fetch`, `hive web`) — stateless HTTP(S) with
   per-hop SSRF checks, exact-origin private grants, size/type limits, and
   explicit download/upload gates. Not a JavaScript browser.

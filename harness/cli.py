@@ -1712,6 +1712,7 @@ def cmd_sandbox_status(args: argparse.Namespace) -> int:
         ("rootless", "yes" if info.get("rootless") else "no"),
         ("image", info["policy"]["docker_image"]),
         ("pinned", "yes" if info["pinned"] else info["pin_error"] or "no"),
+        ("runtime", info["policy"].get("runtime") or "daemon default"),
         ("network", info["policy"]["network"]),
         ("fallback", info["policy"]["local_fallback"]),
     ])
@@ -1727,6 +1728,7 @@ def cmd_sandbox_policy(args: argparse.Namespace) -> int:
     fields = {
         "docker_image": args.image,
         "image_digest": args.digest,
+        "runtime": args.runtime,
         "local_fallback": args.local_fallback,
         "network": args.network,
         "memory": args.memory,
@@ -1745,8 +1747,9 @@ def cmd_sandbox_policy(args: argparse.Namespace) -> int:
     else:
         termui.header("sandbox policy")
         termui.kv([(key, data.get(key)) for key in (
-            "docker_image", "image_digest", "network", "memory", "cpus",
-            "pids_limit", "timeout_s", "local_fallback", "updated_at")])
+            "docker_image", "image_digest", "runtime", "network", "memory",
+            "cpus", "pids_limit", "timeout_s", "local_fallback",
+            "updated_at")])
     return 0
 
 
@@ -2657,6 +2660,9 @@ def build_parser() -> argparse.ArgumentParser:
     spolicy.add_argument("--image", default=None, help="container image name")
     spolicy.add_argument("--digest", default=None,
                          help="sha256 digest (64 hex characters)")
+    spolicy.add_argument("--runtime", default=None,
+                         help="Docker runtime, e.g. runsc for gVisor or "
+                              "kata-runtime for Kata")
     spolicy.add_argument("--local-fallback", default=None,
                          choices=("approval", "allow", "deny"),
                          help="host fallback rule")

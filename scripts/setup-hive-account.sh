@@ -17,7 +17,7 @@ WITH_VENV=1
 
 usage() {
   cat <<'EOF'
-Usage: sudo scripts/setup-hive-account.sh [--dry-run] [--no-venv] [REPO]
+Usage: sudo ./scripts/setup-hive-account.sh [--dry-run] [--no-venv] [REPO]
 
 Creates/updates the dedicated Hive user and /srv/hive layout, copies the
 tracked application tree, and installs the optional Studio environment.

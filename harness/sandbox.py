@@ -25,6 +25,9 @@ DEFAULT_POLICY: dict[str, Any] = {
     "docker_image": "hive-sandbox:1",
     "image_digest": "",
     "network": "none",
+    # Empty uses the Docker daemon default (runc). Set runsc for gVisor or
+    # kata-runtime for Kata Containers when the daemon has that runtime.
+    "runtime": "",
     "memory": "512m",
     "cpus": "1",
     "pids_limit": 128,
@@ -36,6 +39,7 @@ FALLBACK_MODES = ("approval", "allow", "deny")
 _NETWORKS = ("none", "bridge")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,180}$")
+_RUNTIME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$")
 
 
 class SandboxError(RuntimeError):
@@ -71,6 +75,10 @@ class SandboxPolicy:
         if data.get("network") not in _NETWORKS:
             raise SandboxError(
                 f"network must be one of {', '.join(_NETWORKS)}")
+        runtime = str(data.get("runtime") or "").strip()
+        if runtime and not _RUNTIME.match(runtime):
+            raise SandboxError("runtime must be a Docker runtime name")
+        data["runtime"] = runtime
         image = str(data.get("docker_image") or "").strip()
         if not _IMAGE.match(image):
             raise SandboxError(f"invalid sandbox image {image!r}")
