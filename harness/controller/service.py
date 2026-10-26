@@ -7,6 +7,7 @@ Studio, and it records every proposal/apply/revert in the settings audit log.
 
 from __future__ import annotations
 
+import json
 import math
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +40,12 @@ SettingsLoader = Callable[[Path | None], dict[str, Any]]
 SettingsSaver = Callable[[dict[str, Any], Path | None], dict[str, Any]]
 SettingsRemover = Callable[[dict[str, list[str]], Path | None], dict[str, Any]]
 EncoderFactory = Callable[[], TextEncoder]
+
+
+E1_MIN_LABELLED = 200
+E1_MIN_FEATURED = 100
+_POSITIVE_OUTCOMES = frozenset({"accepted", "applied"})
+_NEGATIVE_OUTCOMES = frozenset({"rejected", "reverted", "wrong", "abandoned"})
 
 
 class ControllerError(RuntimeError):
@@ -205,6 +212,72 @@ class ControllerService:
         self._trace("controller.outcome", proposal_id=proposal_id,
                     outcome=outcome, metrics=dict(metrics or {}))
 
+    def trace_summary(self) -> dict[str, Any]:
+        """Count the privacy-preserving traces and report E1 readiness.
+
+        The head is not trained here.  This is the gate that stops a training
+        run from treating an empty or unlabeled trace file as a dataset.
+        """
+        path = self.state.controller_trace_file()
+        events: dict[str, int] = {}
+        proposals: dict[str, dict[str, Any]] = {}
+        outcomes: dict[str, int] = {}
+        latest: dict[str, str] = {}
+        bad_lines = 0
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                try:
+                    row = json.loads(line)
+                except (TypeError, ValueError):
+                    bad_lines += 1
+                    continue
+                if not isinstance(row, dict):
+                    bad_lines += 1
+                    continue
+                event = str(row.get("event") or "")
+                events[event] = events.get(event, 0) + 1
+                proposal_id = str(row.get("proposal_id") or "")
+                if event == "controller.proposal" and proposal_id:
+                    proposals[proposal_id] = row
+                elif event == "controller.outcome" and proposal_id:
+                    outcome = str(row.get("outcome") or "")
+                    outcomes[outcome] = outcomes.get(outcome, 0) + 1
+                    latest[proposal_id] = outcome
+        labelled_ids = [pid for pid in proposals
+                        if latest.get(pid) in (_POSITIVE_OUTCOMES
+                                               | _NEGATIVE_OUTCOMES)]
+        featured_ids = [pid for pid in labelled_ids
+                        if proposals[pid].get("request_features")]
+        positive = sum(1 for pid in labelled_ids
+                       if latest.get(pid) in _POSITIVE_OUTCOMES)
+        negative = len(labelled_ids) - positive
+        missing: list[str] = []
+        if len(labelled_ids) < E1_MIN_LABELLED:
+            missing.append(
+                f"{E1_MIN_LABELLED - len(labelled_ids)} more labelled proposals")
+        if len(featured_ids) < E1_MIN_FEATURED:
+            missing.append(
+                f"{E1_MIN_FEATURED - len(featured_ids)} more featured labelled "
+                "proposals")
+        return {
+            "trace_file": str(path),
+            "events": events,
+            "proposals": len(proposals),
+            "outcomes": outcomes,
+            "labelled": len(labelled_ids),
+            "positive": positive,
+            "negative": negative,
+            "with_features": len(featured_ids),
+            "with_embedding": sum(
+                1 for row in proposals.values()
+                if row.get("request_embedding")),
+            "target_labelled": E1_MIN_LABELLED,
+            "target_featured": E1_MIN_FEATURED,
+            "ready": not missing,
+            "missing": missing,
+            "bad_lines": bad_lines,
+        }
+
     def status(self) -> dict[str, Any]:
         profile = self.profiler.latest()
         proposals: list[dict[str, Any]] = []
@@ -237,6 +310,7 @@ class ControllerService:
             "latest_proposal": latest,
             "controller": controller,
             "encoder": encoder,
+            "trace_summary": self.trace_summary(),
         }
 
     def propose(

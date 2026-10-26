@@ -449,6 +449,12 @@ The controller encoder has its own lifecycle settings in the `encoder` block:
 300, floor 0.1). The lazy model is dropped after that idle window; the next
 request reloads it. `hive controller status` shows whether it is loaded.
 
+`controller status` also reports **trace labels** and **E1 ready**. The
+readiness gate requires 200 labelled proposals with at least 100 carrying
+request features; it never trains a head or treats an empty trace file as a
+dataset. `controller outcome` is how a human or evaluation supplies the label.
+Raw request text is still never written.
+
 ## `hive doctor`
 
 ```bash
