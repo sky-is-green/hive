@@ -110,6 +110,8 @@ def approval_lines(row: dict[str, Any], width: int = 78) -> list[str]:
     add("session", row.get("session_id"))
     add("tool", row.get("tool_identity"))
     add("action", row.get("action"))
+    if row.get("resource"):
+        add("resource", row.get("resource"))
     add("why", row.get("reason"))
     add("risk", f"{row.get('risk') or '?'} risk · "
                f"{row.get('network') or '?'} network · "

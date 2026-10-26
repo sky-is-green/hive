@@ -141,12 +141,14 @@ audit. `hive tools status|policy|grants|pending|decide|revoke|audit`, the TUI
 `a` overlay, and the Studio Global panel expose the state. A DSH `PreToolUse`
 hook posts the concrete tool call to Hive, waits for the approval decision, and
 fails closed if the gateway is unreachable; if the hook cannot be installed or
-an external runtime preflight cannot load it, agent turns are refused. The
-approve/deny path has passed against a live DSH runtime. The Docker sandbox
-uses a pinned image and an explicit, audited local-fallback approval. DSH web
-tools classify loopback, private, metadata and DNS-private destinations as
-private; a read-only private fetch still needs approval. MCP/full browser
-adapters and the source-built runtime rerun remain the release blockers.
+the selected runtime cannot load it (external preflight or bundled start-up
+check), agent turns are refused. The
+approve/deny path has passed against both the source-built and published DSH
+runtimes. The Docker sandbox uses a pinned image and an explicit, audited
+local-fallback approval. DSH web tools classify loopback, private, metadata and
+DNS-private destinations as private; a read-only private fetch still needs
+approval and grants are scoped to the exact origin. Full browser adapters and
+MCP remain the release blockers.
 
 ## 10. Evidence, evaluation and release
 

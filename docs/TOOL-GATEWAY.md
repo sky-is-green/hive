@@ -2,8 +2,9 @@
 
 **Status:** policy/grant/audit core, DSH PreToolUse hook, terminal/web approval
 surfaces, pinned Docker sandbox policy, and private-origin classification for
-DSH web tools implemented; full browser adapters, MCP, and the source-runtime
-release rerun pending, 2026-10-26.
+DSH web tools implemented; full browser adapters and MCP pending, 2026-10-26.
+The hook passes end-to-end against both the source-built and published DSH
+runtimes.
 
 This is the contract for every tool the agent can call: DSH-native tools, MCP
 tools, Hive tools, and browser adapters. It is a **gateway**, not a UI prompt:
@@ -20,9 +21,9 @@ refuses to start unless `HIVE_DSH_HOOK=off` is set for an explicitly
 unguarded development run. When an external runtime is selected with
 `HIVE_DSH_BIN`, Hive boots it once before the first turn and refuses the agent
 if DSH reports that the hook failed to import or activate. The hook path has
-been exercised end-to-end against DSH 0.2.1-rc.2 (approve ran a workspace
-write; deny left the workspace untouched). The source-built product runtime
-still needs the same run in the release gate.
+been exercised end-to-end against both source-built DSH 0.1.2-alpha.1 and
+published DSH 0.2.1-rc.2: approve ran the tool and deny blocked it with the
+hook's exit-2 reason.
 
 ## Layers
 
@@ -167,7 +168,10 @@ These remain in every tier, including Open:
 - **Browser isolation.** The bundled browser uses a fresh profile by default;
   user cookies/passwords are not imported silently.
 - **Private network gate.** Public web may be allowed; localhost, RFC1918,
-  link-local and `.local` origins require an explicit grant even in Open.
+  link-local and `.local` origins require an explicit grant even in Open. Web
+  tool grants are scoped to the exact origin, so approving one private URL does
+  not approve another; a private tool with no visible origin falls back to the
+  `private` resource key.
 - **No silent fallback.** If Docker is unavailable, the UI must show that the
   sandbox is local and ask for session approval. It must never just “work.”
 - **No silent download/upload.** Browser/file download and upload paths need an
@@ -311,26 +315,27 @@ Implemented:
 - `hive tools status|policy|grants|pending|decide|revoke|audit`;
 - the DSH `PreToolUse` hook bridge, the Studio pending cards, the TUI `a`
   overlay, and the CLI `pending` / `decide` commands;
-- a live DSH 0.2.1-rc.2 hook test: approve ran the tool, deny blocked it;
+- live hook tests against source-built DSH 0.1.2-alpha.1 and published DSH
+  0.2.1-rc.2: approve ran the tool, deny blocked it;
 - a pinned-image Docker sandbox policy with explicit local-fallback approval
   (`hive sandbox status|policy|pin`);
-- private-origin classification for DSH web tools: literal private/loopback/
-  metadata hosts, private suffixes, and DNS answers that resolve private are
-  `network=private`; a read-only private fetch still needs approval, including
-  in the Open tier;
+- private-origin classification and exact-origin grants for DSH web tools:
+  literal private/loopback/metadata hosts, private suffixes, and DNS answers
+  that resolve private are `network=private`; a read-only private fetch still
+  needs approval, including in the Open tier;
 - unit tests for the above.
 
 Still required before this is a release-complete agent security boundary:
 
-- the same live hook test against the source-built product runtime that ships
-  with Hive, and a real Docker-daemon execution run (the policy and tests are
-  implemented, but this host has no daemon);
+- a real Docker-daemon execution run (the policy and mocked tests are
+  implemented, but this host has no daemon and no passwordless root);
 - MCP metadata registration and subagent inheritance;
 - full browser adapters (visible/headless automation, redirect-time origin
   checks, download/upload destination gates); the DSH web-tool SSRF gate above
-  is not a browser sandbox;
-- a packaged-runtime check that the hook plugin is present, not only the
-  external-runtime preflight.
+  is not a browser sandbox.
+
+Bundled-runtime verification is implemented as a start-up stderr check, in
+addition to the external-runtime preflight.
 
 ## Implementation order
 

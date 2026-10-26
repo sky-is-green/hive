@@ -4867,6 +4867,7 @@ def create_app(
                 reason=str(body.get("reason") or ""),
                 args=(body.get("args") if isinstance(body.get("args"), dict)
                       else {}),
+                resource=str(body.get("resource") or ""),
                 turn_id=body.get("turn_id"),
                 timeout_s=float(body.get("timeout_s") or 600),
             )

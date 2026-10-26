@@ -361,6 +361,7 @@ function renderGrants(rows) {
   for (const row of rows) {
     const line = document.createElement('div');
     line.textContent = (row.tool_identity || '?') + ' · ' + (row.scope || '?')
+      + (row.resource ? ' · ' + row.resource : '')
       + (row.session_id ? ' · ' + row.session_id : '');
     box.appendChild(line);
   }
@@ -400,6 +401,12 @@ function renderPending(rows) {
     action.className = 'note';
     action.textContent = row.action || '';
     card.appendChild(action);
+    if (row.resource) {
+      const resource = document.createElement('div');
+      resource.className = 'note';
+      resource.textContent = 'resource: ' + row.resource;
+      card.appendChild(resource);
+    }
     const why = document.createElement('div');
     why.className = 'note';
     why.textContent = 'why: ' + (row.reason || '(missing)');

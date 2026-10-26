@@ -183,6 +183,7 @@ class ToolRequest:
     action: str
     reason: str = ""
     args: Mapping[str, Any] = field(default_factory=dict)
+    resource: str = ""
     turn_id: str | None = None
     timeout_s: float = APPROVAL_TTL_S
 
@@ -192,6 +193,8 @@ class ToolRequest:
         object.__setattr__(self, "action", str(self.action or "")[:4096])
         object.__setattr__(self, "reason", str(self.reason or "")[:4096])
         object.__setattr__(self, "args", dict(self.args or {}))
+        object.__setattr__(self, "resource",
+                           str(self.resource or "").strip()[:240])
         object.__setattr__(self, "timeout_s",
                            max(1.0, min(3600.0, float(self.timeout_s))))
 
@@ -252,31 +255,37 @@ class SessionGrants:
     """In-memory grants; they disappear with the process/session."""
 
     def __init__(self) -> None:
-        self._grants: dict[tuple[str, str], dict[str, Any]] = {}
+        self._grants: dict[tuple[str, str, str], dict[str, Any]] = {}
 
     def grant(self, session_id: str, identity: str, *,
-              reason: str = "") -> dict[str, Any]:
+              reason: str = "", resource: str = "") -> dict[str, Any]:
+        resource = str(resource or "").strip()[:240]
         row = {
             "tool_identity": identity, "scope": "session",
-            "session_id": session_id, "granted_at": _utc(),
-            "last_used_at": None, "expires_at": None, "reason": reason,
+            "session_id": session_id, "resource": resource,
+            "granted_at": _utc(), "last_used_at": None, "expires_at": None,
+            "reason": reason,
         }
-        self._grants[(session_id, identity)] = row
+        self._grants[(session_id, identity, resource)] = row
         return dict(row)
 
-    def has(self, session_id: str, identity: str) -> bool:
-        return (session_id, identity) in self._grants
+    def has(self, session_id: str, identity: str,
+            resource: str = "") -> bool:
+        return (session_id, identity, str(resource or "").strip()[:240]) \
+            in self._grants
 
-    def revoke(self, session_id: str, identity: str | None = None) -> int:
+    def revoke(self, session_id: str, identity: str | None = None,
+               resource: str | None = None) -> int:
         keys = [key for key in self._grants
                 if key[0] == session_id
-                and (identity is None or key[1] == identity)]
+                and (identity is None or key[1] == identity)
+                and (resource is None or key[2] == resource)]
         for key in keys:
             del self._grants[key]
         return len(keys)
 
     def list(self, session_id: str | None = None) -> list[dict[str, Any]]:
-        return [dict(row) for (sid, _), row in sorted(self._grants.items())
+        return [dict(row) for (sid, _, _), row in sorted(self._grants.items())
                 if session_id is None or sid == session_id]
 
 
@@ -306,25 +315,33 @@ class GrantStore:
         except (TypeError, ValueError):
             return True
 
-    def has(self, identity: str, session_id: str | None = None) -> bool:
-        if session_id and self.sessions.has(session_id, identity):
+    def has(self, identity: str, session_id: str | None = None,
+            resource: str = "") -> bool:
+        resource = str(resource or "").strip()[:240]
+        if session_id and self.sessions.has(session_id, identity,
+                                           resource=resource):
             return True
         now = time.time()
         return any(row.get("tool_identity") == identity
+                   and str(row.get("resource") or "").strip()[:240] == resource
                    and not self._expired(row, now)
                    for row in self._rows())
 
     def grant(self, identity: str, *, scope: str, session_id: str | None,
-              reason: str = "", display_name: str = "") -> dict[str, Any]:
+              reason: str = "", display_name: str = "",
+              resource: str = "") -> dict[str, Any]:
         if scope not in ("global", "session"):
             raise SecurityError("scope must be global or session")
+        resource = str(resource or "").strip()[:240]
         if scope == "session":
             if not session_id:
                 raise SecurityError("session grant needs a session id")
-            return self.sessions.grant(session_id, identity, reason=reason)
+            return self.sessions.grant(session_id, identity, reason=reason,
+                                       resource=resource)
         row = {
             "tool_identity": identity, "scope": "global",
             "display_name": display_name or identity.split("@", 1)[0],
+            "resource": resource,
             "granted_at": _utc(), "last_used_at": None,
             "expires_at": None, "reason": reason,
         }
@@ -332,14 +349,17 @@ class GrantStore:
         def update(state: dict[str, Any]) -> dict[str, Any]:
             rows = [r for r in (state.get("grants") or [])
                     if isinstance(r, dict)
-                    and r.get("tool_identity") != identity]
+                    and not (r.get("tool_identity") == identity
+                             and str(r.get("resource") or "").strip()[:240]
+                             == resource)]
             rows.append(row)
             return {"schema_version": 1, "grants": rows}
 
         self._store.update(update)
         AuditLog(self.state.audit_file()).append(
             {"event": "tool.grant", "scope": "global",
-             "tool_identity": identity, "reason": reason})
+             "tool_identity": identity, "resource": resource,
+             "reason": reason})
         return dict(row)
 
     def revoke(self, identity: str | None = None, *,
@@ -455,7 +475,8 @@ class ApprovalGateway:
               tier: str) -> dict[str, Any]:
         self._audit("tool.denied", session_id=self.session_id,
                     tool_identity=spec.identity, action=request.action,
-                    reason=request.reason, args_sha256=_json_hash(request.args),
+                    reason=request.reason, resource=request.resource,
+                    args_sha256=_json_hash(request.args),
                     decision=reason, tier=tier)
         return {"status": "denied", "reason": reason,
                 "tool_identity": spec.identity, "session_id": self.session_id}
@@ -476,6 +497,7 @@ class ApprovalGateway:
         if not spec.is_side_effect and spec.network != "private":
             self._audit("tool.approved", session_id=self.session_id,
                         tool_identity=spec.identity, action=request.action,
+                        resource=request.resource,
                         args_sha256=_json_hash(request.args),
                         decision="read-only", tier=tier)
             return {"status": "approved", "reason": "read-only",
@@ -483,19 +505,21 @@ class ApprovalGateway:
         if headless:
             return self._deny(spec, request, "headless side-effect", tier)
 
-        granted = self.grants.has(spec.identity, self.session_id)
         private = spec.network == "private"
+        resource = request.resource or ("private" if private else "")
+        granted = self.grants.has(spec.identity, self.session_id,
+                                  resource=resource)
         if granted and tier in ("guarded", "trusted", "open"):
             self._audit("tool.approved", session_id=self.session_id,
                         tool_identity=spec.identity, action=request.action,
-                        args_sha256=_json_hash(request.args),
+                        resource=resource, args_sha256=_json_hash(request.args),
                         decision="grant", tier=tier)
             return {"status": "approved", "reason": "grant",
                     "tool_identity": spec.identity, "session_id": self.session_id}
         if tier == "open" and not private:
             self._audit("tool.approved", session_id=self.session_id,
                         tool_identity=spec.identity, action=request.action,
-                        args_sha256=_json_hash(request.args),
+                        resource=resource, args_sha256=_json_hash(request.args),
                         decision="open tier", tier=tier)
             return {"status": "approved", "reason": "open tier",
                     "tool_identity": spec.identity, "session_id": self.session_id}
@@ -508,7 +532,7 @@ class ApprovalGateway:
         self._audit("tool.pending", request_id=request_id,
                     session_id=self.session_id, tool_identity=spec.identity,
                     action=request.action, reason=request.reason,
-                    risk=spec.risk, network=spec.network,
+                    resource=resource, risk=spec.risk, network=spec.network,
                     filesystem=spec.filesystem, sandbox=spec.sandbox,
                     args_sha256=_json_hash(request.args), tier=tier,
                     expires_at=expires)
@@ -518,6 +542,7 @@ class ApprovalGateway:
             "session_id": self.session_id, "tier": tier,
             "risk": spec.risk, "network": spec.network,
             "filesystem": spec.filesystem, "sandbox": spec.sandbox,
+            "resource": resource,
             "reason": request.reason, "action": request.action,
             "args": dict(request.args),
         }
@@ -548,23 +573,29 @@ class ApprovalGateway:
             return result
         if choice not in ("once", "session", "always"):
             raise ApprovalError("choice must be once, session, always, or deny")
+        private = pending.spec.network == "private"
+        resource = pending.request.resource or ("private" if private else "")
         if choice == "session":
             self.grants.grant(pending.spec.identity, scope="session",
                               session_id=self.session_id,
-                              reason=pending.request.reason)
+                              reason=pending.request.reason,
+                              resource=resource)
         elif choice == "always":
             if scope not in ("global", "session"):
                 raise ApprovalError("always requires scope=global or scope=session")
             self.grants.grant(pending.spec.identity, scope=scope,
                               session_id=self.session_id,
-                              reason=pending.request.reason)
+                              reason=pending.request.reason,
+                              resource=resource)
         self._audit("tool.approved", request_id=request_id,
                     session_id=self.session_id,
                     tool_identity=pending.spec.identity,
+                    resource=resource,
                     decision=choice, grant_scope=scope if choice == "always" else None)
         result = {"status": "approved", "reason": choice,
                   "request_id": request_id,
-                  "tool_identity": pending.spec.identity}
+                  "tool_identity": pending.spec.identity,
+                  "resource": resource}
         self._decisions[request_id] = result
         return result
 
@@ -584,6 +615,8 @@ class ApprovalGateway:
             "tool_identity": item.spec.identity,
             "action": item.request.action,
             "reason": item.request.reason,
+            "resource": item.request.resource or (
+                "private" if item.spec.network == "private" else ""),
             "args_sha256": _json_hash(item.request.args),
             "created_at": item.created_at,
             "expires_at": item.expires_at,

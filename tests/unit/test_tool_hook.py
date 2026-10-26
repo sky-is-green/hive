@@ -46,6 +46,20 @@ def test_public_web_fetch_is_public_and_read_only():
     request = _web("https://example.com/docs")
     assert request["tool"]["network"] == "public"
     assert request["tool"]["read_only"] is True
+    assert request["resource"] == "https://example.com"
+
+
+def test_the_resource_is_the_exact_origin():
+    request = _web("http://127.0.0.1:8765/server?x=1")
+    assert request["resource"] == "http://127.0.0.1:8765"
+    ipv6 = _web("http://[::1]:8765/")
+    assert ipv6["resource"] == "http://[::1]:8765"
+
+
+def test_a_multi_url_call_gets_the_exact_origin_set():
+    request = tool_hook._request(_payload("web_fetch", tool_input={
+        "urls": ["https://example.com/a", "https://example.org/b"]}))
+    assert request["resource"] == "https://example.com,https://example.org"
 
 
 def test_loopback_literal_is_private():

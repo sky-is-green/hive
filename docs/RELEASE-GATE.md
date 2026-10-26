@@ -87,7 +87,7 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C21 | `hive tools revoke --all --yes` | Requires confirmation; existing grants disappear. | |
 | C22 | `hive tools audit` | Append-only records show decisions; arguments are hashes, not raw values. | |
 | C23 | Global → **Tool policy & grants** | Tier/master controls, pending approval cards, and revoke-all work; page names the runtime preflight and the remaining source-runtime rerun. | |
-| C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | PASS against DSH 0.2.1-rc.2 on 2026-10-26; source-built runtime rerun pending. |
+| C26 | Start an agent turn with the DSH runtime present, request a side-effect tool, approve it in the Studio, then repeat and deny | The tool does not run before approval; deny blocks it; the agent reports the blocked result; no un-hooked path exists. | PASS on 2026-10-26 against the source-built DSH 0.1.2-alpha.1 runtime, and separately against DSH 0.2.1-rc.2. |
 | C28 | `hive sandbox status`; `hive sandbox pin --image hive-sandbox:1 --digest <64-hex>`; `POST /v1/sandbox/exec` without approval, then with `allow_local_fallback` + `session_id` | Status shows the pin/fallback rule; unpinned images are refused; the first host call is 409; the explicit retry runs and writes `sandbox.local_fallback` to the audit. | |
 | C29 | TUI `a` → approve once; repeat → deny | The overlay shows the same request as the Studio/CLI; approve lets the tool run; deny blocks it; the list refreshes. | |
 | C30 | Ask the DSH agent to fetch `http://127.0.0.1:8765/` and `http://169.254.169.254/latest/meta-data` | Both are classified private and require approval even in the Open tier; a public URL does not prompt as private. | |
@@ -99,11 +99,12 @@ Use `NO_COLOR=1` unless checking colour explicitly.
 | C18 | `hive encoder status` / `hive encoder embed "hello"` | Status does not load; embed produces a finite CPU vector of the reported dimension (local-only). | |
 | C19 | `hive profile scan --consent` with no value | Clear consent error, exit 2. | |
 
-**C26 evidence (2026-10-26):** DSH 0.2.1-rc.2 with the Hive `PreToolUse` hook.
-Through `/v1/agent/stream`, approve produced `hook/result: pass` and
+**C26 evidence (2026-10-26):** source-built DSH 0.1.2-alpha.1 and published
+DSH 0.2.1-rc.2, each with the Hive `PreToolUse` hook. Through
+`/v1/agent/stream`, approve produced `hook/result: pass` and
 `tool/result: hive-approved`; deny produced `hook/result: block` (exit 2) and
-`tool/result: Error: blocked: user denied`. The source-built product runtime
-still needs the same rerun.
+`tool/result: Error: blocked: user denied`. The Studio reported
+`gateway_enforced: true` after the source runtime preflight.
 
 Also check one `--json` command with `FORCE_COLOR=1`: JSON must contain **no ANSI**.
 

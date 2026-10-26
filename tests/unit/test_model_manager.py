@@ -497,6 +497,39 @@ def test_agent_honors_an_explicit_dsh_home(agent_client, monkeypatch,
     assert FakeHarness.instances[-1].kwargs["dsh_home"] == str(home)
 
 
+def test_agent_refuses_a_bundled_runtime_with_a_broken_hook(
+        tmp_path, monkeypatch):
+    import harness.agent as agent_module
+
+    class BrokenHarness:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.client = type("Client", (), {
+                "_stderr_lines": [
+                    "hooks-claude-code: failed to import: missing protocol",
+                ]})()
+
+        def start(self):
+            return None
+
+        def close(self):
+            return None
+
+    monkeypatch.delenv("HIVE_DSH_BIN", raising=False)
+    monkeypatch.delenv("HIVE_DSH_HOOK", raising=False)
+    monkeypatch.setattr(agent_module.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(agent_module, "DeepSeekHarness", BrokenHarness)
+    monkeypatch.setattr(
+        "harness.agent_hooks.ensure_hook_profile",
+        lambda *args, **kwargs: {
+            "installed": True, "reason": "test", "hooks": "",
+            "patch": ""})
+    service = agent_module.DshAgentService(
+        default_cwd=tmp_path, session_root=tmp_path / "sessions")
+    with pytest.raises(RuntimeError, match="did not load"):
+        service._ensure("http://mock/v1", "key", "model")
+
+
 def test_agent_sessions_map_to_conversation_ids(agent_client):
     c, _app = agent_client
     _configure_provider(c)
