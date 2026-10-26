@@ -48,6 +48,7 @@ $HIVE_STATE_DIR/                    # default: $HIVE_HOME/harness_state
     studio.json                     # existing controls (migrated)
     security.json                   # tier, master switches, consent
     tool-grants.json                # global grants only
+    tool-registry.json              # verified external/MCP metadata
     sandbox.json                    # Docker/local fallback policy
     browser-grants.json             # private origins, downloads
     controller.json                 # selected profile, recommendation scope
@@ -176,6 +177,34 @@ Rules:
 - revocation removes the row; future calls prompt again;
 - a corrupt file means **no grants**, not “allow all”;
 - the audit log records the grant/revoke event, not just the tool call.
+
+## Tool registry
+
+```jsonc
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "tool_identity": "mcp:mcp__github__search@1.0.0",
+      "tool": {
+        "name": "mcp__github__search",
+        "source": "mcp",
+        "version": "1.0.0",
+        "read_only": true,
+        "network": "public"
+      },
+      "verified": true,
+      "server": "github",
+      "registered_at": "2026-10-26T18:00:00Z"
+    }
+  ]
+}
+```
+
+Only `verified: true` entries override the hook's conservative metadata.
+Unregistered `mcp__<server>__<tool>` calls are side-effecting, private-network,
+high-risk, and require approval. The registry is local policy; it does not
+grant execution by itself.
 
 ## Sandbox policy
 
