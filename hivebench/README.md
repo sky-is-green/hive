@@ -20,7 +20,7 @@ The evaluation suite + the Studio sidecar for the
 Studio serves **130 REST operations** across 120 paths (121 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1611 tests pass, 5 skipped**, verified Oct 26); the live
+The suite is green (**1612 tests pass, 5 skipped**, verified Oct 26); the live
 batteries and the Studio are under active development.
 
 ---

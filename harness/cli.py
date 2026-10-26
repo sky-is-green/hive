@@ -1290,6 +1290,7 @@ def cmd_controller_status(args: argparse.Namespace) -> int:
         latest = status.get("latest_proposal") or {}
         controller = status.get("controller") or {}
         encoder = status.get("encoder") or {}
+        trace = status.get("trace_summary") or {}
         if not encoder.get("loaded"):
             encoder_text = "not loaded"
         else:
@@ -1302,6 +1303,10 @@ def cmd_controller_status(args: argparse.Namespace) -> int:
             ("last proposal", latest.get("id") or "none"),
             ("applied", (controller.get("last_apply") or {}).get("proposal_id") or "none"),
             ("encoder", encoder_text),
+            ("trace labels", f"{trace.get('labelled', 0)} / "
+                             f"{trace.get('target_labelled', 200)}"),
+            ("E1 ready", "yes" if trace.get("ready") else "no — "
+             + "; ".join(trace.get("missing") or ["collect labelled traces"])),
             ("state", status.get("state_dir")),
         ])
     return 0

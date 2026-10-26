@@ -84,6 +84,29 @@ def test_proposal_is_persisted_and_listed(tmp_path):
     assert service.get_proposal(proposal["id"])["id"] == proposal["id"]
 
 
+def test_trace_summary_reports_e1_readiness_without_training(tmp_path):
+    service, _settings, _state = _service(tmp_path)
+    empty = service.status()["trace_summary"]
+    assert empty["proposals"] == 0
+    assert empty["labelled"] == 0
+    assert empty["ready"] is False
+    assert empty["missing"]
+
+    proposal = service.propose(
+        model_gib=12.0, native_ctx=32768, desired_ctx=16384,
+        request="How do I test this?")
+    service.record_outcome(proposal["id"], "accepted", metrics={"latency_ms": 42})
+    summary = service.status()["trace_summary"]
+    assert summary["proposals"] == 1
+    assert summary["labelled"] == 1
+    assert summary["positive"] == 1
+    assert summary["negative"] == 0
+    assert summary["with_features"] == 1
+    assert summary["ready"] is False
+    assert summary["target_labelled"] >= 1
+    assert summary["bad_lines"] == 0
+
+
 def test_apply_requires_confirmation(tmp_path):
     service, _settings, _state = _service(tmp_path)
     proposal = service.propose(model_gib=12.0, native_ctx=32768, desired_ctx=16384)
