@@ -12,7 +12,7 @@ set -euo pipefail
 
 HIVE_USER="${HIVE_USER:-hive-ai}"
 HIVE_BASE="${HIVE_BASE:-/srv/hive-ai}"
-HUMAN_USER="${HUMAN_USER:-penis}"
+HUMAN_USER="${HUMAN_USER:-${SUDO_USER:-penis}}"
 HUMAN_HOME="${HUMAN_HOME:-/home/$HUMAN_USER}"
 YES=0
 if [[ "${1:-}" == "--yes" ]]; then YES=1; fi
