@@ -85,6 +85,8 @@ def test_blast_radius_test_is_explicit_and_sentinel_only():
     assert "ReadWritePaths=\"$HIVE_BASE\"" in BLAST
     assert "runtime_write_rc" in BLAST
     assert "home_visible_rc" in BLAST
+    # The app-tree unlink is bounded: btrfs can block it in the kernel.
+    assert 'timeout 5 rm "$APP"' in BLAST
     assert "/var/run/docker.sock" in BLAST
     assert "id -nG \"$HIVE_USER\"" in BLAST
     # It must not contain a broad destructive command against a real path.
