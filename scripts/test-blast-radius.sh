@@ -82,6 +82,7 @@ systemd-run --wait --pipe --collect \
   --unit="hive-blast-$$" \
   --uid="$HIVE_USER" --gid="$HIVE_GROUP" \
   --setenv=HUMAN="$HUMAN" \
+  --setenv=HUMAN_HOME="$HUMAN_HOME" \
   --setenv=APP="$APP" \
   --setenv=AI="$AI" \
   --setenv=TMPH="$TMPH" \
@@ -103,15 +104,16 @@ systemd-run --wait --pipe --collect \
   --property=UMask=0077 \
   /bin/bash -c '
     set +e
-    test -e /home; echo "home_visible_rc=$?"
-    rm "$HUMAN"; echo "human_rc=$?"
+    # InaccessiblePaths=/home leaves an empty /home mountpoint visible; the
+    # actual human home must be gone, not the parent mountpoint.
+    test -e "$HUMAN_HOME"; echo "home_visible_rc=$?"
+    rm -f "$HUMAN"; echo "human_rc=$?"
     cat "$HUMAN" >/dev/null 2>&1; echo "human_read_rc=$?"
-    # An unlink in a root-owned directory on this btrfs mount can block in
-    # the kernel instead of returning EACCES.  Bound the attempt; any
-    # non-zero rc (including 124) means the app sentinel survived.
-    timeout 5 rm "$APP"; echo "app_rc=$?"
-    rm "$TMPH"; echo "tmp_rc=$?"
-    rm "$AI"; echo "ai_rc=$?"
+    # -f prevents rm from waiting at an interactive "write-protected file?"
+    # prompt.  The timeout is a belt-and-braces bound on a slow filesystem.
+    timeout 5 rm -f "$APP"; echo "app_rc=$?"
+    rm -f "$TMPH"; echo "tmp_rc=$?"
+    rm -f "$AI"; echo "ai_rc=$?"
     touch "/run/user/$(id -u)/HIVE-BLAST-RUNTIME-$$"
     echo "runtime_write_rc=$?"
     rm -f "/run/user/$(id -u)/HIVE-BLAST-RUNTIME-$$"
