@@ -20,7 +20,7 @@ The evaluation suite + the Studio sidecar for the
 Studio serves **135 REST operations** across 125 paths (126 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1623 tests pass, 5 skipped**, verified Oct 26); the live
+The suite is green (**1624 tests pass, 5 skipped**, verified Oct 26); the live
 batteries and the Studio are under active development.
 
 ---
@@ -322,6 +322,7 @@ a single hive theme (yellow/black) across every page.
 | [`docs/AB-RESULTS.md`](../docs/AB-RESULTS.md) | The results so far: the two Scions head to head, the cascade's arms in the multi-sample regime, the curation against the FIFO window, and the encoder's three jobs |
 | [`docs/WEB-FETCH.md`](../docs/WEB-FETCH.md) | The stateless secure fetch contract: per-hop SSRF checks, exact-origin grants, and download/upload gates |
 | [`docs/BROWSER.md`](../docs/BROWSER.md) | The optional Chromium adapter and its validating proxy |
+| [`docs/AI-USER.md`](../docs/AI-USER.md) | Running Hive as a dedicated AI user with its own rootless Docker daemon |
 | [`splinter/docs/ENCODER-NOTES.md`](../splinter/docs/ENCODER-NOTES.md) | Which encoder the harness should use: the sweep, the held-out test, and the falsified hypothesis about the membrane's thresholds |
 
 ### Console features

@@ -9,6 +9,7 @@ approval (or the policy is set to ``allow`` for a deliberate development box).
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -128,6 +129,18 @@ def _hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def docker_host() -> str:
+    """The daemon endpoint the Docker CLI will use."""
+    return (os.environ.get("DOCKER_HOST", "").strip()
+            or "unix:///var/run/docker.sock")
+
+
+def is_rootless_host(host: str | None = None) -> bool:
+    """True for a per-user rootless daemon socket, not the system socket."""
+    value = str(host or docker_host()).lower()
+    return "/run/user/" in value or "rootless" in value
+
+
 def docker_status() -> dict[str, Any]:
     """Probe Docker live; availability is never cached as policy truth."""
     docker_bin = shutil.which("docker")
@@ -144,7 +157,8 @@ def docker_status() -> dict[str, Any]:
         except (OSError, subprocess.SubprocessError):
             daemon = False
     return {"installed": bool(docker_bin), "daemon": daemon,
-            "binary": docker_bin or "", "detail": detail}
+            "binary": docker_bin or "", "detail": detail,
+            "host": docker_host(), "rootless": is_rootless_host()}
 
 
 def pin_image(policy: SandboxPolicy, image: str | None = None,

@@ -31,6 +31,16 @@ def client(tmp_path, monkeypatch):
     return TestClient(app)
 
 
+def test_docker_host_reports_rootless_separation(monkeypatch):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    assert sandbox.docker_host() == "unix:///var/run/docker.sock"
+    assert sandbox.is_rootless_host() is False
+
+    monkeypatch.setenv("DOCKER_HOST", "unix:///run/user/952/docker.sock")
+    assert sandbox.docker_host().endswith("/run/user/952/docker.sock")
+    assert sandbox.is_rootless_host() is True
+
+
 def test_default_policy_is_docker_and_not_pinned(state):
     policy = sandbox.SandboxPolicy(state)
     data = policy.read()

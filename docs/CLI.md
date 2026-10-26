@@ -374,8 +374,9 @@ hive sandbox pin                 # resolve and save the image digest
 hive sandbox pin --image hive-sandbox:1 --digest <64-hex>
 ```
 
-`hive sandbox status` reports Docker, the pinned image, and the fallback rule.
-A Docker image tag without a digest is refused. If Docker is unavailable,
+`hive sandbox status` reports Docker, the `DOCKER_HOST` socket, whether it is a
+rootless per-user socket, the pinned image, and the fallback rule. A Docker
+image tag without a digest is refused. If Docker is unavailable,
 `/v1/sandbox/exec` returns `409` until the caller retries with an explicit
 `allow_local_fallback` and a session id; every such host execution is audited.
 
