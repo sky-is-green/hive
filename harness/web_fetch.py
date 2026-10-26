@@ -112,6 +112,12 @@ class WebFetchPolicy:
         data["updated_at"] = _utc()
         data = self._normalize(data)
         self.store.write(data)
+        AuditLog(self.state.audit_file()).append({
+            "event": "web.policy",
+            "changes": {key: value for key, value in fields.items()
+                        if value is not None},
+            "updated_at": data["updated_at"],
+        })
         return data
 
     def download_dir(self) -> Path:
