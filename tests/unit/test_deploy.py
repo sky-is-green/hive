@@ -30,6 +30,8 @@ def test_unit_runs_the_whole_app_as_hive_ai_with_hardening():
     # DeepSeek Messages adapter.
     assert "HIVE_DSH_PROVIDER=hive-local" in UNIT
     assert "HIVE_DSH_MODEL=hive-local" in UNIT
+    assert "HIVE_LOCAL_API_KEY=lm-studio" in UNIT
+    assert "HARNESS_ENGINES_FILE=/srv/hive-ai/state/engines.local.json" in UNIT
     # Relative defaults would resolve under the read-only app tree.
     assert "--state-dir /srv/hive-ai/state" in UNIT
     assert "--log-dir /srv/hive-ai/logs" in UNIT
@@ -105,3 +107,5 @@ def test_docs_name_the_new_account_and_the_guard_boundary():
     assert "GUARD" in DOCS
     assert "InaccessiblePaths=/home" in DOCS
     assert "usermod -d" in DOCS
+    assert "llm-pi-ai" in DOCS
+    assert "HIVE_DSH_PROVIDER=hive-local" in DOCS
