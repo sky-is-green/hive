@@ -51,7 +51,8 @@ engine, Hive, the rootless Docker daemon) are unreachable.  `HOME` and
 The child preset mounts `bash` only.  `dsh-fs-sandbox` fences writes but not
 reads, so a `read`/`write`/`edit` tool would bypass the bwrap masks; bash is
 the only file surface.  The preset also omits web, subagent, goal, todo, and
-plan tools, and `maxDepth: 0` refuses recursion.
+plan tools.  `maxDepth: 1` permits the parent to create one child; the child
+has no `subagent` tool, so it cannot recurse.
 
 ## Workspace rule
 

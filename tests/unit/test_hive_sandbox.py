@@ -124,6 +124,16 @@ def test_run_covers_media_without_a_redundant_mask():
     assert "/run/media" not in hive_bwrap.MASK_DIRS
 
 
+def test_the_parent_tool_allows_one_delegation_level():
+    import yaml
+
+    data = yaml.safe_load((WRAPPER.parent / "cordis.patch.yml").read_text())
+    rows = [entry for patch in data if "insert" in patch
+            for entry in patch["insert"]]
+    row = next(entry for entry in rows if entry.get("id") == "hive-subagent-tool")
+    assert row["config"]["maxDepth"] == 1
+
+
 def test_empty_command_is_refused(tmp_path):
     root = tmp_path / "workspaces"
     workspace = root / "task"

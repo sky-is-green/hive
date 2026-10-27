@@ -87,4 +87,6 @@
         provider: spawn
         toolName: subagent
         agentPreset: hive-sandbox
-        maxDepth: 0
+        # One level: the parent may create a child, and the child preset has no
+        # subagent tool, so it cannot recurse.
+        maxDepth: 1
