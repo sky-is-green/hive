@@ -175,3 +175,67 @@ def test_missing_gateway_is_fail_closed(capsys, monkeypatch):
                             tool_hook.HookError("Hive gateway is unreachable")))
     assert tool_hook.main([]) == 2
     assert "blocked:" in capsys.readouterr().err
+
+
+def _subagent(cwd=None):
+    data = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "conv-1",
+        "tool_name": "subagent",
+        "tool_input": {"prompt": "inspect the workspace"},
+    }
+    if cwd is not None:
+        data["tool_input"]["cwd"] = cwd
+    return data
+
+
+def test_subagent_requires_an_existing_scratch_workspace(tmp_path, monkeypatch):
+    root = tmp_path / "workspaces"
+    root.mkdir()
+    monkeypatch.setattr(tool_hook, "SUBAGENT_WORKSPACE_ROOT", root)
+
+    assert tool_hook.subagent_workspace_error("subagent", {})
+    assert tool_hook.subagent_workspace_error(
+        "subagent", {"cwd": str(root)})
+    assert tool_hook.subagent_workspace_error(
+        "subagent", {"cwd": str(tmp_path)})
+    assert tool_hook.subagent_workspace_error(
+        "subagent", {"cwd": str(root / "missing")})
+
+    workspace = root / "task-1"
+    workspace.mkdir()
+    assert tool_hook.subagent_workspace_error(
+        "subagent", {"cwd": str(workspace)}) == ""
+    assert tool_hook.subagent_workspace_error(
+        "subagent_fork", {"cwd": str(workspace)}) == ""
+    assert tool_hook.subagent_workspace_error(
+        "bash", {"cwd": str(tmp_path)}) == ""
+
+
+def test_a_missing_workspace_is_denied_before_the_gateway(tmp_path, monkeypatch):
+    root = tmp_path / "workspaces"
+    root.mkdir()
+    monkeypatch.setattr(tool_hook, "SUBAGENT_WORKSPACE_ROOT", root)
+    calls = []
+
+    def post(url, body):
+        calls.append((url, body))
+        return {"status": "approved"}
+
+    outcome = tool_hook.decide(_subagent(), post=post)
+    assert outcome["status"] == "denied"
+    assert "scratch directory" in outcome["reason"]
+    assert calls == []
+
+
+def test_a_workspace_cwd_reaches_the_gateway(tmp_path, monkeypatch):
+    root = tmp_path / "workspaces"
+    workspace = root / "task-1"
+    workspace.mkdir(parents=True)
+    monkeypatch.setattr(tool_hook, "SUBAGENT_WORKSPACE_ROOT", root)
+
+    outcome = tool_hook.decide(
+        _subagent(str(workspace)),
+        post=lambda url, body: {"status": "approved"},
+        get=lambda url: {})
+    assert outcome["status"] == "approved"

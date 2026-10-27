@@ -35,6 +35,10 @@ READ_ONLY_TOOLS = frozenset({
     "get_url", "inspect", "status",
 })
 
+#: Delegation tools whose child must start in a dedicated scratch workspace.
+SUBAGENT_TOOLS = frozenset({"subagent", "subagent_fork"})
+SUBAGENT_WORKSPACE_ROOT = Path("/srv/hive-ai/workspaces")
+
 
 class HookError(RuntimeError):
     """The bridge could not obtain a trustworthy decision."""
@@ -156,6 +160,36 @@ def _session(payload: dict[str, Any]) -> str:
     return "dsh-hook"
 
 
+def subagent_workspace_error(name: str, args: dict[str, Any]) -> str:
+    """Require an existing scratch workspace for every delegated child.
+
+    The child's session cwd is its sandbox workspace root.  A missing or
+    outside cwd would inherit the parent's ``/srv/hive-ai`` root, so the hook
+    refuses before the approval gateway is asked.  The parent creates the
+    directory with its own confined bash first.
+    """
+    if name not in SUBAGENT_TOOLS:
+        return ""
+    raw = args.get("cwd")
+    if not isinstance(raw, str) or not raw.strip():
+        return ("subagent calls need cwd under "
+                f"{SUBAGENT_WORKSPACE_ROOT}; create a scratch directory first")
+    try:
+        target = Path(raw).expanduser().resolve()
+        root = Path(SUBAGENT_WORKSPACE_ROOT).resolve()
+    except (OSError, RuntimeError, ValueError):
+        return f"subagent cwd is not usable: {raw!r}"
+    try:
+        relative = target.relative_to(root)
+    except ValueError:
+        return f"subagent cwd must be under {root}: {target}"
+    if not relative.parts:
+        return f"subagent cwd must be a subdirectory of {root}"
+    if not target.is_dir():
+        return f"subagent cwd does not exist: {target}; create it first"
+    return ""
+
+
 def _request(payload: dict[str, Any]) -> dict[str, Any]:
     name = _tool_name(payload)
     args = _input(payload)
@@ -214,6 +248,9 @@ def decide(payload: dict[str, Any], *,
            sleep: Callable[[float], None] = time.sleep,
            timeout_s: float | None = None) -> dict[str, Any]:
     """Send one hook call and wait for its decision."""
+    problem = subagent_workspace_error(_tool_name(payload), _input(payload))
+    if problem:
+        return {"status": "denied", "reason": problem}
     base = os.environ.get("HIVE_TOOL_URL", DEFAULT_URL).rstrip("/")
     request = _request(payload)
     result = post(f"{base}/v1/tools/call", request)
