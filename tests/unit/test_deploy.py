@@ -54,7 +54,7 @@ def test_unit_runs_the_whole_app_as_hive_ai_with_hardening():
 def test_unit_uses_the_ai_rootless_socket_not_the_human_socket():
     assert "/var/run/docker.sock" not in UNIT
     assert "DOCKER_HOST" in SETUP
-    assert "/run/user/${HIVE_UID}/docker.sock" in SETUP
+    assert "/run/user/%s/docker.sock" in SETUP
     assert 'HIVE_USER="${HIVE_USER:-hive-ai}"' in SETUP
     assert 'HIVE_BASE="${HIVE_BASE:-/srv/hive-ai}"' in SETUP
     assert "/etc/hive/hive.env" in SETUP
@@ -65,6 +65,8 @@ def test_unit_uses_the_ai_rootless_socket_not_the_human_socket():
     assert 'chown -R root:"$HIVE_GROUP" "$HIVE_BASE/app" "$HIVE_BASE/venv"' in SETUP
     assert "shares GUARD's uid" in SETUP
     assert "is in the human docker group" in SETUP
+    # Re-running setup must not wipe operator-added DSH/model settings.
+    assert "grep -v '^DOCKER_HOST='" in SETUP
     assert "usermod -aG docker" not in SETUP
     assert "gpasswd -a" not in SETUP
 
