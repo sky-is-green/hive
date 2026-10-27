@@ -38,7 +38,7 @@ Hi all, I have been running [DeepSeek-V4.1-Flash-GSQ-Uncensored](https://hugging
 - `--pf-b 1.43` regressed to 99.3 / 11.2. `STEP_MAX=20` helped the 16-token turn but dropped the 128-token decode to 12.4. D3 off was neutral. I left them off.
 
 ## Caveats
-- The agent prompt is 5,734 tokens of tool/system content and still costs 67 s. Its routing is wider than the repeated code-review probe. Trimming the agent prompt is the next real lever.
+- The agent prompt was 5,734 tokens of tool/system content and cost 67 s. After the first post I trimmed the Hive profile: 25 -> 11 tools, 5,734 -> 2,682 tokens, 67 -> 59 s prefill, 77 -> 68 s first turn; the follow-up is 2,828 tokens with 5 s prefix reuse. The removed tools are working_directory, goal, subagent, workflow, todo, plan-mode, and web. Backup: `/srv/hive-ai/dsh/cordis.patch.yml.pre-trim`.
 - The direct 6.1k is already at the 4 GiB arena/file tier limit. The 230-244 tok/s reference in [the engine notes](https://github.com/Indras-Mirror/Strata-DSV4.1) needs 128 GiB RAM and a 60-75 GiB arena.
 - DSpark on this HIP build fails with `DSpark step: k out of range`. I see related reports in [#72](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/discussions/72) and [#28](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/discussions/28), so it is off.
 - The GSQ model is 2.25 bpw. Quality is a separate trade, and this post is about the speed ceiling of this quant on this box.
@@ -49,4 +49,4 @@ Hi all, I have been running [DeepSeek-V4.1-Flash-GSQ-Uncensored](https://hugging
 - [24 GB VRAM / 64 GB RAM thread](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/discussions/2)
 - [Single DGX Spark thread](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/discussions/70)
 
-If anyone is running a 30-32 GiB box, let me know and I am happy to compare configs. I am especially interested in whether a larger RAM arena moves the 5.7k agent prompt, and whether DSpark can be fixed on HIP.
+If anyone is running a 30-32 GiB box, let me know and I am happy to compare configs. I am especially interested in whether a larger RAM arena moves the 2.7k agent prompt, and whether DSpark can be fixed on HIP.

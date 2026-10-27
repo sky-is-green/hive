@@ -254,9 +254,18 @@ process:
   follow-up but dropped the 128-token decode to 12.4 tok/s; D3 off was
   neutral.  Those were not applied.
 - Verified: a 6,110-token direct prefill at 126.5 tok/s, and a live Hive turn
-  (`DS41_HIVE_OK`) with 5,734 prompt tokens in 67 s (85.6 tok/s), 128 thinking
-  tokens at 17.6 tok/s, a tool call/result, and a follow-up turn that reused
-  the parked prefix in 5 s and answered 139 tokens at 15.1 tok/s.
+  (`DS41_HIVE_OK`) on the trimmed profile: 2,682 prompt tokens in 59 s,
+  129 thinking tokens at 20.9 tok/s, a tool call/result, and a follow-up turn
+  that reused the parked prefix in 5 s and answered 92 tokens at 17.8 tok/s.
+- Prompt trim (2026-10-27): the Hive profile disables `tool-working-directory`,
+  `tool-goal`, `tool-subagent-control`, `tool-subagent-list-agents`,
+  `tool-subagent`, `tool-subagent-fork`, `tool-workflow`, `tool-todo`,
+  `plan-mode`, and `tool-web`.  It keeps `bash`, `edit`, `glob`, `grep`,
+  `job_kill`, `job_list`, `job_output`, `read`, `read_image`, `skill`, and
+  `write`: 25 tools -> 11, system prompt 2,571 -> 1,204 chars, Hive prompt
+  5,734 -> 2,682 tokens.  The first turn is 77 -> 68 s (59 s prefill); the
+  follow-up prompt is 2,828 tokens.  Backup:
+  `/srv/hive-ai/dsh/cordis.patch.yml.pre-trim`.
 - Previous config backups: `/etc/hive-engine/ds41.json.pre-tune2`,
   `/etc/hive-engine/ds41.json.pre-chunk1024`, and
   `/etc/hive-engine/ds41.json.pre-tune`.  The service log is in the journal;
