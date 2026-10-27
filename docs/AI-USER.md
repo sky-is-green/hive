@@ -290,7 +290,8 @@ The trimmed profile had no delegation.  The sandbox profile adds one
 - **Tools:** the child has no `read`, `write`, `edit`, `glob`, `grep`, web,
   subagent, goal, todo, or plan tools.  `dsh-fs-sandbox` fences writes but not
   reads, so a file tool would bypass the bwrap masks; `bash` is the only
-  read/write surface.  `maxDepth: 0` prevents recursion.
+  read/write surface.  `maxDepth: 1` lets the parent create one child; the
+  child has no `subagent` tool, so it cannot recurse.
 - **Workspace:** the parent creates `/srv/hive-ai/workspaces/<name>` with its
   own bash, then calls `subagent` with
   `cwd=/srv/hive-ai/workspaces/<name>`.  The Hive PreToolUse hook refuses a

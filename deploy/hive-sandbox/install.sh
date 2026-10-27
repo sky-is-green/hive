@@ -114,6 +114,10 @@ fi
 
 if grep -q 'id: hive-subagent-tool' "$PROFILE"; then
   echo "profile already has the sandboxed subagent rows"
+  if grep -q 'maxDepth: 0' "$PROFILE"; then
+    sed -i '/id: hive-subagent-tool/,/maxDepth:/ s/maxDepth: 0/maxDepth: 1/' "$PROFILE"
+    echo "updated the delegation depth to 1"
+  fi
 else
   [[ -e "$BACKUP" ]] || cp -a "$PROFILE" "$BACKUP"
   {
