@@ -7,12 +7,19 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${HERE}/../.." && pwd)"
 HIVE_HOME="${HIVE_HOME:-/srv/hive-ai}"
 PROFILE="${HIVE_HOME}/dsh/cordis.patch.yml"
 BACKUP="${PROFILE}.pre-subagent-sandbox"
 WRAPPER="${HIVE_HOME}/bin/hive-bwrap.py"
 WORKSPACES="${HIVE_HOME}/workspaces"
 AI_USER="${AI_USER:-hive-ai}"
+HOOK_SRC="${REPO_ROOT}/harness/tool_hook.py"
+HOOK_DST="${HIVE_HOME}/app/harness/tool_hook.py"
+HOOK_BACKUP="${HOOK_DST}.pre-subagent-sandbox"
+# The live app is a copy of the repo.  Only replace its hook when the file is
+# exactly the pre-change version; otherwise refuse and ask for a manual merge.
+HOOK_EXPECTED="1b0396ce905c28609f51c9066e459f70c7a4e88bf66cf7905bc1fab3281d0bed"
 
 if [[ ${EUID} -ne 0 ]]; then
   echo "run as root: sudo $0" >&2
@@ -77,6 +84,32 @@ test -f "$SMOKE/written.txt" || {
   exit 1
 }
 echo "runner smoke test: OK"
+
+if [[ ! -f "$HOOK_SRC" ]]; then
+  echo "missing hook source: $HOOK_SRC" >&2
+  exit 1
+fi
+if [[ ! -f "$HOOK_DST" ]]; then
+  echo "missing live hook: $HOOK_DST" >&2
+  exit 1
+fi
+live_hook_sha="$(sha256sum "$HOOK_DST" | awk '{print $1}')"
+new_hook_sha="$(sha256sum "$HOOK_SRC" | awk '{print $1}')"
+if [[ "$live_hook_sha" == "$new_hook_sha" ]]; then
+  echo "live hook already has the subagent workspace rule"
+elif [[ "$live_hook_sha" == "$HOOK_EXPECTED" ]]; then
+  [[ -e "$HOOK_BACKUP" ]] || cp -a "$HOOK_DST" "$HOOK_BACKUP"
+  install -m 0644 -o root -g root "$HOOK_SRC" "$HOOK_DST"
+  echo "installed the subagent workspace hook"
+  echo "hook backup: $HOOK_BACKUP"
+else
+  echo "refusing to replace $HOOK_DST" >&2
+  echo "live checksum: $live_hook_sha" >&2
+  echo "expected:      $HOOK_EXPECTED" >&2
+  echo "new:           $new_hook_sha" >&2
+  echo "merge harness/tool_hook.py by hand, then re-run" >&2
+  exit 1
+fi
 
 if grep -q 'id: hive-subagent-tool' "$PROFILE"; then
   echo "profile already has the sandboxed subagent rows"

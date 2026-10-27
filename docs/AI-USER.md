@@ -313,7 +313,10 @@ The installer backs up the profile to
 `/srv/hive-ai/dsh/cordis.patch.yml.pre-subagent-sandbox`, installs the runner
 as `root:root`, creates `/srv/hive-ai/workspaces` as `hive-ai:hive-ai` 0750,
 runs a smoke test as `hive-ai` (workspace write, masked home/state/socket, no
-loopback), appends the preset rows, and restarts `hive.service`.
+loopback), installs the workspace rule into
+`/srv/hive-ai/app/harness/tool_hook.py` (checksum-guarded, backed up to
+`tool_hook.py.pre-subagent-sandbox`), appends the preset rows, and restarts
+`hive.service`.
 
 This is same-world bubblewrap, not a container.  It blocks the file and
 network paths above, but the child still shares the host kernel.  The
