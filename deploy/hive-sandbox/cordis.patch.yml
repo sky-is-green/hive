@@ -1,0 +1,90 @@
+# Hive sandboxed subagents (managed by deploy/hive-sandbox/install.sh).
+#
+# The base profile mounts tool-subagent but no subagent provider.  This block
+# disables that unconfigured base row, mounts the registry and one child
+# preset, then exposes a new `subagent` tool after both are available.  The
+# child preset shadows the host sandbox, policy, and shell services inside an
+# isolate realm, so the parent keeps its original (networked) bwrap sandbox and
+# the child gets the hardened runner.  The child has bash only: dsh-fs-sandbox
+# fences writes but not reads, so a read tool would bypass the bwrap masks.
+
+- id: tool-subagent
+  disabled: true
+
+- id: tool-subagent-control
+  disabled: true
+
+- id: tool-subagent-list-agents
+  disabled: true
+
+- id: tool-subagent-fork
+  disabled: true
+
+- insert:
+    - id: agent-preset-registry
+      name: '@deepseek-ai/dsh-agent-preset-registry'
+      config:
+        default: hive-sandbox
+
+    - id: preset-hive-sandbox
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: hive-sandbox
+        name: Hive sandbox
+        description: Bash-only child confined to a scratch workspace with no network.
+        order: 20
+        plugins:
+          - id: hive-sandbox-realm
+            name: cordis:group
+            group: true
+            isolate:
+              sandbox: hive-subagent
+              sandboxPolicy: hive-subagent
+              shell: hive-subagent
+            config:
+              - id: sandbox
+                name: '@deepseek-ai/dsh-sandbox-local'
+                config:
+                  runnerCommand:
+                    - /usr/bin/python3
+                    - /srv/hive-ai/bin/hive-bwrap.py
+                  runnerFailureSignatures:
+                    - 'hive-bwrap:'
+                    - 'bwrap:'
+              - id: sandbox-policy
+                name: '@deepseek-ai/dsh-sandbox-policy'
+                config:
+                  mode: workspace-write
+                  workspaceRoot: /srv/hive-ai/workspaces
+              - id: bash-sandbox
+                name: '@deepseek-ai/dsh-bash-sandbox'
+                config:
+                  timeoutMs: 60000
+              - id: tool-bash
+                name: '@deepseek-ai/dsh-tool-bash'
+                config:
+                  enableRunInBackground: false
+              - id: persona
+                name: '@deepseek-ai/dsh-persona'
+                config:
+                  prefix: >-
+                    You are a sandboxed subagent. Work only in the current
+                    directory. There is no network and no host home. Use bash
+                    for all file work, then report the result.
+
+    - id: subagent
+      name: '@deepseek-ai/dsh-subagent'
+
+    - id: subagent-spawn
+      name: '@deepseek-ai/dsh-subagent-spawn-in-process'
+      config:
+        providerName: spawn
+
+    - id: hive-subagent-tool
+      name: '@deepseek-ai/dsh-tool-subagent'
+      inject: [agentPresets, subagents]
+      config:
+        provider: spawn
+        toolName: subagent
+        agentPreset: hive-sandbox
+        maxDepth: 0
