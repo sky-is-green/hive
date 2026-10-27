@@ -70,6 +70,7 @@ trap cleanup EXIT
       printf "ok\n" > written.txt
       test -z "$(ls -A /home 2>/dev/null)"
       test -z "$(ls -A /run 2>/dev/null)"
+      test ! -e /run/user/949/docker.sock
       test -z "$(ls -A /srv/hive-ai/state 2>/dev/null)"
       test -z "$(ls -A /srv/hive-ai/dsh 2>/dev/null)"
       if curl -sS -m 1 http://127.0.0.1:8150/health >/dev/null 2>&1; then

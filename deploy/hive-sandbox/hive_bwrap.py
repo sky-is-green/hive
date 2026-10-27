@@ -31,10 +31,10 @@ WORKSPACE_ROOT = "/srv/hive-ai/workspaces"
 MASK_DIRS = (
     "/home",
     "/root",
+    # /run covers /run/media, /run/user and the rootless Docker socket.
     "/run",
     "/media",
     "/mnt",
-    "/run/media",
     "/var/tmp",
     "/etc/hive",
     "/srv/hive",

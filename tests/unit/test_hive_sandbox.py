@@ -119,6 +119,11 @@ def test_nested_workspace_creates_each_parent(tmp_path):
     assert ("--dir", str(workspace)) in pairs
 
 
+def test_run_covers_media_without_a_redundant_mask():
+    assert "/run" in hive_bwrap.MASK_DIRS
+    assert "/run/media" not in hive_bwrap.MASK_DIRS
+
+
 def test_empty_command_is_refused(tmp_path):
     root = tmp_path / "workspaces"
     workspace = root / "task"
