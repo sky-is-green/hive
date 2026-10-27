@@ -196,22 +196,71 @@ adds its own `hooks-claude-code` row separately):
           hive-local:
             apiKeyEnv: HIVE_LOCAL_API_KEY
             api: openai-completions
-            baseURL: http://127.0.0.1:1234/v1
+            baseURL: http://127.0.0.1:8150/v1
             compat:
               thinkingFormat: deepseek
             models:
-              - id: hive-local
-                name: Qwen3.8-35B-A3B-IQ2_M
-                contextWindow: 16384
+              - id: deepseek-v4.1-flash-gsq
+                name: DeepSeek-V4.1-Flash-GSQ
+                contextWindow: 32768
                 maxTokens: 8192
 ```
 
 `HIVE_LOCAL_API_KEY=lm-studio` is a local, non-secret placeholder; do not use
 a human or cloud key here. The unit sets `HIVE_DSH_PROVIDER=hive-local` and
-`HIVE_DSH_MODEL=hive-local`, and keeps the provider/engine files under
-`/srv/hive-ai/state` so a read-only app tree never blocks persistence. Point
-`HARNESS_LLAMA_SERVER` at the AI-readable llama.cpp binary and put the GGUF
-under `/srv/hive-ai/models/gguf`.
+`HIVE_DSH_MODEL=deepseek-v4.1-flash-gsq`; the same values are pinned in
+`/etc/systemd/system/hive.service.d/ds41.conf` so a setup rerun cannot revert
+them. The provider/engine files stay under `/srv/hive-ai/state` so a
+read-only app tree never blocks persistence. Point `HARNESS_LLAMA_SERVER` at
+the AI-readable llama.cpp binary and put the GGUF under
+`/srv/hive-ai/models/gguf` for the Qwen route; the DeepSeek-V4.1 route uses the
+Strata engine service below instead.
+
+### DS4.1 engine service (single spare GPU)
+
+The local heavy tier is a durable system service, not a transient user
+process:
+
+- Unit: `/etc/systemd/system/ds41-engine.service`, enabled at boot, runs as
+  the dedicated `hive-engine` account, `MemoryMax=12G`, `MemoryHigh=9G`,
+  `ProtectSystem=strict`, `ProtectHome=yes`, `InaccessiblePaths=/home`.
+- Config: `/etc/hive-engine/ds41.json`, mode 0640 root:hive-engine.  It binds
+  the 152 GB V41-GSQ model and the two Engram layers read-only into
+  `/srv/hive-engine/model` and `/srv/hive-engine/engram`.  The service does
+  **not** see `/run/media/penis` or `/home`; only those three mounts.
+- GPU: `HIP_VISIBLE_DEVICES=1` (the spare card, PCI 0000:07:00.0); the display
+  card stays with the desktop.  `hive-engine` is **not** in the docker group
+  and has no docker socket.
+- API: `http://127.0.0.1:8150/v1`, OpenAI-compatible, model id
+  `deepseek-v4.1-flash-gsq`, context 32768.  `hive.service` has
+  `Wants=`/`After=ds41-engine.service` via
+  `/etc/systemd/system/hive.service.d/ds41.conf`.
+- Tuned 2026-10-27 for this 20 GB / 30 GiB box: `--prefill-chunk 1024`,
+  `STRATA_SERVE_STEP_MAX=0`, `--prompt-batch 8192`, `--arena-gib 4`,
+  `--pf-b 0`, `STRATA_PRESTAGE_GIB=1.5`, `STRATA_WAVE_THREADS=16`,
+  `STRATA_WAVE_PARTS=16`, `STRATA_D3_PF=1` (the neutral default), and
+  `STRATA_SERVE_DSPARK` unset.  The exact **pass** path is only ~2.3 tok/s
+  with a 4 GiB arena, so every prompt uses the layer-major batch: a 341-token
+  turn is 21-24 s (was 128 s), a 648-token turn 23 s (was 255 s), and a
+  73-token turn 18 s (was 35 s).  The 6.1k prompt is 51.7-55 s
+  (121-127 tok/s); decode at 6.1k is 16 tok/s, and a 16-token follow-up is
+  7.6 s with the 6,115-token prefix reused.
+- `--prefill-chunk 1024` is the maximum that handles the 6.1k prompt on this
+  card: 2048 returns 503 and 4096 fails a 17.5 GiB dense-graph allocation.
+  The wave reader (`STRATA_WAVE_THREADS=16`, `STRATA_WAVE_PARTS=16`) gave
+  120.8 / 121.3 / 121.2 tok/s for 16/8, 16/16 and 32/16 over a 117.8
+  baseline; the final confirmation was 126.5 tok/s.  `--pf-b 1.43` regressed
+  to 99.3 tok/s prefill / 11.2 decode; `STEP_MAX=20` helped the 16-token
+  follow-up but dropped the 128-token decode to 12.4 tok/s; D3 off was
+  neutral.  Those were not applied.
+- Verified: a 6,110-token direct prefill at 126.5 tok/s, and a live Hive turn
+  (`DS41_HIVE_OK`) with 5,734 prompt tokens in 67 s (85.6 tok/s), 128 thinking
+  tokens at 17.6 tok/s, a tool call/result, and a follow-up turn that reused
+  the parked prefix in 5 s and answered 139 tokens at 15.1 tok/s.
+- Previous config backups: `/etc/hive-engine/ds41.json.pre-tune2`,
+  `/etc/hive-engine/ds41.json.pre-chunk1024`, and
+  `/etc/hive-engine/ds41.json.pre-tune`.  The service log is in the journal;
+  the engine's own log is `/srv/hive-engine/logs/engine.log`.
 
 ## Blast-radius test
 
