@@ -101,6 +101,7 @@ for _ in $(seq 1 60); do
 done
 if [[ "$healthy" -ne 1 ]]; then
   echo "hive.service did not become healthy; inspect the journal" >&2
+  echo "rollback: sudo cp -a $BACKUP $PROFILE && sudo systemctl restart hive.service" >&2
   exit 1
 fi
 curl -fsS -m 3 http://127.0.0.1:8765/health
