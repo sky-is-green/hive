@@ -22,7 +22,11 @@ Environment=HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions
 # instead of the DeepSeek Messages adapter.
 Environment=HIVE_DSH_PROVIDER=hive-local
 Environment=HIVE_DSH_MODEL=hive-local
+# Local llama.cpp needs a non-secret key for the pi-ai route; it is not a
+# human or cloud credential.
+Environment=HIVE_LOCAL_API_KEY=lm-studio
 Environment=HARNESS_PROVIDERS_FILE=/srv/hive-ai/state/providers.local.json
+Environment=HARNESS_ENGINES_FILE=/srv/hive-ai/state/engines.local.json
 Environment=HIVE_TOOL_URL=http://127.0.0.1:8765
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1

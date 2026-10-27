@@ -154,6 +154,65 @@ per-user socket. A human running the command against their own state will not
 see the AI user’s state; use the web Studio, or run the CLI in the AI
 environment.
 
+## Local DSH runtime and OpenAI-compatible route
+
+The unit runs the Studio, but the DSH agent runtime and its approval-hook
+plugin are separate Node installs under `/srv/hive-ai/tools/dsh`. Install
+them as the AI user, not as root:
+
+```bash
+HIVE_UID="$(id -u hive-ai)"
+sudo -u hive-ai -H env HOME=/srv/hive-ai/home \
+  npm install --prefix /srv/hive-ai/tools/dsh \
+  @deepseek-ai/dsh@0.2.1-rc.2 \
+  @deepseek-ai/dsh-hooks-claude-code@0.2.1-rc.2
+```
+
+If npm 12 reports blocked install scripts, approve the five DSH helpers
+(`@deepseek-ai/dsh-subprocess-local`, `koffi`, `node-pty`, `@google/genai`,
+`protobufjs`), run `npm rebuild`, then restore `root:hive-ai` ownership and
+`g+rX,o-rwx` modes.
+
+The profile must be able to resolve the plugin, and a local llama.cpp server
+must use DSH’s OpenAI-compatible `pi-ai` route rather than the DeepSeek
+Messages adapter:
+
+```bash
+sudo install -d -o hive-ai -g hive-ai -m 0755 \
+  /srv/hive-ai/dsh/profiles/sdk/node_modules
+sudo ln -sfn /srv/hive-ai/tools/dsh/node_modules/@deepseek-ai \
+  /srv/hive-ai/dsh/profiles/sdk/node_modules/@deepseek-ai
+```
+
+Append this route to `/srv/hive-ai/dsh/cordis.patch.yml` (the hook installer
+adds its own `hooks-claude-code` row separately):
+
+```yaml
+- insert:
+    - id: llm-pi-ai
+      name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          hive-local:
+            apiKeyEnv: HIVE_LOCAL_API_KEY
+            api: openai-completions
+            baseURL: http://127.0.0.1:1234/v1
+            compat:
+              thinkingFormat: deepseek
+            models:
+              - id: hive-local
+                name: Qwen3.8-35B-A3B-IQ2_M
+                contextWindow: 16384
+                maxTokens: 8192
+```
+
+`HIVE_LOCAL_API_KEY=lm-studio` is a local, non-secret placeholder; do not use
+a human or cloud key here. The unit sets `HIVE_DSH_PROVIDER=hive-local` and
+`HIVE_DSH_MODEL=hive-local`, and keeps the provider/engine files under
+`/srv/hive-ai/state` so a read-only app tree never blocks persistence. Point
+`HARNESS_LLAMA_SERVER` at the AI-readable llama.cpp binary and put the GGUF
+under `/srv/hive-ai/models/gguf`.
+
 ## Blast-radius test
 
 After the account and rootless daemon are up, run the destructive sentinel test
