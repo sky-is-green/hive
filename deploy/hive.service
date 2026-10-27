@@ -18,6 +18,10 @@ Environment=HIVE_HOME=/srv/hive-ai
 Environment=HIVE_STATE_DIR=/srv/hive-ai/state
 Environment=DSH_HOME=/srv/hive-ai/dsh
 Environment=HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions
+# Local llama.cpp is OpenAI-compatible; route it through DSH's pi-ai adapter
+# instead of the DeepSeek Messages adapter.
+Environment=HIVE_DSH_PROVIDER=hive-local
+Environment=HIVE_DSH_MODEL=hive-local
 Environment=HARNESS_PROVIDERS_FILE=/srv/hive-ai/state/providers.local.json
 Environment=HIVE_TOOL_URL=http://127.0.0.1:8765
 Environment=PYTHONUNBUFFERED=1

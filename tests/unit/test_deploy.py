@@ -26,6 +26,10 @@ def test_unit_runs_the_whole_app_as_hive_ai_with_hardening():
     assert "HIVE_STATE_DIR=/srv/hive-ai/state" in UNIT
     assert "DSH_HOME=/srv/hive-ai/dsh" in UNIT
     assert "HIVE_DSH_SESSION_ROOT=/srv/hive-ai/dsh/sessions" in UNIT
+    # Local OpenAI-compatible llama.cpp uses the pi-ai route, not the
+    # DeepSeek Messages adapter.
+    assert "HIVE_DSH_PROVIDER=hive-local" in UNIT
+    assert "HIVE_DSH_MODEL=hive-local" in UNIT
     # Relative defaults would resolve under the read-only app tree.
     assert "--state-dir /srv/hive-ai/state" in UNIT
     assert "--log-dir /srv/hive-ai/logs" in UNIT
