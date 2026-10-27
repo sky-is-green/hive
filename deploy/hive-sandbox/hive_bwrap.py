@@ -9,8 +9,9 @@ configured ``runnerCommand``.  This wrapper adds Hive's deployment policy:
 * no capabilities, a fresh terminal session, and a fixed hostname;
 * tmpfs masks over the host paths a subagent must not read (the human home,
   the Hive state and app trees, GUARD, the engine, the runtime socket dir);
-* a private scratch workspace: sibling workspaces are masked and the child's
-  own workspace is re-created and bound back.
+* a private scratch workspace: the provider's policy bind is replaced by the
+  command's actual cwd, sibling workspaces are masked, and the cwd is bound
+  back and made the command's starting directory.
 
 The wrapper is installed root-owned under ``/srv/hive-ai/bin`` and is invoked
 by the child preset only.  It never reads a path or executable from the
@@ -84,26 +85,19 @@ def split_profile(args: list[str]) -> tuple[list[str], list[str]]:
     return args[:separator], args[separator + 1:]
 
 
-def workspace_bind(profile: list[str], workspace_root: str) -> str:
-    """The workspace path from the provider's ``--bind <path> <path>`` pair."""
-    root = Path(workspace_root)
-    for index in range(len(profile) - 2):
-        if profile[index] != "--bind":
-            continue
-        source, target = profile[index + 1], profile[index + 2]
-        if source != target:
-            continue
-        if not Path(source).is_absolute():
-            continue
-        try:
-            relative = Path(source).relative_to(root)
-        except ValueError:
-            continue
-        if any(part in ("", ".", "..") for part in relative.parts):
-            raise ProfileError("workspace path is not normalized: " + source)
-        if relative.parts:
-            return source
-    raise ProfileError("profile has no workspace bind under " + str(root))
+def profile_bind(profile: list[str]) -> int:
+    """Index of the provider's single ``--bind <path> <path>`` workspace pair.
+
+    DSH's sandbox policy roots a child at the parent's permission root, so the
+    provider's bind can be broader than the child's scratch directory.  The
+    runner replaces it with the actual command cwd.
+    """
+    found = [index for index in range(len(profile) - 2)
+             if profile[index] == "--bind"
+             and profile[index + 1] == profile[index + 2]]
+    if len(found) != 1:
+        raise ProfileError(f"expected one workspace bind, found {len(found)}")
+    return found[0]
 
 
 def mask_args(workspace_root: str,
@@ -125,20 +119,37 @@ def build_bwrap_argv(
     bwrap: str = BWRAP,
     workspace_root: str = WORKSPACE_ROOT,
     mask_dirs: tuple[str, ...] = MASK_DIRS,
+    cwd: str | None = None,
 ) -> list[str]:
-    """The complete bwrap argv for one confined command."""
+    """The complete bwrap argv for one confined command.
+
+    The policy bind is the provider's permission root, which the child inherits
+    from the parent.  The actual command cwd is the child's scratch directory;
+    the runner narrows the bind to it and refuses a cwd outside the workspace
+    root.
+    """
     if not command:
         raise ProfileError("empty command")
-    workspace = workspace_bind(profile, workspace_root)
-    root = Path(workspace_root)
-    relative = Path(workspace).relative_to(root)
-    args = [bwrap, *NAMESPACE_ARGS, *profile,
-            *mask_args(workspace_root, mask_dirs)]
+    root = Path(workspace_root).resolve()
+    target = Path(cwd if cwd is not None else os.getcwd()).resolve()
+    try:
+        relative = target.relative_to(root)
+    except ValueError as exc:
+        raise ProfileError(
+            f"command cwd is outside {root}: {target}") from exc
+    if not relative.parts:
+        raise ProfileError(f"command cwd must be a subdirectory of {root}")
+    if not target.is_dir():
+        raise ProfileError(f"command cwd does not exist: {target}")
+    index = profile_bind(profile)
+    confined = profile[:index] + profile[index + 3:]
+    args = [bwrap, *NAMESPACE_ARGS, *confined,
+            *mask_args(str(root), mask_dirs)]
     current = root
     for part in relative.parts:
         current /= part
         args += ["--dir", str(current)]
-    args += ["--bind", workspace, workspace]
+    args += ["--bind", str(target), str(target), "--chdir", str(target)]
     args += ["--setenv", "HOME", "/tmp", "--setenv", "TMPDIR", "/tmp"]
     args += ["--", *command]
     return args
@@ -148,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         profile, command = split_profile(
             list(argv if argv is not None else sys.argv[1:]))
-        target = build_bwrap_argv(profile, command)
+        target = build_bwrap_argv(profile, command, cwd=os.getcwd())
     except ProfileError as exc:
         print(f"hive-bwrap: {exc}", file=sys.stderr)
         return 125

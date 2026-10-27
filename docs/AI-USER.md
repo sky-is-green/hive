@@ -286,7 +286,10 @@ The trimmed profile had no delegation.  The sandbox profile adds one
   unreachable), `/etc/hive`, `/srv/hive`, `/srv/hive-engine`, and
   `/srv/hive-ai/{app,bin,dsh,home,logs,runs,state,tools,transcripts,harness_state}`.
   Sibling workspaces under `/srv/hive-ai/workspaces` are masked; only the
-  child's own workspace is bound back.  `HOME` and `TMPDIR` are `/tmp`.
+  child's own workspace is bound back.  The runner replaces the provider's
+  broader policy bind with the command's actual cwd and refuses a cwd outside
+  the workspaces root, so changing `workdir` cannot escape the scratch tree.
+  `HOME` and `TMPDIR` are `/tmp`.
 - **Tools:** the child has no `read`, `write`, `edit`, `glob`, `grep`, web,
   subagent, goal, todo, or plan tools.  `dsh-fs-sandbox` fences writes but not
   reads, so a file tool would bypass the bwrap masks; `bash` is the only

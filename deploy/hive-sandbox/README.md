@@ -44,9 +44,12 @@ profile/session, home, logs, runs, state, tools, transcripts, harness-state,
 and `.dsh-home` trees.
 
 Sibling workspaces are masked too; the child's own workspace is re-created and
-bound back.  The network namespace has no route, so loopback services (the
-engine, Hive, the rootless Docker daemon) are unreachable.  `HOME` and
-`TMPDIR` point at the fresh `/tmp`.
+bound back.  The provider's policy bind is the parent's permission root
+(`/srv/hive-ai`); the runner removes that broader bind, requires the command
+cwd under `/srv/hive-ai/workspaces`, and binds only that cwd.  A bash call whose
+`workdir` leaves the workspaces root fails closed.  The network namespace has
+no route, so loopback services (the engine, Hive, the rootless Docker daemon)
+are unreachable.  `HOME` and `TMPDIR` point at the fresh `/tmp`.
 
 The child preset mounts `bash` only.  `dsh-fs-sandbox` fences writes but not
 reads, so a `read`/`write`/`edit` tool would bypass the bwrap masks; bash is
