@@ -706,6 +706,12 @@ class DshAgentService:
             harness = self._harness
             self._harness = None
             self._target = None
+            if harness is not None:
+                # A forced stop retires this generation just like a model
+                # change: reusing the persisted session id makes DSH reject
+                # the next turn ("session already exists").
+                self._generation += 1
+                self._handoff_done.clear()
         proc = getattr(getattr(harness, "client", None), "_proc", None)
         if proc is not None and proc.poll() is None:
             try:
@@ -735,6 +741,11 @@ class DshAgentService:
     def close(self) -> None:
         with self._lock:
             if self._harness is not None:
+                # Stop/cancel also retires the generation; the next turn must
+                # build a fresh session id rather than collide with the
+                # durable log of the runtime we just closed.
+                self._generation += 1
+                self._handoff_done.clear()
                 try:
                     self._harness.close()
                 finally:
