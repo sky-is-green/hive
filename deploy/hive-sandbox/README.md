@@ -17,8 +17,12 @@ capabilities.  The bwrap path already gives per-session policy and per-call
   `hive-sandbox` preset, the subagent service/provider, and a new
   `hive-subagent-tool` row with `maxDepth: 0`.
 - `install.sh` - root installer.  It is idempotent: refreshes the runner,
-  creates `/srv/hive-ai/workspaces`, runs a smoke test as `hive-ai`, appends
-  the profile block once, and restarts `hive.service`.
+  creates `/srv/hive-ai/workspaces`, runs a smoke test as `hive-ai`, installs
+  the workspace rule into the live hook, appends the profile block once, and
+  restarts `hive.service`.  The hook replacement is checksum-guarded: the
+  installer refuses if the live `/srv/hive-ai/app/harness/tool_hook.py` is not
+  the expected pre-change file, and backs it up to
+  `tool_hook.py.pre-subagent-sandbox` before writing.
 
 ## Install
 
