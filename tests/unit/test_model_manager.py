@@ -460,6 +460,28 @@ def test_agent_stream_shapes_sdk_activity(agent_client, monkeypatch):
     assert "session_id" not in harness.kwargs  # sessions are per-run, not per-runtime
 
 
+def test_force_stop_retires_the_runtime_generation(agent_client):
+    """A Cease must not rebuild the same persisted DSH session id."""
+    c, app = agent_client
+    _configure_provider(c)
+    with c.stream("POST", "/v1/agent/stream", json={
+        "message": "first", "conversation_id": "c-gen",
+    }) as resp:
+        resp.read()
+    agent = app.state.agent
+    before = agent._generation
+    assert agent._harness is not None
+    agent._force_stop_runtime()
+    assert agent._harness is None
+    assert agent._generation == before + 1
+    with c.stream("POST", "/v1/agent/stream", json={
+        "message": "after cease", "conversation_id": "c-gen",
+    }) as resp:
+        resp.read()
+    harness = FakeHarness.instances[-1]
+    assert harness.calls[0][1] == f"agent-c-gen-g{before + 1}"
+
+
 def test_agent_activity_is_recorded_and_cease_blocks_the_next_turn(
         agent_client, monkeypatch):
     c, app = agent_client
