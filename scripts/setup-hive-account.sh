@@ -178,11 +178,16 @@ fi
 # file inside $HIVE_BASE could still be unlinked and replaced, because the
 # directory belongs to the AI user.
 run install -d -o root -g root -m 0755 /etc/hive
-cat > "/tmp/hive.env.$$" <<EOF
-DOCKER_HOST=unix:///run/user/${HIVE_UID}/docker.sock
-EOF
-run install -o root -g root -m 0600 "/tmp/hive.env.$$" /etc/hive/hive.env
-rm -f "/tmp/hive.env.$$"
+# Preserve operator-added DSH/model settings; only DOCKER_HOST is owned here.
+ENV_TMP="/tmp/hive.env.$$"
+if [[ -f /etc/hive/hive.env ]]; then
+  grep -v '^DOCKER_HOST=' /etc/hive/hive.env > "$ENV_TMP" || true
+else
+  : > "$ENV_TMP"
+fi
+printf 'DOCKER_HOST=unix:///run/user/%s/docker.sock\n' "$HIVE_UID" >> "$ENV_TMP"
+run install -o root -g root -m 0600 "$ENV_TMP" /etc/hive/hive.env
+rm -f "$ENV_TMP"
 
 UNIT_INSTALLED=0
 if [[ "$HIVE_USER" == "hive-ai" && "$HIVE_BASE" == "/srv/hive-ai" ]]; then
