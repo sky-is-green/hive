@@ -22,7 +22,8 @@ def _load_wrapper():
 hive_bwrap = _load_wrapper()
 
 
-def _profile(workspace: Path) -> list[str]:
+def _profile(policy_root: Path) -> list[str]:
+    """The provider profile: the policy bind is the parent's permission root."""
     return [
         "--ro-bind", "/", "/",
         "--dev", "/dev",
@@ -30,7 +31,7 @@ def _profile(workspace: Path) -> list[str]:
         "--proc", "/proc",
         "--die-with-parent",
         "--tmpfs", "/tmp",
-        "--bind", str(workspace), str(workspace),
+        "--bind", str(policy_root), str(policy_root),
     ]
 
 
@@ -50,30 +51,47 @@ def test_missing_separator_is_a_runner_failure():
         hive_bwrap.split_profile(["--ro-bind", "/", "/"])
 
 
-def test_workspace_must_be_under_the_root(tmp_path):
+def test_the_policy_bind_must_be_present(tmp_path):
+    root = tmp_path / "workspaces"
+    root.mkdir()
+    workspace = root / "task"
+    workspace.mkdir()
+    profile = _profile(root)[:-3]
+    with pytest.raises(hive_bwrap.ProfileError, match="workspace bind"):
+        hive_bwrap.build_bwrap_argv(
+            profile, ["bash"], workspace_root=str(root), mask_dirs=(),
+            cwd=str(workspace))
+
+
+def test_the_command_cwd_must_be_under_the_root(tmp_path):
     root = tmp_path / "workspaces"
     root.mkdir()
     outside = tmp_path / "outside"
     outside.mkdir()
-    with pytest.raises(hive_bwrap.ProfileError, match="workspace bind"):
+    with pytest.raises(hive_bwrap.ProfileError, match="outside"):
         hive_bwrap.build_bwrap_argv(
-            _profile(outside), ["bash", "-c", "true"],
-            workspace_root=str(root), mask_dirs=())
+            _profile(root), ["bash", "-c", "true"],
+            workspace_root=str(root), mask_dirs=(), cwd=str(outside))
 
 
 def test_the_root_itself_is_not_a_workspace(tmp_path):
     root = tmp_path / "workspaces"
     root.mkdir()
-    with pytest.raises(hive_bwrap.ProfileError, match="workspace bind"):
-        hive_bwrap.workspace_bind(_profile(root), str(root))
+    with pytest.raises(hive_bwrap.ProfileError, match="subdirectory"):
+        hive_bwrap.build_bwrap_argv(
+            _profile(root), ["bash"], workspace_root=str(root),
+            mask_dirs=(), cwd=str(root))
 
 
-def test_a_dotdot_workspace_is_refused(tmp_path):
+def test_a_dotdot_cwd_is_refused(tmp_path):
     root = tmp_path / "workspaces"
     root.mkdir()
-    escaping = root / ".." / "outside"
-    with pytest.raises(hive_bwrap.ProfileError, match="not normalized"):
-        hive_bwrap.workspace_bind(_profile(escaping), str(root))
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    with pytest.raises(hive_bwrap.ProfileError, match="outside"):
+        hive_bwrap.build_bwrap_argv(
+            _profile(root), ["bash"], workspace_root=str(root),
+            mask_dirs=(), cwd=str(root / ".." / "outside"))
 
 
 def test_namespace_flags_masks_and_rebind_are_ordered(tmp_path):
@@ -86,8 +104,9 @@ def test_namespace_flags_masks_and_rebind_are_ordered(tmp_path):
     missing = tmp_path / "missing"
 
     argv = hive_bwrap.build_bwrap_argv(
-        _profile(workspace), ["bash", "-c", "true"],
-        workspace_root=str(root), mask_dirs=(str(secret), str(missing)))
+        _profile(root), ["bash", "-c", "true"],
+        workspace_root=str(root), mask_dirs=(str(secret), str(missing)),
+        cwd=str(workspace))
     pairs = _pairs(argv)
 
     assert ("--unshare-user", "--disable-userns") in pairs
@@ -98,11 +117,14 @@ def test_namespace_flags_masks_and_rebind_are_ordered(tmp_path):
     assert ("--tmpfs", str(secret)) in pairs
     assert ("--tmpfs", str(missing)) not in pairs
 
+    # The broad policy bind is removed; only the child's cwd is bound.
+    assert ("--bind", str(root)) not in pairs
+    assert ("--bind", str(workspace)) in pairs
+    assert ("--chdir", str(workspace)) in pairs
+
     root_at = pairs.index(("--tmpfs", str(root)))
-    bind_at = max(
-        index for index, pair in enumerate(pairs)
-        if pair == ("--bind", str(workspace)))
     dir_at = pairs.index(("--dir", str(workspace)))
+    bind_at = pairs.index(("--bind", str(workspace)))
     assert root_at < dir_at < bind_at
     assert argv[-4:] == ["--", "bash", "-c", "true"]
 
@@ -112,8 +134,8 @@ def test_nested_workspace_creates_each_parent(tmp_path):
     workspace = root / "conversation" / "task"
     workspace.mkdir(parents=True)
     argv = hive_bwrap.build_bwrap_argv(
-        _profile(workspace), ["bash"],
-        workspace_root=str(root), mask_dirs=())
+        _profile(root), ["bash"],
+        workspace_root=str(root), mask_dirs=(), cwd=str(workspace))
     pairs = _pairs(argv)
     assert ("--dir", str(root / "conversation")) in pairs
     assert ("--dir", str(workspace)) in pairs
@@ -140,7 +162,8 @@ def test_empty_command_is_refused(tmp_path):
     workspace.mkdir(parents=True)
     with pytest.raises(hive_bwrap.ProfileError, match="empty command"):
         hive_bwrap.build_bwrap_argv(
-            _profile(workspace), [], workspace_root=str(root), mask_dirs=())
+            _profile(root), [], workspace_root=str(root), mask_dirs=(),
+            cwd=str(workspace))
 
 
 def test_main_reports_a_missing_profile(capsys):
