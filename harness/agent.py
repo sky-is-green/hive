@@ -520,7 +520,13 @@ class DshAgentService:
 
     def _ensure(self, base_url: str, api_key: str, model: str):
         cordis = self._runtime_cordis()
-        key = (base_url, api_key, model, cordis)
+        # A local OpenAI-compatible server must go through DSH's pi-ai route,
+        # not the DeepSeek Messages adapter.  Both names are deployment
+        # choices; the defaults preserve the stock DeepSeek runtime.
+        provider = (os.environ.get("HIVE_DSH_PROVIDER", "").strip()
+                    or "deepseek-official")
+        model = (os.environ.get("HIVE_DSH_MODEL", "").strip() or model)
+        key = (base_url, api_key, model, provider, cordis)
         with self._lock:
             if self._harness is not None and self._target == key:
                 return self._harness
@@ -588,7 +594,7 @@ class DshAgentService:
                     self._hook_preflight_key = preflight_key
             self._hook_runtime_verified = False
             self._harness = DeepSeekHarness(
-                provider="deepseek-official",
+                provider=provider,
                 base_url=base_url,
                 api_key=api_key or "lm-studio",
                 model=model,
