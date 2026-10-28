@@ -148,8 +148,16 @@ print(json.dumps({
 }))
 PY
 )"
-response="$(curl -fsS -m 90 -X POST http://127.0.0.1:8765/v1/sandbox/exec \
+response="$(curl -sS -m 90 -w '\n%{http_code}' \
+  -X POST http://127.0.0.1:8765/v1/sandbox/exec \
   -H 'content-type: application/json' -d "$payload")"
+http_status="${response##*$'\n'}"
+response="${response%$'\n'*}"
+if [[ "$http_status" != "200" ]]; then
+  echo "docker sandbox HTTP $http_status: $response" >&2
+  echo "inspect: journalctl -u hive.service -n 80 --no-pager" >&2
+  exit 1
+fi
 /usr/bin/python3 -c '
 import json, sys
 body = json.load(sys.stdin)
