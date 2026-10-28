@@ -184,3 +184,113 @@ def test_status_reports_the_pin_and_fallback(client, monkeypatch):
     assert body["pinned"] is False
     assert body["fallback_requires_approval"] is True
     assert "approval" in body["fallback"]
+
+
+def _workspace_root(tmp_path, monkeypatch):
+    root = tmp_path / "workspaces"
+    root.mkdir()
+    monkeypatch.setattr(sandbox, "WORKSPACE_ROOT", root)
+    return root
+
+
+def test_workspace_path_accepts_a_child(tmp_path, monkeypatch):
+    root = _workspace_root(tmp_path, monkeypatch)
+    workspace = root / "task"
+    workspace.mkdir()
+    assert sandbox.workspace_path(str(workspace)) == str(workspace.resolve())
+
+
+def test_workspace_path_rejects_bad_targets(tmp_path, monkeypatch):
+    root = _workspace_root(tmp_path, monkeypatch)
+    with pytest.raises(sandbox.SandboxError, match="subdirectory"):
+        sandbox.workspace_path(str(root))
+    with pytest.raises(sandbox.SandboxError, match="under"):
+        sandbox.workspace_path(str(tmp_path))
+    with pytest.raises(sandbox.SandboxError, match="does not exist"):
+        sandbox.workspace_path(str(root / "missing"))
+    colon = root / "task:bad"
+    colon.mkdir()
+    with pytest.raises(sandbox.SandboxError, match="Docker-invalid"):
+        sandbox.workspace_path(str(colon))
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    link = root / "link"
+    link.symlink_to(outside)
+    with pytest.raises(sandbox.SandboxError, match="under"):
+        sandbox.workspace_path(str(link))
+
+
+def test_a_workspace_requires_docker(client, monkeypatch):
+    monkeypatch.setattr(sandbox, "docker_status", lambda: {
+        "installed": True, "daemon": False, "binary": "/usr/bin/docker",
+        "detail": "docker daemon is not running"})
+    root = _workspace_root(
+        Path(client.app.state.harness.state_dir).parent, monkeypatch)
+    workspace = root / "task"
+    workspace.mkdir()
+    response = client.post("/v1/sandbox/exec", json={
+        "command": "echo hi", "session_id": "s1",
+        "workspace": str(workspace), "allow_local_fallback": True})
+    assert response.status_code == 409
+    assert "requires Docker" in response.json()["detail"]
+
+
+def test_docker_run_mounts_the_workspace_and_labels_the_child(
+        client, monkeypatch):
+    state = StatePaths(client.app.state.harness.state_dir)
+    sandbox.SandboxPolicy(state).update(
+        docker_image="hive-sandbox:1", image_digest="d" * 64)
+    monkeypatch.setattr(sandbox, "docker_status", lambda: {
+        "installed": True, "daemon": True, "binary": "/usr/bin/docker",
+        "detail": "docker daemon is running"})
+    root = _workspace_root(
+        Path(client.app.state.harness.state_dir).parent, monkeypatch)
+    workspace = root / "child-proof"
+    workspace.mkdir()
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, "/workspace\nDOCKER_OK\n", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    response = client.post("/v1/sandbox/exec", json={
+        "command": "pwd; printf DOCKER_OK", "session_id": "child-1",
+        "parent_session_id": "parent-1", "workspace": str(workspace)})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["backend"] == "docker"
+    assert body["workspace"] == str(workspace.resolve())
+    assert body["container"].startswith("hive-sandbox-")
+    command = calls[-1]
+    assert "-v" in command
+    assert f"{workspace.resolve()}:/workspace:rw" in command
+    assert "-w" in command and command[command.index("-w") + 1] == "/workspace"
+    assert "hive.session=child-1" in command
+    assert "hive.parent=parent-1" in command
+    assert any(value.startswith("hive.workspace=") for value in command)
+    assert "--name" in command
+    assert body["container"] in command
+
+
+def test_kill_session_containers_includes_the_parent_label(monkeypatch):
+    monkeypatch.setattr(sandbox, "docker_status", lambda: {
+        "installed": True, "daemon": True, "binary": "/usr/bin/docker",
+        "detail": "docker daemon is running"})
+    listed = []
+    killed = []
+
+    def fake_run(command, **kwargs):
+        if command[1] == "ps":
+            listed.append(command)
+            return subprocess.CompletedProcess(command, 0, "abc\n", "")
+        killed.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = sandbox.kill_session_containers("parent-1")
+    filters = [command[command.index("--filter") + 1] for command in listed]
+    assert filters == ["label=hive.session=parent-1",
+                       "label=hive.parent=parent-1"]
+    assert result["killed"] == ["abc"]
+    assert killed == [["/usr/bin/docker", "kill", "abc"]]
