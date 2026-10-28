@@ -13,9 +13,9 @@ sandbox and full tool set; the child gets its own workspace mounted at
   `hive-sandbox` preset, the subagent service/provider, and a new
   `hive-subagent-tool` row with `maxDepth: 1`.
 - `install.sh` - root installer.  It checksum-guards and updates the live
-  `harness/app.py`, `harness/sandbox.py`, and `harness/tool_hook.py`, installs
-  the plugin package, replaces the profile block, restarts `hive.service`, and
-  runs a Docker workspace smoke test.
+  `harness/app.py`, `harness/sandbox.py`, `harness/security.py`, and
+  `harness/tool_hook.py`, installs the plugin package, replaces the profile
+  block, restarts `hive.service`, and runs a Docker workspace smoke test.
 - `hive_bwrap.py` - the earlier bwrap runner, retained as a fallback reference.
   The child does not use it: `hive.service`'s systemd sandbox blocks bwrap's
   mount path with `Function not implemented`, while the rootless Docker daemon
@@ -34,6 +34,7 @@ Backups:
 - `/srv/hive-ai/dsh/cordis.patch.yml.pre-docker-sandbox`
 - `/srv/hive-ai/app/harness/app.py.pre-docker-sandbox`
 - `/srv/hive-ai/app/harness/sandbox.py.pre-docker-sandbox`
+- `/srv/hive-ai/app/harness/security.py.pre-docker-sandbox`
 - `/srv/hive-ai/app/harness/tool_hook.py.pre-docker-sandbox`
 
 ## What the child can see
@@ -84,8 +85,12 @@ Unit tests:
 ```
 
 The installer's Docker smoke test mounts a real workspace and checks the
-container's `/workspace` output.  A live proof should show the child returning
-`DOCKER_SANDBOX_OK`-style markers and no host paths.
+container's `/workspace` output.  The 2026-10-28 live proof returned
+`/workspace`, `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`, `HOME_ABSENT`,
+`SIBLING_ABSENT`, `NET_BLOCKED`, and `CHILD_DONE` from the child with exit 0.
+A live cease test killed a `sleep 60` container in about three seconds: the
+sandbox request returned exit 137 with `timed_out: false`, and
+`actions.stop.containers.killed` named the container.
 
 ## Boundary
 

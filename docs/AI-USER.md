@@ -310,12 +310,33 @@ Install or refresh as root from the hivebench checkout (idempotent):
 sudo bash deploy/hive-sandbox/install.sh
 ```
 
-The installer updates `/srv/hive-ai/app/harness/{app,sandbox,tool_hook}.py`
-with checksum guards and `.pre-docker-sandbox` backups, installs the
+The installer updates
+`/srv/hive-ai/app/harness/{app,sandbox,security,tool_hook}.py` with checksum
+guards and `.pre-docker-sandbox` backups, installs the
 `@deepseek-ai/hive-docker-bash` package into the DSH installation, replaces the
 profile block, restarts `hive.service`, and runs a Docker workspace smoke test.
 The profile backup is
 `/srv/hive-ai/dsh/cordis.patch.yml.pre-docker-sandbox`.
+
+Verified 2026-10-28:
+
+- A live `subagent` turn started child `83f90620-6aa4-47cd-b68d-21a8d76e03c6`.
+  The child ran in a pinned `hive-sandbox:1` container and returned
+  `/workspace`, `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`, `HOME_ABSENT`,
+  `SIBLING_ABSENT`, `NET_BLOCKED`, and `CHILD_DONE` with exit 0.
+  `child-proof.txt` contains `CHILD_OK` in the host workspace.  The container
+  reports uid 0; the rootless daemon maps that to `hive-ai` on the host.
+- A 60-second `sleep` container labelled `hive.session=label-child` and
+  `hive.parent=label-parent` was killed by a cease on `label-parent`: the
+  sandbox request returned exit 137 with `timed_out: false` instead of running
+  the full 60 seconds, and `actions.stop.containers.killed` named the
+  container.  The block was resumed.
+- The installer's Docker smoke returned `docker sandbox: OK`.
+
+The parent model may try `job_output` on the child id after a delegation.  That
+id is a subagent, not a job; the call returns `unknown job`.  The actual result
+is the completion notice.  The proof's parent did this twice and still reported
+the child output correctly.
 
 The earlier bwrap runner remains at `/srv/hive-ai/bin/hive-bwrap.py` as a
 fallback reference.  The child does not use it: the `hive.service` systemd
