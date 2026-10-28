@@ -16,10 +16,7 @@ sandbox and full tool set; the child gets its own workspace mounted at
   `harness/app.py`, `harness/sandbox.py`, `harness/security.py`, and
   `harness/tool_hook.py`, installs the plugin package, replaces the profile
   block, restarts `hive.service`, and runs a Docker workspace smoke test.
-- `hive_bwrap.py` - the earlier bwrap runner, retained as a fallback reference.
-  The child does not use it: `hive.service`'s systemd sandbox blocks bwrap's
-  mount path with `Function not implemented`, while the rootless Docker daemon
-  runs outside that sandbox.
+
 
 ## Install
 
@@ -91,6 +88,11 @@ container's `/workspace` output.  The 2026-10-28 live proof returned
 A live cease test killed a `sleep 60` container in about three seconds: the
 sandbox request returned exit 137 with `timed_out: false`, and
 `actions.stop.containers.killed` named the container.
+
+The parent's first trace showed it reaching for `job_output` on the child id
+because it has no subagent wait/poll tool.  The gateway now refuses
+`job_output`/`job_kill` on a delegated child id and tells the model to wait for
+the completion notice; real background jobs still follow the normal path.
 
 ## Boundary
 

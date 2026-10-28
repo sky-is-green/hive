@@ -37,8 +37,10 @@
               prefix: >-
                 You are a sandboxed subagent. The workspace is mounted at
                 /workspace and is the only writable host path. There is no
-                network and no host home. Use the bash tool for all file work,
+                network, no host home, and no Hive state. Use the bash tool for
+                all file work. Check the [exit code: N] marker on every result,
                 then report the result.
+              complete: true
           - id: tool-bash-docker
             name: '@deepseek-ai/hive-docker-bash'
             config:
