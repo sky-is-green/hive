@@ -320,6 +320,14 @@ class SessionLineage:
             current = self._parents.get(current)
         return rows
 
+    def descendants(self, session_id: str) -> list[str]:
+        """Every known child below ``session_id`` (direct or deeper)."""
+        parent = str(session_id or "").strip()
+        if not parent:
+            return []
+        return [child for child in self._parents
+                if parent in self.ancestors(child)]
+
     def clear(self) -> None:
         self._parents.clear()
 

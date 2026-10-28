@@ -270,6 +270,17 @@ def test_session_lineage_is_acyclic_and_downward(tmp_path):
     assert lineage.parent("child") == "parent"
 
 
+def test_session_lineage_lists_descendants():
+    lineage = SessionLineage()
+    lineage.claim("parent", "child")
+    lineage.claim("child", "grandchild")
+    lineage.claim("other", "sibling")
+    assert lineage.descendants("parent") == ["child", "grandchild"]
+    assert lineage.descendants("child") == ["grandchild"]
+    assert lineage.descendants("missing") == []
+    assert lineage.descendants("") == []
+
+
 def test_child_inherits_parent_session_grant_but_not_identity(tmp_path):
     hub = GatewayHub(_state(tmp_path))
     parent = hub.gateway("parent")

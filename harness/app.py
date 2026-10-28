@@ -2660,7 +2660,11 @@ def create_app(
 
             killed: list[str] = []
             errors: list[str] = []
-            for target in {session_id, conversation_id} - {""}:
+            targets = {session_id, conversation_id} - {""}
+            hub = getattr(app.state, "tool_hub", None)
+            if hub is not None and session_id:
+                targets.update(hub.lineage.descendants(session_id))
+            for target in targets:
                 outcome = kill_session_containers(target)
                 killed.extend(outcome.get("killed") or [])
                 if outcome.get("error"):
