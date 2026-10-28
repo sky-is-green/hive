@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from harness.paths import state_dir
@@ -36,6 +37,10 @@ DEFAULT_POLICY: dict[str, Any] = {
     "updated_at": None,
 }
 FALLBACK_MODES = ("approval", "allow", "deny")
+#: The only host tree a child sandbox may mount.  The endpoint resolves the
+#: requested path and rejects a root, parent, symlink escape, or Docker-hostile
+#: injection before the container starts.
+WORKSPACE_ROOT = Path("/srv/hive-ai/workspaces")
 _NETWORKS = ("none", "bridge")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,180}$")
@@ -154,13 +159,45 @@ def label_value(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.:-]", "_", str(value or ""))[:128]
 
 
+def workspace_path(raw: str) -> str:
+    """The canonical host path a child sandbox may mount at ``/workspace``.
+
+    The path must resolve to an existing subdirectory of ``WORKSPACE_ROOT``.
+    The root itself, a parent, a symlink escape, and a path Docker would parse
+    as a volume option are all refused.  The caller passes the resolved string
+    to ``docker run -v <path>:/workspace:rw``.
+    """
+    text = str(raw or "").strip()
+    if not text:
+        raise SandboxError("workspace is required")
+    root = WORKSPACE_ROOT.resolve()
+    try:
+        path = Path(text).expanduser().resolve()
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise SandboxError(f"workspace is not usable: {text}") from exc
+    try:
+        relative = path.relative_to(root)
+    except ValueError as exc:
+        raise SandboxError(f"workspace must be under {root}") from exc
+    if not relative.parts:
+        raise SandboxError(f"workspace must be a subdirectory of {root}")
+    if not path.is_dir():
+        raise SandboxError(f"workspace does not exist: {path}")
+    rendered = str(path)
+    if ":" in rendered or "," in rendered:
+        raise SandboxError("workspace path contains a Docker-invalid character")
+    return rendered
+
+
 def kill_session_containers(session_id: str, *,
                             timeout: float = 10.0) -> dict[str, Any]:
-    """Kill sandbox containers labelled for one agent session.
+    """Kill sandbox containers labelled for one agent session or its children.
 
-    ``/v1/sandbox/exec`` labels every container with ``hive.session``; an
-    emergency cease uses that label to stop work that outlived the runtime.
-    A missing daemon or an empty id is reported, never silently ignored.
+    ``/v1/sandbox/exec`` labels every container with ``hive.session``; a child
+    call also carries ``hive.parent``.  An emergency cease passes the parent
+    session id and must stop both its own containers and any child container
+    that outlived the in-process runtime.  A missing daemon or an empty id is
+    reported, never silently ignored.
     """
     session_id = label_value(session_id)
     if not session_id:
@@ -169,18 +206,20 @@ def kill_session_containers(session_id: str, *,
     if not status["daemon"]:
         return {"killed": [], "error": status["detail"]}
     binary = str(status["binary"])
-    label = f"hive.session={session_id}"
-    try:
-        listed = subprocess.run(
-            [binary, "ps", "-q", "--filter", f"label={label}"],
-            capture_output=True, text=True, timeout=timeout)
-    except (OSError, subprocess.SubprocessError) as exc:
-        return {"killed": [], "error": f"cannot list containers: {exc}"}
-    ids = [line.strip() for line in (listed.stdout or "").splitlines()
-           if line.strip()]
+    labels = (f"hive.session={session_id}", f"hive.parent={session_id}")
+    ids: list[str] = []
+    for label in labels:
+        try:
+            listed = subprocess.run(
+                [binary, "ps", "-q", "--filter", f"label={label}"],
+                capture_output=True, text=True, timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as exc:
+            return {"killed": [], "error": f"cannot list containers: {exc}"}
+        ids.extend(line.strip() for line in (listed.stdout or "").splitlines()
+                   if line.strip())
     killed: list[str] = []
     errors: list[str] = []
-    for container_id in ids:
+    for container_id in dict.fromkeys(ids):
         try:
             proc = subprocess.run(
                 [binary, "kill", container_id],
@@ -193,7 +232,7 @@ def kill_session_containers(session_id: str, *,
         else:
             errors.append(
                 f"{container_id}: {(proc.stderr or proc.stdout)[:200]}")
-    return {"killed": killed, "errors": errors, "label": label}
+    return {"killed": killed, "errors": errors, "labels": list(labels)}
 
 
 def docker_status() -> dict[str, Any]:

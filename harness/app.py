@@ -1201,6 +1201,11 @@ class SandboxExecRequest(BaseModel):
         None, description="Deprecated; must match the pinned sandbox image.")
     session_id: Optional[str] = Field(
         None, description="Session receiving a local-fallback approval.")
+    parent_session_id: Optional[str] = Field(
+        None, description="Parent session for a child container's cease label.")
+    workspace: Optional[str] = Field(
+        None, description="Host workspace to mount at /workspace; must be under "
+                          "/srv/hive-ai/workspaces.")
     allow_local_fallback: bool = Field(
         False, description="Explicitly approve a host subprocess for this call.")
 
@@ -5249,24 +5254,48 @@ def create_app(
         backend = "local"
         image_ref = ""
         fallback_reason = ""
+        workspace = ""
+        if req.workspace:
+            try:
+                workspace = sandbox_mod.workspace_path(req.workspace)
+            except sandbox_mod.SandboxError as exc:
+                raise HTTPException(422, str(exc)) from exc
+        if workspace and not (req.use_docker and docker["daemon"]):
+            raise HTTPException(
+                409, "a workspace sandbox requires Docker; local fallback is disabled")
+        container_name = ""
         if req.use_docker and docker["daemon"]:
             try:
                 image_ref = policy.image_ref()
             except sandbox_mod.SandboxError as exc:
                 raise HTTPException(409, str(exc)) from exc
+            import uuid
+
+            container_name = f"hive-sandbox-{uuid.uuid4().hex[:12]}"
             cmd = [
                 docker["binary"], "run", "--rm",
+                "--name", container_name,
                 "--network", str(data.get("network") or "none"),
                 "--memory", str(data.get("memory") or "512m"),
                 "--cpus", str(data.get("cpus") or "1"),
                 "--pids-limit", str(int(data.get("pids_limit") or 128)),
                 "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges",
+            ]
+            if workspace:
+                cmd += ["-v", f"{workspace}:/workspace:rw", "-w", "/workspace"]
+            cmd += [
                 "--label", "hive.managed=1",
                 "--label",
                 "hive.session=" + sandbox_mod.label_value(
                     req.session_id or "global"),
             ]
+            if req.parent_session_id:
+                cmd += ["--label", "hive.parent=" + sandbox_mod.label_value(
+                    req.parent_session_id)]
+            if workspace:
+                cmd += ["--label", "hive.workspace=" + sandbox_mod.label_value(
+                    workspace)]
             runtime = str(data.get("runtime") or "").strip()
             if runtime:
                 cmd += ["--runtime", runtime]
@@ -5301,18 +5330,29 @@ def create_app(
         except _sp.TimeoutExpired as exc:
             timed_out = True
             rc = 124
+            if backend == "docker" and container_name:
+                for args in (["kill", container_name],
+                             ["rm", "-f", container_name]):
+                    try:
+                        _sp.run([docker["binary"], *args],
+                                capture_output=True, timeout=10)
+                    except Exception:  # noqa: BLE001 - best-effort cleanup
+                        pass
             out = ((exc.stdout or "") if isinstance(exc.stdout, str) else (exc.stdout or b"").decode("utf-8", "replace"))[:CAP]
             err = ((exc.stderr or "") if isinstance(exc.stderr, str) else (exc.stderr or b"").decode("utf-8", "replace"))[:CAP]
         except Exception as exc:  # noqa: BLE001
             return {"backend": backend, "error": str(exc), "exit_code": 1,
                     "stdout": "", "stderr": str(exc), "timed_out": False,
-                    "image": image_ref, "sandbox_policy": data}
+                    "image": image_ref, "sandbox_policy": data,
+                    "workspace": workspace, "container": container_name}
         return {
             "backend": backend,
             "docker_available": docker["daemon"],
             "image": image_ref,
             "sandbox_policy": data,
             "fallback_reason": fallback_reason,
+            "workspace": workspace,
+            "container": container_name,
             "exit_code": rc,
             "timed_out": timed_out,
             "stdout": out,

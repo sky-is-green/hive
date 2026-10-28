@@ -275,57 +275,57 @@ process:
 
 The trimmed profile had no delegation.  The sandbox profile adds one
 `subagent` tool back, but every child starts in a separate DSH preset
-(`hive-sandbox`) with only `bash`:
+(`hive-sandbox`) with only a Docker-backed `bash` tool:
 
-- **Parent:** unchanged base bwrap sandbox, workspace `/srv/hive-ai`, network
-  for local health checks, and the 11 trimmed tools.
-- **Child:** `/srv/hive-ai/bin/hive-bwrap.py` wraps the child's
-  `dsh-sandbox-local` provider.  It adds a private user, network, IPC, UTS,
-  and PID namespace, disables nested user namespaces, drops all capabilities,
-  and masks `/home`, `/root`, `/run` (so the rootless Docker socket is
-  unreachable), `/etc/hive`, `/srv/hive`, `/srv/hive-engine`, and
-  `/srv/hive-ai/{app,bin,dsh,home,logs,runs,state,tools,transcripts,harness_state}`.
-  Sibling workspaces under `/srv/hive-ai/workspaces` are masked; only the
-  child's own workspace is bound back.  The runner replaces the provider's
-  broader policy bind with the command's actual cwd and refuses a cwd outside
-  the workspaces root, so changing `workdir` cannot escape the scratch tree.
-  `HOME` and `TMPDIR` are `/tmp`.
+- **Parent:** unchanged base sandbox, workspace `/srv/hive-ai`, network for
+  local health checks, and the 11 trimmed tools.
+- **Child:** `@deepseek-ai/hive-docker-bash` sends each command to
+  `/v1/sandbox/exec`.  The endpoint validates the child's workspace under
+  `/srv/hive-ai/workspaces`, mounts it at `/workspace`, and runs the pinned
+  `hive-sandbox:1` image with `--network none`, `--cap-drop ALL`,
+  `--security-opt no-new-privileges`, memory/CPU/pids limits, and
+  `hive.session`/`hive.parent` labels.  The container has no host root, no
+  human home, no Hive state, no DSH runtime, and no Docker socket; only the
+  workspace is mounted.
 - **Tools:** the child has no `read`, `write`, `edit`, `glob`, `grep`, web,
-  subagent, goal, todo, or plan tools.  `dsh-fs-sandbox` fences writes but not
-  reads, so a file tool would bypass the bwrap masks; `bash` is the only
-  read/write surface.  `maxDepth: 1` lets the parent create one child; the
-  child has no `subagent` tool, so it cannot recurse.
+  subagent, goal, todo, or plan tools.  `bash` is the only surface.
+  `maxDepth: 1` lets the parent create one child; the child has no `subagent`
+  tool, so it cannot recurse.
 - **Workspace:** the parent creates `/srv/hive-ai/workspaces/<name>` with its
   own bash, then calls `subagent` with
   `cwd=/srv/hive-ai/workspaces/<name>`.  The Hive PreToolUse hook refuses a
-  missing or outside cwd before the approval gateway, so a child cannot
-  inherit the parent's `/srv/hive-ai` root.
-- **Cease:** the `hive.service` cgroup is killed, and bwrap's
-  `--die-with-parent` kills the command.  This path has no Docker container
-  and no `hive.session` label.  The rootless Docker `/v1/sandbox/exec` path is
-  unchanged and still serves the Studio's own sandbox calls.
+  missing or outside cwd before the approval gateway.  The child plugin uses
+  the child's working directory, and the endpoint refuses a root, parent, or
+  symlink escape.
+- **Cease:** `kill_session_containers` stops containers labelled with either
+  the session or its `hive.parent`; the Hive cease path passes the parent
+  session.  The in-process child dies with the DSH runtime; the container is
+  stopped by the label.
 - **Cleanup:** workspaces persist for audit.  Remove
   `/srv/hive-ai/workspaces/<name>` when the work is no longer needed.
 
-Install or refresh as root (idempotent):
+Install or refresh as root from the hivebench checkout (idempotent):
 
 ```bash
-sudo ./deploy/hive-sandbox/install.sh
+sudo bash deploy/hive-sandbox/install.sh
 ```
 
-The installer backs up the profile to
-`/srv/hive-ai/dsh/cordis.patch.yml.pre-subagent-sandbox`, installs the runner
-as `root:root`, creates `/srv/hive-ai/workspaces` as `hive-ai:hive-ai` 0750,
-runs a smoke test as `hive-ai` (workspace write, masked home/state/socket, no
-loopback), installs the workspace rule into
-`/srv/hive-ai/app/harness/tool_hook.py` (checksum-guarded, backed up to
-`tool_hook.py.pre-subagent-sandbox`), appends the preset rows, and restarts
-`hive.service`.
+The installer updates `/srv/hive-ai/app/harness/{app,sandbox,tool_hook}.py`
+with checksum guards and `.pre-docker-sandbox` backups, installs the
+`@deepseek-ai/hive-docker-bash` package into the DSH installation, replaces the
+profile block, restarts `hive.service`, and runs a Docker workspace smoke test.
+The profile backup is
+`/srv/hive-ai/dsh/cordis.patch.yml.pre-docker-sandbox`.
 
-This is same-world bubblewrap, not a container.  It blocks the file and
-network paths above, but the child still shares the host kernel.  The
-rootless Docker and gVisor options in [Kernel boundary](#kernel-boundary)
-remain the stronger boundary for untrusted code.
+The earlier bwrap runner remains at `/srv/hive-ai/bin/hive-bwrap.py` as a
+fallback reference.  The child does not use it: the `hive.service` systemd
+sandbox blocks bwrap's mount path with `Function not implemented`, while the
+rootless Docker daemon runs outside that sandbox.
+
+This is rootless Docker, not a dedicated VM.  It removes the host filesystem
+and network paths above, but the container still shares the host kernel.  The
+gVisor and Kata options in [Kernel boundary](#kernel-boundary) remain the
+stronger boundary for untrusted code.
 
 ## Blast-radius test
 
