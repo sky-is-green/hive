@@ -56,6 +56,29 @@ else
   chmod 0750 "$WORKSPACES"
 fi
 
+validate_live() {
+  local src="$1" dst="$2" expected="$3" live new
+  if [[ ! -f "$src" ]]; then
+    echo "missing source: $src" >&2
+    return 1
+  fi
+  if [[ ! -f "$dst" ]]; then
+    echo "missing live file: $dst" >&2
+    return 1
+  fi
+  live="$(sha256sum "$dst" | awk '{print $1}')"
+  new="$(sha256sum "$src" | awk '{print $1}')"
+  if [[ "$live" == "$new" || "$live" == "$expected" ]]; then
+    return 0
+  fi
+  echo "refusing to replace $dst" >&2
+  echo "  live:     $live" >&2
+  echo "  expected: $expected" >&2
+  echo "  new:      $new" >&2
+  echo "merge the file by hand, then re-run" >&2
+  return 1
+}
+
 install_live() {
   local src="$1" dst="$2" expected="$3" live new
   if [[ ! -f "$src" ]]; then
@@ -85,6 +108,12 @@ install_live() {
   echo "installed $dst (backup $dst.pre-docker-sandbox)"
 }
 
+validate_live "${REPO_ROOT}/harness/app.py" \
+  "${HIVE_HOME}/app/harness/app.py" "$APP_PY_EXPECTED"
+validate_live "${REPO_ROOT}/harness/sandbox.py" \
+  "${HIVE_HOME}/app/harness/sandbox.py" "$SANDBOX_PY_EXPECTED"
+validate_live "${REPO_ROOT}/harness/tool_hook.py" \
+  "${HIVE_HOME}/app/harness/tool_hook.py" "$HOOK_PY_EXPECTED"
 install_live "${REPO_ROOT}/harness/app.py" \
   "${HIVE_HOME}/app/harness/app.py" "$APP_PY_EXPECTED"
 install_live "${REPO_ROOT}/harness/sandbox.py" \
