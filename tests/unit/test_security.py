@@ -281,6 +281,25 @@ def test_session_lineage_lists_descendants():
     assert lineage.descendants("") == []
 
 
+def test_child_ids_are_not_background_jobs(tmp_path):
+    hub = GatewayHub(_state(tmp_path))
+    hub.claim_child("parent", "child")
+    gateway = hub.gateway("parent")
+    output = gateway.authorize(
+        _spec(name="job_output"),
+        _req("parent", args={"job_id": "child"}))
+    assert output["status"] == "denied"
+    assert "delegated subagent" in output["reason"]
+    kill = gateway.authorize(
+        _spec(name="job_kill"),
+        _req("parent", args={"job_id": "child"}))
+    assert kill["status"] == "denied"
+    real = gateway.authorize(
+        _spec(name="job_output"),
+        _req("parent", args={"job_id": "job-1"}))
+    assert real["status"] == "pending"
+
+
 def test_child_inherits_parent_session_grant_but_not_identity(tmp_path):
     hub = GatewayHub(_state(tmp_path))
     parent = hub.gateway("parent")
