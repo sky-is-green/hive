@@ -20,6 +20,8 @@ WORKSPACES="${HIVE_HOME}/workspaces"
 AI_USER="${AI_USER:-hive-ai}"
 PLUGIN_SRC="${HERE}/plugin"
 PLUGIN_DST="${HIVE_HOME}/tools/dsh/node_modules/@deepseek-ai/hive-docker-bash"
+DELEGATE_SRC="${HERE}/delegate"
+DELEGATE_DST="${HIVE_HOME}/tools/dsh/node_modules/@deepseek-ai/hive-delegate"
 MARKER='# Hive sandboxed subagents (managed by deploy/hive-sandbox/install.sh).'
 
 # The versions currently installed by the Docker conversion.  The next run
@@ -43,6 +45,10 @@ fi
 }
 [[ -f "$PLUGIN_SRC/index.js" ]] || {
   echo "missing plugin source: $PLUGIN_SRC/index.js" >&2
+  exit 1
+}
+[[ -f "$DELEGATE_SRC/index.js" ]] || {
+  echo "missing plugin source: $DELEGATE_SRC/index.js" >&2
   exit 1
 }
 
@@ -125,16 +131,19 @@ install_live "${REPO_ROOT}/harness/security.py" \
 install_live "${REPO_ROOT}/harness/tool_hook.py" \
   "${HIVE_HOME}/app/harness/tool_hook.py" "$HOOK_PY_EXPECTED"
 
-install -d -m 0755 "$PLUGIN_DST"
-install -m 0644 -o root -g root "$PLUGIN_SRC/package.json" \
-  "$PLUGIN_DST/package.json"
-install -m 0644 -o root -g root "$PLUGIN_SRC/index.js" \
-  "$PLUGIN_DST/index.js"
-chown -R root:root "$PLUGIN_DST"
-chmod 0755 "$PLUGIN_DST"
-if command -v node >/dev/null 2>&1; then
-  node --check "$PLUGIN_DST/index.js"
-fi
+install_plugin() {
+  local src="$1" dst="$2"
+  install -d -m 0755 "$dst"
+  install -m 0644 -o root -g root "$src/package.json" "$dst/package.json"
+  install -m 0644 -o root -g root "$src/index.js" "$dst/index.js"
+  chown -R root:root "$dst"
+  chmod 0755 "$dst"
+  if command -v node >/dev/null 2>&1; then
+    node --check "$dst/index.js"
+  fi
+}
+install_plugin "$PLUGIN_SRC" "$PLUGIN_DST"
+install_plugin "$DELEGATE_SRC" "$DELEGATE_DST"
 
 if grep -qF "$MARKER" "$PROFILE"; then
   [[ -e "$BACKUP" ]] || cp -a "$PROFILE" "$BACKUP"

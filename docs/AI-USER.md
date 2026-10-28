@@ -274,11 +274,13 @@ process:
 ## Sandboxed subagents
 
 The trimmed profile had no delegation.  The sandbox profile adds one
-`subagent` tool back, but every child starts in a separate DSH preset
+synchronous `delegate` tool, and every child starts in a separate DSH preset
 (`hive-sandbox`) with only a Docker-backed `bash` tool:
 
 - **Parent:** unchanged base sandbox, workspace `/srv/hive-ai`, network for
-  local health checks, and the 11 trimmed tools.
+  local health checks, and the 11 trimmed tools plus `delegate`.  `delegate`
+  starts the child, waits for its final answer, and returns that answer as the
+  tool result.  The asynchronous `subagent` tool is disabled.
 - **Child:** `@deepseek-ai/hive-docker-bash` sends each command to
   `/v1/sandbox/exec`.  The endpoint validates the child's workspace under
   `/srv/hive-ai/workspaces`, mounts it at `/workspace`, and runs the pinned
@@ -292,7 +294,7 @@ The trimmed profile had no delegation.  The sandbox profile adds one
   `maxDepth: 1` lets the parent create one child; the child has no `subagent`
   tool, so it cannot recurse.
 - **Workspace:** the parent creates `/srv/hive-ai/workspaces/<name>` with its
-  own bash, then calls `subagent` with
+  own bash, then calls `delegate` with
   `cwd=/srv/hive-ai/workspaces/<name>`.  The Hive PreToolUse hook refuses a
   missing or outside cwd before the approval gateway.  The child plugin uses
   the child's working directory, and the endpoint refuses a root, parent, or
@@ -312,20 +314,23 @@ sudo bash deploy/hive-sandbox/install.sh
 
 The installer updates
 `/srv/hive-ai/app/harness/{app,sandbox,security,tool_hook}.py` with checksum
-guards and `.pre-docker-sandbox` backups, installs the
-`@deepseek-ai/hive-docker-bash` package into the DSH installation, replaces the
-profile block, restarts `hive.service`, and runs a Docker workspace smoke test.
-The profile backup is
+guards and `.pre-docker-sandbox` backups, installs the child
+`@deepseek-ai/hive-docker-bash` and parent `@deepseek-ai/hive-delegate`
+packages into the DSH installation, replaces the profile block, restarts
+`hive.service`, and runs a Docker workspace smoke test.  The profile backup is
 `/srv/hive-ai/dsh/cordis.patch.yml.pre-docker-sandbox`.
 
 Verified 2026-10-28:
 
-- A live `subagent` turn started child `83f90620-6aa4-47cd-b68d-21a8d76e03c6`.
-  The child ran in a pinned `hive-sandbox:1` container and returned
-  `/workspace`, `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`, `HOME_ABSENT`,
+- A live `delegate` turn started child `2d1ce915-a9a8-4808-b97b-4c3f843a88f6`.
+  The parent tool waited and returned the child's final answer directly.  The
+  child ran in a pinned `hive-sandbox:1` container and returned `/workspace`,
+  `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`, `HOME_ABSENT`,
   `SIBLING_ABSENT`, `NET_BLOCKED`, and `CHILD_DONE` with exit 0.
-  `child-proof.txt` contains `CHILD_OK` in the host workspace.  The container
-  reports uid 0; the rootless daemon maps that to `hive-ai` on the host.
+  `child-proof.txt` contains `CHILD_OK` in the host workspace.  The parent's
+  turn finished `completed` with no `job_output`, no duplicate child, and no
+  completion-notice wait.  The container reports uid 0; the rootless daemon
+  maps that to `hive-ai` on the host.
 - A 60-second `sleep` container labelled `hive.session=label-child` and
   `hive.parent=label-parent` was killed by a cease on `label-parent`: the
   sandbox request returned exit 137 with `timed_out: false` instead of running
@@ -333,13 +338,12 @@ Verified 2026-10-28:
   container.  The block was resumed.
 - The installer's Docker smoke returned `docker sandbox: OK`.
 
-The parent model may try `job_output` on the child id after a delegation.  The
-2026-10-28 trace showed why: the parent has no subagent wait/poll tool, so it
-reaches for the only asynchronous primitive it knows.  The gateway now refuses
-`job_output` and `job_kill` on a delegated child id with a model-visible reason:
-that id is a subagent, not a background job, and the result arrives as the
-completion notice.  A real background job id still follows the normal approval
-path.
+The synchronous `delegate` tool removes the child id from the parent's view, so
+the old `job_output` confusion has no target.  The gateway still refuses
+`job_output` and `job_kill` on any known child id (for a stray call or the
+disabled asynchronous path) with a model-visible reason: that id is a
+subagent, not a background job.  A real background job id still follows the
+normal approval path.
 
 The earlier bwrap experiment is retired and its installed runner is removed.
 The `hive.service` systemd sandbox blocks bwrap's mount path with
@@ -348,8 +352,9 @@ sandbox; there is no working bwrap fallback to keep.
 
 This is rootless Docker, not a dedicated VM.  It removes the host filesystem
 and network paths above, but the container still shares the host kernel.  The
-gVisor and Kata options in [Kernel boundary](#kernel-boundary) remain the
-stronger boundary for untrusted code.
+gVisor option in [Kernel boundary](#kernel-boundary) is the next stronger
+runtime; the `deploy/gvisor/install.sh` bundle installs and tests it.  Kata
+remains a system/VM-level change.
 
 ## Blast-radius test
 
@@ -436,9 +441,23 @@ hive sandbox policy --runtime kata-runtime # Kata
 hive sandbox status                        # shows the selected runtime
 ```
 
-The runtime must be installed and registered with the AI user’s Docker daemon;
-`runsc` and Kata are not installed by this repository. The default empty value
-uses the daemon’s default (`runc`).
+For gVisor, run `deploy/gvisor/install.sh` as root.  It verifies and installs
+`runsc`, registers it with the rootless daemon using `--rootless` (and
+`--ignore-cgroups` when this `runsc` build supports it), switches the Hive
+policy, and runs a real workspace smoke test.  On failure it reverts the policy
+to the daemon default (`runc`).  See
+[`deploy/gvisor/README.md`](../deploy/gvisor/README.md).
+
+Kata Containers is a microVM runtime.  The host is KVM-capable (`kvm_amd`
+loaded, AMD SVM, `/dev/kvm` present), but rootless Docker plus Kata is not a
+standard supported deployment; Kata normally expects a system-level runtime
+and VM/network management.  A system Docker would require the AI user to reach
+a privileged socket, which conflicts with the no-docker-group rule, so a
+dedicated VM is the clean Kata-class boundary.  `/dev/kvm` is currently mode
+`0666` root:kvm; gVisor does not use it, and you should restrict it to a
+dedicated group before pursuing Kata.
+
+The default empty runtime value uses the daemon’s default (`runc`).
 
 For a truly adversarial AI, treat the Hive host as expendable and put it on a
 separate physical machine or a microVM. The app/user split is a large
