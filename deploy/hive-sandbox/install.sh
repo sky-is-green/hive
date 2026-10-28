@@ -27,6 +27,7 @@ MARKER='# Hive sandboxed subagents (managed by deploy/hive-sandbox/install.sh).'
 # accepts these (or the new source already) and refuses any other live file.
 APP_PY_EXPECTED="d2ffd072422454d42f27d445d2f44d020f1f72cbb3086bec1ef06de17cd11aff"
 SANDBOX_PY_EXPECTED="d66109edd8c4a6b0d716f6f31570048f3935b23bd269d2594f572565727dcf3a"
+SECURITY_PY_EXPECTED="79960bc45b6e2a62c198d9c0ef5d42968d44ca90217b24dbaefa1589e54e6ec7"
 HOOK_PY_EXPECTED="62f78ff5b813c187c26efa27923683ea9943fbe8595479834174350dfe511826"
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -114,12 +115,16 @@ validate_live "${REPO_ROOT}/harness/app.py" \
   "${HIVE_HOME}/app/harness/app.py" "$APP_PY_EXPECTED"
 validate_live "${REPO_ROOT}/harness/sandbox.py" \
   "${HIVE_HOME}/app/harness/sandbox.py" "$SANDBOX_PY_EXPECTED"
+validate_live "${REPO_ROOT}/harness/security.py" \
+  "${HIVE_HOME}/app/harness/security.py" "$SECURITY_PY_EXPECTED"
 validate_live "${REPO_ROOT}/harness/tool_hook.py" \
   "${HIVE_HOME}/app/harness/tool_hook.py" "$HOOK_PY_EXPECTED"
 install_live "${REPO_ROOT}/harness/app.py" \
   "${HIVE_HOME}/app/harness/app.py" "$APP_PY_EXPECTED"
 install_live "${REPO_ROOT}/harness/sandbox.py" \
   "${HIVE_HOME}/app/harness/sandbox.py" "$SANDBOX_PY_EXPECTED"
+install_live "${REPO_ROOT}/harness/security.py" \
+  "${HIVE_HOME}/app/harness/security.py" "$SECURITY_PY_EXPECTED"
 install_live "${REPO_ROOT}/harness/tool_hook.py" \
   "${HIVE_HOME}/app/harness/tool_hook.py" "$HOOK_PY_EXPECTED"
 
