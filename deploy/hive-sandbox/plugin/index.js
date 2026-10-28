@@ -61,8 +61,9 @@ export function apply(ctx, config = {}) {
     output: {
       schema: {
         type: 'object',
-        properties: { text: { type: 'string' } },
-        required: ['text'],
+        properties: {
+          text: { type: 'string', required: true },
+        },
         additionalProperties: false,
       },
       render(_args, value) {
