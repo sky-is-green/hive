@@ -36,7 +36,7 @@ READ_ONLY_TOOLS = frozenset({
 })
 
 #: Delegation tools whose child must start in a dedicated scratch workspace.
-SUBAGENT_TOOLS = frozenset({"subagent", "subagent_fork"})
+SUBAGENT_TOOLS = frozenset({"delegate", "subagent", "subagent_fork"})
 SUBAGENT_WORKSPACE_ROOT = Path("/srv/hive-ai/workspaces")
 
 

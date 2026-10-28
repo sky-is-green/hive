@@ -1,20 +1,26 @@
-# Sandboxed subagents (Docker)
+# Sandboxed delegation (Docker)
 
-This bundle gives Hive one `subagent` tool whose children run in a separate DSH
-agent preset with only a Docker-backed `bash` tool.  The parent keeps its base
-sandbox and full tool set; the child gets its own workspace mounted at
+This bundle gives Hive one synchronous `delegate` tool whose children run in a
+separate DSH agent preset with only a Docker-backed `bash` tool.  `delegate`
+starts the child, waits for its final answer, and returns that answer as the
+tool result; there is no asynchronous child id to poll.  The parent keeps its
+base sandbox and full tool set; the child gets its own workspace mounted at
 `/workspace` in the pinned `hive-sandbox:1` image.
 
 ## Files
 
+- `delegate/` - `@deepseek-ai/hive-delegate`, the parent's waiting delegation
+  tool.  It calls `ctx.subagents.startActivation` with `delivery: 'caller'`,
+  awaits the result, returns the child's final text, and disposes the
+  activation.
 - `plugin/` - `@deepseek-ai/hive-docker-bash`, a child-only DSH tool that sends
   each command to `/v1/sandbox/exec` with the child's workspace and session id.
 - `cordis.patch.yml` - the profile block: the preset registry, the
   `hive-sandbox` preset, the subagent service/provider, and a new
-  `hive-subagent-tool` row with `maxDepth: 1`.
+  `hive-delegate-tool` row with `maxDepth: 1`.
 - `install.sh` - root installer.  It checksum-guards and updates the live
   `harness/app.py`, `harness/sandbox.py`, `harness/security.py`, and
-  `harness/tool_hook.py`, installs the plugin package, replaces the profile
+  `harness/tool_hook.py`, installs both plugin packages, replaces the profile
   block, restarts `hive.service`, and runs a Docker workspace smoke test.
 
 
@@ -47,8 +53,9 @@ the pinned image with:
   GUARD, engine, or Docker socket mounts.
 
 The child has `bash` only.  The preset omits `read`, `write`, `edit`, `glob`,
-`grep`, web, subagent, goal, todo, and plan tools.  `maxDepth: 1` lets the parent
-create one child; the child has no `subagent` tool, so it cannot recurse.
+`grep`, web, subagent, delegate, goal, todo, and plan tools.  `maxDepth: 1`
+lets the parent create one child; the child has no delegation tool, so it
+cannot recurse.
 
 ## Workspace rule
 
@@ -56,7 +63,7 @@ The parent creates `/srv/hive-ai/workspaces/<name>` with its own bash, then
 calls:
 
 ```text
-subagent(prompt="...", cwd="/srv/hive-ai/workspaces/<name>")
+delegate(prompt="...", cwd="/srv/hive-ai/workspaces/<name>")
 ```
 
 `harness/tool_hook.py` refuses a missing or outside cwd before the approval
@@ -82,17 +89,20 @@ Unit tests:
 ```
 
 The installer's Docker smoke test mounts a real workspace and checks the
-container's `/workspace` output.  The 2026-10-28 live proof returned
-`/workspace`, `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`, `HOME_ABSENT`,
-`SIBLING_ABSENT`, `NET_BLOCKED`, and `CHILD_DONE` from the child with exit 0.
+container's `/workspace` output.  The 2026-10-28 live `delegate` proof started
+child `2d1ce915-a9a8-4808-b97b-4c3f843a88f6`; the parent tool waited and
+returned `/workspace`, `CHILD_OK`, `STATE_ABSENT`, `SOCKET_ABSENT`,
+`HOME_ABSENT`, `SIBLING_ABSENT`, `NET_BLOCKED`, and `CHILD_DONE` with exit 0.
+The parent's turn finished `completed` with no `job_output`, no duplicate
+child, and no completion-notice wait.
+
 A live cease test killed a `sleep 60` container in about three seconds: the
 sandbox request returned exit 137 with `timed_out: false`, and
 `actions.stop.containers.killed` named the container.
 
-The parent's first trace showed it reaching for `job_output` on the child id
-because it has no subagent wait/poll tool.  The gateway now refuses
-`job_output`/`job_kill` on a delegated child id and tells the model to wait for
-the completion notice; real background jobs still follow the normal path.
+The gateway still refuses `job_output`/`job_kill` on a known child id, for a
+stray call or the disabled asynchronous path; real background jobs follow the
+normal approval path.
 
 ## Boundary
 

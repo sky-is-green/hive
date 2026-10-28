@@ -209,6 +209,10 @@ def test_subagent_requires_an_existing_scratch_workspace(tmp_path, monkeypatch):
     assert tool_hook.subagent_workspace_error(
         "subagent_fork", {"cwd": str(workspace)}) == ""
     assert tool_hook.subagent_workspace_error(
+        "delegate", {"cwd": str(workspace)}) == ""
+    assert tool_hook.subagent_workspace_error(
+        "delegate", {}) != ""
+    assert tool_hook.subagent_workspace_error(
         "bash", {"cwd": str(tmp_path)}) == ""
 
 
@@ -223,6 +227,24 @@ def test_a_missing_workspace_is_denied_before_the_gateway(tmp_path, monkeypatch)
         return {"status": "approved"}
 
     outcome = tool_hook.decide(_subagent(), post=post)
+    assert outcome["status"] == "denied"
+    assert "scratch directory" in outcome["reason"]
+    assert calls == []
+
+
+def test_a_delegate_without_a_workspace_is_denied_before_the_gateway(
+        tmp_path, monkeypatch):
+    root = tmp_path / "workspaces"
+    root.mkdir()
+    monkeypatch.setattr(tool_hook, "SUBAGENT_WORKSPACE_ROOT", root)
+    calls = []
+
+    def post(url, body):
+        calls.append((url, body))
+        return {"status": "approved"}
+
+    outcome = tool_hook.decide(
+        _payload("delegate", tool_input={}), post=post)
     assert outcome["status"] == "denied"
     assert "scratch directory" in outcome["reason"]
     assert calls == []

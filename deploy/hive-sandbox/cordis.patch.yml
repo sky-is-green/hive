@@ -54,11 +54,11 @@
       config:
         providerName: spawn
 
-    - id: hive-subagent-tool
-      name: '@deepseek-ai/dsh-tool-subagent'
+    - id: hive-delegate-tool
+      name: '@deepseek-ai/hive-delegate'
       inject: [agentPresets, subagents]
       config:
         provider: spawn
-        toolName: subagent
+        toolName: delegate
         agentPreset: hive-sandbox
         maxDepth: 1
