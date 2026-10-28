@@ -23,9 +23,11 @@ PLUGIN_SRC="${HERE}/plugin"
 PLUGIN_DST="${HIVE_HOME}/tools/dsh/node_modules/@deepseek-ai/hive-docker-bash"
 MARKER='# Hive sandboxed subagents (managed by deploy/hive-sandbox/install.sh).'
 
-APP_PY_EXPECTED="616570e23bdf15a03445801b4bb9bc1036fc7140b7e347eea8bbd41cc2c5761c"
-SANDBOX_PY_EXPECTED="393f6d450836381403ec8528ee8085d3ad3011223eecd01fcb12702f242cae40"
-HOOK_PY_EXPECTED="1b0396ce905c28609f51c9066e459f70c7a4e88bf66cf7905bc1fab3281d0bed"
+# The versions currently installed by the Docker conversion.  The next run
+# accepts these (or the new source already) and refuses any other live file.
+APP_PY_EXPECTED="d2ffd072422454d42f27d445d2f44d020f1f72cbb3086bec1ef06de17cd11aff"
+SANDBOX_PY_EXPECTED="d66109edd8c4a6b0d716f6f31570048f3935b23bd269d2594f572565727dcf3a"
+HOOK_PY_EXPECTED="62f78ff5b813c187c26efa27923683ea9943fbe8595479834174350dfe511826"
 
 if [[ ${EUID} -ne 0 ]]; then
   echo "run as root: sudo bash $0" >&2
