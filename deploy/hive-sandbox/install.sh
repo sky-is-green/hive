@@ -16,7 +16,6 @@ REPO_ROOT="$(cd "${HERE}/../.." && pwd)"
 HIVE_HOME="${HIVE_HOME:-/srv/hive-ai}"
 PROFILE="${HIVE_HOME}/dsh/cordis.patch.yml"
 BACKUP="${PROFILE}.pre-docker-sandbox"
-WRAPPER="${HIVE_HOME}/bin/hive-bwrap.py"
 WORKSPACES="${HIVE_HOME}/workspaces"
 AI_USER="${AI_USER:-hive-ai}"
 PLUGIN_SRC="${HERE}/plugin"
@@ -27,7 +26,7 @@ MARKER='# Hive sandboxed subagents (managed by deploy/hive-sandbox/install.sh).'
 # accepts these (or the new source already) and refuses any other live file.
 APP_PY_EXPECTED="d2ffd072422454d42f27d445d2f44d020f1f72cbb3086bec1ef06de17cd11aff"
 SANDBOX_PY_EXPECTED="d66109edd8c4a6b0d716f6f31570048f3935b23bd269d2594f572565727dcf3a"
-SECURITY_PY_EXPECTED="79960bc45b6e2a62c198d9c0ef5d42968d44ca90217b24dbaefa1589e54e6ec7"
+SECURITY_PY_EXPECTED="2945003717db7daff203060d53192e16a2e000e0f90297a0a5336f5210283482"
 HOOK_PY_EXPECTED="62f78ff5b813c187c26efa27923683ea9943fbe8595479834174350dfe511826"
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -47,10 +46,8 @@ fi
   exit 1
 }
 
-install -d -m 0755 "${HIVE_HOME}/bin"
-chown root:root "${HIVE_HOME}/bin"
-chmod 0755 "${HIVE_HOME}/bin"
-install -m 0755 -o root -g root "${HERE}/hive_bwrap.py" "$WRAPPER"
+# The bwrap experiment is retired; remove its installed runner if present.
+rm -f "${HIVE_HOME}/bin/hive-bwrap.py"
 
 if [[ ! -d "$WORKSPACES" ]]; then
   install -d -m 0750 -o "$AI_USER" -g "$AI_USER" "$WORKSPACES"

@@ -333,15 +333,18 @@ Verified 2026-10-28:
   container.  The block was resumed.
 - The installer's Docker smoke returned `docker sandbox: OK`.
 
-The parent model may try `job_output` on the child id after a delegation.  That
-id is a subagent, not a job; the call returns `unknown job`.  The actual result
-is the completion notice.  The proof's parent did this twice and still reported
-the child output correctly.
+The parent model may try `job_output` on the child id after a delegation.  The
+2026-10-28 trace showed why: the parent has no subagent wait/poll tool, so it
+reaches for the only asynchronous primitive it knows.  The gateway now refuses
+`job_output` and `job_kill` on a delegated child id with a model-visible reason:
+that id is a subagent, not a background job, and the result arrives as the
+completion notice.  A real background job id still follows the normal approval
+path.
 
-The earlier bwrap runner remains at `/srv/hive-ai/bin/hive-bwrap.py` as a
-fallback reference.  The child does not use it: the `hive.service` systemd
-sandbox blocks bwrap's mount path with `Function not implemented`, while the
-rootless Docker daemon runs outside that sandbox.
+The earlier bwrap experiment is retired and its installed runner is removed.
+The `hive.service` systemd sandbox blocks bwrap's mount path with
+`Function not implemented`, while the rootless Docker daemon runs outside that
+sandbox; there is no working bwrap fallback to keep.
 
 This is rootless Docker, not a dedicated VM.  It removes the host filesystem
 and network paths above, but the container still shares the host kernel.  The
