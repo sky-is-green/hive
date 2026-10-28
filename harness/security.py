@@ -631,6 +631,25 @@ class ApprovalGateway:
         return {"status": "denied", "reason": reason,
                 "tool_identity": spec.identity, "session_id": self.session_id}
 
+    def _child_job_error(self, spec: ToolSpec,
+                         request: ToolRequest) -> str:
+        """Refuse job polling on a delegated child's session id.
+
+        The local model has no subagent wait tool, so it sometimes treats the
+        child id returned by ``subagent`` as a background job id.  A child id
+        is never a job: the result arrives as a completion notice.  Refuse the
+        mistake with a model-visible reason instead of ``unknown job``.
+        """
+        if spec.name not in ("job_output", "job_kill"):
+            return ""
+        job_id = str((request.args or {}).get("job_id") or "").strip()
+        if not job_id or self.lineage is None:
+            return ""
+        if self.lineage.parent(job_id) is None:
+            return ""
+        return ("this id is a delegated subagent, not a background job; wait "
+                "for the completion notice instead of polling it")
+
     def authorize(self, spec: ToolSpec | Mapping[str, Any],
                   request: ToolRequest, *,
                   headless: bool | None = None) -> dict[str, Any]:
@@ -652,6 +671,10 @@ class ApprovalGateway:
                     spec, request,
                     "cease requested; this session is blocked until resume",
                     tier)
+
+        child_job = self._child_job_error(spec, request)
+        if child_job:
+            return self._deny(spec, request, child_job, tier)
 
         if spec.is_side_effect and spec.needs_reason and not reason_ok:
             return self._deny(spec, request, "missing reason", tier)
