@@ -115,8 +115,19 @@ def check(task: dict, answer: str) -> bool:
             return False
         return abs(got - float(spec["expect"])) <= float(spec.get("tol", 1e-6))
     if kind == "choice":
-        letters = re.findall(r"\b([A-Z])\b", answer.upper())
-        return bool(letters) and letters[-1] == str(spec["expect"]).upper()
+        want = str(spec["expect"]).upper()
+        text = answer.upper()
+        # Prefer an explicit "answer: B" / "answer is B" / "choose B" phrase;
+        # verbose models often append unrelated prose after the answer.
+        for pattern in (
+            r"\b(?:ANSWER|CHOOSE|OPTION|CHOICE|TIER)\s*(?:IS|:|\=)?\s*([A-Z])\b",
+            r"^\s*([A-Z])\b",
+        ):
+            found = re.findall(pattern, text)
+            if found:
+                return found[-1] == want
+        letters = re.findall(r"\b([A-Z])\b", text)
+        return bool(letters) and letters[-1] == want
     if kind == "boxed":
         got = _boxed(answer)
         if got is None:
@@ -125,6 +136,145 @@ def check(task: dict, answer: str) -> bool:
         # \boxed{\frac{40}{243}\approx 0.1646} must compare as 40/243.
         got = re.split(r"\\approx|≈", got)[0].strip()
         return _math_equal(got, str(spec["expect"]))
+    if kind == "schedule":
+        obj = extract_json(answer)
+        if not isinstance(obj, dict):
+            return False
+        schedule = obj.get("schedule")
+        if not isinstance(schedule, list):
+            return False
+        specs = spec.get("tasks") or {}
+        workers = {str(w) for w in (spec.get("workers") or [])}
+        worker_skills = {
+            str(w): {str(s) for s in skills}
+            for w, skills in (spec.get("worker_skills") or {}).items()
+        }
+        task_skills = {str(t): str(s) for t, s in (spec.get("task_skills") or {}).items()}
+        releases = {str(t): float(v) for t, v in (spec.get("release") or {}).items()}
+        task_deadlines = {str(t): float(v) for t, v in (spec.get("task_deadline") or {}).items()}
+        rows: dict[str, tuple[str, float, float]] = {}
+        for item in schedule:
+            if not isinstance(item, dict):
+                return False
+            task = str(item.get("task", ""))
+            worker = str(item.get("worker", ""))
+            if task not in specs or task in rows or worker not in workers:
+                return False
+            if task_skills.get(task) and task_skills[task] not in worker_skills.get(worker, set()):
+                return False
+            try:
+                start = float(item.get("start"))
+            except (TypeError, ValueError):
+                return False
+            duration = float(specs[task].get("duration", 0))
+            if start < 0 or start < releases.get(task, 0.0):
+                return False
+            if task in task_deadlines and start + duration > task_deadlines[task] + 1e-9:
+                return False
+            rows[task] = (worker, start, start + duration)
+        if set(rows) != set(specs):
+            return False
+        for before, after in spec.get("dependencies", []):
+            if before not in rows or after not in rows:
+                return False
+            if rows[before][2] > rows[after][1] + 1e-9:
+                return False
+        for worker in workers:
+            intervals = sorted((r[1], r[2]) for r in rows.values() if r[0] == worker)
+            for (s1, e1), (s2, e2) in zip(intervals, intervals[1:]):
+                if e1 > s2 + 1e-9:
+                    return False
+        makespan = max(r[2] for r in rows.values()) if rows else 0.0
+        return makespan <= float(spec.get("deadline", makespan)) + 1e-9
+    if kind == "ordered":
+        obj = extract_json(answer)
+        if not isinstance(obj, dict):
+            return False
+        order = obj.get(spec.get("field", "order"))
+        if not isinstance(order, list):
+            return False
+        position = {str(item): index for index, item in enumerate(order)}
+        required = spec.get("required_items") or []
+        if any(str(item) not in position for item in required):
+            return False
+        for before, after in spec.get("before", []):
+            if before not in position or after not in position:
+                return False
+            if position[before] >= position[after]:
+                return False
+        return True
+    if kind == "assign":
+        # Feasibility checker: any assignment that fits is correct. The role
+        # suite's exact-set checker is kept for the benchmark, but a wider
+        # suite must not reject a valid alternative assignment.
+        obj = extract_json(answer)
+        if not isinstance(obj, dict):
+            return False
+        rows = obj.get("assignments")
+        if not isinstance(rows, list):
+            return False
+        task_specs = spec.get("tasks") or {}
+        worker_caps = spec.get("workers") or {}
+        if not isinstance(task_specs, dict) or not isinstance(worker_caps, dict):
+            return False
+        durations = {
+            str(name): float(value.get("duration", value) if isinstance(value, dict) else value)
+            for name, value in task_specs.items()
+        }
+        capacities = {str(name): float(value) for name, value in worker_caps.items()}
+        task_skills = {str(k): str(v) for k, v in (spec.get("task_skills") or {}).items()}
+        worker_skills = {
+            str(k): {str(s) for s in v}
+            for k, v in (spec.get("worker_skills") or {}).items()
+        }
+        seen: set[str] = set()
+        loads = {name: 0.0 for name in capacities}
+        for item in rows:
+            if not isinstance(item, dict):
+                return False
+            task = str(item.get("task", ""))
+            worker = str(item.get("worker", ""))
+            if task not in durations or task in seen or worker not in capacities:
+                return False
+            if task_skills.get(task) and task_skills[task] not in worker_skills.get(worker, set()):
+                return False
+            seen.add(task)
+            loads[worker] += durations[task]
+        if seen != set(durations):
+            return False
+        return all(loads[w] <= capacities[w] + 1e-9 for w in capacities)
+    if kind == "json":
+        obj = extract_json(answer)
+        if not isinstance(obj, dict):
+            return False
+        for key in spec.get("required", []):
+            if key not in obj:
+                return False
+        for key, minimum in (spec.get("min_items") or {}).items():
+            value = obj.get(key)
+            if not isinstance(value, list) or len(value) < int(minimum):
+                return False
+        for key, needle in (spec.get("contains") or {}).items():
+            if _normalize(str(needle)) not in _normalize(str(obj.get(key, ""))):
+                return False
+        for key, expected in (spec.get("equals") or {}).items():
+            if obj.get(key) != expected:
+                return False
+        for key, expected in (spec.get("equals_sets") or {}).items():
+            got = obj.get(key)
+            if not isinstance(got, list) or set(map(str, got)) != set(map(str, expected)):
+                return False
+        expected = spec.get("expected_assignments")
+        if expected:
+            got = {
+                (str(item.get("task", "")), str(item.get("worker", "")))
+                for item in (obj.get("assignments") or [])
+                if isinstance(item, dict)
+            }
+            want = {(str(item["task"]), str(item["worker"])) for item in expected}
+            if got != want:
+                return False
+        return True
     if kind == "code":
         code = _code_block(answer)
         if code is None:
@@ -166,15 +316,22 @@ def check(task: dict, answer: str) -> bool:
 
 
 def extract_json(text: str) -> Optional[dict]:
-    """First JSON object in a text (fences and prose tolerated)."""
+    """First top-level JSON object in a text (fences and prose tolerated)."""
     if not text:
         return None
-    for match in re.finditer(r"\{.*?\}", text, re.S):
+    try:
+        value = json.loads(text)
+        return value if isinstance(value, dict) else None
+    except ValueError:
+        pass
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(text):
+        if char != "{":
+            continue
         try:
-            return json.loads(match.group(0))
+            value, _ = decoder.raw_decode(text[index:])
         except ValueError:
             continue
-    try:
-        return json.loads(text)
-    except ValueError:
-        return None
+        if isinstance(value, dict):
+            return value
+    return None

@@ -1,0 +1,1857 @@
+{
+ "name": "controller-suite",
+ "version": 1,
+ "count": 60,
+ "tasks": [
+  {
+   "id": "controller-001",
+   "role": "controller",
+   "prompt": "Two workers: W1 is free for 20 minutes, W2 for 30 minutes. Tasks: A takes 20 minutes, B takes 5, C takes 15. Assign every task to a worker without exceeding their free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all three tasks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "assignments"
+    ],
+    "min_items": {
+     "assignments": 3
+    },
+    "expected_assignments": [
+     {
+      "task": "A",
+      "worker": "W1"
+     },
+     {
+      "task": "B",
+      "worker": "W2"
+     },
+     {
+      "task": "C",
+      "worker": "W2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "controller-002",
+   "role": "controller",
+   "prompt": "Two workers: W1 is free for 30 minutes, W2 for 30 minutes. Tasks: A takes 10 minutes, B takes 15, C takes 20, D takes 10. Assign every task exactly once without exceeding either worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all four tasks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "assignments"
+    ],
+    "min_items": {
+     "assignments": 4
+    },
+    "expected_assignments": [
+     {
+      "task": "A",
+      "worker": "W1"
+     },
+     {
+      "task": "B",
+      "worker": "W1"
+     },
+     {
+      "task": "C",
+      "worker": "W2"
+     },
+     {
+      "task": "D",
+      "worker": "W2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "controller-003",
+   "role": "controller",
+   "prompt": "Two workers with 30 minutes each. Tasks: A 20 min, B 10 min, C 15 min, D 10 min. Assign every task exactly once without exceeding either worker's 30-minute budget. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "assignments"
+    ],
+    "min_items": {
+     "assignments": 4
+    },
+    "expected_assignments": [
+     {
+      "task": "A",
+      "worker": "W1"
+     },
+     {
+      "task": "B",
+      "worker": "W1"
+     },
+     {
+      "task": "C",
+      "worker": "W2"
+     },
+     {
+      "task": "D",
+      "worker": "W2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "controller-004",
+   "role": "controller",
+   "prompt": "Three jobs need 12 GB, 8 GB, and 6 GB. Two cards have 20 GB and 16 GB, and each card keeps 2 GB free. Up to two jobs may share a card. Can all three jobs run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "controller-101",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3h, skill x), B(2h, skill y), C(4h, skill x), D(1h, skill y), E(2h, skill x) on workers W1(skill x), W2(skill y), W3(skills x and y). Dependencies: A before C; B before D; C before E; D before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 9h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x"
+     ],
+     "W2": [
+      "y"
+     ],
+     "W3": [
+      "x",
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "y",
+     "C": "x",
+     "D": "y",
+     "E": "x"
+    },
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "D",
+      "E"
+     ]
+    ],
+    "deadline": 9
+   }
+  },
+  {
+   "id": "controller-102",
+   "role": "controller",
+   "prompt": "Schedule four tasks on two workers with release times and deadlines: A duration 2, release 0, deadline 4; B duration 3, release 0, deadline 5; C duration 2, release 2, deadline 6; D duration 1, release 4, deadline 7. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "release": {
+     "A": 0,
+     "B": 0,
+     "C": 2,
+     "D": 4
+    },
+    "task_deadline": {
+     "A": 4,
+     "B": 5,
+     "C": 6,
+     "D": 7
+    }
+   }
+  },
+  {
+   "id": "controller-103",
+   "role": "controller",
+   "prompt": "Four patches must merge: P1 before P3; P2 before P4; P3 before P4. P1 and P2 may be in either order. Return the lexicographically smallest valid merge order as ONLY JSON: {\"order\": [\"P1\",\"P2\",\"P3\",\"P4\"]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "order"
+    ],
+    "equals": {
+     "order": [
+      "P1",
+      "P2",
+      "P3",
+      "P4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "controller-105",
+   "role": "controller",
+   "prompt": "Two jobs need the only free 20 GB card. Job A is a live rollback with a 5-minute deadline. Job B is a benchmark with a 2-hour deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "controller-106",
+   "role": "controller",
+   "prompt": "A merge has two failing tests and a conflict in one source file. Which action is correct? A = ignore the tests and merge, B = resolve the conflict, rerun the tests, then merge, C = merge first and fix later. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "controller-209",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 50 minutes, W2 is free for 50 minutes, W3 is free for 50 minutes. Tasks: A takes 25 minutes, B takes 15 minutes, C takes 20 minutes, D takes 5 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 4 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 25,
+     "B": 15,
+     "C": 20,
+     "D": 5
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 50,
+     "W3": 50
+    }
+   }
+  },
+  {
+   "id": "controller-210",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 30 minutes, W2 is free for 50 minutes, W3 is free for 30 minutes. Tasks: A takes 15 minutes, B takes 5 minutes, C takes 15 minutes, D takes 15 minutes, E takes 20 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 5 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 15,
+     "B": 5,
+     "C": 15,
+     "D": 15,
+     "E": 20
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 50,
+     "W3": 30
+    }
+   }
+  },
+  {
+   "id": "controller-211",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 50 minutes, W2 is free for 40 minutes, W3 is free for 50 minutes. Tasks: A takes 5 minutes, B takes 5 minutes, C takes 15 minutes, D takes 10 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 4 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 5,
+     "B": 5,
+     "C": 15,
+     "D": 10
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 40,
+     "W3": 50
+    }
+   }
+  },
+  {
+   "id": "controller-212",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 40 minutes, W2 is free for 40 minutes, W3 is free for 40 minutes. Tasks: A takes 25 minutes, B takes 20 minutes, C takes 15 minutes, D takes 5 minutes, E takes 5 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 5 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 25,
+     "B": 20,
+     "C": 15,
+     "D": 5,
+     "E": 5
+    },
+    "workers": {
+     "W1": 40,
+     "W2": 40,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "controller-213",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 50 minutes, W2 is free for 50 minutes, W3 is free for 50 minutes. Tasks: A takes 10 minutes, B takes 25 minutes, C takes 10 minutes, D takes 15 minutes, E takes 20 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 5 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 10,
+     "B": 25,
+     "C": 10,
+     "D": 15,
+     "E": 20
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 50,
+     "W3": 50
+    }
+   }
+  },
+  {
+   "id": "controller-214",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 30 minutes, W2 is free for 50 minutes, W3 is free for 40 minutes. Tasks: A takes 10 minutes, B takes 5 minutes, C takes 20 minutes, D takes 5 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 4 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 10,
+     "B": 5,
+     "C": 20,
+     "D": 5
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 50,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "controller-215",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 30 minutes, W2 is free for 40 minutes, W3 is free for 30 minutes. Tasks: A takes 25 minutes, B takes 10 minutes, C takes 10 minutes, D takes 25 minutes, E takes 5 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 5 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 25,
+     "B": 10,
+     "C": 10,
+     "D": 25,
+     "E": 5
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 40,
+     "W3": 30
+    }
+   }
+  },
+  {
+   "id": "controller-216",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 50 minutes, W2 is free for 50 minutes, W3 is free for 30 minutes. Tasks: A takes 5 minutes, B takes 20 minutes, C takes 15 minutes, D takes 5 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 4 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 5,
+     "B": 20,
+     "C": 15,
+     "D": 5
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 50,
+     "W3": 30
+    }
+   }
+  },
+  {
+   "id": "controller-217",
+   "role": "controller",
+   "prompt": "Three workers: W1 is free for 40 minutes, W2 is free for 30 minutes, W3 is free for 40 minutes. Tasks: A takes 20 minutes, B takes 25 minutes, C takes 15 minutes, D takes 10 minutes. Assign every task to exactly one worker without exceeding any worker's free time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}. Include all 4 tasks.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 25,
+     "C": 15,
+     "D": 10
+    },
+    "workers": {
+     "W1": 40,
+     "W2": 30,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "controller-218",
+   "role": "controller",
+   "prompt": "Schedule tasks A(5), B(3), C(2), D(5), E(5), F(1) on workers W1, W2, W3. Dependencies: A before B; A before C; C before D; C before E; B before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 13.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 5
+     },
+     "F": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "B",
+      "F"
+     ]
+    ],
+    "deadline": 13
+   }
+  },
+  {
+   "id": "controller-219",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3), B(4), C(1), D(3), E(3), F(2) on workers W1, W2, W3. Dependencies: A before B; A before C; B before D; D before E; B before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 13.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "B",
+      "F"
+     ]
+    ],
+    "deadline": 13
+   }
+  },
+  {
+   "id": "controller-220",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3), B(3), C(3), D(1), E(2), F(2) on workers W1, W2, W3. Dependencies: A before B; B before C; A before D; C before E; A before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 11.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 2
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "A",
+      "F"
+     ]
+    ],
+    "deadline": 11
+   }
+  },
+  {
+   "id": "controller-221",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3), B(2), C(1), D(2), E(2), F(1) on workers W1, W2, W3. Dependencies: A before B; A before C; A before D; C before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 7.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 2
+     },
+     "F": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "C",
+      "F"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-222",
+   "role": "controller",
+   "prompt": "Schedule tasks A(1), B(1), C(1), D(2), E(2), F(2) on workers W1, W2, W3. Dependencies: A before B; A before C; A before D; D before E; C before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 7.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 2
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "C",
+      "F"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-223",
+   "role": "controller",
+   "prompt": "Schedule tasks A(5), B(5), C(3), D(2), E(4), F(4) on workers W1, W2, W3. Dependencies: A before C; B before E; A before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 11.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 4
+     },
+     "F": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "E"
+     ],
+     [
+      "A",
+      "F"
+     ]
+    ],
+    "deadline": 11
+   }
+  },
+  {
+   "id": "controller-224",
+   "role": "controller",
+   "prompt": "Schedule tasks A(4), B(3), C(1), D(2), E(3), F(3) on workers W1, W2, W3. Dependencies: A before B; A before D; C before E; C before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 7.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 4
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "C",
+      "F"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-225",
+   "role": "controller",
+   "prompt": "Schedule tasks A(2), B(3), C(5), D(1), E(1) on workers W1, W2, W3. Dependencies: A before B; B before C; B before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 5
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "controller-226",
+   "role": "controller",
+   "prompt": "Schedule tasks A(2), B(2), C(1), D(3), E(3), F(4) on workers W1, W2, W3. Dependencies: A before B; B before C; B before D; C before E; B before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 8.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "B",
+      "F"
+     ]
+    ],
+    "deadline": 8
+   }
+  },
+  {
+   "id": "controller-227",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3h, skill x), B(3h, skill y), C(2h, skill y), D(2h, skill x) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before B. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 8h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "y",
+     "C": "y",
+     "D": "x"
+    },
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ]
+    ],
+    "deadline": 8
+   }
+  },
+  {
+   "id": "controller-228",
+   "role": "controller",
+   "prompt": "Schedule tasks A(2h, skill y), B(4h, skill y), C(1h, skill x), D(2h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before B; B before C; A before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 8h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "y",
+     "B": "y",
+     "C": "x",
+     "D": "y"
+    },
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ]
+    ],
+    "deadline": 8
+   }
+  },
+  {
+   "id": "controller-229",
+   "role": "controller",
+   "prompt": "Schedule tasks A(2h, skill x), B(4h, skill x), C(2h, skill x), D(2h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: B before C. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 7h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "x",
+     "C": "x",
+     "D": "y"
+    },
+    "dependencies": [
+     [
+      "B",
+      "C"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-230",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3h, skill x), B(2h, skill x), C(2h, skill x), D(1h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before B; A before C. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 7h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "x",
+     "C": "x",
+     "D": "y"
+    },
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-231",
+   "role": "controller",
+   "prompt": "Schedule tasks A(3h, skill x), B(1h, skill y), C(2h, skill x), D(4h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before B; A before C; B before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 8h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "y",
+     "C": "x",
+     "D": "y"
+    },
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ]
+    ],
+    "deadline": 8
+   }
+  },
+  {
+   "id": "controller-232",
+   "role": "controller",
+   "prompt": "Schedule tasks A(2h, skill y), B(3h, skill x), C(1h, skill y), D(1h, skill x), E(4h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before B; B before C; C before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 7h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "y",
+     "B": "x",
+     "C": "y",
+     "D": "x",
+     "E": "y"
+    },
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "controller-233",
+   "role": "controller",
+   "prompt": "Schedule tasks A(1h, skill x), B(3h, skill y), C(3h, skill x), D(2h, skill y), E(1h, skill y) on workers W1(skills x and y), W2(skill x), W3(skill y). Dependencies: A before C; A before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 6h.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "worker_skills": {
+     "W1": [
+      "x",
+      "y"
+     ],
+     "W2": [
+      "x"
+     ],
+     "W3": [
+      "y"
+     ]
+    },
+    "task_skills": {
+     "A": "x",
+     "B": "y",
+     "C": "x",
+     "D": "y",
+     "E": "y"
+    },
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ]
+    ],
+    "deadline": 6
+   }
+  },
+  {
+   "id": "controller-234",
+   "role": "controller",
+   "prompt": "Schedule 5 tasks on three workers with release times and deadlines: A duration 1, release 1, deadline 5; B duration 3, release 1, deadline 9; C duration 3, release 4, deadline 9; D duration 3, release 3, deadline 8; E duration 3, release 6, deadline 14. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 1,
+     "B": 1,
+     "C": 4,
+     "D": 3,
+     "E": 6
+    },
+    "task_deadline": {
+     "A": 5,
+     "B": 9,
+     "C": 9,
+     "D": 8,
+     "E": 14
+    }
+   }
+  },
+  {
+   "id": "controller-235",
+   "role": "controller",
+   "prompt": "Schedule 4 tasks on three workers with release times and deadlines: A duration 1, release 0, deadline 5; B duration 2, release 1, deadline 6; C duration 2, release 3, deadline 9; D duration 3, release 4, deadline 9. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 0,
+     "B": 1,
+     "C": 3,
+     "D": 4
+    },
+    "task_deadline": {
+     "A": 5,
+     "B": 6,
+     "C": 9,
+     "D": 9
+    }
+   }
+  },
+  {
+   "id": "controller-236",
+   "role": "controller",
+   "prompt": "Schedule 4 tasks on three workers with release times and deadlines: A duration 3, release 0, deadline 8; B duration 2, release 2, deadline 9; C duration 2, release 3, deadline 9; D duration 3, release 4, deadline 9. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 0,
+     "B": 2,
+     "C": 3,
+     "D": 4
+    },
+    "task_deadline": {
+     "A": 8,
+     "B": 9,
+     "C": 9,
+     "D": 9
+    }
+   }
+  },
+  {
+   "id": "controller-237",
+   "role": "controller",
+   "prompt": "Schedule 4 tasks on three workers with release times and deadlines: A duration 3, release 1, deadline 9; B duration 2, release 3, deadline 8; C duration 3, release 2, deadline 9; D duration 1, release 3, deadline 7. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 1,
+     "B": 3,
+     "C": 2,
+     "D": 3
+    },
+    "task_deadline": {
+     "A": 9,
+     "B": 8,
+     "C": 9,
+     "D": 7
+    }
+   }
+  },
+  {
+   "id": "controller-238",
+   "role": "controller",
+   "prompt": "Schedule 5 tasks on three workers with release times and deadlines: A duration 2, release 2, deadline 7; B duration 3, release 3, deadline 11; C duration 1, release 3, deadline 7; D duration 1, release 3, deadline 7; E duration 3, release 4, deadline 12. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 2,
+     "B": 3,
+     "C": 3,
+     "D": 3,
+     "E": 4
+    },
+    "task_deadline": {
+     "A": 7,
+     "B": 11,
+     "C": 7,
+     "D": 7,
+     "E": 12
+    }
+   }
+  },
+  {
+   "id": "controller-239",
+   "role": "controller",
+   "prompt": "Schedule 4 tasks on three workers with release times and deadlines: A duration 1, release 1, deadline 5; B duration 3, release 3, deadline 9; C duration 2, release 4, deadline 10; D duration 2, release 5, deadline 10. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 1,
+     "B": 3,
+     "C": 4,
+     "D": 5
+    },
+    "task_deadline": {
+     "A": 5,
+     "B": 9,
+     "C": 10,
+     "D": 10
+    }
+   }
+  },
+  {
+   "id": "controller-240",
+   "role": "controller",
+   "prompt": "Schedule 5 tasks on three workers with release times and deadlines: A duration 3, release 2, deadline 7; B duration 1, release 2, deadline 6; C duration 1, release 4, deadline 9; D duration 1, release 4, deadline 7; E duration 3, release 4, deadline 12. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "release": {
+     "A": 2,
+     "B": 2,
+     "C": 4,
+     "D": 4,
+     "E": 4
+    },
+    "task_deadline": {
+     "A": 7,
+     "B": 6,
+     "C": 9,
+     "D": 7,
+     "E": 12
+    }
+   }
+  },
+  {
+   "id": "controller-241",
+   "role": "controller",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 30 minutes free. Tasks: A takes 15 minutes, B takes 5 minutes, C takes 10 minutes, D takes 5 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-242",
+   "role": "controller",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 30 minutes free. Tasks: A takes 15 minutes, B takes 10 minutes, C takes 20 minutes, D takes 5 minutes. Proposed assignment: A -> W2, B -> W1, C -> W2, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-243",
+   "role": "controller",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 30 minutes free. Tasks: A takes 10 minutes, B takes 10 minutes, C takes 15 minutes, D takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2, D -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "controller-244",
+   "role": "controller",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 20 minutes free. Tasks: A takes 10 minutes, B takes 10 minutes, C takes 15 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "controller-245",
+   "role": "controller",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 30 minutes free. Tasks: A takes 10 minutes, B takes 5 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-246",
+   "role": "controller",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 30 minutes free. Tasks: A takes 20 minutes, B takes 15 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-247",
+   "role": "controller",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 30 minutes free. Tasks: A takes 10 minutes, B takes 20 minutes, C takes 10 minutes, D takes 5 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-248",
+   "role": "controller",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 20 minutes free. Tasks: A takes 20 minutes, B takes 5 minutes, C takes 10 minutes, D takes 10 minutes. Proposed assignment: A -> W1, B -> W2, C -> W2, D -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-301",
+   "role": "controller",
+   "prompt": "Two jobs need the only free 20 GB card. Job A is a live rollback with a 5-minute deadline. Job B is a benchmark with a 2-hour deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "controller-302",
+   "role": "controller",
+   "prompt": "Three jobs need 18 GB, 6 GB, and 4 GB. One card has 24 GB and keeps 2 GB free. Up to two jobs may share the card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-303",
+   "role": "controller",
+   "prompt": "A card has 20 GB and keeps 2 GB free. Job A needs 10 GB and Job B needs 7 GB. Can both run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "controller-304",
+   "role": "controller",
+   "prompt": "A merge has one failing test and a conflict in a source file. Which action is correct? A = merge anyway, B = resolve the conflict, rerun the test, then merge, C = delete the test. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "controller-305",
+   "role": "controller",
+   "prompt": "Two jobs need the same 20 GB card. Job A is a customer-visible fix with a 10-minute deadline. Job B is a background re-index with a 6-hour deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "controller-306",
+   "role": "controller",
+   "prompt": "A model swap leaves the old endpoint healthy and the new endpoint failing smoke tests. Which action is correct? A = repoint traffic anyway, B = roll back the provider mapping and keep the old endpoint, C = delete the old weights. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "controller-307",
+   "role": "controller",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 25 minutes. Tasks: A 20 min, B 10 min, C 15 min. Proposed assignment: A -> W1, B -> W2, C -> W2. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "controller-308",
+   "role": "controller",
+   "prompt": "Workers: W1 has 15 minutes free, W2 has 30 minutes. Tasks: A 15 min, B 10 min, C 10 min. Proposed assignment: A -> W1, B -> W1, C -> W2. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "controller-401",
+   "role": "controller",
+   "prompt": "Merge jobs: P1, P2, P3, P4. Constraints: P1 before P3; P2 before P3; P3 before P4. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "P1",
+     "P2",
+     "P3",
+     "P4"
+    ],
+    "before": [
+     [
+      "P1",
+      "P3"
+     ],
+     [
+      "P2",
+      "P3"
+     ],
+     [
+      "P3",
+      "P4"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "controller-402",
+   "role": "controller",
+   "prompt": "Merge jobs: A, B, C, D, E. Constraints: A before B; B before C; A before D; D before E. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "controller-403",
+   "role": "controller",
+   "prompt": "Merge jobs: X, Y, Z, W. Constraints: X before Z; Y before Z; Z before W. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "X",
+     "Y",
+     "Z",
+     "W"
+    ],
+    "before": [
+     [
+      "X",
+      "Z"
+     ],
+     [
+      "Y",
+      "Z"
+     ],
+     [
+      "Z",
+      "W"
+     ]
+    ]
+   }
+  }
+ ]
+}
