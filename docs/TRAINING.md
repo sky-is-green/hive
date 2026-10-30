@@ -57,6 +57,28 @@ Artifacts: `work/train-runs/lfm3-role-sft-v3/{adapter,merged,*.gguf}`. The GGUF
 converts cleanly with llama.cpp b11960 (`conversion/lfm3.py`) and matches the
 HF score on the role suite.
 
+## Controller specialist (hyper-specialisation)
+
+The controller is the first one-role adapter. Corpus, wider suite, comparison
+and deployment: `docs/round5/CONTROLLER-SPECIALIST.md`.
+
+```sh
+python experiments/build_controller_suite.py
+python experiments/build_controller_sft.py --out experiments/data/controller-sft-v2
+
+HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
+  ~/.unsloth/studio/unsloth_studio/bin/python experiments/lfm3_sft.py \
+    --model-dir ../models-hf/LFM3-1.7B-Base \
+    --data experiments/data/controller-sft-v2/train.jsonl \
+    --out ../train-runs/controller-sft-base-v2 \
+    --epochs 3 --batch 4 --grad-accum 4 --lr 2e-4 --max-length 512 --merge
+```
+
+Result: 52/60 on the wider controller suite vs 50/60 for Scion-35B, 9/9 on the
+original controller tasks, 0.25 s median through the GGUF server. Live at
+`:8156` (alias `controller-1.7b-sft`); role `controller` → `controller17`,
+placement `display`. Scion remains the manual fallback.
+
 ## Ternary path — Qwen/Scion/Bonsai recipe
 
 The runner exists at:
