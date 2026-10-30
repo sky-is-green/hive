@@ -65,19 +65,33 @@ and deployment: `docs/round5/CONTROLLER-SPECIALIST.md`.
 ```sh
 python experiments/build_controller_suite.py
 python experiments/build_controller_sft.py --out experiments/data/controller-sft-v2
+python experiments/build_controller_gap.py --out experiments/data/controller-sft-v3
 
 HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
   ~/.unsloth/studio/unsloth_studio/bin/python experiments/lfm3_sft.py \
     --model-dir ../models-hf/LFM3-1.7B-Base \
-    --data experiments/data/controller-sft-v2/train.jsonl \
-    --out ../train-runs/controller-sft-base-v2 \
+    --data experiments/data/controller-sft-v3/train.jsonl \
+    --out ../train-runs/controller-sft-base-v3 \
     --epochs 3 --batch 4 --grad-accum 4 --lr 2e-4 --max-length 512 --merge
 ```
 
-Result: 52/60 on the wider controller suite vs 50/60 for Scion-35B, 9/9 on the
-original controller tasks, 0.25 s median through the GGUF server. Live at
-`:8156` (alias `controller-1.7b-sft`); role `controller` → `controller17`,
-placement `display`. Scion remains the manual fallback.
+Result: 54/60 on the wider controller suite in HF (57/60 GGUF) vs 50/60 for
+Scion-35B, 9/9 on the original controller tasks, 0.25 s median through the GGUF
+server. Live at `:8156` (alias `controller-1.7b-sft`); role `controller` →
+`controller17`, placement `display`. Scion remains the manual fallback.
+
+Published: https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft
+
+Packaging is reusable for the next role:
+
+```sh
+python experiments/package_role_specialist.py \
+  --run ../train-runs/controller-sft-base-v3 --role controller \
+  --repo SkyIsNotGreen/lfm3-controller-1.7b-sft \
+  --eval ../train-runs/controller-sft-base-v3/eval-specialist.json \
+  --gguf-eval ../train-runs/controller-sft-base-v3/eval-gguf.json \
+  --suite "Hive 60-task controller suite"
+```
 
 ## Ternary path — Qwen/Scion/Bonsai recipe
 
