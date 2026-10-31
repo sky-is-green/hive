@@ -78,8 +78,20 @@ work/train-runs/multirole-cp-v1/
 
 The live `:8156` controller endpoint still runs controller v3. The multirole
 model was tested on a spare `:8157` endpoint and stopped; it is a candidate, not
-yet promoted. The controller HF repo remains **private** pending the name and
-card review.
+yet promoted.
+
+## Published checkpoint
+
+The multirole checkpoint replaced the controller-only files in the existing
+**private** repo:
+
+`https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft`
+
+The README now describes the controller+planner model and its evaluation. The
+old controller-only GGUF and eval files were removed in the same commit; the
+adapter, merged model, and GGUF were verified by SHA-256 against the local
+artifacts. The repo slug still says `controller` because the final name has not
+been approved; a rename is pending.
 
 ## Next
 
