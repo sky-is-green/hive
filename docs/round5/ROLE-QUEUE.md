@@ -58,13 +58,18 @@ the queue stops and Scion is restored. The runner also restores Scion at the
 end. Scion baseline for the comparison: controller 50/60, planner 15/17
 original.
 
-**First recovery result:** controller **57/60** (up from 54), planner
+**Recovery result:** controller **57/60** (up from 54), planner
 **69/77 / 15/17 original** (up from 68/14), placement **44/46**, placement-plan
 **12/12** (up from 8/12). The gate failed only on planner original: 15/17 is
-one short of the 16/17 bar, and the miss is `planner-106` (parallel dependency
-waves). A short waves/planner anchor run is testing whether that last task can
-be recovered; if it passes, the curriculum route is validated for controller,
-planner, and placement.
+one short of the 16/17 bar.
+
+A waves/planner anchor then moved controller to **59/60** and kept placement
+44/46 and placement-plan 12/12, but planner original fell to **14/17**
+(`planner-102` critical path, `planner-106` waves, plus `planner-201` schedule).
+The planner does not hold at the two-role 16/17 level when a third role is
+merged, even with planner-for-role data. The curriculum is validated as a
+**capability-recovery method**, not as a way around the 1.7B’s two-role capacity
+limit. The queue stopped; no candidate was promoted; Scion was restored.
 
 ## Gate rules
 

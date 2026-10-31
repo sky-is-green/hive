@@ -37,6 +37,28 @@ behaviour, and more replay only moves the loss around.
 
 So the practical limit for one 1.7B LoRA adapter is **two constraint roles**.
 
+## Curriculum follow-up (role → planner → role)
+
+The failed 3-role model (`multirole-cpp-v1`: controller 54/60, planner
+68/77 / 14/17, placement 45/46) was retrained with a placement-planner corpus
+and placement assignments carrying a `check` trace:
+
+| stage | controller | planner | placement | placement-plan |
+|---|---:|---:|---:|---:|
+| before | 54/60 | 68/77, 14/17 | 45/46 | 8/12 |
+| role + planner-for-placement | **57/60** | 69/77, 15/17 | 44/46 | **12/12** |
+| + waves/planner anchor | **59/60** | 67/77, **14/17** | 44/46 | **12/12** |
+
+The curriculum clearly works as a **capability-recovery method**: controller
+recovered to the two-role level (59/60), and placement planning went from 8/12
+to 12/12. It does **not** buy enough capacity to hold planner at the two-role
+16/17 level with a third role. The planner oscillates at 14–15/17; the misses
+are critical path (`planner-102`), parallel waves (`planner-106`), and a
+schedule (`planner-201`) in the anchor.
+
+The gate stopped both candidates. The live model remains the two-role
+controller+planner checkpoint.
+
 ## Recommendation
 
 1. **Keep `multirole-cp-v1` as the live controller+planner checkpoint.**
