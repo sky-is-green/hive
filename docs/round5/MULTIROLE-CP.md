@@ -1,5 +1,6 @@
-# Controller + planner multi-role test
+# Hive Conductor 1.7B — controller + planner
 
+**Model:** `hive-conductor-1.7b-v1` (built from `multirole-cp-v1`)
 **Date:** 2026-10-31
 **Question:** if the controller specialist learns a second role, does the
 controller role go down?
@@ -76,8 +77,9 @@ work/train-runs/multirole-cp-v1/
   run-manifest.json
 ```
 
-The multirole model is now live on `:8156`, replacing controller v3. The alias
-and provider stay `controller-1.7b-sft` / `controller17`; the serving model is
+The multirole model is now live on `:8156` as **Hive Conductor 1.7B**, replacing
+controller v3. The alias is `conductor-1.7b`; the provider key stays
+`controller17`. The serving model is
 `multirole-cp-v1-Q4_K_M.gguf`. The spare `:8157` test server was stopped. Scion
 remains the fallback.
 
@@ -90,7 +92,7 @@ controller role back to `scion35`.
 The multirole checkpoint replaced the controller-only files in the **private**
 repo:
 
-`https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1`
+`https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1`
 
 The repo was renamed from the controller-era slug; the old URL redirects. The
 README describes the controller+planner model and its evaluation. The old

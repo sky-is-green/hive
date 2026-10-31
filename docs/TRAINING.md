@@ -81,7 +81,7 @@ server. This controller-only checkpoint was live on `:8156` until the
 controller+planner promotion below; it remains the rollback artifact.
 
 The private HF repo now hosts the multirole checkpoint:
-https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
+https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1
 
 The packaging script is reusable for the next role:
 
@@ -94,7 +94,7 @@ python experiments/package_role_specialist.py \
   --suite "Hive 60-task controller suite"
 ```
 
-## Controller + planner multi-role
+## Hive Conductor 1.7B (controller + planner)
 
 The first retention test: add planner to the controller specialist and check
 whether controller goes down. Full report: `docs/round5/MULTIROLE-CP.md`.
@@ -114,10 +114,10 @@ HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
 
 Result: controller **59/60** (was 54/60), original 9/9; planner **69/77 HF**
 (16/17 original), **66/77 GGUF** (15/17 original). No interference; positive
-transfer. The multirole checkpoint is live on `:8156` as
-`controller-1.7b-sft`, with Scion as fallback.
+transfer. The multirole checkpoint is live on `:8156` as **Hive Conductor
+1.7B** (`conductor-1.7b`), with Scion as fallback.
 
-Published (private): https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
+Published (private): https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1
 
 
 ## Ternary path — Qwen/Scion/Bonsai recipe
