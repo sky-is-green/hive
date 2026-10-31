@@ -66,7 +66,7 @@ SYSTEM = {
     "controller": "You are the Hive controller. Return only the requested JSON.",
     "router": "You are the Hive router. Answer with exactly one letter.",
     "face": "You are the Hive face. Answer directly and concisely.",
-    "agency": "You are the Hive agency role. Answer with exactly one letter.",
+    "agency": "You are the Hive agency role. Return only the requested answer.",
     "mechanics": "You are the Hive mechanics role. Return only the requested JSON.",
     "judge": "You are the Hive judge. Answer with exactly one letter.",
     "rag": "You are the Hive RAG reader. Use only the provided passage.",
@@ -74,6 +74,7 @@ SYSTEM = {
     "vision": "You are the Hive vision reader. Answer briefly.",
     "placement": "You are the Hive placement planner. Return only the requested answer.",
     "critic": "You are the Hive critic. Check the proposal and answer yes or no.",
+    "dispatcher": "You are the Hive dispatcher. Return only the requested answer.",
 }
 
 
