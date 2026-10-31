@@ -38,7 +38,8 @@
       "id": "placement-only",
       "roles": ["placement"],
       "mode": "separate-adapter",
-      "status": "queued"
+      "status": "passed",
+      "result": "43/46 (0.935) HF and GGUF; gate pass; :8158 candidate"
     },
     {
       "id": "critic-only",

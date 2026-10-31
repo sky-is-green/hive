@@ -1,0 +1,199 @@
+{
+ "name": "placement-plan-suite",
+ "version": 1,
+ "count": 12,
+ "tasks": [
+  {
+   "id": "placement-plan-001",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 12 GB, 4 GB, and 10 GB on cards C1=20 GB and C2=16 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-002",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 10 GB, 4 GB, and 14 GB on cards C1=20 GB and C2=28 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-003",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 12 GB, 12 GB, and 10 GB on cards C1=20 GB and C2=20 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-004",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 14 GB, 12 GB, and 10 GB on cards C1=28 GB and C2=24 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-005",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 6 GB, 12 GB, and 14 GB on cards C1=16 GB and C2=16 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-006",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 4 GB, 14 GB, and 4 GB on cards C1=16 GB and C2=16 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-007",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 10 GB, 8 GB, and 12 GB on cards C1=16 GB and C2=28 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-008",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 14 GB, 14 GB, and 12 GB on cards C1=16 GB and C2=20 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-009",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 14 GB, 12 GB, and 12 GB on cards C1=16 GB and C2=24 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-010",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 12 GB, 12 GB, and 12 GB on cards C1=28 GB and C2=16 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-011",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 8 GB, 14 GB, and 14 GB on cards C1=20 GB and C2=24 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "placement-plan-012",
+   "role": "placement",
+   "prompt": "Plan a safe placement of models M1, M2, M3 needing 8 GB, 4 GB, and 10 GB on cards C1=16 GB and C2=28 GB. Each card keeps 2 GB free and holds at most two models. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  }
+ ]
+}
