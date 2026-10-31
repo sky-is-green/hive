@@ -95,9 +95,10 @@ PALETTES = {
 
 
 def hex_points(inset: int = 0):
-    # flat-top hexagon
-    return [(24 + inset, 4 + inset), (72 - inset, 4 + inset), (92 - inset, 48),
-            (72 - inset, 92 - inset), (24 + inset, 92 - inset), (4 + inset, 48)]
+    # flat-top hexagon, wider across the caption end so long titles fit
+    return [(24 + inset, 4 + inset), (72 - inset, 4 + inset), (94 - inset, 48),
+            (78 - inset, 92 - inset), (18 + inset, 92 - inset),
+            (2 + inset, 48)]
 
 
 def text(draw: ImageDraw.ImageDraw, label: str, y: int, color,
@@ -380,8 +381,9 @@ def draw_scion(draw, p, big=False, drafter=False):
     draw.point((48, top), fill=light)
     draw.point((47, top + 1), fill=light)
 
-    leaves = [(50, 14, 60, 19), (36, 17, 46, 22),
-              (50, 23, 61, 28), (35, 25, 45, 30)]
+    # 35B-A3B: three active leaves; the drafter adds one gold leaf.
+    leaves = [(50, 14, 60, 19), (36, 20, 46, 25),
+              (50, 25, 61, 30)]
     if big:
         leaves = [(50, 9, 60, 14), (36, 11, 46, 16),
                   (51, 16, 62, 21), (34, 19, 45, 24),
@@ -452,27 +454,28 @@ def make(name: str) -> Path:
     ICONS[name](d, p)
     if name == "scion_drafter":
         # three-line banner: title, params, and the gold side-car caption
-        banner = [(16, 61), (80, 61), (70, 88), (26, 88)]
+        banner = [(14, 61), (82, 61), (70, 86), (26, 86)]
         d.polygon(banner, fill=(*dark, 245))
-        d.line((16, 61, 80, 61), fill=accent, width=1)
-        text(d, LABELS[name], 64, accent)
-        text(d, PARAMS[name], 73, light)
-        mini_text(d, "DRAFTER", 82, p["gold"])
+        d.line((14, 61, 82, 61), fill=accent, width=1)
+        text(d, LABELS[name], 63, accent)
+        text(d, PARAMS[name], 72, light)
+        mini_text(d, "DRAFTER", 81, p["gold"])
     elif name in PARAMS:
-        # two-line banner clipped to the hexagon's taper
-        banner = [(16, 61), (80, 61), (70, 86), (26, 86)]
+        # two-line banner, inset from the wider hexagon
+        banner = [(14, 61), (82, 61), (70, 86), (26, 86)]
         d.polygon(banner, fill=(*dark, 245))
-        d.line((16, 61, 80, 61), fill=accent, width=1)
-        text(d, LABELS[name], 65, accent)
-        text(d, PARAMS[name], 76, light)
+        d.line((14, 61, 82, 61), fill=accent, width=1)
+        text(d, LABELS[name], 64, accent)
+        text(d, PARAMS[name], 75, light)
     else:
-        # single-line label banner
-        d.rectangle((16, 64, 80, 78), fill=(*dark, 240))
-        d.line((16, 64, 80, 64), fill=accent, width=1)
-        d.line((16, 78, 80, 78), fill=accent2, width=1)
+        # single-line label banner, inset from the wider hexagon
+        d.polygon([(14, 64), (82, 64), (76, 80), (20, 80)],
+                  fill=(*dark, 240))
+        d.line((14, 64, 82, 64), fill=accent, width=1)
+        d.line((20, 80, 76, 80), fill=accent2, width=1)
         text(d, LABELS[name], 67, light)
         # base diamond
-        d.polygon([(48, 80), (51, 84), (48, 88), (45, 84)], fill=accent2)
+        d.polygon([(48, 82), (51, 86), (48, 90), (45, 86)], fill=accent2)
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.png"
     img.resize((96 * SCALE, 96 * SCALE), Image.Resampling.NEAREST).save(path)
