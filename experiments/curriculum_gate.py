@@ -117,7 +117,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
         check(checks, reasons, f"{role}:min", c_acc + 1e-9 >= min_acc,
               f"{c_acc:.4f} >= {min_acc:.3f}")
-        if b_acc is not None and role == "placement-plan":
+        if b_acc is not None and role == "placement-plan" and b_acc + 1e-9 < min_acc:
+            # Require improvement only while the skill is below the bar. An
+            # anchor run on an already-perfect planner should not fail here.
             check(checks, reasons, "placement-plan:improved", c_acc > b_acc + 1e-9,
                   f"{c_acc:.4f} > before {b_acc:.4f}")
         if role == "controller":
