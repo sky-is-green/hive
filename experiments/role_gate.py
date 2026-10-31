@@ -94,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("no roles to gate")
 
     gate = queue.get("gate") or {}
-    protected = ["controller", "planner"]
+    separate = bool(batch and batch.get("mode") == "separate-adapter")
+    protected = [] if separate else ["controller", "planner"]
     all_roles = list(dict.fromkeys(protected + roles))
     candidate_dir = Path(args.candidate_dir).resolve()
     baseline_dir = Path(args.baseline_dir or queue.get("baseline_dir") or "").resolve()
