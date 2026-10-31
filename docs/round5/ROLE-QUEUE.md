@@ -33,7 +33,7 @@ or an adapter router is used.
 separate-adapter gate. It is running on `:8158` as `placement-1.7b-sft`
 (candidate, not wired into a role). Next is critic-only.
 
-## Hive Clerk 1.7B (mechanics + RAG)
+## Hive Reader 1.7B (mechanics + RAG)
 
 Mechanics and RAG are combined into one separate adapter because both are
 document-in / structured-answer-out and neither needs the Conductor’s scheduling
@@ -43,7 +43,9 @@ capacity.
 - Corpus: 2,104 rows (1,199 mechanics, 905 RAG; 296 suite-overlap rows dropped).
 - Training: from `LFM3-1.7B-Base`, 3 epochs, 396 steps, separate adapter.
 - Gate: mechanics and RAG each ≥0.90 HF and GGUF, HF↔GGUF gap ≤0.05.
-- Candidate endpoint when it passes: `:8159`, alias `clerk-1.7b`.
+- Candidate endpoint when it passes: `:8159`. The in-flight run uses the
+  internal key `clerk-sft-v1` / alias `clerk-1.7b`; the model and release name
+  are **Hive Reader 1.7B** (`hive-reader-1.7b-v1`).
 
 ## Curriculum recovery (queued)
 
