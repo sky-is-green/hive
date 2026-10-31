@@ -1,0 +1,32 @@
+{
+  "roles": {
+    "planner": "scion35",
+    "controller": "controller17",
+    "router": "scion35",
+    "face": "scion35",
+    "agency": "clerk17",
+    "mechanics": "reader17",
+    "judge": "d1-2b",
+    "rag": "reader17",
+    "risk": "guards",
+    "vision": "lfm3vl",
+    "placement": "auditor17",
+    "critic": "auditor17",
+    "dispatcher": "dispatcher17"
+  },
+  "placements": {
+    "planner": "non_display",
+    "controller": "display",
+    "router": "non_display",
+    "face": "non_display",
+    "agency": "non_display",
+    "mechanics": "display",
+    "judge": "display",
+    "rag": "display",
+    "risk": "",
+    "vision": "display",
+    "placement": "non_display",
+    "critic": "non_display",
+    "dispatcher": "non_display"
+  }
+}
