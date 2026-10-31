@@ -76,30 +76,35 @@ work/train-runs/multirole-cp-v1/
   run-manifest.json
 ```
 
-The live `:8156` controller endpoint still runs controller v3. The multirole
-model was tested on a spare `:8157` endpoint and stopped; it is a candidate, not
-yet promoted.
+The multirole model is now live on `:8156`, replacing controller v3. The alias
+and provider stay `controller-1.7b-sft` / `controller17`; the serving model is
+`multirole-cp-v1-Q4_K_M.gguf`. The spare `:8157` test server was stopped. Scion
+remains the fallback.
+
+Rollback: stop the `:8156` server, restart
+`controller-sft-base-v3-Q4_K_M.gguf` with the same alias, or point the
+controller role back to `scion35`.
 
 ## Published checkpoint
 
-The multirole checkpoint replaced the controller-only files in the existing
-**private** repo:
+The multirole checkpoint replaced the controller-only files in the **private**
+repo:
 
-`https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft`
+`https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1`
 
-The README now describes the controller+planner model and its evaluation. The
-old controller-only GGUF and eval files were removed in the same commit; the
+The repo was renamed from the controller-era slug; the old URL redirects. The
+README describes the controller+planner model and its evaluation. The old
+controller-only GGUF and eval files were removed in the same commit; the
 adapter, merged model, and GGUF were verified by SHA-256 against the local
-artifacts. The repo slug still says `controller` because the final name has not
-been approved; a rename is pending.
+artifacts.
 
 ## Next
 
 1. Add **placement** and **critic** to the same adapter. If controller and
    planner hold, the constraint family is real.
-2. Promote the multirole model to `:8156` only after a live canary and
-   deterministic schedule guard.
-3. Package/upload the multirole model separately only after explicit approval.
+2. Add the deterministic schedule guard and run a live canary on controller
+   traffic; roll back to v3 or Scion if schedule failures appear.
+3. Decide whether the now-private HF repo becomes public.
 
 ## Repro
 
