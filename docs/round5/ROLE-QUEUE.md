@@ -32,6 +32,32 @@ or an adapter router is used.
 separate-adapter gate. It is running on `:8158` as `placement-1.7b-sft`
 (candidate, not wired into a role). Next is critic-only.
 
+## Curriculum recovery (queued)
+
+The failed 3-role model (`multirole-cpp-v1`) is the “before”:
+
+| role | before |
+|---|---:|
+| controller | 54/60 (9/9 original) |
+| planner | 68/77, **14/17 original** |
+| placement | 45/46 (0.978) |
+| placement-plan | 8/12 (0.667) |
+
+The recovery run adds a placement-planner corpus (`placement_plan` plus
+placement assignments with a `check` trace) to controller/planner/placement
+replay, starting from the failed 3-role model. It is gated by
+`experiments/curriculum_gate.py`:
+
+- controller ≥57/60 and original 9/9
+- planner original ≥16/17
+- placement ≥0.90
+- placement-plan ≥0.90 and better than 8/12
+
+If it passes, `run_curriculum_queue.sh` continues to critic-only; if it fails,
+the queue stops and Scion is restored. The runner also restores Scion at the
+end. Scion baseline for the comparison: controller 50/60, planner 15/17
+original.
+
 ## Gate rules
 
 Protected roles are always re-evaluated, even when they are not in the batch.
