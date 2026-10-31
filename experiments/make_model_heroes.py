@@ -69,10 +69,14 @@ PALETTES = {
                    "light": (236, 247, 255), "dark": (4, 11, 18)},
     "clerk": {"bg": (28, 15, 43), "accent": (192, 139, 255), "accent2": (255, 111, 181),
               "light": (248, 240, 255), "dark": (12, 5, 20)},
-    "scion35": {"bg": (8, 32, 24), "accent": (94, 224, 138), "accent2": (255, 209, 102),
-                "light": (240, 255, 244), "dark": (4, 14, 10)},
-    "scion176": {"bg": (42, 13, 13), "accent": (255, 138, 76), "accent2": (255, 209, 102),
-                 "light": (255, 244, 232), "dark": (18, 5, 5)},
+    "scion35": {"bg": (6, 26, 17), "accent": (86, 220, 132), "accent2": (44, 166, 96),
+                "light": (232, 255, 238), "dark": (3, 12, 8),
+                "root": (118, 144, 82), "root_dark": (50, 70, 38),
+                "soil": (28, 38, 22), "band": (228, 196, 104)},
+    "scion176": {"bg": (7, 30, 17), "accent": (138, 238, 112), "accent2": (58, 180, 96),
+                 "light": (240, 255, 226), "dark": (3, 14, 7),
+                 "root": (132, 158, 88), "root_dark": (56, 78, 42),
+                 "soil": (30, 40, 24), "band": (240, 208, 110)},
 }
 
 
@@ -82,16 +86,19 @@ def hex_points(inset: int = 0):
             (72 - inset, 92 - inset), (24 + inset, 92 - inset), (4 + inset, 48)]
 
 
-def text(draw: ImageDraw.ImageDraw, label: str, y: int, color, x: int = 48) -> None:
-    width = len(label) * 6 - 1
+def text(draw: ImageDraw.ImageDraw, label: str, y: int, color,
+         x: int = 48, scale: int = 1, spacing: int = 1) -> None:
+    pitch = 5 + spacing
+    width = (len(label) * pitch - spacing) * scale
     start = x - width // 2
     for i, char in enumerate(label):
         glyph = FONT.get(char.upper(), FONT[" "])
         for row, bits in enumerate(glyph):
             for col, bit in enumerate(bits):
                 if bit == "1":
-                    draw.rectangle((start + i * 6 + col, y + row,
-                                    start + i * 6 + col, y + row), fill=color)
+                    px = start + (i * pitch + col) * scale
+                    py = y + row * scale
+                    draw.rectangle((px, py, px + scale - 1, py + scale - 1), fill=color)
 
 
 def node(draw, x, y, color, light):
@@ -244,35 +251,128 @@ def draw_clerk(draw, p):
     draw.point((50, 59), fill=a2)
 
 
+def leaf(draw, box, p, pointing_right: bool = True, tip_dy: int = 0) -> None:
+    """A full pixel leaf with a rounded base, tapered tip and short vein."""
+    x0, y0, x1, y1 = box
+    cy = (y0 + y1) // 2
+    if pointing_right:
+        tip = (x1, cy + tip_dy)
+        edge = [(x0, cy), (x0 + 1, y0 + 1), (x0 + 4, y0),
+                (x0 + 7, y0 + 1), tip, (x0 + 7, y1 - 1),
+                (x0 + 4, y1), (x0 + 1, y1 - 1)]
+        vein = (x0 + 3, cy, x1 - 3, cy + tip_dy)
+        shoulder = (x0 + 4, y0 + 1)
+    else:
+        tip = (x0, cy + tip_dy)
+        edge = [(x1, cy), (x1 - 1, y0 + 1), (x1 - 4, y0),
+                (x1 - 7, y0 + 1), tip, (x1 - 7, y1 - 1),
+                (x1 - 4, y1), (x1 - 1, y1 - 1)]
+        vein = (x1 - 3, cy, x0 + 3, cy + tip_dy)
+        shoulder = (x1 - 4, y0 + 1)
+    draw.polygon(edge, fill=p["accent"], outline=p["dark"])
+    draw.line(vein, fill=p["accent2"], width=1)
+    draw.point(shoulder, fill=p["light"])
+
+
 def draw_scion(draw, p, big=False):
+    """A young scion shoot grafted onto an old, established rootstock.
+
+    The rootstock is a stump with a deep root fan and a cut side branch; the
+    bright scion is a different green, joined at a pale grafting band. The
+    176B hero gets a taller shoot, more leaves and a denser root fan.
+    """
     a, a2, light, dark = p["accent"], p["accent2"], p["light"], p["dark"]
-    # tree / graft
-    draw.rectangle((45, 26, 51, 60), fill=dark)
-    draw.rectangle((46, 28, 50, 59), fill=a)
-    branches = [((48, 42), (30, 28)), ((48, 38), (66, 24)),
-                ((48, 50), (27, 46)), ((48, 50), (69, 44))]
+    root, root_dark = p["root"], p["root_dark"]
+    soil, band = p["soil"], p["band"]
+
+    # ground line and a soil cross-section for the established roots
+    draw.polygon([(13, 61), (13, 49), (20, 46), (30, 44), (42, 44),
+                  (54, 44), (66, 44), (76, 46), (83, 49), (83, 61)],
+                 fill=soil)
+    draw.line((13, 49, 20, 46, 30, 44, 42, 44, 54, 44, 66, 44,
+               76, 46, 83, 49), fill=root_dark, width=1)
+    for x in (18, 24, 72, 78):
+        draw.line((x, 47, x - 1, 44), fill=a2, width=1)
+        draw.line((x, 47, x + 1, 44), fill=a2, width=1)
+    for x, y in [(22, 52), (30, 56), (67, 53), (74, 57), (58, 59)]:
+        draw.point((x, y), fill=root_dark)
+
+    # established root fan: thick mains, tapered laterals, a few rootlets
     if big:
-        branches += [((48, 34), (38, 18)), ((48, 34), (58, 18))]
-    for (x0, y0), (x1, y1) in branches:
-        draw.line((x0, y0, x1, y1), fill=dark, width=3)
-        draw.line((x0, y0, x1, y1), fill=a, width=1)
-        draw.rectangle((x1 - 2, y1 - 2, x1 + 2, y1 + 2), fill=a2)
-    # graft band
-    draw.rectangle((42, 50, 54, 53), fill=dark)
-    draw.rectangle((43, 51, 53, 52), fill=a2)
-    # crown
-    draw.polygon([(36, 8), (40, 15), (44, 8), (48, 15), (52, 8), (56, 15), (60, 8),
-                  (58, 18), (38, 18)], fill=a2, outline=dark)
-    draw.point((42, 12), fill=light)
-    draw.point((48, 12), fill=light)
-    draw.point((54, 12), fill=light)
+        roots = [
+            ([(48, 47), (42, 50), (35, 53), (28, 56), (24, 59)], 4),
+            ([(48, 47), (54, 50), (61, 53), (68, 56), (72, 59)], 4),
+            ([(42, 50), (39, 55), (37, 59)], 3),
+            ([(54, 50), (57, 55), (59, 59)], 3),
+            ([(28, 56), (26, 60)], 2),
+            ([(68, 56), (70, 60)], 2),
+            ([(48, 47), (48, 54), (47, 60)], 3),
+            ([(35, 53), (32, 58)], 2),
+            ([(61, 53), (64, 58)], 2),
+        ]
+    else:
+        roots = [
+            ([(48, 47), (43, 50), (37, 53), (31, 55), (26, 58)], 4),
+            ([(48, 47), (53, 50), (59, 53), (65, 55), (70, 58)], 4),
+            ([(43, 50), (40, 54), (38, 58), (36, 60)], 3),
+            ([(53, 50), (56, 54), (58, 58), (60, 60)], 3),
+            ([(31, 55), (29, 59)], 2),
+            ([(65, 55), (67, 59)], 2),
+            ([(48, 47), (48, 53), (47, 59)], 3),
+            ([(37, 53), (35, 57)], 1),
+            ([(59, 53), (61, 57)], 1),
+        ]
+    for pts, width in roots:
+        segs = len(pts) - 1
+        for i in range(segs):
+            w = max(1, round(width * (segs - i) / segs))
+            draw.line((pts[i], pts[i + 1]), fill=root_dark, width=w + 2)
+        for i in range(segs):
+            w = max(1, round(width * (segs - i) / segs))
+            draw.line((pts[i], pts[i + 1]), fill=root, width=w)
+
+    # rootstock stump: older, darker wood, wider than the scion
+    draw.polygon([(42, 49), (44, 33), (52, 33), (54, 49)], fill=dark)
+    draw.polygon([(44, 48), (45, 35), (51, 35), (52, 48)], fill=root)
+    draw.line((46, 37, 46, 40), fill=root_dark, width=1)
+    draw.line((50, 42, 50, 46), fill=root_dark, width=1)
+    draw.point((47, 44), fill=root_dark)
+    # old cut side branch
+    draw.line((43, 40, 39, 37), fill=dark, width=3)
+    draw.line((43, 40, 39, 37), fill=root, width=1)
+
+    # scion shoot: new growth, brighter green, slimmer than the stump
+    top = 10 if big else 13
+    draw.line((48, top, 48, 34), fill=dark, width=3)
+    draw.line((48, top + 1, 48, 33), fill=a, width=1)
+    # new growth tip
+    draw.point((48, top), fill=light)
+    draw.point((47, top + 1), fill=light)
+
+    leaves = [(50, 14, 60, 19), (36, 17, 46, 22),
+              (50, 23, 61, 28), (35, 25, 45, 30)]
     if big:
-        # lightning bolt through the graft
-        draw.polygon([(60, 20), (48, 38), (56, 38), (42, 58), (52, 40), (45, 40)],
-                     fill=a2, outline=dark)
-    # roots
-    draw.line((44, 59, 36, 62), fill=a, width=1)
-    draw.line((52, 59, 60, 62), fill=a, width=1)
+        leaves = [(50, 9, 60, 14), (36, 11, 46, 16),
+                  (51, 16, 62, 21), (34, 19, 45, 24),
+                  (50, 23, 61, 28), (33, 25, 43, 30)]
+    for box in leaves:
+        # short petiole joins the leaf to the shoot
+        x0, y0, x1, y1 = box
+        cy = (y0 + y1) // 2
+        if x0 > 48:
+            draw.line((48, cy, x0, cy), fill=a2, width=1)
+        else:
+            draw.line((x1, cy, 48, cy), fill=a2, width=1)
+        leaf(draw, box, p, pointing_right=x0 > 48,
+             tip_dy=-1 if cy <= 20 else 1)
+
+    # grafting band over the union: the visual join between old and new
+    draw.rectangle((41, 31, 55, 35), fill=dark)
+    draw.rectangle((42, 32, 54, 34), fill=band)
+    draw.line((42, 32, 54, 32), fill=light, width=1)
+    draw.line((42, 34, 54, 34), fill=root_dark, width=1)
+    for x in (44, 47, 50, 53):
+        draw.point((x, 33), fill=dark)
 
 
 ICONS = {
@@ -291,9 +391,11 @@ LABELS = {
     "auditor": "AUDITOR",
     "dispatcher": "DISPATCHER",
     "clerk": "CLERK",
-    "scion35": "SCION 35B",
-    "scion176": "SCION 176B",
+    "scion35": "SCION",
+    "scion176": "SCION",
 }
+
+PARAMS = {"scion35": "35B-A3B", "scion176": "176B-A6B"}
 
 
 def make(name: str) -> Path:
@@ -302,28 +404,27 @@ def make(name: str) -> Path:
     light, dark = p["light"], p["dark"]
     img = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    # outer glow
-    d.polygon([(24, 2), (72, 2), (94, 48), (72, 94), (24, 94), (2, 48)],
-              fill=(*accent, 45))
     # border and body
     d.polygon(hex_points(0), fill=(*dark, 255))
     d.polygon(hex_points(2), fill=(*accent, 255))
     d.polygon(hex_points(4), fill=(*bg, 255))
-    # pixel sparkles / dither
-    for x, y in [(20, 12), (76, 16), (14, 60), (82, 54), (48, 56)]:
-        d.point((x, y), fill=(*light, 90))
     # icon
     ICONS[name](d, p)
-    # label banner
-    d.rectangle((16, 64, 80, 78), fill=(*dark, 240))
-    d.line((16, 64, 80, 64), fill=accent, width=1)
-    d.line((16, 78, 80, 78), fill=accent2, width=1)
-    text(d, LABELS[name], 67, light)
-    # base diamond
-    d.polygon([(48, 80), (51, 84), (48, 88), (45, 84)], fill=accent2)
-    # corner brackets
-    for x, y, sx, sy in [(8, 40, 1, 0), (88, 40, -1, 0), (18, 6, 0, 1), (78, 6, 0, 1)]:
-        d.line((x, y, x + 4 * sx if sx else x, y + 4 * sy if sy else y), fill=accent, width=1)
+    if name in PARAMS:
+        # two-line banner clipped to the hexagon's taper
+        banner = [(16, 61), (80, 61), (70, 86), (26, 86)]
+        d.polygon(banner, fill=(*dark, 245))
+        d.line((16, 61, 80, 61), fill=accent, width=1)
+        text(d, LABELS[name], 65, accent)
+        text(d, PARAMS[name], 76, light)
+    else:
+        # single-line label banner
+        d.rectangle((16, 64, 80, 78), fill=(*dark, 240))
+        d.line((16, 64, 80, 64), fill=accent, width=1)
+        d.line((16, 78, 80, 78), fill=accent2, width=1)
+        text(d, LABELS[name], 67, light)
+        # base diamond
+        d.polygon([(48, 80), (51, 84), (48, 88), (45, 84)], fill=accent2)
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.png"
     img.resize((96 * SCALE, 96 * SCALE), Image.Resampling.NEAREST).save(path)
