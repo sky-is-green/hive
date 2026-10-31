@@ -15,7 +15,7 @@ stays live.
 | batch | roles | status |
 |---|---|---|
 | `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
-| `placement-only` | placement | **queued as a separate adapter** |
+| `placement-only` | placement | **passed** — 43/46 (0.935) HF and GGUF, gate pass |
 | `critic-only` | critic | **queued as a separate adapter** |
 | `agency-dispatcher` | agency, dispatcher | queued |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
@@ -25,6 +25,12 @@ stays live.
 Adding a third role to the same adapter fails the protected-role gate even with
 more replay. New roles are trained as **separate adapters** unless a larger base
 or an adapter router is used.
+
+**Separate-adapter progress:** placement-only is trained from
+`LFM3-1.7B-Base`, 1,200 placement rows, 3 epochs (225 steps). It scores
+**43/46 (0.935)** on its held-out suite in both HF and GGUF and passes the
+separate-adapter gate. It is running on `:8158` as `placement-1.7b-sft`
+(candidate, not wired into a role). Next is critic-only.
 
 ## Gate rules
 

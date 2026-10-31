@@ -74,7 +74,7 @@ experiments/data/multirole-cpp-v1/
 
 ## Next
 
-Train **placement-only** and **critic-only** specialists as separate small
-models, using the same base and evaluation gate. They are independent of the
-controller/planner adapter, so the two-role model stays intact. Add them to the
-queue as separate-adapter batches rather than merged-role batches.
+Placement-only is done: 43/46 (0.935) HF and GGUF, separate-adapter gate pass.
+It runs on `:8158` as `placement-1.7b-sft` (candidate, not wired into a role).
+Next is critic-only, then agency/dispatcher and merge/incident as separate
+adapters.
