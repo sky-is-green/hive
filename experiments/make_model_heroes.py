@@ -58,6 +58,15 @@ FONT = {
     "-": ["00000", "00000", "00000", "11111", "00000", "00000", "00000"],
 }
 
+MINI_FONT = {
+    "D": ["1110", "1001", "1001", "1001", "1110"],
+    "R": ["1110", "1001", "1110", "1010", "1001"],
+    "A": ["0110", "1001", "1111", "1001", "1001"],
+    "F": ["1111", "1000", "1110", "1000", "1000"],
+    "T": ["1111", "0110", "0110", "0110", "0110"],
+    "E": ["1111", "1000", "1110", "1000", "1111"],
+}
+
 PALETTES = {
     "conductor": {"bg": (13, 18, 48), "accent": (242, 193, 78), "accent2": (79, 124, 255),
                   "light": (246, 241, 227), "dark": (7, 10, 26)},
@@ -77,6 +86,11 @@ PALETTES = {
                  "light": (240, 255, 226), "dark": (3, 14, 7),
                  "root": (132, 158, 88), "root_dark": (56, 78, 42),
                  "soil": (30, 40, 24), "band": (240, 208, 110)},
+    "scion_drafter": {"bg": (6, 26, 17), "accent": (86, 220, 132), "accent2": (44, 166, 96),
+                      "light": (232, 255, 238), "dark": (3, 12, 8),
+                      "root": (118, 144, 82), "root_dark": (50, 70, 38),
+                      "soil": (28, 38, 22), "band": (228, 196, 104),
+                      "gold": (240, 204, 110), "gold_dark": (164, 124, 48)},
 }
 
 
@@ -99,6 +113,20 @@ def text(draw: ImageDraw.ImageDraw, label: str, y: int, color,
                     px = start + (i * pitch + col) * scale
                     py = y + row * scale
                     draw.rectangle((px, py, px + scale - 1, py + scale - 1), fill=color)
+
+
+def mini_text(draw: ImageDraw.ImageDraw, label: str, y: int, color,
+              x: int = 48) -> None:
+    """Four-by-five pixel caption, for a third line in the badge."""
+    pitch = 5
+    width = len(label) * pitch - 1
+    start = x - width // 2
+    for i, char in enumerate(label):
+        glyph = MINI_FONT.get(char.upper(), ["0000"] * 5)
+        for row, bits in enumerate(glyph):
+            for col, bit in enumerate(bits):
+                if bit == "1":
+                    draw.point((start + i * pitch + col, y + row), fill=color)
 
 
 def node(draw, x, y, color, light):
@@ -251,8 +279,11 @@ def draw_clerk(draw, p):
     draw.point((50, 59), fill=a2)
 
 
-def leaf(draw, box, p, pointing_right: bool = True, tip_dy: int = 0) -> None:
+def leaf(draw, box, p, pointing_right: bool = True, tip_dy: int = 0,
+         blade=None, ink=None) -> None:
     """A full pixel leaf with a rounded base, tapered tip and short vein."""
+    blade = blade or p["accent"]
+    ink = ink or p["accent2"]
     x0, y0, x1, y1 = box
     cy = (y0 + y1) // 2
     if pointing_right:
@@ -269,12 +300,12 @@ def leaf(draw, box, p, pointing_right: bool = True, tip_dy: int = 0) -> None:
                 (x1 - 4, y1), (x1 - 1, y1 - 1)]
         vein = (x1 - 3, cy, x0 + 3, cy + tip_dy)
         shoulder = (x1 - 4, y0 + 1)
-    draw.polygon(edge, fill=p["accent"], outline=p["dark"])
-    draw.line(vein, fill=p["accent2"], width=1)
+    draw.polygon(edge, fill=blade, outline=p["dark"])
+    draw.line(vein, fill=ink, width=1)
     draw.point(shoulder, fill=p["light"])
 
 
-def draw_scion(draw, p, big=False):
+def draw_scion(draw, p, big=False, drafter=False):
     """A young scion shoot grafted onto an old, established rootstock.
 
     The rootstock is a stump with a deep root fan and a cut side branch; the
@@ -342,7 +373,7 @@ def draw_scion(draw, p, big=False):
     draw.line((43, 40, 39, 37), fill=root, width=1)
 
     # scion shoot: new growth, brighter green, slimmer than the stump
-    top = 10 if big else 13
+    top = 10 if big else (9 if drafter else 13)
     draw.line((48, top, 48, 34), fill=dark, width=3)
     draw.line((48, top + 1, 48, 33), fill=a, width=1)
     # new growth tip
@@ -366,6 +397,12 @@ def draw_scion(draw, p, big=False):
         leaf(draw, box, p, pointing_right=x0 > 48,
              tip_dy=-1 if cy <= 20 else 1)
 
+    if drafter:
+        # the side-car drafter: one extra leaf, in graft-gold, on its own shoot
+        draw.line((44, 11, 48, 11), fill=p["gold_dark"], width=1)
+        leaf(draw, (34, 9, 44, 14), p, pointing_right=False, tip_dy=-1,
+             blade=p["gold"], ink=p["gold_dark"])
+
     # grafting band over the union: the visual join between old and new
     draw.rectangle((41, 31, 55, 35), fill=dark)
     draw.rectangle((42, 32, 54, 34), fill=band)
@@ -383,6 +420,7 @@ ICONS = {
     "clerk": draw_clerk,
     "scion35": lambda d, p: draw_scion(d, p, big=False),
     "scion176": lambda d, p: draw_scion(d, p, big=True),
+    "scion_drafter": lambda d, p: draw_scion(d, p, big=False, drafter=True),
 }
 
 LABELS = {
@@ -393,9 +431,11 @@ LABELS = {
     "clerk": "CLERK",
     "scion35": "SCION",
     "scion176": "SCION",
+    "scion_drafter": "SCION",
 }
 
-PARAMS = {"scion35": "35B-A3B", "scion176": "176B-A6B"}
+PARAMS = {"scion35": "35B-A3B", "scion176": "176B-A6B",
+          "scion_drafter": "35B-A3B"}
 
 
 def make(name: str) -> Path:
@@ -410,7 +450,15 @@ def make(name: str) -> Path:
     d.polygon(hex_points(4), fill=(*bg, 255))
     # icon
     ICONS[name](d, p)
-    if name in PARAMS:
+    if name == "scion_drafter":
+        # three-line banner: title, params, and the gold side-car caption
+        banner = [(16, 61), (80, 61), (70, 88), (26, 88)]
+        d.polygon(banner, fill=(*dark, 245))
+        d.line((16, 61, 80, 61), fill=accent, width=1)
+        text(d, LABELS[name], 64, accent)
+        text(d, PARAMS[name], 73, light)
+        mini_text(d, "DRAFTER", 82, p["gold"])
+    elif name in PARAMS:
         # two-line banner clipped to the hexagon's taper
         banner = [(16, 61), (80, 61), (70, 86), (26, 86)]
         d.polygon(banner, fill=(*dark, 245))
