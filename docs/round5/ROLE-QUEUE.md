@@ -17,7 +17,7 @@ stays live.
 | `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
 | `placement-only` | placement | **passed** — 43/46 (0.935) HF and GGUF, gate pass |
 | `clerk` | mechanics + RAG (**Hive Reader 1.7B**) | **passed** — mechanics 40/40 HF / 39/40 GGUF, RAG 40/40 both |
-| `auditor` | placement + critic (**Hive Auditor 1.7B**) | **queued as a separate adapter** |
+| `auditor` | placement + critic (**Hive Auditor 1.7B**) | **passed** — placement 44/46 HF, 43/46 GGUF; critic 36/38 HF, 35/38 GGUF |
 | `agency-dispatcher` | agency, dispatcher (**Hive Operator 1.7B**) | queued |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
 | — | router, judge, face | **not queued** — semantic roles stay Scion/d1 |
@@ -48,6 +48,17 @@ capacity.
 - Candidate on `:8159`, alias `reader-1.7b`; internal run dir
   `clerk-sft-v1`. Release slug `hive-reader-1.7b-v1`.
 - Gate report: `work/train-runs/clerk-sft-v1/gate-report.json`.
+
+## Hive Auditor 1.7B (placement + critic)
+
+The first combined Auditor learned placement but under-learned critic
+(32/38 HF). A critic-heavy continuation improved GGUF but not HF. The winning
+mix added controller/planner replay to the training corpus (800 placement,
+1,000 critic, 500 controller, 300 planner; 2,600 rows, 3 epochs).
+
+- Result: placement **44/46 HF, 43/46 GGUF**; critic **36/38 HF, 35/38 GGUF**.
+- Gate: **PASS**. Candidate on `:8162`, alias `auditor-1.7b`.
+- Gate report: `work/train-runs/auditor-sft-v3/gate-report.json`.
 
 ## Hive Operator 1.7B (agency + dispatcher)
 

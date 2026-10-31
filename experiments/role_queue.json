@@ -48,7 +48,8 @@
       "name": "Hive Auditor 1.7B",
       "roles": ["placement", "critic"],
       "mode": "separate-adapter",
-      "status": "queued"
+      "status": "passed",
+      "result": "placement 44/46 HF, 43/46 GGUF; critic 36/38 HF, 35/38 GGUF; :8162"
     },
     {
       "id": "clerk",
