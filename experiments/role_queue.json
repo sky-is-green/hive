@@ -51,6 +51,7 @@
     },
     {
       "id": "clerk",
+      "name": "Hive Reader 1.7B",
       "roles": ["mechanics", "rag"],
       "mode": "separate-adapter",
       "status": "queued"
