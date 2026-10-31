@@ -77,17 +77,18 @@ HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
 
 Result: 54/60 on the wider controller suite in HF (57/60 GGUF) vs 50/60 for
 Scion-35B, 9/9 on the original controller tasks, 0.25 s median through the GGUF
-server. Live at `:8156` (alias `controller-1.7b-sft`); role `controller` →
-`controller17`, placement `display`. Scion remains the manual fallback.
+server. This controller-only checkpoint was live on `:8156` until the
+controller+planner promotion below; it remains the rollback artifact.
 
-Published: https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft
+The private HF repo now hosts the multirole checkpoint:
+https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
 
-Packaging is reusable for the next role:
+The packaging script is reusable for the next role:
 
 ```sh
 python experiments/package_role_specialist.py \
   --run ../train-runs/controller-sft-base-v3 --role controller \
-  --repo SkyIsNotGreen/lfm3-controller-1.7b-sft \
+  --repo <new-destination-repo> \
   --eval ../train-runs/controller-sft-base-v3/eval-specialist.json \
   --gguf-eval ../train-runs/controller-sft-base-v3/eval-gguf.json \
   --suite "Hive 60-task controller suite"
@@ -113,11 +114,11 @@ HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
 
 Result: controller **59/60** (was 54/60), original 9/9; planner **69/77 HF**
 (16/17 original), **66/77 GGUF** (15/17 original). No interference; positive
-transfer. The model is a candidate for promotion, not yet live.
+transfer. The multirole checkpoint is live on `:8156` as
+`controller-1.7b-sft`, with Scion as fallback.
 
-The checkpoint is in the existing private HF repo
-`SkyIsNotGreen/lfm3-controller-1.7b-sft` (README updated; controller-only
-artifacts replaced). The repo slug is pending a final rename.
+Published (private): https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
+
 
 ## Ternary path — Qwen/Scion/Bonsai recipe
 

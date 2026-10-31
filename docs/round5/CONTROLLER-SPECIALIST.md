@@ -2,8 +2,10 @@
 
 **Date:** 2026-10-30
 **Target:** `LFM3-1.7B-Base` + controller-only LoRA (one role, one output contract)
-**Deployed:** `controller-1.7b-sft` (v3) on `:8156`, role `controller` → `controller17`
-**HF:** https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft
+**Deployed:** controller v3 on `:8156` until 2026-10-31, then superseded by the
+controller+planner checkpoint (`MULTIROLE-CP.md`).
+**HF:** https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
+(renamed; the repo now hosts the multirole checkpoint)
 
 The generalist SFT run took controller from 2/9 to 8/9 on the nine-task role
 suite. That was promising but too narrow to hand over a merge seat. This run
@@ -112,8 +114,9 @@ check as cheap insurance.
 ## Deployment
 
 - Model: `work/train-runs/controller-sft-base-v3/controller-sft-base-v3-Q4_K_M.gguf`
-- HF: https://huggingface.co/SkyIsNotGreen/lfm3-controller-1.7b-sft
-  (adapter, merged model, GGUF, eval JSON, license, model card)
+  (historical; the live `:8156` now serves the multirole checkpoint)
+- HF: https://huggingface.co/SkyIsNotGreen/lfm3-1.7b-controller-planner-v1
+  (renamed; now hosts the multirole checkpoint, not this controller-only one)
 - Server: llama.cpp b11960 Vulkan, `:8156`, alias `controller-1.7b-sft`,
   8k context, 2 slots, `--reasoning off`
 - Role config: `hivebench/harness/webui/roles.json` → `controller:
@@ -156,9 +159,11 @@ python experiments/eval_role_endpoint.py \
   --max-tokens 512 --no-response-format \
   --out ../train-runs/controller-sft-base-v3/eval-gguf.json
 
+# Historical only: the repo now hosts the multirole checkpoint. Do not run
+# this against the live repo without a new destination.
 python experiments/package_role_specialist.py \
   --run ../train-runs/controller-sft-base-v3 --role controller \
-  --repo SkyIsNotGreen/lfm3-controller-1.7b-sft \
+  --repo SkyIsNotGreen/lfm3-1.7b-controller-planner-v1 \
   --eval ../train-runs/controller-sft-base-v3/eval-specialist.json \
   --gguf-eval ../train-runs/controller-sft-base-v3/eval-gguf.json \
   --suite "Hive 60-task controller suite"
