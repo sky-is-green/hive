@@ -1,0 +1,1089 @@
+{
+ "name": "dispatcher-suite",
+ "version": 1,
+ "count": 40,
+ "tasks": [
+  {
+   "id": "dispatcher-001",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(5), B(1), C(4), D(5), E(2) on workers W1, W2, W3. Dependencies: A before B; B before C; B before D; A before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "dispatcher-002",
+   "role": "dispatcher",
+   "prompt": "Two jobs need the only free worker. Job A is a live rollback with a 5-minute deadline. Job B is a benchmark with a 2-hour deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "dispatcher-003",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 10 minutes, B takes 20 minutes, C takes 10 minutes, D takes 20 minutes, E takes 5 minutes to workers W1 has 60 minutes, W2 has 50 minutes, W3 has 60 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 10,
+     "B": 20,
+     "C": 10,
+     "D": 20,
+     "E": 5
+    },
+    "workers": {
+     "W1": 60,
+     "W2": 50,
+     "W3": 60
+    }
+   }
+  },
+  {
+   "id": "dispatcher-004",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 5 minutes, C takes 20 minutes, D takes 20 minutes, E takes 20 minutes, F takes 15 minutes to workers W1 has 40 minutes, W2 has 40 minutes, W3 has 30 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 5,
+     "C": 20,
+     "D": 20,
+     "E": 20,
+     "F": 15
+    },
+    "workers": {
+     "W1": 40,
+     "W2": 40,
+     "W3": 30
+    }
+   }
+  },
+  {
+   "id": "dispatcher-005",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(5), B(5), C(1), D(2), E(5) on workers W1, W2, W3. Dependencies: A before B; B before C; B before D; C before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 17.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 17
+   }
+  },
+  {
+   "id": "dispatcher-006",
+   "role": "dispatcher",
+   "prompt": "Two jobs need the only free worker. Job A is a live rollback with a 5-minute deadline. Job B is a background re-index with a 6-hour deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "dispatcher-007",
+   "role": "dispatcher",
+   "prompt": "Two jobs need the only free worker. Job A is a benchmark with a 2-hour deadline. Job B is a live rollback with a 5-minute deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "dispatcher-008",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 5 minutes, C takes 10 minutes, D takes 10 minutes to workers W1 has 30 minutes, W2 has 50 minutes, W3 has 60 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 5,
+     "C": 10,
+     "D": 10
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 50,
+     "W3": 60
+    }
+   }
+  },
+  {
+   "id": "dispatcher-009",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(1), B(1), C(4), D(1), E(3), F(4) on workers W1, W2, W3. Dependencies: A before B; D before E; A before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 7.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "A",
+      "F"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "dispatcher-010",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(3), B(5), C(3), D(4), E(3), F(3) on workers W1, W2, W3. Dependencies: A before B; A before C; B before D; A before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 13.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ]
+    ],
+    "deadline": 13
+   }
+  },
+  {
+   "id": "dispatcher-011",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 25 minutes. Jobs: A takes 15 minutes, B takes 5 minutes, C takes 10 minutes, D takes 15 minutes. Proposed dispatch: A -> W1, B -> W2, C -> W2, D -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-012",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 10 minutes, B takes 15 minutes, C takes 10 minutes, D takes 5 minutes, E takes 5 minutes to workers W1 has 60 minutes, W2 has 40 minutes, W3 has 40 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 10,
+     "B": 15,
+     "C": 10,
+     "D": 5,
+     "E": 5
+    },
+    "workers": {
+     "W1": 60,
+     "W2": 40,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "dispatcher-013",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 10 minutes, C takes 10 minutes, D takes 15 minutes, E takes 15 minutes, F takes 15 minutes to workers W1 has 50 minutes, W2 has 50 minutes, W3 has 60 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 10,
+     "C": 10,
+     "D": 15,
+     "E": 15,
+     "F": 15
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 50,
+     "W3": 60
+    }
+   }
+  },
+  {
+   "id": "dispatcher-014",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 30 minutes. Jobs: A takes 15 minutes, B takes 10 minutes, C takes 15 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-015",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 10 minutes, C takes 15 minutes, D takes 10 minutes, E takes 15 minutes, F takes 20 minutes to workers W1 has 60 minutes, W2 has 60 minutes, W3 has 50 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 10,
+     "C": 15,
+     "D": 10,
+     "E": 15,
+     "F": 20
+    },
+    "workers": {
+     "W1": 60,
+     "W2": 60,
+     "W3": 50
+    }
+   }
+  },
+  {
+   "id": "dispatcher-016",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(2), B(2), C(2), D(5), E(5) on workers W1, W2, W3. Dependencies: A before B; C before D; B before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "B",
+      "E"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-017",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 5 minutes, B takes 20 minutes, C takes 5 minutes, D takes 20 minutes, E takes 5 minutes to workers W1 has 60 minutes, W2 has 50 minutes, W3 has 40 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 5,
+     "B": 20,
+     "C": 5,
+     "D": 20,
+     "E": 5
+    },
+    "workers": {
+     "W1": 60,
+     "W2": 50,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "dispatcher-018",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(5), B(4), C(3), D(3), E(4) on workers W1, W2, W3. Dependencies: B before C; A before D; A before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-019",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(2), B(5), C(4), D(4), E(2) on workers W1, W2, W3. Dependencies: C before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 9.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 9
+   }
+  },
+  {
+   "id": "dispatcher-020",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(2), B(5), C(5), D(1), E(2) on workers W1, W2, W3. Dependencies: A before B; A before C; C before D; C before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 5
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-021",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 30 minutes, W2 has 20 minutes. Jobs: A takes 5 minutes, B takes 15 minutes, C takes 5 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W1. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-022",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 10 minutes, C takes 20 minutes, D takes 20 minutes to workers W1 has 50 minutes, W2 has 60 minutes, W3 has 40 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 10,
+     "C": 20,
+     "D": 20
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 60,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "dispatcher-023",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 15 minutes. Jobs: A takes 10 minutes, B takes 5 minutes, C takes 10 minutes, D takes 5 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W1, D -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-024",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(2), B(4), C(5), D(2), E(5) on workers W1, W2, W3. Dependencies: A before C; B before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 8.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 5
+     },
+     "D": {
+      "duration": 2
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ]
+    ],
+    "deadline": 8
+   }
+  },
+  {
+   "id": "dispatcher-025",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(3), B(2), C(2), D(1), E(4) on workers W1, W2, W3. Dependencies: A before B; A before C; A before D. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 7.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ]
+    ],
+    "deadline": 7
+   }
+  },
+  {
+   "id": "dispatcher-026",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 15 minutes, W2 has 25 minutes. Jobs: A takes 10 minutes, B takes 5 minutes, C takes 10 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-027",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 30 minutes. Jobs: A takes 20 minutes, B takes 20 minutes, C takes 10 minutes, D takes 5 minutes. Proposed dispatch: A -> W1, B -> W2, C -> W2, D -> W1. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-028",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 10 minutes, C takes 10 minutes, D takes 20 minutes, E takes 10 minutes to workers W1 has 30 minutes, W2 has 30 minutes, W3 has 60 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 10,
+     "C": 10,
+     "D": 20,
+     "E": 10
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 30,
+     "W3": 60
+    }
+   }
+  },
+  {
+   "id": "dispatcher-029",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(2), B(5), C(2), D(4), E(5), F(2) on workers W1, W2, W3. Dependencies: B before D; D before E; E before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 17.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 5
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "B",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "E",
+      "F"
+     ]
+    ],
+    "deadline": 17
+   }
+  },
+  {
+   "id": "dispatcher-030",
+   "role": "dispatcher",
+   "prompt": "Two jobs need the only free worker. Job A is a background re-index with a 6-hour deadline. Job B is a live rollback with a 5-minute deadline. Which job goes first? Answer A or B with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "dispatcher-031",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(4), B(3), C(5), D(1), E(1) on workers W1, W2, W3. Dependencies: A before B; A before C; B before D; A before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 4
+     },
+     "B": {
+      "duration": 3
+     },
+     "C": {
+      "duration": 5
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 1
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-032",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(1), B(1), C(4), D(5), E(3), F(5) on workers W1, W2, W3. Dependencies: A before B; A before C; A before D; D before E; B before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "B",
+      "F"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-033",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 20 minutes, B takes 15 minutes, C takes 10 minutes, D takes 20 minutes to workers W1 has 30 minutes, W2 has 50 minutes, W3 has 40 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 20,
+     "B": 15,
+     "C": 10,
+     "D": 20
+    },
+    "workers": {
+     "W1": 30,
+     "W2": 50,
+     "W3": 40
+    }
+   }
+  },
+  {
+   "id": "dispatcher-034",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(5), B(5), C(3), D(4), E(3) on workers W1, W2, W3. Dependencies: A before B; A before C; B before D; B before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 15.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "B",
+      "E"
+     ]
+    ],
+    "deadline": 15
+   }
+  },
+  {
+   "id": "dispatcher-035",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 30 minutes. Jobs: A takes 10 minutes, B takes 5 minutes, C takes 5 minutes, D takes 15 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W1, D -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-036",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 20 minutes, W2 has 20 minutes. Jobs: A takes 10 minutes, B takes 10 minutes, C takes 10 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W2. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-037",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 10 minutes, B takes 10 minutes, C takes 5 minutes, D takes 20 minutes, E takes 20 minutes to workers W1 has 60 minutes, W2 has 40 minutes, W3 has 50 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 10,
+     "B": 10,
+     "C": 5,
+     "D": 20,
+     "E": 20
+    },
+    "workers": {
+     "W1": 60,
+     "W2": 40,
+     "W3": 50
+    }
+   }
+  },
+  {
+   "id": "dispatcher-038",
+   "role": "dispatcher",
+   "prompt": "Schedule jobs A(1), B(1), C(2), D(5), E(2) on workers W1, W2, W3. Dependencies: A before B; B before D; D before E. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. Makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 1
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "dispatcher-039",
+   "role": "dispatcher",
+   "prompt": "Workers: W1 has 25 minutes, W2 has 20 minutes. Jobs: A takes 10 minutes, B takes 10 minutes, C takes 20 minutes, D takes 5 minutes. Proposed dispatch: A -> W1, B -> W1, C -> W2, D -> W1. Is this dispatch valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "dispatcher-040",
+   "role": "dispatcher",
+   "prompt": "Dispatch jobs A takes 15 minutes, B takes 10 minutes, C takes 20 minutes, D takes 5 minutes, E takes 10 minutes to workers W1 has 50 minutes, W2 has 30 minutes, W3 has 60 minutes. Assign every job exactly once without exceeding a worker's time. Return ONLY JSON: {\"assignments\": [{\"task\": \"A\", \"worker\": \"W1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "A": 15,
+     "B": 10,
+     "C": 20,
+     "D": 5,
+     "E": 10
+    },
+    "workers": {
+     "W1": 50,
+     "W2": 30,
+     "W3": 60
+    }
+   }
+  }
+ ]
+}

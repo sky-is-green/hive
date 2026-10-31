@@ -1,0 +1,430 @@
+{
+ "name": "agency-suite",
+ "version": 1,
+ "count": 43,
+ "tasks": [
+  {
+   "id": "agency-001",
+   "role": "agency",
+   "prompt": "You need to read a local file. Which tool should you call? A = web_search, B = read_file, C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-002",
+   "role": "agency",
+   "prompt": "You need to write a text file. Which tool should you call? A = bash, B = write_file, C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-003",
+   "role": "agency",
+   "prompt": "You must read a source file, edit it, and run the tests. Return ONLY JSON: {\"tools\": [\"read_file\", \"edit_file\", \"run_tests\"]} in the correct order.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "tools"
+    ],
+    "equals": {
+     "tools": [
+      "read_file",
+      "edit_file",
+      "run_tests"
+     ]
+    }
+   }
+  },
+  {
+   "id": "agency-004",
+   "role": "agency",
+   "prompt": "You need to run the unit tests. Which tool should you call? A = run_tests. B = read_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-005",
+   "role": "agency",
+   "prompt": "You need to move a model file to the library. Which tool should you call? A = web_search. B = bash. C = write_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-006",
+   "role": "agency",
+   "prompt": "You need to run the unit tests. Which tool should you call? A = read_file. B = run_tests. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-007",
+   "role": "agency",
+   "prompt": "You must read and edit a config, then run tests. Return ONLY JSON: {\"tools\": [\"bash\", \"read_file\", \"edit_file\"]} in the correct order.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "tools"
+    ],
+    "equals": {
+     "tools": [
+      "bash",
+      "read_file",
+      "edit_file"
+     ]
+    }
+   }
+  },
+  {
+   "id": "agency-008",
+   "role": "agency",
+   "prompt": "You need to inspect a process and stop it. Which tool should you call? A = read_file. B = bash. C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-009",
+   "role": "agency",
+   "prompt": "You need to move a model file to the library. Which tool should you call? A = write_file. B = bash. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-010",
+   "role": "agency",
+   "prompt": "You must read and edit a config, then run tests. Return ONLY JSON: {\"tools\": [\"read_file\", \"write_file\", \"run_tests\"]} in the correct order.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "tools"
+    ],
+    "equals": {
+     "tools": [
+      "read_file",
+      "write_file",
+      "run_tests"
+     ]
+    }
+   }
+  },
+  {
+   "id": "agency-011",
+   "role": "agency",
+   "prompt": "You need to run the unit tests. Which tool should you call? A = read_file. B = web_search. C = run_tests. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-012",
+   "role": "agency",
+   "prompt": "You need to search the web for a changelog. Which tool should you call? A = read_file. B = bash. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-013",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = image_gen. B = write_file. C = run_tests. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-014",
+   "role": "agency",
+   "prompt": "You need to list files in a directory. Which tool should you call? A = bash. B = image_gen. C = read_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-015",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = run_tests. B = write_file. C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-016",
+   "role": "agency",
+   "prompt": "You need to run the unit tests. Which tool should you call? A = web_search. B = read_file. C = run_tests. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-017",
+   "role": "agency",
+   "prompt": "You need to read a local source file. Which tool should you call? A = read_file. B = bash. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-018",
+   "role": "agency",
+   "prompt": "You need to move a model file to the library. Which tool should you call? A = bash. B = write_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-019",
+   "role": "agency",
+   "prompt": "You need to list files in a directory. Which tool should you call? A = image_gen. B = bash. C = read_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-020",
+   "role": "agency",
+   "prompt": "You need to write a new text file. Which tool should you call? A = bash. B = write_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-021",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = run_tests. B = image_gen. C = write_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-022",
+   "role": "agency",
+   "prompt": "You must read and edit a config, then run tests. Return ONLY JSON: {\"tools\": [\"read_file\", \"edit_file\", \"run_tests\"]} in the correct order.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "tools"
+    ],
+    "equals": {
+     "tools": [
+      "read_file",
+      "edit_file",
+      "run_tests"
+     ]
+    }
+   }
+  },
+  {
+   "id": "agency-023",
+   "role": "agency",
+   "prompt": "You need to search the web for a changelog. Which tool should you call? A = web_search. B = read_file. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-024",
+   "role": "agency",
+   "prompt": "You need to write a new text file. Which tool should you call? A = bash. B = web_search. C = write_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-025",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = image_gen. B = run_tests. C = write_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-026",
+   "role": "agency",
+   "prompt": "You need to edit one line in a file. Which tool should you call? A = image_gen. B = web_search. C = edit_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-027",
+   "role": "agency",
+   "prompt": "You need to run the unit tests. Which tool should you call? A = run_tests. B = web_search. C = read_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-028",
+   "role": "agency",
+   "prompt": "You need to inspect a process and stop it. Which tool should you call? A = bash. B = read_file. C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-029",
+   "role": "agency",
+   "prompt": "You need to write a new text file. Which tool should you call? A = write_file. B = bash. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-030",
+   "role": "agency",
+   "prompt": "You need to write a new text file. Which tool should you call? A = web_search. B = write_file. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-031",
+   "role": "agency",
+   "prompt": "You need to inspect a process and stop it. Which tool should you call? A = image_gen. B = bash. C = read_file. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-032",
+   "role": "agency",
+   "prompt": "You need to search the web for a changelog. Which tool should you call? A = read_file. B = web_search. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-033",
+   "role": "agency",
+   "prompt": "You need to read a local source file. Which tool should you call? A = bash. B = read_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-034",
+   "role": "agency",
+   "prompt": "You need to read a local source file. Which tool should you call? A = web_search. B = read_file. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-035",
+   "role": "agency",
+   "prompt": "You need to write a new text file. Which tool should you call? A = write_file. B = web_search. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-036",
+   "role": "agency",
+   "prompt": "You need to edit one line in a file. Which tool should you call? A = image_gen. B = edit_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-037",
+   "role": "agency",
+   "prompt": "You need to read a local source file. Which tool should you call? A = read_file. B = web_search. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-038",
+   "role": "agency",
+   "prompt": "You need to edit one line in a file. Which tool should you call? A = web_search. B = edit_file. C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-039",
+   "role": "agency",
+   "prompt": "You need to edit one line in a file. Which tool should you call? A = edit_file. B = image_gen. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "A"
+   }
+  },
+  {
+   "id": "agency-040",
+   "role": "agency",
+   "prompt": "You need to search the web for a changelog. Which tool should you call? A = bash. B = read_file. C = web_search. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-041",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = write_file. B = image_gen. C = run_tests. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "B"
+   }
+  },
+  {
+   "id": "agency-042",
+   "role": "agency",
+   "prompt": "You need to inspect a process and stop it. Which tool should you call? A = read_file. B = image_gen. C = bash. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  },
+  {
+   "id": "agency-043",
+   "role": "agency",
+   "prompt": "You need to generate a logo image. Which tool should you call? A = write_file. B = run_tests. C = image_gen. Answer with exactly one letter.",
+   "checker": {
+    "type": "choice",
+    "expect": "C"
+   }
+  }
+ ]
+}

@@ -49,6 +49,18 @@ capacity.
   `clerk-sft-v1`. Release slug `hive-reader-1.7b-v1`.
 - Gate report: `work/train-runs/clerk-sft-v1/gate-report.json`.
 
+## Hive Operator 1.7B (agency + dispatcher)
+
+The last roster adapter combines tool selection/order with job dispatch and
+scheduling.
+
+- Held-out suites: 43 agency tasks and 40 dispatcher tasks.
+- Corpus: 1,460 rows (360 agency + 1,100 dispatcher). Agency diversity is
+  template-limited; it is the simpler half.
+- Training: from `LFM3-1.7B-Base`, 3 epochs, separate adapter.
+- Gate: agency and dispatcher each ≥0.90 HF and GGUF, HF↔GGUF gap ≤0.05.
+- Candidate endpoint when it passes: `:8163`, alias `operator-1.7b`.
+
 ## Curriculum recovery (queued)
 
 The failed 3-role model (`multirole-cpp-v1`) is the “before”:
