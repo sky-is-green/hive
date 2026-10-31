@@ -1,0 +1,432 @@
+{
+ "name": "rag-suite",
+ "version": 1,
+ "count": 40,
+ "tasks": [
+  {
+   "id": "rag-001",
+   "role": "rag",
+   "prompt": "Use only this passage: 'The Hive control plane puts big models on card0 and keeps card1 for the display. LFM3 runs on card1.' Question: Which card does LFM3 use? Answer with the card name only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card1"
+    ]
+   }
+  },
+  {
+   "id": "rag-002",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B runs on card0 and uses 32k context. LFM3 uses 64k total.' Question: What context does Scion-35B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-003",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B runs on card0 with 32k context. LFM3 runs on card1 with 64k total context.' Question: Which card and context does Scion-35B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card0",
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-004",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B is 10.56 GB. LFM3 is 1.02 GB.' How much smaller is LFM3 than Scion-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 9.54,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-204",
+   "role": "rag",
+   "prompt": "Use only this passage: 'd1-2B is 1.72 GB, uses 8k context, and runs on card 1. Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0.' Question: Which card and context does Qwen-35B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 0",
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-205",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' Question: How many of the two models run on card 0? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  },
+  {
+   "id": "rag-206",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B is 10.56 GB, uses 32k context, and runs on card 0. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: How many of the two models run on card 0? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  },
+  {
+   "id": "rag-207",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' Question: How many of the two models run on card 1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1.0
+   }
+  },
+  {
+   "id": "rag-208",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' Question: Which card and context does LFM3-VL use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-209",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B is 10.56 GB, uses 32k context, and runs on card 0. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: Which card and context does d1-2B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-210",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3 is 1.02 GB, uses 64k context, and runs on card 1. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' How much smaller is LFM3 than Scion-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 9.54,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-211",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0.' How much smaller is Bonsai-27B than Qwen-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 4.99,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-212",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' Question: How many of the two models run on card 1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1.0
+   }
+  },
+  {
+   "id": "rag-213",
+   "role": "rag",
+   "prompt": "Use only this passage: 'd1-2B is 1.72 GB, uses 8k context, and runs on card 1. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' Question: How many of the two models run on card 1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  },
+  {
+   "id": "rag-214",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3 is 1.02 GB, uses 64k context, and runs on card 1. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: Which card and context does Bonsai-27B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 0",
+     "16k"
+    ]
+   }
+  },
+  {
+   "id": "rag-215",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' Question: Which card and context does Scion-35B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 0",
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-216",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' How much smaller is LFM3-VL than Qwen-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 9.98,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-217",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: What context does Bonsai-27B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "16k"
+    ]
+   }
+  },
+  {
+   "id": "rag-218",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0.' Question: How many of the two models run on card 0? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1.0
+   }
+  },
+  {
+   "id": "rag-219",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: Which card and context does Bonsai-27B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 0",
+     "16k"
+    ]
+   }
+  },
+  {
+   "id": "rag-220",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' Question: What context does Bonsai-27B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "16k"
+    ]
+   }
+  },
+  {
+   "id": "rag-221",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: Which card and context does d1-2B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-222",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' Question: How many of the two models run on card 0? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  },
+  {
+   "id": "rag-223",
+   "role": "rag",
+   "prompt": "Use only this passage: 'd1-2B is 1.72 GB, uses 8k context, and runs on card 1. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' Question: What context does d1-2B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-224",
+   "role": "rag",
+   "prompt": "Use only this passage: 'd1-2B is 1.72 GB, uses 8k context, and runs on card 1. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: What context does d1-2B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-225",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B is 10.56 GB, uses 32k context, and runs on card 0. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' How much smaller is LFM3 than Scion-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 9.54,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-226",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: What context does Qwen-35B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-227",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' Question: Which card and context does LFM3 use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "64k"
+    ]
+   }
+  },
+  {
+   "id": "rag-228",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1.' Question: Which card and context does LFM3-VL use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-229",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: What context does Qwen-35B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-230",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Scion-35B is 10.56 GB, uses 32k context, and runs on card 0. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' Question: How many of the two models run on card 1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 0.0
+   }
+  },
+  {
+   "id": "rag-231",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' Question: What context does LFM3-VL use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-232",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' How much smaller is LFM3 than Bonsai-27B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 5.69,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-233",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0.' How much smaller is Bonsai-27B than Qwen-35B? Answer with the number in GB only.",
+   "checker": {
+    "type": "number",
+    "expect": 4.99,
+    "tol": 0.02
+   }
+  },
+  {
+   "id": "rag-234",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: Which card and context does d1-2B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 1",
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-235",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Bonsai-27B is 6.71 GB, uses 16k context, and runs on card 0. Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0.' Question: How many of the two models run on card 0? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  },
+  {
+   "id": "rag-236",
+   "role": "rag",
+   "prompt": "Use only this passage: 'Qwen-35B is 11.70 GB, uses 32k context, and runs on card 0. LFM3 is 1.02 GB, uses 64k context, and runs on card 1.' Question: What context does Qwen-35B use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-237",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: What context does LFM3-VL use? Answer with the context size only.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "8k"
+    ]
+   }
+  },
+  {
+   "id": "rag-238",
+   "role": "rag",
+   "prompt": "Use only this passage: 'd1-2B is 1.72 GB, uses 8k context, and runs on card 1. Scion-35B is 10.56 GB, uses 32k context, and runs on card 0.' Question: Which card and context does Scion-35B use? Answer with both values.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "card 0",
+     "32k"
+    ]
+   }
+  },
+  {
+   "id": "rag-239",
+   "role": "rag",
+   "prompt": "Use only this passage: 'LFM3-VL is 1.72 GB, uses 8k context, and runs on card 1. d1-2B is 1.72 GB, uses 8k context, and runs on card 1.' Question: How many of the two models run on card 1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2.0
+   }
+  }
+ ]
+}

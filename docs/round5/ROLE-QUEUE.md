@@ -16,6 +16,7 @@ stays live.
 |---|---|---|
 | `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
 | `placement-only` | placement | **passed** — 43/46 (0.935) HF and GGUF, gate pass |
+| `clerk` | mechanics + RAG | **training as a separate adapter** — 2,104 rows, 396 steps |
 | `critic-only` | critic | **queued as a separate adapter** |
 | `agency-dispatcher` | agency, dispatcher | queued |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
@@ -31,6 +32,18 @@ or an adapter router is used.
 **43/46 (0.935)** on its held-out suite in both HF and GGUF and passes the
 separate-adapter gate. It is running on `:8158` as `placement-1.7b-sft`
 (candidate, not wired into a role). Next is critic-only.
+
+## Hive Clerk 1.7B (mechanics + RAG)
+
+Mechanics and RAG are combined into one separate adapter because both are
+document-in / structured-answer-out and neither needs the Conductor’s scheduling
+capacity.
+
+- Held-out suites: 40 mechanics tasks and 40 RAG tasks.
+- Corpus: 2,104 rows (1,199 mechanics, 905 RAG; 296 suite-overlap rows dropped).
+- Training: from `LFM3-1.7B-Base`, 3 epochs, 396 steps, separate adapter.
+- Gate: mechanics and RAG each ≥0.90 HF and GGUF, HF↔GGUF gap ≤0.05.
+- Candidate endpoint when it passes: `:8159`, alias `clerk-1.7b`.
 
 ## Curriculum recovery (queued)
 
