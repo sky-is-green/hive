@@ -1,0 +1,537 @@
+{
+ "name": "placement-suite",
+ "version": 1,
+ "count": 46,
+ "tasks": [
+  {
+   "id": "placement-001",
+   "role": "placement",
+   "prompt": "A model has 13.36 GB of weights, a 1 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. A card has 16 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1
+   }
+  },
+  {
+   "id": "placement-002",
+   "role": "placement",
+   "prompt": "A model has 12.95 GB of weights, a 1 GB runtime reserve, and 0.75 GB of KV cache per 8k context block. A card has 20 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 8
+   }
+  },
+  {
+   "id": "placement-003",
+   "role": "placement",
+   "prompt": "A model has 9.29 GB of weights, a 1 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. A card has 24 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 9
+   }
+  },
+  {
+   "id": "placement-004",
+   "role": "placement",
+   "prompt": "A model has 10.92 GB of weights, a 1 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. A card has 16 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2
+   }
+  },
+  {
+   "id": "placement-005",
+   "role": "placement",
+   "prompt": "A model has 7.83 GB of weights, a 2 GB runtime reserve, and 0.5 GB of KV cache per 8k context block. A card has 16 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 12
+   }
+  },
+  {
+   "id": "placement-006",
+   "role": "placement",
+   "prompt": "A model has 13.64 GB of weights, a 2 GB runtime reserve, and 1.0 GB of KV cache per 8k context block. A card has 20 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 4
+   }
+  },
+  {
+   "id": "placement-007",
+   "role": "placement",
+   "prompt": "A model has 8.49 GB of weights, a 2 GB runtime reserve, and 2.0 GB of KV cache per 8k context block. A card has 16 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2
+   }
+  },
+  {
+   "id": "placement-008",
+   "role": "placement",
+   "prompt": "A model has 12.01 GB of weights, a 2 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. A card has 16 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1
+   }
+  },
+  {
+   "id": "placement-009",
+   "role": "placement",
+   "prompt": "A model has 9.34 GB of weights, a 2 GB runtime reserve, and 0.75 GB of KV cache per 8k context block. A card has 20 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 11
+   }
+  },
+  {
+   "id": "placement-010",
+   "role": "placement",
+   "prompt": "A model has 13.15 GB of weights, a 1 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. A card has 16 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on the card? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1
+   }
+  },
+  {
+   "id": "placement-011",
+   "role": "placement",
+   "prompt": "A model needs 14.03 GB of weights and 2.0 GB of KV cache. A 24 GB card keeps 2 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-012",
+   "role": "placement",
+   "prompt": "A model needs 13.64 GB of weights and 0.5 GB of KV cache. A 24 GB card keeps 1 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-013",
+   "role": "placement",
+   "prompt": "A model needs 7.79 GB of weights and 1.0 GB of KV cache. A 16 GB card keeps 2 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-014",
+   "role": "placement",
+   "prompt": "A model needs 11.8 GB of weights and 1.0 GB of KV cache. A 24 GB card keeps 1 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-015",
+   "role": "placement",
+   "prompt": "A model needs 6.44 GB of weights and 1.5 GB of KV cache. A 24 GB card keeps 2 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-016",
+   "role": "placement",
+   "prompt": "A model needs 14.56 GB of weights and 1.5 GB of KV cache. A 16 GB card keeps 1 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "placement-017",
+   "role": "placement",
+   "prompt": "A model needs 8.2 GB of weights and 1.5 GB of KV cache. A 16 GB card keeps 2 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-018",
+   "role": "placement",
+   "prompt": "A model needs 12.77 GB of weights and 1.5 GB of KV cache. A 20 GB card keeps 2 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-019",
+   "role": "placement",
+   "prompt": "A model needs 17.15 GB of weights and 2.0 GB of KV cache. A 16 GB card keeps 1 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "placement-020",
+   "role": "placement",
+   "prompt": "A model needs 10.62 GB of weights and 1.5 GB of KV cache. A 24 GB card keeps 1 GB free for the system. Does it fit? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-021",
+   "role": "placement",
+   "prompt": "A model has 14.53 GB of weights and needs a 1 GB runtime reserve. The candidate cards are 16, 32, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 16
+   }
+  },
+  {
+   "id": "placement-022",
+   "role": "placement",
+   "prompt": "A model has 18.09 GB of weights and needs a 4 GB runtime reserve. The candidate cards are 16, 20, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 40
+   }
+  },
+  {
+   "id": "placement-023",
+   "role": "placement",
+   "prompt": "A model has 17.77 GB of weights and needs a 4 GB runtime reserve. The candidate cards are 16, 20, 32, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 32
+   }
+  },
+  {
+   "id": "placement-024",
+   "role": "placement",
+   "prompt": "A model has 15.67 GB of weights and needs a 4 GB runtime reserve. The candidate cards are 16, 24 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 24
+   }
+  },
+  {
+   "id": "placement-025",
+   "role": "placement",
+   "prompt": "A model has 13.65 GB of weights and needs a 4 GB runtime reserve. The candidate cards are 20, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 20
+   }
+  },
+  {
+   "id": "placement-026",
+   "role": "placement",
+   "prompt": "A model has 19.72 GB of weights and needs a 2 GB runtime reserve. The candidate cards are 16, 20, 24, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 24
+   }
+  },
+  {
+   "id": "placement-027",
+   "role": "placement",
+   "prompt": "A model has 14.15 GB of weights and needs a 4 GB runtime reserve. The candidate cards are 32, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 32
+   }
+  },
+  {
+   "id": "placement-028",
+   "role": "placement",
+   "prompt": "A model has 16.38 GB of weights and needs a 2 GB runtime reserve. The candidate cards are 32, 40 GB. Which is the smallest card that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 32
+   }
+  },
+  {
+   "id": "placement-029",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 4 GB, 12 GB, and 14 GB. Cards C1=28 GB and C2=16 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 4,
+     "M2": 12,
+     "M3": 14
+    },
+    "workers": {
+     "C1": 28,
+     "C2": 16
+    }
+   }
+  },
+  {
+   "id": "placement-030",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 6 GB, 14 GB, and 10 GB. Cards C1=24 GB and C2=24 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 6,
+     "M2": 14,
+     "M3": 10
+    },
+    "workers": {
+     "C1": 24,
+     "C2": 24
+    }
+   }
+  },
+  {
+   "id": "placement-031",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 10 GB, 10 GB, and 8 GB. Cards C1=20 GB and C2=16 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 10,
+     "M2": 10,
+     "M3": 8
+    },
+    "workers": {
+     "C1": 20,
+     "C2": 16
+    }
+   }
+  },
+  {
+   "id": "placement-032",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 14 GB, 14 GB, and 4 GB. Cards C1=20 GB and C2=20 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 14,
+     "M2": 14,
+     "M3": 4
+    },
+    "workers": {
+     "C1": 20,
+     "C2": 20
+    }
+   }
+  },
+  {
+   "id": "placement-033",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 14 GB, 8 GB, and 12 GB. Cards C1=16 GB and C2=28 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 14,
+     "M2": 8,
+     "M3": 12
+    },
+    "workers": {
+     "C1": 16,
+     "C2": 28
+    }
+   }
+  },
+  {
+   "id": "placement-034",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 10 GB, 12 GB, and 4 GB. Cards C1=16 GB and C2=20 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 10,
+     "M2": 12,
+     "M3": 4
+    },
+    "workers": {
+     "C1": 16,
+     "C2": 20
+    }
+   }
+  },
+  {
+   "id": "placement-035",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 12 GB, 4 GB, and 14 GB. Cards C1=24 GB and C2=20 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 12,
+     "M2": 4,
+     "M3": 14
+    },
+    "workers": {
+     "C1": 24,
+     "C2": 20
+    }
+   }
+  },
+  {
+   "id": "placement-036",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 10 GB, 10 GB, and 14 GB. Cards C1=28 GB and C2=28 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 10,
+     "M2": 10,
+     "M3": 14
+    },
+    "workers": {
+     "C1": 28,
+     "C2": 28
+    }
+   }
+  },
+  {
+   "id": "placement-037",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 14 GB, 12 GB, and 8 GB. Cards C1=24 GB and C2=28 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 14,
+     "M2": 12,
+     "M3": 8
+    },
+    "workers": {
+     "C1": 24,
+     "C2": 28
+    }
+   }
+  },
+  {
+   "id": "placement-038",
+   "role": "placement",
+   "prompt": "Models M1, M2, M3 need 10 GB, 14 GB, and 10 GB. Cards C1=28 GB and C2=28 GB. Assign every model to exactly one card, at most two models per card. Return ONLY JSON: {\"assignments\": [{\"task\": \"M1\", \"worker\": \"C1\"}]}.",
+   "checker": {
+    "type": "assign",
+    "tasks": {
+     "M1": 10,
+     "M2": 14,
+     "M3": 10
+    },
+    "workers": {
+     "C1": 28,
+     "C2": 28
+    }
+   }
+  },
+  {
+   "id": "placement-039",
+   "role": "placement",
+   "prompt": "Models A, B, C need 8 GB, 16 GB, and 16 GB. Cards C1=20 GB and C2=20 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "placement-040",
+   "role": "placement",
+   "prompt": "Models A, B, C need 10 GB, 10 GB, and 12 GB. Cards C1=32 GB and C2=24 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-041",
+   "role": "placement",
+   "prompt": "Models A, B, C need 10 GB, 6 GB, and 8 GB. Cards C1=20 GB and C2=16 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-042",
+   "role": "placement",
+   "prompt": "Models A, B, C need 16 GB, 8 GB, and 10 GB. Cards C1=24 GB and C2=16 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-043",
+   "role": "placement",
+   "prompt": "Models A, B, C need 12 GB, 10 GB, and 14 GB. Cards C1=28 GB and C2=24 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-044",
+   "role": "placement",
+   "prompt": "Models A, B, C need 10 GB, 6 GB, and 14 GB. Cards C1=28 GB and C2=16 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-045",
+   "role": "placement",
+   "prompt": "Models A, B, C need 8 GB, 8 GB, and 16 GB. Cards C1=28 GB and C2=20 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "placement-046",
+   "role": "placement",
+   "prompt": "Models A, B, C need 6 GB, 14 GB, and 16 GB. Cards C1=28 GB and C2=20 GB. At most two models may share a card. Can all three run at once? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  }
+ ]
+}

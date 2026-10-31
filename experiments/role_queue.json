@@ -31,16 +31,31 @@
     {
       "id": "placement-critic",
       "roles": ["placement", "critic"],
+      "status": "failed",
+      "reason": "third/fourth role degrades controller and planner; see MULTIROLE-LIMIT.md"
+    },
+    {
+      "id": "placement-only",
+      "roles": ["placement"],
+      "mode": "separate-adapter",
+      "status": "queued"
+    },
+    {
+      "id": "critic-only",
+      "roles": ["critic"],
+      "mode": "separate-adapter",
       "status": "queued"
     },
     {
       "id": "agency-dispatcher",
       "roles": ["agency", "dispatcher"],
+      "mode": "separate-adapter",
       "status": "queued"
     },
     {
       "id": "merge-incident",
       "roles": ["merge", "incident"],
+      "mode": "separate-adapter",
       "status": "queued"
     }
   ],

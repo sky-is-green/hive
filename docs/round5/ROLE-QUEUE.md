@@ -14,10 +14,17 @@ stays live.
 
 | batch | roles | status |
 |---|---|---|
-| `placement-critic` | placement, critic | **queued** |
+| `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
+| `placement-only` | placement | **queued as a separate adapter** |
+| `critic-only` | critic | **queued as a separate adapter** |
 | `agency-dispatcher` | agency, dispatcher | queued |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
 | — | router, judge, face | **not queued** — semantic roles stay Scion/d1 |
+
+**Queue policy change:** one 1.7B LoRA adapter holds **two** constraint roles.
+Adding a third role to the same adapter fails the protected-role gate even with
+more replay. New roles are trained as **separate adapters** unless a larger base
+or an adapter router is used.
 
 ## Gate rules
 
@@ -38,6 +45,11 @@ Protected roles are always re-evaluated, even when they are not in the batch.
 The baseline is `../train-runs/multirole-cp-v1`. The gate compares candidate
 evals against it and writes `gate-report.json`; exit code 0 means the batch may
 advance to a **canary**, not to the live endpoint.
+
+Batches with `"mode": "separate-adapter"` skip the protected-role checks: that
+adapter contains only its own role, so controller/planner regression is not
+applicable. Those batches only need the new role(s) to clear 0.90 with a small
+HF↔GGUF gap.
 
 ## Workflow per batch
 

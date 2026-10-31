@@ -1,0 +1,425 @@
+{
+ "name": "critic-suite",
+ "version": 1,
+ "count": 38,
+ "tasks": [
+  {
+   "id": "critic-001",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 25 minutes free. Tasks: A takes 5 minutes, B takes 10 minutes, C takes 20 minutes, D takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-002",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 25 minutes free. Tasks: A takes 10 minutes, B takes 5 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-003",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 30 minutes free. Tasks: A takes 20 minutes, B takes 10 minutes, C takes 15 minutes, D takes 5 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-004",
+   "role": "critic",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 25 minutes free. Tasks: A takes 5 minutes, B takes 20 minutes, C takes 15 minutes, D takes 5 minutes. Proposed assignment: A -> W2, B -> W2, C -> W1, D -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-005",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 15 minutes free. Tasks: A takes 20 minutes, B takes 10 minutes, C takes 5 minutes, D takes 5 minutes. Proposed assignment: A -> W1, B -> W2, C -> W1, D -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-006",
+   "role": "critic",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 30 minutes free. Tasks: A takes 15 minutes, B takes 15 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-007",
+   "role": "critic",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 25 minutes free. Tasks: A takes 10 minutes, B takes 5 minutes, C takes 20 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-008",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 30 minutes free. Tasks: A takes 5 minutes, B takes 15 minutes, C takes 5 minutes, D takes 15 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1, D -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-009",
+   "role": "critic",
+   "prompt": "Workers: W1 has 15 minutes free, W2 has 20 minutes free. Tasks: A takes 15 minutes, B takes 5 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W2, C -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-010",
+   "role": "critic",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 20 minutes free. Tasks: A takes 10 minutes, B takes 5 minutes, C takes 15 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-011",
+   "role": "critic",
+   "prompt": "Workers: W1 has 30 minutes free, W2 has 20 minutes free. Tasks: A takes 15 minutes, B takes 10 minutes, C takes 10 minutes, D takes 5 minutes. Proposed assignment: A -> W1, B -> W1, C -> W1, D -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-012",
+   "role": "critic",
+   "prompt": "Workers: W1 has 15 minutes free, W2 has 15 minutes free. Tasks: A takes 5 minutes, B takes 15 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W2, C -> W1. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-013",
+   "role": "critic",
+   "prompt": "Workers: W1 has 20 minutes free, W2 has 30 minutes free. Tasks: A takes 15 minutes, B takes 5 minutes, C takes 20 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-014",
+   "role": "critic",
+   "prompt": "Workers: W1 has 25 minutes free, W2 has 30 minutes free. Tasks: A takes 15 minutes, B takes 10 minutes, C takes 10 minutes. Proposed assignment: A -> W1, B -> W1, C -> W2. Each task runs once. Is this assignment valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-015",
+   "role": "critic",
+   "prompt": "Tasks: A=3, B=2, C=1, D=3, E=4. Workers: W1, W2. Dependencies: A before B; C before D; C before E. Deadline: 9. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"C\",\"worker\":\"W2\",\"start\":0},{\"task\":\"B\",\"worker\":\"W2\",\"start\":0},{\"task\":\"D\",\"worker\":\"W2\",\"start\":1},{\"task\":\"E\",\"worker\":\"W2\",\"start\":4}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-016",
+   "role": "critic",
+   "prompt": "Tasks: A=1, B=3, C=2, D=2. Workers: W1, W2. Dependencies: A before B. Deadline: 6. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"C\",\"worker\":\"W2\",\"start\":0},{\"task\":\"D\",\"worker\":\"W1\",\"start\":1},{\"task\":\"B\",\"worker\":\"W2\",\"start\":2}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-017",
+   "role": "critic",
+   "prompt": "Tasks: A=2, B=2, C=3, D=2. Workers: W1, W2. Dependencies: A before B; A before C; B before D. Deadline: 7. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W3\",\"start\":0},{\"task\":\"C\",\"worker\":\"W1\",\"start\":2},{\"task\":\"B\",\"worker\":\"W2\",\"start\":2},{\"task\":\"D\",\"worker\":\"W2\",\"start\":4}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-018",
+   "role": "critic",
+   "prompt": "Tasks: A=4, B=4, C=3, D=2, E=3. Workers: W1, W2. Dependencies: A before B; B before C; B before E. Deadline: 12. Proposed schedule: {\"schedule\":[{\"task\":\"D\",\"worker\":\"W3\",\"start\":0},{\"task\":\"A\",\"worker\":\"W2\",\"start\":0},{\"task\":\"B\",\"worker\":\"W1\",\"start\":4},{\"task\":\"C\",\"worker\":\"W1\",\"start\":8},{\"task\":\"E\",\"worker\":\"W2\",\"start\":8}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-019",
+   "role": "critic",
+   "prompt": "Tasks: A=4, B=3, C=3, D=1. Workers: W1, W2. Dependencies: A before B; A before C. Deadline: 8. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":9},{\"task\":\"D\",\"worker\":\"W2\",\"start\":0},{\"task\":\"C\",\"worker\":\"W1\",\"start\":4},{\"task\":\"B\",\"worker\":\"W2\",\"start\":4}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-020",
+   "role": "critic",
+   "prompt": "Tasks: A=2, B=1, C=4, D=2. Workers: W1, W2. Dependencies: B before C; B before D. Deadline: 6. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"B\",\"worker\":\"W2\",\"start\":7},{\"task\":\"C\",\"worker\":\"W2\",\"start\":1},{\"task\":\"D\",\"worker\":\"W1\",\"start\":2}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-021",
+   "role": "critic",
+   "prompt": "Tasks: A=4, B=3, C=1, D=1, E=3. Workers: W1, W2. Dependencies: A before B; C before D; C before E. Deadline: 8. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"C\",\"worker\":\"W2\",\"start\":0},{\"task\":\"D\",\"worker\":\"W2\",\"start\":1},{\"task\":\"E\",\"worker\":\"W2\",\"start\":2},{\"task\":\"B\",\"worker\":\"W1\",\"start\":4}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-022",
+   "role": "critic",
+   "prompt": "Tasks: A=2, B=3, C=1, D=2. Workers: W1, W2. Dependencies: A before B; B before C; B before D. Deadline: 8. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"B\",\"worker\":\"W1\",\"start\":2},{\"task\":\"C\",\"worker\":\"W1\",\"start\":5},{\"task\":\"D\",\"worker\":\"W2\",\"start\":5}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-023",
+   "role": "critic",
+   "prompt": "Tasks: A=4, B=4, C=3, D=4. Workers: W1, W2. Dependencies: A before D. Deadline: 12. Proposed schedule: {\"schedule\":[{\"task\":\"B\",\"worker\":\"W1\",\"start\":13},{\"task\":\"C\",\"worker\":\"W2\",\"start\":0},{\"task\":\"A\",\"worker\":\"W2\",\"start\":3},{\"task\":\"D\",\"worker\":\"W1\",\"start\":7}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-024",
+   "role": "critic",
+   "prompt": "Tasks: A=1, B=3, C=1, D=3. Workers: W1, W2. Dependencies: A before B; B before C; A before D. Deadline: 6. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":7},{\"task\":\"D\",\"worker\":\"W1\",\"start\":1},{\"task\":\"B\",\"worker\":\"W2\",\"start\":1},{\"task\":\"C\",\"worker\":\"W1\",\"start\":4}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-025",
+   "role": "critic",
+   "prompt": "Tasks: A=1, B=2, C=1, D=1. Workers: W1, W2. Dependencies: A before B; A before C. Deadline: 4. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":5},{\"task\":\"D\",\"worker\":\"W2\",\"start\":0},{\"task\":\"C\",\"worker\":\"W1\",\"start\":1},{\"task\":\"B\",\"worker\":\"W2\",\"start\":1}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-026",
+   "role": "critic",
+   "prompt": "Tasks: A=4, B=3, C=3, D=2, E=1. Workers: W1, W2. Dependencies: A before E. Deadline: 8. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"B\",\"worker\":\"W1\",\"start\":0},{\"task\":\"D\",\"worker\":\"W2\",\"start\":3},{\"task\":\"C\",\"worker\":\"W1\",\"start\":4},{\"task\":\"E\",\"worker\":\"W2\",\"start\":5}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-027",
+   "role": "critic",
+   "prompt": "Tasks: A=2, B=3, C=4, D=3. Workers: W1, W2. Dependencies: B before C; C before D. Deadline: 11. Proposed schedule: {\"schedule\":[{\"task\":\"B\",\"worker\":\"W1\",\"start\":0},{\"task\":\"A\",\"worker\":\"W2\",\"start\":0},{\"task\":\"C\",\"worker\":\"W1\",\"start\":3},{\"task\":\"D\",\"worker\":\"W1\",\"start\":0}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-028",
+   "role": "critic",
+   "prompt": "Tasks: A=2, B=4, C=2, D=2. Workers: W1, W2. Dependencies: A before B; B before C; B before D. Deadline: 9. Proposed schedule: {\"schedule\":[{\"task\":\"A\",\"worker\":\"W1\",\"start\":0},{\"task\":\"B\",\"worker\":\"W1\",\"start\":2},{\"task\":\"C\",\"worker\":\"W1\",\"start\":6},{\"task\":\"D\",\"worker\":\"W2\",\"start\":6}]}. Is this schedule valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-029",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E, F. Constraints: A before B; B before C; C before D; C before E; D before F. Proposed order: ['A', 'B', 'C', 'D', 'F', 'E']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-030",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D. Constraints: A before B; A before C; B before D. Proposed order: ['A', 'B', 'D', 'C']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-031",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E, F. Constraints: A before B; A before C; C before D; D before E; E before F. Proposed order: ['A', 'B', 'F', 'D', 'E', 'C']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-032",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E, F. Constraints: A before B; A before C; C before D; A before E; C before F. Proposed order: ['A', 'B', 'C', 'F', 'D', 'E']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-033",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E, F. Constraints: A before B; A before C; C before D; A before E; D before F. Proposed order: ['B', 'A', 'C', 'D', 'F', 'E']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  },
+  {
+   "id": "critic-034",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E, F. Constraints: A before B; B before C; C before D; B before E; B before F. Proposed order: ['A', 'B', 'F', 'C', 'D', 'E']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-035",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D, E. Constraints: A before B; B before C; C before D; A before E. Proposed order: ['A', 'B', 'C', 'D', 'E']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-036",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D. Constraints: A before B; B before C; A before D. Proposed order: ['A', 'D', 'B', 'C']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-037",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D. Constraints: A before B; A before C; A before D. Proposed order: ['A', 'D', 'B', 'C']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "critic-038",
+   "role": "critic",
+   "prompt": "Merge jobs: A, B, C, D. Constraints: A before B; A before C; B before D. Proposed order: ['A', 'D', 'B', 'C']. Is this order valid? Answer yes or no.",
+   "checker": {
+    "type": "contains",
+    "expect": [
+     "no"
+    ]
+   }
+  }
+ ]
+}
