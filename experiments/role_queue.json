@@ -1,0 +1,49 @@
+{
+  "baseline_checkpoint": "multirole-cp-v1",
+  "baseline_dir": "../train-runs/multirole-cp-v1",
+  "tasks": {
+    "original": "experiments/roles/tasks-roles.json",
+    "controller": "experiments/roles/tasks-controller.json",
+    "planner": "experiments/roles/tasks-planner.json"
+  },
+  "gate": {
+    "controller": {
+      "orig_min": 9,
+      "wider_max_loss": 2
+    },
+    "planner": {
+      "orig_min_hf": 16,
+      "orig_min_gguf": 15,
+      "wider_max_loss": 2
+    },
+    "gguf_max_gap": 0.05,
+    "require_gguf": true,
+    "new_role_min": {
+      "placement": 0.9,
+      "critic": 0.9,
+      "dispatcher": 0.9,
+      "agency": 0.9,
+      "merge": 0.9,
+      "incident": 0.9
+    }
+  },
+  "batches": [
+    {
+      "id": "placement-critic",
+      "roles": ["placement", "critic"],
+      "status": "queued"
+    },
+    {
+      "id": "agency-dispatcher",
+      "roles": ["agency", "dispatcher"],
+      "status": "queued"
+    },
+    {
+      "id": "merge-incident",
+      "roles": ["merge", "incident"],
+      "status": "queued"
+    }
+  ],
+  "stop_on_fail": true,
+  "promotion": "manual after gate + live canary"
+}
