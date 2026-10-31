@@ -115,6 +115,10 @@ Result: controller **59/60** (was 54/60), original 9/9; planner **69/77 HF**
 (16/17 original), **66/77 GGUF** (15/17 original). No interference; positive
 transfer. The model is a candidate for promotion, not yet live.
 
+The checkpoint is in the existing private HF repo
+`SkyIsNotGreen/lfm3-controller-1.7b-sft` (README updated; controller-only
+artifacts replaced). The repo slug is pending a final rename.
+
 ## Ternary path — Qwen/Scion/Bonsai recipe
 
 The runner exists at:
