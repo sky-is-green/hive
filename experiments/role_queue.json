@@ -64,7 +64,23 @@
       "name": "Hive Operator 1.7B",
       "roles": ["agency", "dispatcher"],
       "mode": "separate-adapter",
-      "status": "queued"
+      "status": "failed",
+      "result": "dispatcher 0.950 HF / 0.925 GGUF; agency 0.907 HF / 0.861 GGUF; split"
+    },
+    {
+      "id": "dispatcher",
+      "name": "Hive Dispatcher 1.7B",
+      "roles": ["dispatcher"],
+      "mode": "separate-adapter",
+      "status": "passed",
+      "result": "0.950 HF / 0.925 GGUF; :8163 dispatcher-1.7b"
+    },
+    {
+      "id": "agency",
+      "name": "Hive Clerk 1.7B",
+      "roles": ["agency"],
+      "mode": "separate-adapter",
+      "status": "training"
     },
     {
       "id": "merge-incident",
