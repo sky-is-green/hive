@@ -62,6 +62,7 @@ def main() -> int:
     parser.add_argument("--eval", action="append", default=[])
     parser.add_argument("--gguf", default="")
     parser.add_argument("--out", default="")
+    parser.add_argument("--hero", default="", help="optional local hero PNG")
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
 
@@ -102,6 +103,13 @@ def main() -> int:
         "The model is trained for the Hive role contract; other prompts are out "
         "of scope. Use a deterministic checker or guard in production."
     )
+    hero = ""
+    if args.hero:
+        hero_path = Path(args.hero).resolve()
+        link_or_copy(hero_path, out / "assets" / "hero.png")
+        hero = ('<p align="center">\n'
+                f'  <img src="assets/hero.png" alt="{args.title}" width="360">\n'
+                '</p>\n\n')
 
     readme = f"""---
 base_model: LiquidAI/LFM3-1.7B-Base
@@ -116,7 +124,7 @@ tags:
 
 # {args.title}
 
-{args.tagline}
+{hero}{args.tagline}
 
 One adapter covers the **{', '.join(roles)}** seat(s) for the Hive local
 control plane, built from
