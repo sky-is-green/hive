@@ -93,6 +93,28 @@ python experiments/package_role_specialist.py \
   --suite "Hive 60-task controller suite"
 ```
 
+## Controller + planner multi-role
+
+The first retention test: add planner to the controller specialist and check
+whether controller goes down. Full report: `docs/round5/MULTIROLE-CP.md`.
+
+```sh
+python experiments/build_planner_suite.py
+python experiments/build_planner_sft.py --out experiments/data/planner-sft-v1
+python experiments/build_multirole_sft.py --out experiments/data/multirole-cp-v1
+
+HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
+  ~/.unsloth/studio/unsloth_studio/bin/python experiments/lfm3_sft.py \
+    --model-dir ../train-runs/controller-sft-base-v3/merged \
+    --data experiments/data/multirole-cp-v1/train.jsonl \
+    --out ../train-runs/multirole-cp-v1 \
+    --epochs 2 --batch 4 --grad-accum 4 --lr 1e-4 --max-length 512 --merge
+```
+
+Result: controller **59/60** (was 54/60), original 9/9; planner **69/77 HF**
+(16/17 original), **66/77 GGUF** (15/17 original). No interference; positive
+transfer. The model is a candidate for promotion, not yet live.
+
 ## Ternary path — Qwen/Scion/Bonsai recipe
 
 The runner exists at:
