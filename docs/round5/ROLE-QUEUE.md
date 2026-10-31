@@ -16,9 +16,9 @@ stays live.
 |---|---|---|
 | `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
 | `placement-only` | placement | **passed** — 43/46 (0.935) HF and GGUF, gate pass |
-| `clerk` | mechanics + RAG | **training as a separate adapter** — 2,104 rows, 396 steps |
-| `critic-only` | critic | **queued as a separate adapter** |
-| `agency-dispatcher` | agency, dispatcher | queued |
+| `clerk` | mechanics + RAG (**Hive Reader 1.7B**) | **passed** — mechanics 40/40 HF / 39/40 GGUF, RAG 40/40 both |
+| `auditor` | placement + critic (**Hive Auditor 1.7B**) | **queued as a separate adapter** |
+| `agency-dispatcher` | agency, dispatcher (**Hive Operator 1.7B**) | queued |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
 | — | router, judge, face | **not queued** — semantic roles stay Scion/d1 |
 
@@ -43,9 +43,11 @@ capacity.
 - Corpus: 2,104 rows (1,199 mechanics, 905 RAG; 296 suite-overlap rows dropped).
 - Training: from `LFM3-1.7B-Base`, 3 epochs, 396 steps, separate adapter.
 - Gate: mechanics and RAG each ≥0.90 HF and GGUF, HF↔GGUF gap ≤0.05.
-- Candidate endpoint when it passes: `:8159`. The in-flight run uses the
-  internal key `clerk-sft-v1` / alias `clerk-1.7b`; the model and release name
-  are **Hive Reader 1.7B** (`hive-reader-1.7b-v1`).
+- **Result: gate PASS.** Mechanics **40/40 HF, 39/40 GGUF** (0.975); RAG
+  **40/40 HF and GGUF**. Median 0.08 s mechanics, 0.06 s RAG.
+- Candidate on `:8159`, alias `reader-1.7b`; internal run dir
+  `clerk-sft-v1`. Release slug `hive-reader-1.7b-v1`.
+- Gate report: `work/train-runs/clerk-sft-v1/gate-report.json`.
 
 ## Curriculum recovery (queued)
 

@@ -44,8 +44,9 @@
       "result": "43/46 (0.935) HF and GGUF; gate pass; :8158 candidate"
     },
     {
-      "id": "critic-only",
-      "roles": ["critic"],
+      "id": "auditor",
+      "name": "Hive Auditor 1.7B",
+      "roles": ["placement", "critic"],
       "mode": "separate-adapter",
       "status": "queued"
     },
@@ -54,10 +55,12 @@
       "name": "Hive Reader 1.7B",
       "roles": ["mechanics", "rag"],
       "mode": "separate-adapter",
-      "status": "queued"
+      "status": "passed",
+      "result": "mechanics 40/40 HF, 39/40 GGUF; RAG 40/40 both; :8159 reader-1.7b"
     },
     {
       "id": "agency-dispatcher",
+      "name": "Hive Operator 1.7B",
       "roles": ["agency", "dispatcher"],
       "mode": "separate-adapter",
       "status": "queued"
