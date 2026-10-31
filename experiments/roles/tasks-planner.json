@@ -1,0 +1,1773 @@
+{
+ "name": "planner-suite",
+ "version": 1,
+ "count": 77,
+ "tasks": [
+  {
+   "id": "planner-001",
+   "role": "planner",
+   "prompt": "Plan a safe migration of a 200 GB model library from /home to /run/media in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-002",
+   "role": "planner",
+   "prompt": "Plan a safe rollback of a failed model deployment in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-003",
+   "role": "planner",
+   "prompt": "Five migration jobs A, B, C, D, E. Constraints: A before C; B before D; C before E; D before E. A and B may be in either order. Return ONLY JSON: {\"order\": [\"A\", \"B\", \"C\", \"D\", \"E\"]} with all five jobs once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "before": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "D",
+      "E"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-004",
+   "role": "planner",
+   "prompt": "A 200 GB library must be copied to one drive while leaving 20 GB free. The candidate drives are 120, 150, 240, and 300 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 240
+   }
+  },
+  {
+   "id": "planner-101",
+   "role": "planner",
+   "prompt": "Eight jobs A-H. Constraints: A before D; B before D; B before C; C before E; D before F; E before F; F before G; G before H. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\"]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "order"
+    ],
+    "equals": {
+     "order": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-102",
+   "role": "planner",
+   "prompt": "Dependency graph with durations: A=3, B=2, C=4, D=2, E=1, F=2. Edges: A->C, B->C, C->E, C->D, E->F, D->F. Return the critical path and its length as ONLY JSON: {\"path\": [\"A\"], \"length\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "path",
+     "length"
+    ],
+    "equals": {
+     "path": [
+      "A",
+      "C",
+      "D",
+      "F"
+     ],
+     "length": 11
+    }
+   }
+  },
+  {
+   "id": "planner-103",
+   "role": "planner",
+   "prompt": "Five tasks: A=4, B=3, C=2, D=5, E=1. Dependencies: A->C, B->C, C->D, C->E. Two identical workers. What is the minimum possible makespan? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 11
+   }
+  },
+  {
+   "id": "planner-104",
+   "role": "planner",
+   "prompt": "Models M1, M2, and M3 need 13 GB, 9 GB, and 7 GB. Cards C1=20 GB and C2=14 GB. Assign every model to exactly one card, at most two models per card, and minimize the maximum card load. Return ONLY JSON with model lists in alphabetical order: {\"c1\": [\"...\"], \"c2\": [\"...\"]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "c1",
+     "c2"
+    ],
+    "equals_sets": {
+     "c1": [
+      "M1",
+      "M3"
+     ],
+     "c2": [
+      "M2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-105",
+   "role": "planner",
+   "prompt": "Pack items of size 7, 5, 4, 3, and 2 into bins of capacity 10. What is the minimum number of bins? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 3
+   }
+  },
+  {
+   "id": "planner-106",
+   "role": "planner",
+   "prompt": "Tasks: A and B have no dependencies. C needs A. D needs A and B. E needs C and D. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\",\"B\"],[\"C\",\"D\"],[\"E\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C",
+       "D"
+      ],
+      [
+       "E"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-107",
+   "role": "planner",
+   "prompt": "A model has 10.56 GB of weights, a 1 GB runtime reserve, and 2 GB of KV cache per 8k context block. Card C1 has 20 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 3
+   }
+  },
+  {
+   "id": "planner-108",
+   "role": "planner",
+   "prompt": "A 200 GB library must have two full copies on separate drives at the same time. Candidate drives are 120, 150, 240, and 300 GB, and each drive must keep 20 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      240,
+      300
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-109",
+   "role": "planner",
+   "prompt": "Four people A, B, C, D stand in positions 1-4. D is at position 1. A is not at position 1 or 4. B is immediately left of C. A is left of B. Return the unique seating as ONLY JSON: {\"1\":\"D\",\"2\":\"A\",\"3\":\"B\",\"4\":\"C\"}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "equals": {
+     "1": "D",
+     "2": "A",
+     "3": "B",
+     "4": "C"
+    }
+   }
+  },
+  {
+   "id": "planner-110",
+   "role": "planner",
+   "prompt": "A model has 10.56 GB of weights, a 1 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. Card C1 has 20 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 4
+   }
+  },
+  {
+   "id": "planner-111",
+   "role": "planner",
+   "prompt": "A DAG has durations A=2, B=3, C=4, D=1, E=5, F=2, G=3, H=1. Edges: A->C, B->C, C->D, C->E, D->F, E->F, F->G, G->H. What is the length of the longest path? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 18
+   }
+  },
+  {
+   "id": "planner-201",
+   "role": "planner",
+   "prompt": "Schedule tasks A(3), B(2), C(4), D(5), E(2) on workers W1 and W2. Dependencies: A before C; B before C; C before D; C before E. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "planner-202",
+   "role": "planner",
+   "prompt": "Schedule tasks A(2), B(5), C(3), D(4), E(1), F(2) on workers W1, W2, W3. Dependencies: A before C; B before D; C before E; D before E; E before F. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 1
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "E",
+      "F"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "planner-301",
+   "role": "planner",
+   "prompt": "Plan a safe backup of a 120 GB model library in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-302",
+   "role": "planner",
+   "prompt": "Plan a safe migration of a 500 GB model library from /home to /run/media/archive in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-303",
+   "role": "planner",
+   "prompt": "Plan a safe refresh of the role SFT dataset from benchmark and preference rows in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-304",
+   "role": "planner",
+   "prompt": "Plan a safe migration of a 120 GB model library from /mnt/staging to /srv/hive-ai/models in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-305",
+   "role": "planner",
+   "prompt": "Plan a safe swap from LFM3 1.7B to a fine-tuned variant on :8155 in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-306",
+   "role": "planner",
+   "prompt": "Plan a safe migration of a 80 GB model library from /srv/old to /run/media/archive in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-307",
+   "role": "planner",
+   "prompt": "Plan a safe backup of a 240 GB model library in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-308",
+   "role": "planner",
+   "prompt": "Plan a safe migration of a 200 GB model library from /srv/old to /run/media/archive in at most 4 steps. Return ONLY JSON: {\"steps\": [\"...\"], \"risks\": [\"...\"]}. Include at least 3 steps and 2 risks.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "steps",
+     "risks"
+    ],
+    "min_items": {
+     "steps": 3,
+     "risks": 2
+    }
+   }
+  },
+  {
+   "id": "planner-309",
+   "role": "planner",
+   "prompt": "Pack items of size 5, 3, 4, 5 into bins of capacity 10. What is the minimum number of bins? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 2
+   }
+  },
+  {
+   "id": "planner-310",
+   "role": "planner",
+   "prompt": "A 80 GB library must be copied to one drive while leaving 10 GB free. The candidate drives are 240, 300, 400 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 240
+   }
+  },
+  {
+   "id": "planner-311",
+   "role": "planner",
+   "prompt": "Pack items of size 6, 6, 3, 3, 5 into bins of capacity 8. What is the minimum number of bins? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 4
+   }
+  },
+  {
+   "id": "planner-312",
+   "role": "planner",
+   "prompt": "Dependency graph with durations: A=5, B=2, C=5, D=5, E=5, F=1, G=4. Edges: A->C, A->D, A->E, A->G, B->D, C->G, D->E, D->G, E->F, E->G. Return the critical path and its length as ONLY JSON: {\"path\": [\"A\"], \"length\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "path",
+     "length"
+    ],
+    "equals": {
+     "path": [
+      "A",
+      "D",
+      "E",
+      "G"
+     ],
+     "length": 19
+    }
+   }
+  },
+  {
+   "id": "planner-313",
+   "role": "planner",
+   "prompt": "Tasks: A=1, B=1, C=3, D=5, E=4. Dependencies: A before D, B before C, C before D, D before E. 3 identical workers. What is the minimum possible makespan? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 13
+   }
+  },
+  {
+   "id": "planner-314",
+   "role": "planner",
+   "prompt": "Pack items of size 6, 4, 7, 6, 3, 5 into bins of capacity 8. What is the minimum number of bins? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 5
+   }
+  },
+  {
+   "id": "planner-315",
+   "role": "planner",
+   "prompt": "Pack items of size 6, 7, 4, 5, 6, 4 into bins of capacity 8. What is the minimum number of bins? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 5
+   }
+  },
+  {
+   "id": "planner-316",
+   "role": "planner",
+   "prompt": "A 200 GB library must be copied to one drive while leaving 30 GB free. The candidate drives are 150, 240, 300 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 240
+   }
+  },
+  {
+   "id": "planner-317",
+   "role": "planner",
+   "prompt": "Dependency graph with durations: A=1, B=2, C=5, D=1, E=2. Edges: A->B, A->C, C->D, D->E. Return the critical path and its length as ONLY JSON: {\"path\": [\"A\"], \"length\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "path",
+     "length"
+    ],
+    "equals": {
+     "path": [
+      "A",
+      "C",
+      "D",
+      "E"
+     ],
+     "length": 9
+    }
+   }
+  },
+  {
+   "id": "planner-318",
+   "role": "planner",
+   "prompt": "A 120 GB library must be copied to one drive while leaving 10 GB free. The candidate drives are 120, 150, 400 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 150
+   }
+  },
+  {
+   "id": "planner-319",
+   "role": "planner",
+   "prompt": "Tasks: A=4, B=5, C=1, D=3, E=3. Dependencies: A before D, B before C, B before D, D before E. 3 identical workers. What is the minimum possible makespan? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 11
+   }
+  },
+  {
+   "id": "planner-320",
+   "role": "planner",
+   "prompt": "Dependency graph with durations: A=3, B=5, C=2, D=3, E=4, F=5, G=2. Edges: A->B, B->E, B->G, C->F, D->E, E->F. Return the critical path and its length as ONLY JSON: {\"path\": [\"A\"], \"length\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "path",
+     "length"
+    ],
+    "equals": {
+     "path": [
+      "A",
+      "B",
+      "E",
+      "F"
+     ],
+     "length": 17
+    }
+   }
+  },
+  {
+   "id": "planner-321",
+   "role": "planner",
+   "prompt": "A model has 8.82 GB of weights, a 2 GB runtime reserve, and 1.5 GB of KV cache per 8k context block. Card C1 has 16 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 3
+   }
+  },
+  {
+   "id": "planner-322",
+   "role": "planner",
+   "prompt": "A model has 12.86 GB of weights, a 2 GB runtime reserve, and 0.75 GB of KV cache per 8k context block. Card C1 has 24 GB total and keeps 2 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 12
+   }
+  },
+  {
+   "id": "planner-323",
+   "role": "planner",
+   "prompt": "Tasks: A=4, B=1, C=1, D=5, E=1, F=5. Dependencies: A before B, B before D, B before F, C before F, D before E. 2 identical workers. What is the minimum possible makespan? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 11
+   }
+  },
+  {
+   "id": "planner-324",
+   "role": "planner",
+   "prompt": "A 200 GB library must be copied to one drive while leaving 20 GB free. The candidate drives are 120, 240, 400 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 240
+   }
+  },
+  {
+   "id": "planner-325",
+   "role": "planner",
+   "prompt": "A model has 11.99 GB of weights, a 1 GB runtime reserve, and 2.0 GB of KV cache per 8k context block. Card C1 has 20 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 3
+   }
+  },
+  {
+   "id": "planner-326",
+   "role": "planner",
+   "prompt": "A model has 11.94 GB of weights, a 1 GB runtime reserve, and 2.0 GB of KV cache per 8k context block. Card C1 has 16 GB total and keeps 1 GB free for the system. How many whole 8k context blocks fit on C1? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 1
+   }
+  },
+  {
+   "id": "planner-327",
+   "role": "planner",
+   "prompt": "A 240 GB library must be copied to one drive while leaving 20 GB free. The candidate drives are 120, 240, 300 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 300
+   }
+  },
+  {
+   "id": "planner-328",
+   "role": "planner",
+   "prompt": "A 200 GB library must be copied to one drive while leaving 30 GB free. The candidate drives are 120, 150, 240 GB. Which is the smallest drive that fits? Answer with the number only.",
+   "checker": {
+    "type": "number",
+    "expect": 240
+   }
+  },
+  {
+   "id": "planner-329",
+   "role": "planner",
+   "prompt": "5 migration jobs A, B, C, D, E. Constraints: A before B; A before C; A before D; B before E. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "B",
+      "E"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-330",
+   "role": "planner",
+   "prompt": "5 migration jobs A, B, C, D, E. Constraints: A before B; B before C; A before D; B before E. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "B",
+      "E"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-331",
+   "role": "planner",
+   "prompt": "7 migration jobs A, B, C, D, E, F, G. Constraints: A before B; B before C; A before D; A before E; E before F; E before G. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "F",
+     "G"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ],
+     [
+      "E",
+      "F"
+     ],
+     [
+      "E",
+      "G"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-332",
+   "role": "planner",
+   "prompt": "4 migration jobs A, B, C, D. Constraints: A before B; A before C; C before D. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-333",
+   "role": "planner",
+   "prompt": "4 migration jobs A, B, C, D. Constraints: A before B; B before C; C before D. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-334",
+   "role": "planner",
+   "prompt": "6 migration jobs A, B, C, D, E, F. Constraints: A before B; B before C; B before D; A before E; E before F. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "F"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "A",
+      "E"
+     ],
+     [
+      "E",
+      "F"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-335",
+   "role": "planner",
+   "prompt": "4 migration jobs A, B, C, D. Constraints: A before B; A before C; A before D. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-336",
+   "role": "planner",
+   "prompt": "6 migration jobs A, B, C, D, E, F. Constraints: A before B; A before C; C before D; D before E; A before F. Return the lexicographically smallest valid order as ONLY JSON: {\"order\": [\"A\"]} with every job once.",
+   "checker": {
+    "type": "ordered",
+    "field": "order",
+    "required_items": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "F"
+    ],
+    "before": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ],
+     [
+      "A",
+      "F"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "planner-337",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D, E, F. Dependencies: B->C, A->D, C->D, C->E, D->E, A->F. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C",
+       "F"
+      ],
+      [
+       "D"
+      ],
+      [
+       "E"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-338",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D. Dependencies: C->D. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B",
+       "C"
+      ],
+      [
+       "D"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-339",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D. Dependencies: B->C, A->D. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C",
+       "D"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-340",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D, E. Dependencies: A->C, B->D, C->D, A->E, B->E. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C",
+       "E"
+      ],
+      [
+       "D"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-341",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D, E, F. Dependencies: B->C, A->D, D->E, E->F. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C",
+       "D"
+      ],
+      [
+       "E"
+      ],
+      [
+       "F"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-342",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D, E, F. Dependencies: B->C, B->E, C->E, C->F, D->F. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B",
+       "D"
+      ],
+      [
+       "C"
+      ],
+      [
+       "E",
+       "F"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-343",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D. Dependencies: B->C, B->D, C->D. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B"
+      ],
+      [
+       "C"
+      ],
+      [
+       "D"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-344",
+   "role": "planner",
+   "prompt": "Tasks: A, B, C, D, E, F. Dependencies: A->D, A->E, B->E, D->E. Return the dependency waves as ONLY JSON: {\"waves\": [[\"A\"], [\"B\"]]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "waves"
+    ],
+    "equals": {
+     "waves": [
+      [
+       "A",
+       "B",
+       "C",
+       "F"
+      ],
+      [
+       "D"
+      ],
+      [
+       "E"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-345",
+   "role": "planner",
+   "prompt": "A 120 GB library must have two full copies on separate drives at the same time. Candidate drives are 150, 240, 400 GB, and each drive must keep 10 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      150,
+      240
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-346",
+   "role": "planner",
+   "prompt": "A 80 GB library must have two full copies on separate drives at the same time. Candidate drives are 120, 300, 400 GB, and each drive must keep 20 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      120,
+      300
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-347",
+   "role": "planner",
+   "prompt": "A 120 GB library must have two full copies on separate drives at the same time. Candidate drives are 120, 150, 240, 400 GB, and each drive must keep 10 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      150,
+      240
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-348",
+   "role": "planner",
+   "prompt": "A 200 GB library must have two full copies on separate drives at the same time. Candidate drives are 120, 300, 400 GB, and each drive must keep 10 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      300,
+      400
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-349",
+   "role": "planner",
+   "prompt": "A 120 GB library must have two full copies on separate drives at the same time. Candidate drives are 120, 240, 300, 400 GB, and each drive must keep 20 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      240,
+      300
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-350",
+   "role": "planner",
+   "prompt": "A 80 GB library must have two full copies on separate drives at the same time. Candidate drives are 240, 300, 400 GB, and each drive must keep 20 GB free. Which two smallest drives can hold the two copies? Return ONLY JSON: {\"drives\": [240, 300]}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "drives"
+    ],
+    "equals": {
+     "drives": [
+      240,
+      300
+     ]
+    }
+   }
+  },
+  {
+   "id": "planner-351",
+   "role": "planner",
+   "prompt": "Schedule tasks A(3), B(2), C(5), D(1), E(5) on workers W1, W2, W3. Dependencies: A before B; A before C; A before D; C before E. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 15.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 5
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 15
+   }
+  },
+  {
+   "id": "planner-352",
+   "role": "planner",
+   "prompt": "Schedule tasks A(3), B(5), C(2), D(3), E(3), F(2) on workers W1, W2. Dependencies: A before C; B before D; B before E; D before F. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "B",
+      "E"
+     ],
+     [
+      "D",
+      "F"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "planner-353",
+   "role": "planner",
+   "prompt": "Schedule tasks A(2), B(2), C(3), D(4), E(3) on workers W1, W2, W3. Dependencies: A before B; B before C; B before D. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 10.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ]
+    ],
+    "deadline": 10
+   }
+  },
+  {
+   "id": "planner-354",
+   "role": "planner",
+   "prompt": "Schedule tasks A(4), B(4), C(1), D(4), E(3), F(5) on workers W1, W2, W3. Dependencies: A before B; A before C; A before E; B before F. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 14.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 4
+     },
+     "B": {
+      "duration": 4
+     },
+     "C": {
+      "duration": 1
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "A",
+      "C"
+     ],
+     [
+      "A",
+      "E"
+     ],
+     [
+      "B",
+      "F"
+     ]
+    ],
+    "deadline": 14
+   }
+  },
+  {
+   "id": "planner-355",
+   "role": "planner",
+   "prompt": "Schedule tasks A(4), B(5), C(3), D(1), E(3), F(4) on workers W1, W2. Dependencies: A before B; B before C; C before D; C before E; A before F. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 15.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 4
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 1
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 4
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "A",
+      "F"
+     ]
+    ],
+    "deadline": 15
+   }
+  },
+  {
+   "id": "planner-356",
+   "role": "planner",
+   "prompt": "Schedule tasks A(5), B(2), C(4), D(4), E(5) on workers W1, W2, W3. Dependencies: A before B; B before C; A before D. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 13.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 5
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "A",
+      "D"
+     ]
+    ],
+    "deadline": 13
+   }
+  },
+  {
+   "id": "planner-357",
+   "role": "planner",
+   "prompt": "Schedule tasks A(3), B(2), C(3), D(3), E(5) on workers W1, W2. Dependencies: B before C; C before D; D before E. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 13.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 3
+     },
+     "B": {
+      "duration": 2
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 3
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ],
+     [
+      "D",
+      "E"
+     ]
+    ],
+    "deadline": 13
+   }
+  },
+  {
+   "id": "planner-358",
+   "role": "planner",
+   "prompt": "Schedule tasks A(2), B(5), C(2), D(2) on workers W1, W2, W3. Dependencies: A before B; B before C; C before D. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 2
+     },
+     "D": {
+      "duration": 2
+     }
+    },
+    "workers": [
+     "W1",
+     "W2",
+     "W3"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "C",
+      "D"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "planner-359",
+   "role": "planner",
+   "prompt": "Schedule tasks A(1), B(5), C(3), D(5), E(3), F(3) on workers W1, W2. Dependencies: A before B; B before D; C before E; C before F. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 12.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 1
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 3
+     },
+     "D": {
+      "duration": 5
+     },
+     "E": {
+      "duration": 3
+     },
+     "F": {
+      "duration": 3
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ],
+     [
+      "C",
+      "F"
+     ]
+    ],
+    "deadline": 12
+   }
+  },
+  {
+   "id": "planner-360",
+   "role": "planner",
+   "prompt": "Schedule tasks A(2), B(5), C(4), D(4), E(5) on workers W1, W2. Dependencies: A before B; B before C; B before D; C before E. Tasks may run in parallel on different workers. Return ONLY JSON: {\"schedule\": [{\"task\": \"A\", \"worker\": \"W1\", \"start\": 0}]}. The makespan must be at most 16.",
+   "checker": {
+    "type": "schedule",
+    "tasks": {
+     "A": {
+      "duration": 2
+     },
+     "B": {
+      "duration": 5
+     },
+     "C": {
+      "duration": 4
+     },
+     "D": {
+      "duration": 4
+     },
+     "E": {
+      "duration": 5
+     }
+    },
+    "workers": [
+     "W1",
+     "W2"
+    ],
+    "dependencies": [
+     [
+      "A",
+      "B"
+     ],
+     [
+      "B",
+      "C"
+     ],
+     [
+      "B",
+      "D"
+     ],
+     [
+      "C",
+      "E"
+     ]
+    ],
+    "deadline": 16
+   }
+  }
+ ]
+}
