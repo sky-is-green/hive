@@ -1,0 +1,592 @@
+{
+ "name": "mechanics-suite",
+ "version": 1,
+ "count": 40,
+ "tasks": [
+  {
+   "id": "mechanics-001",
+   "role": "mechanics",
+   "prompt": "Extract the payee and amount from this text: 'Invoice from Acme Corp for $1,240.50 due Friday.' Return ONLY JSON: {\"payee\": \"...\", \"amount\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "payee",
+     "amount"
+    ],
+    "contains": {
+     "payee": "acme"
+    }
+   }
+  },
+  {
+   "id": "mechanics-002",
+   "role": "mechanics",
+   "prompt": "Extract the date and total from: 'Order 778 shipped 2026-10-30 for $89.99.' Return ONLY JSON: {\"date\": \"...\", \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "date",
+     "total"
+    ],
+    "contains": {
+     "date": "2026-10-30",
+     "total": "89.99"
+    }
+   }
+  },
+  {
+   "id": "mechanics-003",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2026-01-10. An amendment dated 2026-02-15 changed the delivery date to 2026-03-01. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "contains": {
+     "delivery": "2026-03-01"
+    }
+   }
+  },
+  {
+   "id": "mechanics-004",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $10, line 2 = $20, discount = $5, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "28"
+    }
+   }
+  },
+  {
+   "id": "mechanics-204",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $25, discount = $5, tax = $7. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "27"
+    }
+   }
+  },
+  {
+   "id": "mechanics-205",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $70, line 2 = $19, line 3 = $27, discount = $15, tax = $7. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "108"
+    }
+   }
+  },
+  {
+   "id": "mechanics-206",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2025-01-20. An amendment dated 2025-02-20 changed the delivery date to 2025-03-15. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2025-03-15"
+    }
+   }
+  },
+  {
+   "id": "mechanics-207",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2027-01-16. An amendment dated 2027-02-17 changed the delivery date to 2027-03-17. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2027-03-17"
+    }
+   }
+  },
+  {
+   "id": "mechanics-208",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $44, discount = $5, tax = $13. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "52"
+    }
+   }
+  },
+  {
+   "id": "mechanics-209",
+   "role": "mechanics",
+   "prompt": "Extract the payee and amount from this text: 'Invoice from Northwind Ltd for $6023.56 due Friday.' Return ONLY JSON: {\"payee\": \"...\", \"amount\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "payee",
+     "amount"
+    ],
+    "contains": {
+     "payee": "northwind",
+     "amount": "6023.56"
+    }
+   }
+  },
+  {
+   "id": "mechanics-210",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $21, line 2 = $30, discount = $10, tax = $11. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "52"
+    }
+   }
+  },
+  {
+   "id": "mechanics-211",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $31, line 2 = $60, discount = $5, tax = $13. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "99"
+    }
+   }
+  },
+  {
+   "id": "mechanics-212",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $10, discount = $5, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "8"
+    }
+   }
+  },
+  {
+   "id": "mechanics-213",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 3 units at $49 each plus $9 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "156"
+    }
+   }
+  },
+  {
+   "id": "mechanics-214",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $21, line 2 = $27, line 3 = $88, discount = $10, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "129"
+    }
+   }
+  },
+  {
+   "id": "mechanics-215",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $70, discount = $15, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "58"
+    }
+   }
+  },
+  {
+   "id": "mechanics-216",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2026-01-28. An amendment dated 2026-02-17 changed the delivery date to 2026-03-21. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2026-03-21"
+    }
+   }
+  },
+  {
+   "id": "mechanics-217",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2027-01-25. An amendment dated 2027-02-28 changed the delivery date to 2027-03-12. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2027-03-12"
+    }
+   }
+  },
+  {
+   "id": "mechanics-218",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 5 units at $35 each plus $0 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "175"
+    }
+   }
+  },
+  {
+   "id": "mechanics-219",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $73, line 2 = $80, line 3 = $43, discount = $15, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "184"
+    }
+   }
+  },
+  {
+   "id": "mechanics-220",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2026-01-21. An amendment dated 2026-02-27 changed the delivery date to 2026-03-19. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2026-03-19"
+    }
+   }
+  },
+  {
+   "id": "mechanics-221",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2026-01-25. An amendment dated 2026-02-13 changed the delivery date to 2026-03-09. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2026-03-09"
+    }
+   }
+  },
+  {
+   "id": "mechanics-222",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2025-01-10. An amendment dated 2025-02-21 changed the delivery date to 2025-03-23. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2025-03-23"
+    }
+   }
+  },
+  {
+   "id": "mechanics-223",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2026-01-17. An amendment dated 2026-02-15 changed the delivery date to 2026-03-09. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2026-03-09"
+    }
+   }
+  },
+  {
+   "id": "mechanics-224",
+   "role": "mechanics",
+   "prompt": "Extract the payee and amount from this text: 'Invoice from Hooli for $7413.58 due Friday.' Return ONLY JSON: {\"payee\": \"...\", \"amount\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "payee",
+     "amount"
+    ],
+    "contains": {
+     "payee": "hooli",
+     "amount": "7413.58"
+    }
+   }
+  },
+  {
+   "id": "mechanics-225",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $57, discount = $5, tax = $13. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "65"
+    }
+   }
+  },
+  {
+   "id": "mechanics-226",
+   "role": "mechanics",
+   "prompt": "Extract the payee and amount from this text: 'Invoice from Hooli for $802.87 due Friday.' Return ONLY JSON: {\"payee\": \"...\", \"amount\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "payee",
+     "amount"
+    ],
+    "contains": {
+     "payee": "hooli",
+     "amount": "802.87"
+    }
+   }
+  },
+  {
+   "id": "mechanics-227",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 5 units at $32 each plus $0 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "160"
+    }
+   }
+  },
+  {
+   "id": "mechanics-228",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 5 units at $60 each plus $5 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "305"
+    }
+   }
+  },
+  {
+   "id": "mechanics-229",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 3 units at $43 each plus $9 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "138"
+    }
+   }
+  },
+  {
+   "id": "mechanics-230",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 8 units at $15 each plus $0 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "120"
+    }
+   }
+  },
+  {
+   "id": "mechanics-231",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $42, discount = $5, tax = $13. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "50"
+    }
+   }
+  },
+  {
+   "id": "mechanics-232",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 9 units at $37 each plus $0 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "333"
+    }
+   }
+  },
+  {
+   "id": "mechanics-233",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2024-01-17. An amendment dated 2024-02-24 changed the delivery date to 2024-03-10. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2024-03-10"
+    }
+   }
+  },
+  {
+   "id": "mechanics-234",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2027-01-27. An amendment dated 2027-02-11 changed the delivery date to 2027-03-24. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2027-03-24"
+    }
+   }
+  },
+  {
+   "id": "mechanics-235",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $12, line 2 = $73, line 3 = $64, discount = $5, tax = $3. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "147"
+    }
+   }
+  },
+  {
+   "id": "mechanics-236",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2025-01-21. An amendment dated 2025-02-21 changed the delivery date to 2025-03-19. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2025-03-19"
+    }
+   }
+  },
+  {
+   "id": "mechanics-237",
+   "role": "mechanics",
+   "prompt": "A contract was signed 2024-01-12. An amendment dated 2024-02-12 changed the delivery date to 2024-03-08. Return ONLY JSON: {\"delivery\": \"YYYY-MM-DD\"} with the effective delivery date.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "delivery"
+    ],
+    "equals": {
+     "delivery": "2024-03-08"
+    }
+   }
+  },
+  {
+   "id": "mechanics-238",
+   "role": "mechanics",
+   "prompt": "Extract the order total: 9 units at $58 each plus $0 shipping. Return ONLY JSON: {\"qty\": 0, \"unit\": 0, \"total\": 0}.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "qty",
+     "unit",
+     "total"
+    ],
+    "contains": {
+     "total": "522"
+    }
+   }
+  },
+  {
+   "id": "mechanics-239",
+   "role": "mechanics",
+   "prompt": "Extract the final total from this invoice: line 1 = $84, line 2 = $78, discount = $10, tax = $13. Return ONLY JSON: {\"total\": 0} with the computed total.",
+   "checker": {
+    "type": "json",
+    "required": [
+     "total"
+    ],
+    "contains": {
+     "total": "165"
+    }
+   }
+  }
+ ]
+}

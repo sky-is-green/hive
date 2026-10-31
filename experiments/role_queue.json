@@ -21,6 +21,8 @@
     "new_role_min": {
       "placement": 0.9,
       "critic": 0.9,
+      "mechanics": 0.9,
+      "rag": 0.9,
       "dispatcher": 0.9,
       "agency": 0.9,
       "merge": 0.9,
@@ -44,6 +46,12 @@
     {
       "id": "critic-only",
       "roles": ["critic"],
+      "mode": "separate-adapter",
+      "status": "queued"
+    },
+    {
+      "id": "clerk",
+      "roles": ["mechanics", "rag"],
       "mode": "separate-adapter",
       "status": "queued"
     },
