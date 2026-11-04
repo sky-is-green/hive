@@ -99,13 +99,15 @@ controller-only GGUF and eval files were removed in the same commit; the
 adapter, merged model, and GGUF were verified by SHA-256 against the local
 artifacts.
 
-## Next
+## Status
 
-1. Add **placement** and **critic** to the same adapter. If controller and
-   planner hold, the constraint family is real.
-2. Add the deterministic schedule guard and run a live canary on controller
-   traffic; roll back to v3 or Scion if schedule failures appear.
-3. Release visibility is handled by the release checklist; the weights stay private until that flip.
+1. **Placement + critic** did not stay in this adapter. The 3-role merge failed
+   the protected-role gate; they now ship as **Hive Auditor 1.7B** on `:8162`.
+2. The **controller/planner** pair remains in this adapter and is live on
+   `:8156`; the deterministic schedule guard is still the production follow-up.
+3. The roster is now five separate specialists: Conductor, Reader, Auditor,
+   Dispatcher and Clerk. Release visibility is handled by the release checklist;
+   the weights stay private until that flip.
 
 ## Repro
 

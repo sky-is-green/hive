@@ -97,6 +97,6 @@ experiments/data/multirole-cpp-v1/
 ## Next
 
 Placement-only is done: 43/46 (0.935) HF and GGUF, separate-adapter gate pass.
-It runs on `:8158` as `placement-1.7b-sft` (candidate, not wired into a role).
-Next is critic-only, then agency/dispatcher and merge/incident as separate
-adapters.
+It has since been superseded by **Hive Auditor 1.7B**, which covers placement
+and critic in one separate adapter and is live on `:8162`. The placement-only
+`:8158` candidate is retired; the next new seats are merge/incident.
