@@ -234,12 +234,21 @@ Flat import names are preserved (`experiments.*`, `testing.*`, `tests.*`,
 
 ## Run the studio (HiveBench Studio)
 
-Two commands are the whole story, run from this checkout: `--setup` copies
-`providers.example.json` → `providers.local.json` if missing, probes for a reachable
-backend (LM Studio on `:1234`, or a local `llama-server` from `models/gguf`),
-creates a provider config if one is missing, and prints the next step. The studio serves the splinter over a
-FastAPI API; the endpoint contract lives in `harness/app.py`, and the
-[`splinter/docs/INTEGRATE.md`](../splinter/docs/INTEGRATE.md) shows how to point external clients at it.
+Two commands are the whole story, run from this checkout: `--setup` finds the
+example provider config (or seeds a local one), probes for a reachable backend
+(LM Studio on `:1234`, or a local `llama-server` from `models/gguf`), and warms
+the drone. `python -m harness` then serves the API on `:8765` and the Hive
+console on `:8170` from the same process; `--no-console` keeps the legacy
+API/report surface only. The endpoint contract lives in `harness/app.py`, and
+the [`splinter/docs/INTEGRATE.md`](../splinter/docs/INTEGRATE.md) shows how to
+point external clients at it.
+
+The console Roles page is live, not a mock-up: it writes the role assignment
+that `/v1/roles`, `/v1/role/chat/completions` and the agent's `role` field read.
+The default roster is Conductor (controller + planner), Reader (mechanics +
+RAG), Auditor (placement + critic), Dispatcher, and Clerk, with Scion/d1/LFM3
+on the semantic and vision seats. `GET /v1/roles` reports whether each seat
+resolves to a configured provider.
 
 ```powershell
 .\.venv\Scripts\python -m harness --setup   # copies providers config, probes backend, warms the drone
