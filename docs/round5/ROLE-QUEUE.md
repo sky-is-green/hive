@@ -16,11 +16,11 @@ stays live.
 |---|---|---|
 | `placement-critic` | placement, critic | **failed gate** — 3- and 4-role tests degraded controller/planner; see `MULTIROLE-LIMIT.md` |
 | `placement-only` | placement | **passed** — 43/46 (0.935) HF and GGUF, gate pass |
-| `clerk` | mechanics + RAG (**Hive Reader 1.7B**) | **passed** — mechanics 40/40 HF / 39/40 GGUF, RAG 40/40 both |
-| `auditor` | placement + critic (**Hive Auditor 1.7B**) | **passed** — placement 44/46 HF, 43/46 GGUF; critic 36/38 HF, 35/38 GGUF |
+| `clerk` | mechanics + RAG (**Hive Reader 1.7B**) | **passed and wired** — mechanics 40/40 HF / 39/40 GGUF, RAG 40/40 both |
+| `auditor` | placement + critic (**Hive Auditor 1.7B**) | **passed and wired** — placement 44/46 HF, 43/46 GGUF; critic 36/38 HF, 35/38 GGUF |
 | `agency-dispatcher` | agency, dispatcher (**Hive Operator 1.7B**) | **failed** — dispatcher 0.950/0.925, agency 0.907/0.861; split |
-| `dispatcher` | dispatcher (**Hive Dispatcher 1.7B**) | **passed** — 0.950 HF / 0.925 GGUF |
-| `agency` | agency (**Hive Clerk 1.7B**) | **passed** — 0.977 HF / 0.930 GGUF, candidate `:8164` |
+| `dispatcher` | dispatcher (**Hive Dispatcher 1.7B**) | **passed and wired** — 0.950 HF / 0.925 GGUF |
+| `agency` | agency (**Hive Clerk 1.7B**) | **passed and wired** — 0.977 HF / 0.930 GGUF |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
 | — | router, judge, face | **not queued** — semantic roles stay Scion/d1 |
 
@@ -33,7 +33,7 @@ or an adapter router is used.
 `LFM3-1.7B-Base`, 1,200 placement rows, 3 epochs (225 steps). It scores
 **43/46 (0.935)** on its held-out suite in both HF and GGUF and passes the
 separate-adapter gate. It is running on `:8158` as `placement-1.7b-sft`
-(candidate, not wired into a role). Next is critic-only.
+(superseded by Auditor for placement).
 
 ## Hive Reader 1.7B (mechanics + RAG)
 
@@ -59,7 +59,7 @@ mix added controller/planner replay to the training corpus (800 placement,
 1,000 critic, 500 controller, 300 planner; 2,600 rows, 3 epochs).
 
 - Result: placement **44/46 HF, 43/46 GGUF**; critic **36/38 HF, 35/38 GGUF**.
-- Gate: **PASS**. Candidate on `:8162`, alias `auditor-1.7b`.
+- Gate: **PASS**. Candidate on `:8162`, alias `auditor-1.7b`, wired for placement and critic.
 - Gate report: `work/train-runs/auditor-sft-v3/gate-report.json`.
 
 ## Operator split: Hive Dispatcher + Hive Clerk
@@ -68,10 +68,10 @@ The combined agency+dispatcher adapter was too broad. v2, initialized from
 Conductor, reached dispatcher **0.950 HF / 0.925 GGUF** but agency only
 **0.907 HF / 0.861 GGUF**. The gate split the roster:
 
-- **Hive Dispatcher 1.7B** — dispatcher-only; **passed**, candidate on `:8163`,
+- **Hive Dispatcher 1.7B** — dispatcher-only; **passed**, live on `:8163`,
   alias `dispatcher-1.7b`. Uses the dispatcher half of `operator-sft-v2`.
 - **Hive Clerk 1.7B** — agency-only; trained from `operator-sft-v2` on the
-  360-row agency corpus, **passed** at **0.977 HF / 0.930 GGUF**, candidate on
+  360-row agency corpus, **passed** at **0.977 HF / 0.930 GGUF**, live on
   `:8164`, alias `clerk-1.7b`.
 
 Dispatcher is the assignment/scheduling seat; Clerk is tool selection/order.
@@ -81,10 +81,10 @@ Dispatcher is the assignment/scheduling seat; Clerk is tool selection/order.
 | model | seats | endpoint |
 |---|---|---|
 | **Hive Conductor 1.7B** | controller + planner | `:8156` (live) |
-| **Hive Reader 1.7B** | mechanics + RAG | `:8159` candidate |
-| **Hive Auditor 1.7B** | placement + critic | `:8162` candidate |
-| **Hive Dispatcher 1.7B** | dispatcher | `:8163` candidate |
-| **Hive Clerk 1.7B** | agency | `:8164` candidate |
+| **Hive Reader 1.7B** | mechanics + RAG | `:8159` live |
+| **Hive Auditor 1.7B** | placement + critic | `:8162` live |
+| **Hive Dispatcher 1.7B** | dispatcher | `:8163` live |
+| **Hive Clerk 1.7B** | agency | `:8164` live |
 
 All five are separate adapters, each gated on its own held-out suites. Router,
 face, judge, vision and risk remain on Scion/d1/VL/guards.

@@ -1,0 +1,270 @@
+/*
+ * HiveTrainingPanel — styles for harness/webui/training_panel.js (T1).
+ * Uses the shell's design tokens (styles.css :root) with fallbacks so the
+ * module stays legible even if mounted before/without them.
+ */
+
+.trp {
+  --trp-bg: #14161a;
+  --trp-bg-2: #1b1e23;
+  --trp-line: #2a2e36;
+  --trp-line-soft: #20242b;
+  --trp-ink: #f2f4f7;
+  --trp-muted: #98a1ae;
+  --trp-accent: #ffb703;
+  --trp-good: #40d99a;
+  --trp-warn: #ffb020;
+  --trp-bad: #ff6b6b;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font: 14px/1.5 "Inter", "Segoe UI", system-ui, sans-serif;
+  color: var(--trp-ink);
+}
+
+.trp * { box-sizing: border-box; }
+.trp .muted, .trp .trp-muted { color: var(--trp-muted); font-size: 12px; }
+.trp .mono, .trp code { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace; }
+.trp a { color: var(--trp-accent); text-decoration: none; }
+.trp a:hover { text-decoration: underline; }
+
+/* toolbar -------------------------------------------------------------- */
+.trp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--trp-bg);
+  border: 1px solid var(--trp-line);
+  border-radius: 12px;
+}
+.trp-toolbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.trp .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--trp-muted); flex: none; }
+.trp .dot.ok { background: var(--trp-good); box-shadow: 0 0 8px rgba(64, 217, 154, .5); }
+.trp .dot.bad { background: var(--trp-bad); }
+.trp-status { font-size: 13px; }
+.trp-status.trp-ok { color: var(--trp-good); }
+.trp-status.trp-warn { color: var(--trp-warn); }
+.trp-status.trp-pending { color: var(--trp-accent); }
+.trp-updated { margin-left: 2px; }
+
+/* message banner ------------------------------------------------------- */
+.trp-message {
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  border: 1px solid var(--trp-line);
+}
+.trp-message.ok {
+  color: var(--trp-good);
+  border-color: rgba(64, 217, 154, .35);
+  background: rgba(64, 217, 154, .06);
+}
+.trp-message.error {
+  color: var(--trp-bad);
+  border-color: rgba(255, 107, 107, .35);
+  background: rgba(255, 107, 107, .06);
+}
+
+/* sections ------------------------------------------------------------- */
+.trp-section {
+  background: var(--trp-bg);
+  border: 1px solid var(--trp-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.trp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--trp-line-soft);
+}
+.trp-head h2 { margin: 0; font-size: 14px; font-weight: 650; color: var(--trp-ink); }
+
+/* form ----------------------------------------------------------------- */
+.trp-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px 14px;
+  padding: 14px 15px;
+}
+.trp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--trp-muted);
+}
+.trp-field--wide { grid-column: span 2; }
+.trp-field input,
+.trp-field select {
+  font: 13px/1.4 inherit;
+  color: var(--trp-ink);
+  background: var(--trp-bg-2);
+  border: 1px solid var(--trp-line);
+  border-radius: 7px;
+  padding: 7px 9px;
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: 0;
+}
+.trp-field input::placeholder { color: #5e6672; }
+.trp-field input:focus,
+.trp-field select:focus {
+  outline: none;
+  border-color: var(--trp-accent);
+}
+.trp-field input:disabled,
+.trp-field select:disabled { opacity: .5; cursor: not-allowed; }
+
+.trp-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trp-run-meta {
+  padding: 9px 15px 13px;
+  color: var(--trp-accent);
+  font-size: 12px;
+  border-top: 1px solid var(--trp-line-soft);
+}
+
+/* status cards --------------------------------------------------------- */
+.trp-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 14px 15px;
+}
+.trp-stat {
+  background: var(--trp-bg-2);
+  border: 1px solid var(--trp-line-soft);
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.trp-stat-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--trp-muted);
+}
+.trp-stat-value { font-size: 15px; font-weight: 650; word-break: break-word; }
+.trp-stat-value.good { color: var(--trp-good); }
+.trp-stat-value.warn { color: var(--trp-warn); }
+.trp-stat-value.accent { color: var(--trp-accent); }
+.trp-stat-value.muted { color: var(--trp-muted); }
+
+.trp-report-link {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(64, 217, 154, .35);
+  background: rgba(64, 217, 154, .06);
+  border-radius: 9px;
+  font-size: 13px;
+}
+.trp-report-link a { font-weight: 650; }
+
+/* log block ------------------------------------------------------------ */
+.trp-log-wrap { border-top: 1px solid var(--trp-line-soft); }
+.trp-log-head { padding: 9px 15px 0; }
+.trp-log {
+  margin: 8px 15px 14px;
+  max-height: 240px;
+  overflow: auto;
+  background: #0c0e11;
+  border: 1px solid var(--trp-line-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: 12px/1.5 "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  color: #c8d0da;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* tables --------------------------------------------------------------- */
+.trp .trp-table-wrap { overflow: auto; }
+.trp-table { width: 100%; border-collapse: collapse; }
+.trp-table th, .trp-table td {
+  text-align: left;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--trp-line-soft);
+  font-size: 12.5px;
+  vertical-align: top;
+}
+.trp-table th {
+  color: var(--trp-muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.trp-table tr:hover td { background: rgba(255, 183, 3, .035); }
+.trp-strong { font-weight: 650; word-break: break-word; }
+
+/* tags + links ---------------------------------------------------------- */
+.trp .trp-tag {
+  display: inline-block;
+  border: 1px solid var(--trp-line);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  color: var(--trp-muted);
+}
+.trp-link { color: var(--trp-accent); }
+
+/* buttons -------------------------------------------------------------- */
+.trp-btn {
+  font: inherit;
+  color: var(--trp-ink);
+  background: transparent;
+  border: 1px solid var(--trp-line);
+  border-radius: 7px;
+  padding: 6px 13px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.trp-btn:hover { border-color: var(--trp-accent); color: var(--trp-accent); }
+.trp-btn--primary {
+  background: var(--trp-accent);
+  color: #111;
+  border-color: var(--trp-accent);
+  font-weight: 700;
+}
+.trp-btn--primary:hover { background: #ffc21a; color: #111; }
+.trp-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* preset trainer status line ------------------------------------------- */
+.trp-trainer-status {
+  grid-column: 1 / -1;
+  color: var(--trp-muted);
+  font-size: 12.5px;
+  padding: 2px 0;
+}
+
+/* empty states --------------------------------------------------------- */
+.trp .trp-empty {
+  padding: 14px 15px;
+  color: var(--trp-muted);
+  font-size: 13px;
+}
+
+/* narrow screens ------------------------------------------------------- */
+@media (max-width: 900px) {
+  .trp-form { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+  .trp-field--wide { grid-column: span 2; }
+  .trp-table th, .trp-table td { padding: 7px 9px; }
+}

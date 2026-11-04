@@ -32,6 +32,22 @@ the API is opt-in. It runs the cascade, the memory arms and the A/B batteries
 from the same result schema, and every run leaves a report, a manifest and a
 harvest. The detailed guide is in [`hivebench/README.md`](hivebench/README.md).
 
+## The Hive 1.7B roster
+
+Five small role specialists, served by the same harness:
+
+| model | seats |
+|---|---|
+| [Hive Conductor 1.7B](https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1) | controller + planner |
+| [Hive Reader 1.7B](https://huggingface.co/SkyIsNotGreen/hive-reader-1.7b-v1) | mechanics + RAG |
+| [Hive Auditor 1.7B](https://huggingface.co/SkyIsNotGreen/hive-auditor-1.7b-v1) | placement + critic |
+| [Hive Dispatcher 1.7B](https://huggingface.co/SkyIsNotGreen/hive-dispatcher-1.7b-v1) | dispatcher |
+| [Hive Clerk 1.7B](https://huggingface.co/SkyIsNotGreen/hive-clerk-1.7b-v1) | agency |
+
+They are role specialists, not general chat models. The controller/planner seat
+is the Conductor; the other four cover document reading, placement/critique,
+dispatch and agency. Router, face, judge and vision remain on Scion/d1/LFM3.
+
 ## One harness, any engine, placed per role
 
 A stack tier does not hard-code an engine. It names a **role** — in the cascade,
@@ -150,7 +166,8 @@ is the execution checker (6/7 errors, 4/4 at p >= 0.97, 0/21 false rejects,
 API-in-the-27B-slot path (DeepSeek V4.1 Flash Free: 28/28, 7 API escalations,
 0/21, 8.57 s / 14.54 s; GLM 5.3 Flash Free: 27/28, 7 API, 0/21, 7.80 s /
 11.45 s). The API-driven controller is unmeasured; grounding is not pursued.
-This is a research harness, not a product.
+This is a research harness with a supported local build path; the
+measurements and the paper remain the primary product.
 
 ## Engine notes
 

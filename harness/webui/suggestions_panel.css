@@ -1,0 +1,60 @@
+/* Suggestions panel styles are scoped so it can be mounted into any shell. */
+.hive-suggestions {
+  --hs-bg: var(--panel, #14161a);
+  --hs-bg-raised: var(--panel-2, #1b1e23);
+  --hs-line: var(--line, #2a2e36);
+  --hs-ink: var(--ink, #f2f4f7);
+  --hs-muted: var(--muted, #98a1ae);
+  --hs-accent: var(--accent, #ffb703);
+  --hs-good: var(--good, #40d99a);
+  --hs-bad: var(--bad, #ff6b6b);
+  color: var(--hs-ink);
+  font: 14px/1.5 "Inter", "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hive-suggestions *, .hive-suggestions *::before, .hive-suggestions *::after { box-sizing: border-box; }
+.hive-suggestions .hs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hive-suggestions .hs-title, .hive-suggestions .hs-form-title { margin: 0; font-size: 18px; }
+.hive-suggestions .hs-subtitle { margin: 3px 0 0; color: var(--hs-muted); font-size: 12px; }
+.hive-suggestions .hs-button {
+  border: 1px solid var(--hs-line); border-radius: 8px; padding: 7px 12px;
+  color: var(--hs-ink); background: transparent; font: inherit; cursor: pointer;
+}
+.hive-suggestions .hs-button:hover { border-color: var(--hs-accent); color: var(--hs-accent); }
+.hive-suggestions .hs-button:disabled { opacity: .55; cursor: wait; }
+.hive-suggestions .hs-button--primary { background: var(--hs-accent); border-color: var(--hs-accent); color: #171717; font-weight: 700; }
+.hive-suggestions .hs-button--accept:hover { border-color: var(--hs-good); color: var(--hs-good); }
+.hive-suggestions .hs-button--reject:hover { border-color: var(--hs-bad); color: var(--hs-bad); }
+.hive-suggestions .hs-message { margin: 0; color: var(--hs-muted); }
+.hive-suggestions .hs-message--error { color: var(--hs-bad); }
+.hive-suggestions .hs-message--empty { padding: 10px 12px; border: 1px dashed var(--hs-line); border-radius: 8px; }
+.hive-suggestions .hs-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; background: var(--hs-bg); border: 1px solid var(--hs-line); border-radius: 10px; }
+.hive-suggestions .hs-form-title { grid-column: 1 / -1; font-size: 14px; }
+.hive-suggestions .hs-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hive-suggestions .hs-field:nth-of-type(2), .hive-suggestions .hs-field:nth-of-type(3) { grid-column: 1 / -1; }
+.hive-suggestions .hs-label { color: var(--hs-muted); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.hive-suggestions .hs-field input, .hive-suggestions .hs-field textarea { width: 100%; border: 1px solid var(--hs-line); border-radius: 7px; padding: 8px; color: var(--hs-ink); background: var(--hs-bg-raised); font: inherit; }
+.hive-suggestions .hs-field textarea { min-height: 72px; resize: vertical; }
+.hive-suggestions .hs-form > .hs-button { justify-self: start; }
+.hive-suggestions .hs-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.hive-suggestions .hs-card { min-width: 0; padding: 14px; background: var(--hs-bg); border: 1px solid var(--hs-line); border-radius: 10px; }
+.hive-suggestions .hs-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.hive-suggestions .hs-card-title { min-width: 0; margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.hive-suggestions .hs-status { flex: none; padding: 2px 8px; border: 1px solid var(--hs-line); border-radius: 999px; color: var(--hs-muted); font-size: 10px; text-transform: uppercase; }
+.hive-suggestions .hs-status--accepted { color: var(--hs-good); border-color: var(--hs-good); }
+.hive-suggestions .hs-status--rejected { color: var(--hs-bad); border-color: var(--hs-bad); }
+.hive-suggestions .hs-detail { margin-top: 11px; }
+.hive-suggestions .hs-detail-label { margin: 0; color: var(--hs-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.hive-suggestions .hs-detail-text { margin: 3px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hive-suggestions .hs-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 12px; color: var(--hs-muted); font-size: 12px; }
+.hive-suggestions .hs-meta-item b { color: var(--hs-ink); }
+.hive-suggestions .hs-source { margin: 8px 0 0; color: var(--hs-muted); font-size: 11px; }
+.hive-suggestions .hs-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+@media (max-width: 600px) {
+  .hive-suggestions .hs-form { grid-template-columns: minmax(0, 1fr); }
+  .hive-suggestions .hs-field { grid-column: 1 / -1; }
+}

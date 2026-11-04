@@ -7,9 +7,9 @@ Serves harness/webui on :8170 and proxies:
 - /view/*    -> http://127.0.0.1:8765/view/*
 - /probe/P/*  -> http://127.0.0.1:P/*
 
-This exists only so the new shell can be reviewed without restarting live Hive
-or adding CORS. Production will serve the same files from FastAPI and use the
-real /v1 endpoints directly.
+The server is also embedded by ``python -m harness`` on the same port, so the
+release build has one start command and one browser tab. It stays a separate
+thread because it proxies same-origin to the FastAPI sidecar and needs no CORS.
 """
 
 from __future__ import annotations
@@ -29,7 +29,6 @@ REPO_ROOT = ROOT.parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 HIVE = "http://127.0.0.1:8765"
-ROLES = ROOT / "roles.json"
 TRACES = ROOT / "routing.jsonl"
 PREFERENCES = ROOT / "preferences.jsonl"
 RATIONALES = ROOT / "preference_rationales.jsonl"
@@ -43,6 +42,7 @@ DEFAULT_ROUTE_TARGETS = {
 }
 sys.path.insert(0, str(ROOT))
 import judge as judge_lib
+from harness.roles import load_roles, save_roles
 REPO = ROOT.parents[1]
 sys.path.insert(0, str(REPO / "splinter" / "splinter"))
 TIER = {"ultra_small": "simple", "medium": "medium", "escalation": "complex"}
@@ -58,38 +58,6 @@ MODEL_ENDPOINTS = {
     "dispatcher17": "http://127.0.0.1:8163",
     "clerk17": "http://127.0.0.1:8164",
 }
-DEFAULT_ROLES = {
-    "planner": "scion35",
-    "controller": "controller17",
-    "router": "scion35",
-    "face": "scion35",
-    "agency": "clerk17",
-    "mechanics": "reader17",
-    "judge": "d1-2b",
-    "rag": "reader17",
-    "risk": "guards",
-    "vision": "lfm3vl",
-    "placement": "auditor17",
-    "critic": "auditor17",
-    "dispatcher": "dispatcher17",
-}
-DEFAULT_PLACEMENTS = {
-    "planner": "non_display",
-    "controller": "display",
-    "router": "non_display",
-    "face": "non_display",
-    "agency": "non_display",
-    "mechanics": "display",
-    "judge": "display",
-    "rag": "display",
-    "risk": "",
-    "vision": "display",
-    "placement": "non_display",
-    "critic": "non_display",
-    "dispatcher": "non_display",
-}
-
-
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -399,17 +367,8 @@ class Handler(SimpleHTTPRequestHandler):
         self._send_json({"preferences": rows, "summary": summary})
 
     def _roles_get(self) -> None:
-        import json
-        roles = DEFAULT_ROLES
-        placements = DEFAULT_PLACEMENTS
-        if ROLES.is_file():
-            try:
-                saved = json.loads(ROLES.read_text())
-                roles = {**DEFAULT_ROLES, **(saved.get("roles") or {})}
-                placements = {**DEFAULT_PLACEMENTS, **(saved.get("placements") or {})}
-            except ValueError:
-                pass
-        body = json.dumps({"roles": roles, "placements": placements}).encode()
+        state = load_roles()
+        body = json.dumps(state).encode()
         self.send_response(200)
         self.send_header("content-type", "application/json")
         self.send_header("content-length", str(len(body)))
@@ -417,15 +376,18 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _roles_post(self) -> None:
-        import json
         length = int(self.headers.get("content-length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
         try:
             payload = json.loads(raw or b"{}")
-            roles = {**DEFAULT_ROLES, **(payload.get("roles") or {})}
-            placements = {**DEFAULT_PLACEMENTS, **(payload.get("placements") or {})}
-            ROLES.write_text(json.dumps({"roles": roles, "placements": placements}, indent=2) + "\n")
-            body = json.dumps({"ok": True, "roles": roles, "placements": placements}).encode()
+            current = load_roles()
+            roles = {**current["roles"], **(payload.get("roles") or {})}
+            placements = {**current["placements"],
+                          **(payload.get("placements") or {})}
+            path = save_roles(roles, placements)
+            body = json.dumps({"ok": True, "roles": roles,
+                               "placements": placements,
+                               "file": str(path)}).encode()
             self.send_response(200)
             self.send_header("content-type", "application/json")
             self.send_header("content-length", str(len(body)))
@@ -602,6 +564,9 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path == "/api/decision":
             self._proxy("http://127.0.0.1:8161/v1/systemone")
             return
+        if self.path == "/api/v1/role/chat/completions":
+            self._proxy_model(HIVE + "/v1/role/chat/completions")
+            return
         if self.path == "/api/judge/predict":
             self._judge_predict()
             return
@@ -649,11 +614,38 @@ class Handler(SimpleHTTPRequestHandler):
         print(f"{self.address_string()} {fmt % args}", flush=True)
 
 
+def configure(hive_url: str | None = None) -> None:
+    """Point the proxy at a non-default sidecar (tests, alternate ports)."""
+    global HIVE
+    if hive_url:
+        HIVE = hive_url.rstrip("/")
+
+
+def serve_in_thread(bind: str = "127.0.0.1", port: int = 8170,
+                    hive_url: str | None = None) -> ThreadingHTTPServer:
+    """Start the console in a daemon thread.
+
+    ``python -m harness`` uses this so one command serves both the API and the
+    console.  The caller owns shutdown; the process exit is enough for a
+    desktop launch.
+    """
+    import threading
+
+    configure(hive_url)
+    server = ThreadingHTTPServer((bind, port), Handler)
+    thread = threading.Thread(target=server.serve_forever,
+                              name="hive-console", daemon=True)
+    thread.start()
+    return server
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8170)
     parser.add_argument("--bind", default="127.0.0.1")
+    parser.add_argument("--hive", default="http://127.0.0.1:8765")
     args = parser.parse_args()
+    configure(args.hive)
     print(f"serving {ROOT} on http://{args.bind}:{args.port}", flush=True)
     ThreadingHTTPServer((args.bind, args.port), Handler).serve_forever()
     return 0

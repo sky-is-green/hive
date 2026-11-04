@@ -80,7 +80,7 @@ Scion-35B, 9/9 on the original controller tasks, 0.25 s median through the GGUF
 server. This controller-only checkpoint was live on `:8156` until the
 controller+planner promotion below; it remains the rollback artifact.
 
-The private HF repo now hosts the multirole checkpoint:
+The HF repo hosts the multirole checkpoint:
 https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1
 
 The packaging script is reusable for the next role:
@@ -117,7 +117,7 @@ Result: controller **59/60** (was 54/60), original 9/9; planner **69/77 HF**
 transfer. The multirole checkpoint is live on `:8156` as **Hive Conductor
 1.7B** (`conductor-1.7b`), with Scion as fallback.
 
-Published (private): https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1
+Published: https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1
 
 
 ## Ternary path — Qwen/Scion/Bonsai recipe

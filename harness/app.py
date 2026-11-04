@@ -83,6 +83,17 @@ from harness.hardware import (disk_summary, non_display_index,
                                parse_visible_indices)
 from harness.models import drain_slots, page_cache_share, prefetch_weights
 from harness.models import LlamaServerManager
+from harness.roles import (
+    DEFAULT_PLACEMENTS as DEFAULT_ROLE_PLACEMENTS,
+    DEFAULT_ROLES,
+    NON_CHAT_MODELS,
+    NON_CHAT_ROLES,
+    load_roles,
+    provider_name as role_provider_name,
+    resolve_provider as resolve_role_provider,
+    roles_path,
+    save_roles,
+)
 from harness.cascade import api as cascade_api
 from harness.reports import (
     render_report_page,
@@ -1191,6 +1202,12 @@ class ProviderConfigRequest(BaseModel):
     )
 
 
+class RoleConfigRequest(BaseModel):
+    """Replace the live role assignment."""
+    roles: dict[str, str] = {}
+    placements: dict[str, str] = {}
+
+
 class SandboxExecRequest(BaseModel):
     """A command to run in the sandbox."""
 
@@ -1398,6 +1415,11 @@ class ChatStopRequest(BaseModel):
 class AgentMessageRequest(BaseModel):
     message: str
     conversation_id: str = "default"
+    role: str = Field(
+        "",
+        description="Optional live role (controller, agency, ...); its model "
+                    "and provider override the default provider.",
+    )
     assistant: bool = Field(
         False,
         description="App-assistant mode: give the agent the Studio's own API map.",
@@ -2180,6 +2202,167 @@ def create_app(
                 "providers": st.registry.redacted(), "default": st.registry.default,
             }),
         }
+
+    # ------------------------------------------------------------------
+    # Live role assignment.  This file is the single source of truth for the
+    # console, the agent and the role-chat endpoint; the legacy cascade
+    # taxonomy in harness/cascade is a different thing and is not touched.
+    def _roles_payload() -> dict:
+        current = load_roles()
+        roles = current["roles"]
+        placements = current["placements"]
+        resolved: dict[str, dict] = {}
+        for role, model in roles.items():
+            chat = role not in NON_CHAT_ROLES and model not in NON_CHAT_MODELS
+            info: dict[str, Any] = {
+                "model": model,
+                "provider": role_provider_name(model),
+                "chat": chat,
+                "ready": False,
+            }
+            if chat:
+                provider = resolve_role_provider(st.registry, model)
+                if provider is not None:
+                    info.update({
+                        "ready": True,
+                        "provider": provider.name,
+                        "base_url": provider.base_url,
+                        "provider_model": provider.model,
+                    })
+                else:
+                    info["error"] = (
+                        f"no provider serves '{model}' "
+                        f"(preferred name '{info['provider']}')")
+            else:
+                info["error"] = (
+                    "policy role" if role in NON_CHAT_ROLES
+                    else f"{model} is not an OpenAI-compatible chat model")
+            resolved[role] = info
+        return {
+            "roles": roles,
+            "placements": placements,
+            "resolved": resolved,
+            "file": str(roles_path()),
+        }
+
+    @app.get("/v1/roles")
+    def get_roles():
+        """Read the live role assignment and whether each seat resolves."""
+        return _roles_payload()
+
+    @app.post("/v1/roles")
+    def set_roles(req: RoleConfigRequest):
+        """Replace the live role assignment (partial maps are merged)."""
+        if not req.roles and not req.placements:
+            raise HTTPException(422, "roles or placements required")
+        unknown = set(req.roles) - set(DEFAULT_ROLES)
+        if unknown:
+            raise HTTPException(
+                422, "unknown role(s): " + ", ".join(sorted(unknown)))
+        current = load_roles()
+        roles = {**current["roles"], **req.roles}
+        placements = {**current["placements"], **req.placements}
+        path = save_roles(roles, placements)
+        return {"ok": True, "persisted_to": str(path), **_roles_payload()}
+
+    def _role_target(role: str) -> tuple[str, Provider]:
+        current = load_roles()
+        model = current["roles"].get(role)
+        if not model:
+            raise HTTPException(404, f"unknown role '{role}'")
+        if role in NON_CHAT_ROLES or model in NON_CHAT_MODELS:
+            raise HTTPException(
+                409, f"role '{role}' is assigned to '{model}', which is not "
+                     "an OpenAI-compatible chat model")
+        provider = resolve_role_provider(st.registry, model)
+        if provider is None:
+            raise HTTPException(
+                503, f"role '{role}' is assigned to '{model}', but no "
+                     f"provider serves it (preferred name "
+                     f"'{role_provider_name(model)}')")
+        return model, provider
+
+    @app.post("/v1/role/chat/completions")
+    async def role_chat(request: Request):
+        """OpenAI-compatible chat routed through the live role assignment.
+
+        The body is the normal chat-completions payload plus ``role`` (for
+        example ``"controller"``).  The role's provider is authoritative: the
+        request's ``model`` field is replaced, so a UI bug cannot silently
+        call a different model than the role names.
+        """
+        try:
+            payload = await request.json()
+        except ValueError as exc:
+            raise HTTPException(422, "body must be valid JSON") from exc
+        if not isinstance(payload, dict):
+            raise HTTPException(422, "body must be an object")
+        role = str(payload.pop("role", "") or "").strip()
+        if not role:
+            raise HTTPException(422, "role is required")
+        model, provider = _role_target(role)
+        if not payload.get("messages"):
+            raise HTTPException(422, "messages are required")
+
+        forwarded = dict(payload)
+        forwarded["model"] = provider.model or model
+        headers = {"content-type": "application/json", "x-hive-role": role}
+        if provider.api_key:
+            headers["authorization"] = f"Bearer {provider.api_key}"
+        headers.update(provider.to_dict().get("headers") or {})
+
+        url = provider.base_url.rstrip("/") + "/v1/chat/completions"
+        stream = bool(forwarded.get("stream"))
+        session = requests.Session()
+        session.trust_env = False
+        try:
+            upstream = session.post(
+                url, json=forwarded, headers=headers, stream=stream,
+                timeout=(10, 900),
+            )
+        except requests.RequestException as exc:
+            session.close()
+            raise HTTPException(
+                502, f"role '{role}' provider {provider.name} is unreachable: "
+                     f"{exc}") from exc
+        if upstream.status_code >= 400:
+            detail = upstream.text[:2000]
+            upstream.close()
+            session.close()
+            raise HTTPException(
+                upstream.status_code,
+                f"role '{role}' provider {provider.name} returned "
+                f"{upstream.status_code}: {detail}",
+            )
+
+        if not stream:
+            content = upstream.content
+            media_type = upstream.headers.get("content-type", "application/json")
+            upstream.close()
+            session.close()
+            return Response(content=content, media_type=media_type,
+                            headers={"x-hive-role": role,
+                                     "cache-control": "no-store"})
+
+        def relay():
+            try:
+                for line in upstream.iter_lines(chunk_size=1024,
+                                                decode_unicode=True):
+                    if line:
+                        yield (line if isinstance(line, str)
+                               else line.decode("utf-8", "replace")) + "\n\n"
+            except requests.RequestException as exc:
+                yield ("data: " + json.dumps(
+                    {"error": f"role provider stream failed: {exc}"}) + "\n\n")
+            finally:
+                upstream.close()
+                session.close()
+
+        return StreamingResponse(
+            relay(),
+            media_type=upstream.headers.get("content-type", "text/event-stream"),
+            headers={"x-hive-role": role, "cache-control": "no-store"},
+        )
 
     # ------------------------------------------------------------------
     @app.post("/v1/engines")
@@ -3025,10 +3208,14 @@ def create_app(
             raise HTTPException(422, "message must not be empty")
         if not _load_studio_settings()["tools_enabled"]:
             raise HTTPException(403, "tool use is off (Studio settings)")
-        try:
-            provider = st.registry.resolve(None)
-        except LookupError as exc:
-            raise HTTPException(502, str(exc))
+        role = (req.role or "").strip()
+        if role:
+            _model, provider = _role_target(role)
+        else:
+            try:
+                provider = st.registry.resolve(None)
+            except LookupError as exc:
+                raise HTTPException(502, str(exc))
         base_url = provider.base_url.rstrip("/") + "/v1"
         q: "queue.Queue[dict]" = queue.Queue()
 

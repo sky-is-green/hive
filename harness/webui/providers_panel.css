@@ -1,0 +1,368 @@
+/* Hive Console — providers panel (Round 1, F2)
+ * Scoped entirely under .hive-providers so it can be dropped into any page.
+ * Colours come from the shell tokens with fallbacks, so it also renders in
+ * isolation (mock harness, storybook-style preview). */
+
+.hive-providers {
+  --hp-bg: var(--panel, #14161a);
+  --hp-bg-2: var(--panel-2, #1b1e23);
+  --hp-input: var(--hp-bg-2);
+  --hp-line: var(--line, #2a2e36);
+  --hp-line-soft: var(--line-soft, #20242b);
+  --hp-ink: var(--ink, #f2f4f7);
+  --hp-muted: var(--muted, #98a1ae);
+  --hp-accent: var(--accent, #ffb703);
+  --hp-accent-2: var(--accent-2, #ffdd00);
+  --hp-good: var(--good, #40d99a);
+  --hp-warn: var(--warn, #ffb020);
+  --hp-bad: var(--bad, #ff6b6b);
+  --hp-radius: 12px;
+
+  display: grid;
+  gap: 14px;
+  color: var(--hp-ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hive-providers [hidden] { display: none !important; }
+
+/* ------------------------------------------------------------------ head */
+
+.hive-providers .hp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hive-providers .hp-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.hive-providers .hp-sub {
+  margin: 3px 0 0;
+  color: var(--hp-muted);
+  font-size: 12.5px;
+  max-width: 62ch;
+}
+
+.hive-providers .hp-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hive-providers .hp-pill {
+  border: 1px solid var(--hp-line);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  color: var(--hp-muted);
+  white-space: nowrap;
+}
+
+.hive-providers .hp-file {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  color: #7b8492;
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- banners */
+
+.hive-providers .hp-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--hp-line);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: var(--hp-bg-2);
+  font-size: 12.5px;
+}
+
+.hive-providers .hp-banner-body {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  flex: 1;
+}
+
+.hive-providers .hp-banner-body strong { font-weight: 650; }
+.hive-providers .hp-banner-hint { color: var(--hp-muted); font-size: 11.5px; }
+
+.hive-providers .hp-banner.hp-error {
+  border-left-color: var(--hp-bad);
+  background: rgba(255, 107, 107, 0.07);
+}
+
+.hive-providers .hp-banner.hp-conflict {
+  border-left-color: var(--hp-warn);
+  background: rgba(255, 176, 32, 0.08);
+}
+
+.hive-providers .hp-banner.hp-ok {
+  border-left-color: var(--hp-good);
+  background: rgba(64, 217, 154, 0.07);
+  color: var(--hp-good);
+}
+
+/* --------------------------------------------------------------- toolbar */
+
+.hive-providers .hp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hive-providers .hp-btn {
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hp-line);
+  background: var(--hp-bg-2);
+  color: var(--hp-ink);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+}
+
+.hive-providers .hp-btn:hover:not(:disabled) {
+  border-color: var(--hp-accent);
+  color: var(--hp-accent-2);
+}
+
+.hive-providers .hp-btn:focus-visible {
+  outline: 2px solid var(--hp-accent);
+  outline-offset: 1px;
+}
+
+.hive-providers .hp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hive-providers .hp-btn.hp-primary {
+  background: var(--hp-accent);
+  border-color: var(--hp-accent);
+  color: #14100a;
+  font-weight: 650;
+}
+
+.hive-providers .hp-btn.hp-primary:hover:not(:disabled) {
+  background: var(--hp-accent-2);
+  border-color: var(--hp-accent-2);
+  color: #14100a;
+}
+
+.hive-providers .hp-btn.hp-add { border-style: dashed; }
+
+.hive-providers .hp-btn.hp-danger {
+  border-color: rgba(255, 107, 107, 0.4);
+  color: var(--hp-bad);
+  background: transparent;
+}
+
+.hive-providers .hp-btn.hp-danger:hover:not(:disabled) {
+  border-color: var(--hp-bad);
+  color: #ffd9d9;
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.hive-providers .hp-dirty {
+  margin-left: auto;
+  color: var(--hp-warn);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+/* ----------------------------------------------------------------- list */
+
+.hive-providers .hp-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hive-providers .hp-card {
+  border: 1px solid var(--hp-line);
+  border-radius: var(--hp-radius);
+  background: var(--hp-bg);
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.hive-providers .hp-card.hp-is-default {
+  border-color: rgba(255, 183, 3, 0.45);
+  box-shadow: inset 3px 0 0 var(--hp-accent);
+}
+
+.hive-providers .hp-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.hive-providers .hp-card-name {
+  font-weight: 650;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hive-providers .hp-default {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--hp-muted);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hive-providers .hp-default input { accent-color: var(--hp-accent); }
+
+.hive-providers .hp-badge {
+  border: 1px solid rgba(64, 217, 154, 0.35);
+  color: var(--hp-good);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.hive-providers .hp-card-head .hp-btn {
+  margin-left: auto;
+  padding: 5px 9px;
+  font-size: 11.5px;
+}
+
+/* ----------------------------------------------------------------- form */
+
+.hive-providers .hp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.hive-providers .hp-grid .hp-field:nth-child(3),
+.hive-providers .hp-grid .hp-field:nth-child(5) {
+  grid-column: 1 / -1;
+}
+
+.hive-providers .hp-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hive-providers .hp-label {
+  color: var(--hp-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.hive-providers input[type="text"],
+.hive-providers input[type="password"],
+.hive-providers textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--hp-ink);
+  background: var(--hp-input);
+  border: 1px solid var(--hp-line);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.hive-providers textarea {
+  resize: vertical;
+  min-height: 54px;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
+.hive-providers input:focus,
+.hive-providers textarea:focus {
+  outline: 1px solid var(--hp-accent);
+  border-color: var(--hp-accent);
+}
+
+.hive-providers input.hp-invalid,
+.hive-providers textarea.hp-invalid {
+  border-color: var(--hp-bad);
+  outline: 1px solid rgba(255, 107, 107, 0.6);
+}
+
+.hive-providers input::placeholder,
+.hive-providers textarea::placeholder { color: #5e6672; }
+
+.hive-providers .hp-hint {
+  color: var(--hp-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.hive-providers .hp-row-errors {
+  display: grid;
+  gap: 2px;
+}
+
+.hive-providers .hp-row-error {
+  color: var(--hp-bad);
+  font-size: 11.5px;
+}
+
+/* ---------------------------------------------------------- empty / foot */
+
+.hive-providers .hp-empty {
+  border: 1px dashed var(--hp-line);
+  border-radius: var(--hp-radius);
+  padding: 22px;
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.hive-providers .hp-empty p {
+  margin: 0;
+  color: var(--hp-muted);
+  font-size: 12.5px;
+}
+
+.hive-providers .hp-foot {
+  margin: 0;
+  color: var(--hp-muted);
+  font-size: 11.5px;
+}
+
+.hive-providers[data-state="error"] .hp-foot { color: var(--hp-bad); }
+
+@media (max-width: 720px) {
+  .hive-providers .hp-grid { grid-template-columns: minmax(0, 1fr); }
+  .hive-providers .hp-grid .hp-field:nth-child(3),
+  .hive-providers .hp-grid .hp-field:nth-child(5) { grid-column: auto; }
+  .hive-providers .hp-file { max-width: 18ch; }
+}

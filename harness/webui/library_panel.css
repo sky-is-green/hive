@@ -1,0 +1,50 @@
+/* HiveLibraryPanel — scoped under .hive-lib. */
+.hive-lib {
+  --hl-bg: var(--panel, #14161a); --hl-bg2: var(--panel-2, #1b1e23);
+  --hl-line: var(--line, #2a2e36); --hl-ink: var(--ink, #f2f4f7);
+  --hl-muted: var(--muted, #98a1ae); --hl-accent: var(--accent, #ffb703);
+  --hl-good: var(--good, #40d99a); --hl-bad: var(--bad, #ff6b6b);
+  display: flex; flex-direction: column; gap: 14px; color: var(--hl-ink);
+  font: 14px/1.5 "Inter", "Segoe UI", system-ui, sans-serif;
+}
+.hive-lib * { box-sizing: border-box; }
+.hive-lib .hl-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.hive-lib .hl-title { margin: 0; font-size: 18px; }
+.hive-lib .hl-sub, .hive-lib .hl-note { color: var(--hl-muted); font-size: 12px; margin: 3px 0 0; }
+.hive-lib .hl-pathbox, .hive-lib .hl-panel { background: var(--hl-bg); border: 1px solid var(--hl-line); border-radius: 12px; padding: 14px; }
+.hive-lib .hl-label { display: block; color: var(--hl-muted); font-size: 11.5px; margin-bottom: 5px; }
+.hive-lib .hl-pathrow, .hive-lib .hl-searchrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.hive-lib .hl-input { flex: 1; min-width: 220px; background: #0d0f12; border: 1px solid var(--hl-line); color: var(--hl-ink); border-radius: 7px; padding: 8px 9px; font: inherit; font-size: 12.5px; }
+.hive-lib .hl-btn, .hive-lib .hl-del { background: transparent; border: 1px solid var(--hl-line); color: var(--hl-muted); border-radius: 7px; padding: 7px 11px; font: inherit; font-size: 12px; cursor: pointer; }
+.hive-lib .hl-btn:hover { border-color: var(--hl-accent); color: var(--hl-accent); }
+.hive-lib .hl-primary { background: var(--hl-accent); border-color: var(--hl-accent); color: #111; font-weight: 700; }
+.hive-lib .hl-del { color: var(--hl-bad); border-color: rgba(255,107,107,.35); padding: 4px 8px; font-size: 11px; }
+.hive-lib .hl-message { padding: 9px 12px; border: 1px solid var(--hl-line); border-radius: 9px; color: var(--hl-muted); font-size: 12px; }
+.hive-lib .hl-message.bad { color: var(--hl-bad); border-color: rgba(255,107,107,.35); }
+.hive-lib .hl-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+.hive-lib .hl-panel-head h3, .hive-lib .hl-downloads h4 { margin: 0; font-size: 13px; }
+.hive-lib .hl-table-wrap { overflow: auto; }
+.hive-lib .hl-table { width: 100%; border-collapse: collapse; }
+.hive-lib th, .hive-lib td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--hl-line); font-size: 12px; }
+.hive-lib th { color: var(--hl-muted); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+.hive-lib .hl-mono { font-family: "JetBrains Mono", Consolas, monospace; font-size: 11px; }
+.hive-lib .hl-strong { font-weight: 650; }
+.hive-lib .hl-empty { color: var(--hl-muted); padding: 12px 4px; font-size: 12px; }
+.hive-lib .hl-repo { border: 1px solid var(--hl-line); border-radius: 9px; padding: 10px; margin-top: 8px; background: var(--hl-bg2); }
+.hive-lib .hl-repo-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.hive-lib .hl-file { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 4px 0; }
+.hive-lib .hl-file code { color: var(--hl-accent); font-size: 11px; }
+.hive-lib .hl-downloads { margin-top: 14px; border-top: 1px solid var(--hl-line); padding-top: 10px; }
+.hive-lib .hl-download { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 4px 0; font-size: 11.5px; }
+.hive-lib .hl-state { color: var(--hl-muted); }
+.hive-lib .hl-state.done { color: var(--hl-good); }
+.hive-lib .hl-state.error { color: var(--hl-bad); }
+.hive-lib .hl-err { color: var(--hl-bad); }
+.hive-lib .hl-pct { color: var(--hl-accent); }
+
+.hive-lib .hl-sources { margin-top: 2px; }
+.hive-lib .hl-source-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.hive-lib .hl-source { display: flex; flex-direction: column; gap: 2px; padding: 9px 11px; border: 1px solid var(--hl-line); border-radius: 8px; background: var(--hl-bg2); color: var(--hl-ink); text-decoration: none; }
+.hive-lib .hl-source:hover { border-color: var(--hl-accent); }
+.hive-lib .hl-source b { font-size: 12px; color: var(--hl-accent); }
+.hive-lib .hl-source span { font-size: 11px; color: var(--hl-muted); }

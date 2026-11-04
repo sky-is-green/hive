@@ -17,10 +17,10 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **140 REST operations** across 129 paths (131 operations under `/v1/`).
+Studio serves **143 REST operations** across 131 paths (134 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
-The suite is green (**1649 tests pass, 5 skipped**, verified Oct 27); the live
+The suite is green (**1715 tests pass, 5 skipped**, verified Nov 4); the live
 batteries and the Studio are under active development.
 
 ---
@@ -236,14 +236,14 @@ Flat import names are preserved (`experiments.*`, `testing.*`, `tests.*`,
 
 Two commands are the whole story, run from this checkout: `--setup` copies
 `providers.example.json` → `providers.local.json` if missing, probes for a reachable
-backend (LM Studio on `:1234`, or auto-starts the local `llama-server` from
-`models/gguf`), and prints the next step. The studio serves the splinter over a
+backend (LM Studio on `:1234`, or a local `llama-server` from `models/gguf`),
+creates a provider config if one is missing, and prints the next step. The studio serves the splinter over a
 FastAPI API; the endpoint contract lives in `harness/app.py`, and the
 [`splinter/docs/INTEGRATE.md`](../splinter/docs/INTEGRATE.md) shows how to point external clients at it.
 
 ```powershell
 .\.venv\Scripts\python -m harness --setup   # copies providers config, probes backend, warms the drone
-.\.venv\Scripts\python -m harness           # studio UI on http://127.0.0.1:8765
+.\.venv\Scripts\python -m harness           # console on http://127.0.0.1:8170
 ```
 
 ## Sandbox (optional, Docker-backed)
@@ -406,7 +406,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (131 operations across 120 paths under `/v1/`)
+### API surface (134 operations across 122 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|
@@ -431,7 +431,9 @@ a single hive theme (yellow/black) across every page.
 | Training | `/v1/training/engines`, `/launch`, `/status/{run}`, `/report/{run}`, `/v1/trainer/*` |
 | Conversation | `/v1/splinter/*` (turn, stream, reset, mode), `/v1/openai/*` |
 
-Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`.
+Live, always-current OpenAPI docs: `http://127.0.0.1:8765/docs`. The
+Hive console is the same process at `http://127.0.0.1:8170`; `--no-console`
+keeps the legacy API/report surface only.
 
 **Hand-maintained endpoint map:** [`API.md`](API.md) — every endpoint
 grouped by what it is for, with the conventions (auth, revisions, secrets).

@@ -1,0 +1,16 @@
+{
+  "targets": {
+    "simple": {
+      "model": "lfm3",
+      "engine": "lfm3-1.7b"
+    },
+    "medium": {
+      "model": "scion35",
+      "engine": "scion-35b"
+    },
+    "complex": {
+      "model": "ds41",
+      "engine": "ds41-strata"
+    }
+  }
+}

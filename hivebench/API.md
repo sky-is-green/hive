@@ -106,6 +106,14 @@ curl http://127.0.0.1:8765/health
 | `GET` | `/v1/provider/config` | List configured providers and the default one. |
 | `POST` | `/v1/provider/config` | Replace the provider list (name, base_url, api_key, model). — body: `#/components/schemas/ProviderConfigRequest` |
 
+### Roles — the live Hive assignment
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/roles` | Read roles, placements, and whether each seat resolves to a configured provider. |
+| `POST` | `/v1/roles` | Replace the live role assignment (partial maps are merged). — body: `#/components/schemas/RoleConfigRequest` |
+| `POST` | `/v1/role/chat/completions` | OpenAI-compatible chat routed through a role; the role's provider overrides `model`. |
+
 ### Agent — dsh turns, presets
 
 | Method | Path | Purpose |

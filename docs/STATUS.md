@@ -1,10 +1,10 @@
-# Status — 2026-10-22
+# Status — 2026-11-04
 
-**This is a research harness, not a usable product yet.** The reference
+**This is a research harness with a supported local build path.** The reference
 serves are down or reserved for engine work, and the paid tier's key is
-expired. The free OpenCode API tier is measured separately. What is
-published is the measurement record, the code that produced it and the
-contracts the next phase is built against.
+expired. The free OpenCode API tier is measured separately. What is published
+is the measurement record, the code that produced it, the Hive 1.7B role
+roster, and the contracts the next phase is built against.
 
 ## Measured (the same 28 organic tasks unless stated)
 

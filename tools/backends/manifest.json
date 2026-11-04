@@ -44,7 +44,9 @@
         "repo": "ggml-org/llama.cpp",
         "assets": {
           "linux-x64": "llama-*-bin-ubuntu-x64.tar.gz",
-          "linux-arm64": "llama-*-bin-ubuntu-arm64.tar.gz"
+          "linux-arm64": "llama-*-bin-ubuntu-arm64.tar.gz",
+          "win-x64": "llama-*-bin-win-cpu-x64.zip",
+          "win-arm64": "llama-*-bin-win-cpu-arm64.zip"
         }
       }
     },
@@ -53,6 +55,22 @@
       "binary_dir": "tools/backends/sycl",
       "accelerators": ["intel"],
       "notes": "Intel GPUs."
+    },
+    "lfm3": {
+      "label": "LFM3 / d1 (Vulkan b11960)",
+      "binary_dir": "tools/backends/lfm3",
+      "accelerators": ["amd", "nvidia", "intel"],
+      "notes": "llama.cpp b11960/v0.8.0: LFM3 text/VL, d1 system-one decisions, mmproj.",
+      "release": {
+        "repo": "ggml-org/llama.cpp",
+        "tag": "b11960",
+        "assets": {
+          "linux-x64": "llama-b11960-bin-ubuntu-vulkan-x64.tar.gz",
+          "linux-arm64": "llama-b11960-bin-ubuntu-vulkan-arm64.tar.gz",
+          "win-x64": "llama-b11960-bin-win-vulkan-x64.zip",
+          "win-arm64": "llama-b11960-bin-win-vulkan-arm64.zip"
+        }
+      }
     },
     "scion": {
       "label": "Scion (moe-corr-runtime)",

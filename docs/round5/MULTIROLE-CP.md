@@ -89,8 +89,7 @@ controller role back to `scion35`.
 
 ## Published checkpoint
 
-The multirole checkpoint replaced the controller-only files in the **private**
-repo:
+The multirole checkpoint replaced the controller-only files in the repo:
 
 `https://huggingface.co/SkyIsNotGreen/hive-conductor-1.7b-v1`
 
@@ -106,7 +105,7 @@ artifacts.
    planner hold, the constraint family is real.
 2. Add the deterministic schedule guard and run a live canary on controller
    traffic; roll back to v3 or Scion if schedule failures appear.
-3. Decide whether the now-private HF repo becomes public.
+3. Release visibility is handled by the release checklist; the weights stay private until that flip.
 
 ## Repro
 

@@ -203,6 +203,18 @@ def main(argv: list[str] | None = None) -> int:
         "--reload", action="store_true",
         help="auto-reload on Python file changes (dev: CSS in studio.css is live on refresh without this)",
     )
+    parser.add_argument(
+        "--console", action="store_true", default=True,
+        help="serve the Hive console (default; use --no-console to disable)",
+    )
+    parser.add_argument(
+        "--no-console", dest="console", action="store_false",
+        help="serve only the API and the legacy reports UI",
+    )
+    parser.add_argument(
+        "--console-port", type=int, default=8170,
+        help="port for the Hive console (default 8170)",
+    )
     args = parser.parse_args(argv)
 
     _protect_git_excludes(Path.cwd(), [
@@ -216,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
     log_dir = Path(args.log_dir)
     pidfile = log_dir / "studio.pid"
     url = f"http://{args.host}:{args.port}"
+    open_url = (f"http://{args.host}:{args.console_port}"
+                if args.console and args.console_port != args.port else url)
 
     if args.stop:
         return _stop(pidfile)
@@ -229,9 +243,9 @@ def main(argv: list[str] | None = None) -> int:
         # must not leak into the child's interpreter arguments.
         pid = _spawn_detached(["-m", "harness", *child_argv], log_path)
         pidfile.write_text(str(pid))
-        print(f"HiveBench Studio starting at {url} (pid {pid}; log: {log_path})")
+        print(f"HiveBench Studio starting at {open_url} (pid {pid}; log: {log_path})")
         if not args.no_open:
-            _wait_and_open(url)
+            _wait_and_open(open_url)
         return 0
 
     kwargs = {
@@ -257,6 +271,24 @@ def main(argv: list[str] | None = None) -> int:
     )
     app = create_app(**kwargs)
 
+    # The console is served from the same process, on its own port, so one
+    # command gives the operator the UI and the API.  It proxies same-origin
+    # to the API above; no CORS or second launch step.
+    if args.console and args.console_port != args.port:
+        try:
+            from harness.webui import dev_server
+
+            dev_server.serve_in_thread(
+                bind=args.host, port=args.console_port, hive_url=url)
+            print(f"Hive console: {open_url}", flush=True)
+        except OSError as exc:
+            open_url = url
+            print(f"Hive console unavailable on :{args.console_port} ({exc}); "
+                  f"using {url}", flush=True)
+        except Exception as exc:  # noqa: BLE001 - API still works
+            open_url = url
+            print(f"Hive console unavailable ({exc}); using {url}", flush=True)
+
     # Auto-start removed: studio no longer loads an LLM on boot.
     # Models are started explicitly via POST /v1/server/start or the UI Load button.
     # The --no-auto-start flag is kept for compatibility but is now the default.
@@ -275,7 +307,7 @@ def main(argv: list[str] | None = None) -> int:
     # Browser opens once the port answers — foreground and detached alike
     # (dsh-web behavior; --no-open opts out).
     if not args.no_open:
-        threading.Thread(target=_wait_and_open, args=(url,), daemon=True).start()
+        threading.Thread(target=_wait_and_open, args=(open_url,), daemon=True).start()
 
     uvicorn.run(app, host=args.host, port=args.port, log_level="info", reload=args.reload)
     return 0
@@ -285,22 +317,38 @@ def _setup(providers_file: Path) -> int:
     """Guided first run: config, backend probe, next command."""
     import shutil
 
-    from backend.providers import DEFAULT_PROVIDERS_FILE
-
     print("HiveBench Studio — first-run setup")
     print("-" * 46)
 
     # 1. providers config
     if not providers_file.exists():
-        example = Path("providers.example.json")
-        if example.exists():
-            providers_file.parent.mkdir(parents=True, exist_ok=True)
+        root = Path(__file__).resolve().parents[1]
+        example = next((p for p in (
+            Path("providers.example.json"),
+            Path("splinter") / "providers.example.json",
+            root / "providers.example.json",
+            root / "splinter" / "providers.example.json",
+        ) if p.is_file()), None)
+        providers_file.parent.mkdir(parents=True, exist_ok=True)
+        if example:
             shutil.copy2(example, providers_file)
-            print(f"  [ok] created {providers_file} from providers.example.json")
-            print("       (default provider is 'lmstudio' on localhost:1234)")
+            print(f"  [ok] created {providers_file} from {example}")
+            print("       (edit it to remove unused providers or add keys)")
         else:
-            print(f"  [..] no providers.example.json found; using defaults "
-                  f"({DEFAULT_PROVIDERS_FILE} not required)")
+            # The minimum a first run needs: a local OpenAI-compatible
+            # endpoint.  Loading a model in the console registers the real
+            # port and model name.
+            providers_file.write_text(json.dumps({
+                "providers": [{
+                    "name": "lmstudio",
+                    "base_url": "http://localhost:1234",
+                    "api_key": "lm-studio",
+                    "model": "",
+                    "headers": {},
+                }],
+                "default": "lmstudio",
+            }, indent=2) + "\n", encoding="utf-8")
+            print(f"  [ok] created {providers_file} with a local provider")
     else:
         print(f"  [ok] providers config present: {providers_file}")
 
@@ -328,12 +376,13 @@ def _setup(providers_file: Path) -> int:
         print(f"  [..] drone download skipped ({str(exc)[:80]})")
 
     # 4. local llama-server binary (managed mode)
-    llama_bin = Path("tools/llama.cpp/llama-server.exe")
+    exe = "llama-server.exe" if os.name == "nt" else "llama-server"
+    llama_bin = Path("tools/llama.cpp") / exe
     if llama_bin.exists():
-        print(f"  [ok] local llama-server found ({llama_bin}); "
-              "auto-start will serve models/gguf on :1234")
+        print(f"  [ok] local llama-server found ({llama_bin})")
     else:
-        print("  [..] no local llama-server (auto-start needs models/gguf)")
+        print("  [..] no local llama-server under tools/llama.cpp; "
+              "use the console Models tab or `hive setup`")
 
     # 5. next step
     print("-" * 46)
@@ -342,13 +391,13 @@ def _setup(providers_file: Path) -> int:
         print("    python -m harness            # or: hivebench-harness")
         print("    python -m harness --detach   # headless: no console window,"
               " opens the browser")
-        print("Then open http://127.0.0.1:8765")
+        print("Then use the Hive console (http://127.0.0.1:8170).")
     else:
         print("No reachable backend yet. Either:")
         print("  1. start LM Studio with a model loaded (localhost:1234), or")
-        print("  2. drop GGUF files into models/gguf and run:")
+        print("  2. put a GGUF in models/gguf and start it from the console:")
         print("     python -m harness")
-        print("     (auto-start will launch llama-server for you)")
+        print("     Models → load; the provider is registered automatically.")
     return 0
 
 

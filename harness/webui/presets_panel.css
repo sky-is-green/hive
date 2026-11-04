@@ -1,0 +1,67 @@
+/* Hive agent presets browser. All styles are scoped to the standalone panel. */
+.hive-presets {
+  --hpr-bg: var(--panel, #14161a);
+  --hpr-bg-2: var(--panel-2, #1b1e23);
+  --hpr-line: var(--line, #2a2e36);
+  --hpr-ink: var(--ink, #f2f4f7);
+  --hpr-muted: var(--muted, #98a1ae);
+  --hpr-accent: var(--accent, #ffb703);
+  --hpr-good: var(--good, #40d99a);
+  --hpr-warn: var(--warn, #ffb020);
+  --hpr-bad: var(--bad, #ff6b6b);
+  display: grid;
+  gap: 14px;
+  color: var(--hpr-ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.hive-presets [hidden] { display: none !important; }
+.hive-presets .hpr-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.hive-presets .hpr-heading > div { font-size: 16px; font-weight: 650; }
+.hive-presets .hpr-sub { max-width: 68ch; margin: 3px 0 0; color: var(--hpr-muted); font-size: 12.5px; }
+.hive-presets .hpr-status, .hive-presets .hpr-message { color: var(--hpr-muted); font-size: 12px; }
+.hive-presets .hpr-message { padding: 9px 11px; border: 1px solid var(--hpr-line); border-radius: 9px; }
+.hive-presets .hpr-error { color: var(--hpr-bad); border-left: 3px solid var(--hpr-bad); background: rgba(255, 107, 107, .06); }
+.hive-presets .hpr-notice { color: var(--hpr-good); border-left: 3px solid var(--hpr-good); background: rgba(64, 217, 154, .06); }
+.hive-presets .hpr-groups { display: grid; gap: 14px; }
+.hive-presets .hpr-group { display: grid; gap: 8px; }
+.hive-presets .hpr-group-title { margin: 0; font-size: 13px; letter-spacing: .04em; }
+.hive-presets .hpr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 10px; }
+.hive-presets .hpr-card, .hive-presets .hpr-copy-panel, .hive-presets .hpr-detail {
+  min-width: 0; padding: 12px; border: 1px solid var(--hpr-line); border-radius: 11px; background: var(--hpr-bg);
+}
+.hive-presets .hpr-card { display: grid; align-content: start; gap: 8px; }
+.hive-presets .hpr-card.hpr-selected { border-color: var(--hpr-accent); box-shadow: inset 3px 0 var(--hpr-accent); }
+.hive-presets .hpr-card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.hive-presets .hpr-name { font-size: 13px; }
+.hive-presets .hpr-id { color: var(--hpr-muted); font-size: 11px; overflow-wrap: anywhere; }
+.hive-presets .hpr-description { margin: 0; color: var(--hpr-muted); font-size: 12px; overflow-wrap: anywhere; }
+.hive-presets .hpr-meta { display: flex; flex-wrap: wrap; gap: 7px; font-size: 11px; }
+.hive-presets .hpr-trust, .hive-presets .hpr-broken { padding: 1px 7px; border: 1px solid var(--hpr-line); border-radius: 999px; color: var(--hpr-muted); }
+.hive-presets .hpr-broken { color: var(--hpr-warn); }
+.hive-presets .hpr-actions { display: flex; gap: 7px; margin-top: 2px; }
+.hive-presets .hpr-btn { padding: 7px 10px; border: 1px solid var(--hpr-line); border-radius: 7px; background: var(--hpr-bg-2); color: var(--hpr-ink); font: inherit; font-size: 12px; cursor: pointer; }
+.hive-presets .hpr-btn:hover:not(:disabled) { border-color: var(--hpr-accent); }
+.hive-presets .hpr-btn:focus-visible, .hive-presets .hpr-input:focus, .hive-presets .hpr-select:focus { outline: 2px solid var(--hpr-accent); outline-offset: 1px; }
+.hive-presets .hpr-btn:disabled { opacity: .45; cursor: not-allowed; }
+.hive-presets .hpr-primary { border-color: var(--hpr-accent); background: var(--hpr-accent); color: #17130a; font-weight: 650; }
+.hive-presets .hpr-danger { color: var(--hpr-bad); border-color: rgba(255, 107, 107, .4); }
+.hive-presets .hpr-empty { padding: 18px; border: 1px dashed var(--hpr-line); border-radius: 10px; color: var(--hpr-muted); text-align: center; font-size: 12px; }
+.hive-presets .hpr-copy-panel { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto auto; align-items: end; gap: 10px; background: var(--hpr-bg-2); }
+.hive-presets .hpr-copy-panel h3 { grid-column: 1 / -1; margin: 0; font-size: 13px; }
+.hive-presets .hpr-field { display: grid; gap: 4px; min-width: 0; }
+.hive-presets .hpr-label { color: var(--hpr-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.hive-presets .hpr-input, .hive-presets .hpr-select { width: 100%; min-width: 0; padding: 7px 8px; border: 1px solid var(--hpr-line); border-radius: 7px; background: var(--hpr-bg); color: var(--hpr-ink); font: inherit; font-size: 12px; }
+.hive-presets .hpr-dirty { color: var(--hpr-warn); font-size: 10px; white-space: nowrap; }
+.hive-presets .hpr-detail { display: grid; gap: 9px; }
+.hive-presets .hpr-detail-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.hive-presets .hpr-detail-head h3 { margin: 0; font-size: 13px; }
+.hive-presets .hpr-content { max-height: 65vh; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--hpr-line); border-radius: 8px; background: #101216; color: var(--hpr-ink); font: 12px/1.5 "JetBrains Mono", "SFMono-Regular", Consolas, monospace; white-space: pre; }
+.hive-presets .hpr-read-message { color: var(--hpr-muted); font-size: 12px; }
+.hive-presets .hpr-read-error { color: var(--hpr-bad); }
+@media (max-width: 720px) {
+  .hive-presets .hpr-copy-panel { grid-template-columns: 1fr; }
+  .hive-presets .hpr-copy-panel h3 { grid-column: auto; }
+  .hive-presets .hpr-dirty { white-space: normal; }
+}

@@ -1,0 +1,53 @@
+/* Hive Global settings panel. Scoped to avoid affecting the shell. */
+.hive-settings {
+  --hsg-bg: var(--panel, #14161a);
+  --hsg-bg-2: var(--panel-2, #1b1e23);
+  --hsg-line: var(--line, #2a2e36);
+  --hsg-ink: var(--ink, #f2f4f7);
+  --hsg-muted: var(--muted, #98a1ae);
+  --hsg-accent: var(--accent, #ffb703);
+  --hsg-good: var(--good, #40d99a);
+  --hsg-warn: var(--warn, #ffb020);
+  --hsg-bad: var(--bad, #ff6b6b);
+  display: grid;
+  gap: 13px;
+  color: var(--hsg-ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.hive-settings [hidden] { display: none !important; }
+.hive-settings .hsg-header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 2px 12px; }
+.hive-settings .hsg-title { font-size: 17px; font-weight: 650; }
+.hive-settings .hsg-subtitle { margin: 0; color: var(--hsg-muted); font-size: 12px; }
+.hive-settings .hsg-header .hsg-btn { grid-column: 2; grid-row: 1 / span 2; }
+.hive-settings .hsg-status, .hive-settings .hsg-message { color: var(--hsg-muted); font-size: 12px; }
+.hive-settings .hsg-message { padding: 8px 10px; border: 1px solid var(--hsg-line); border-radius: 8px; overflow-wrap: anywhere; }
+.hive-settings .hsg-error { color: var(--hsg-bad); border-left: 3px solid var(--hsg-bad); background: rgba(255, 107, 107, .06); }
+.hive-settings .hsg-notice { color: var(--hsg-good); border-left: 3px solid var(--hsg-good); background: rgba(64, 217, 154, .06); }
+.hive-settings .hsg-empty { padding: 11px; border: 1px dashed var(--hsg-line); border-radius: 8px; color: var(--hsg-muted); font-size: 12px; }
+.hive-settings .hsg-card { min-width: 0; padding: 12px; border: 1px solid var(--hsg-line); border-radius: 10px; background: var(--hsg-bg); }
+.hive-settings .hsg-section-title { margin: 0 0 9px; font-size: 13px; letter-spacing: .025em; }
+.hive-settings .hsg-toggle { display: flex; align-items: center; gap: 9px; padding: 5px 0; cursor: pointer; }
+.hive-settings .hsg-checkbox { accent-color: var(--hsg-accent); width: 16px; height: 16px; }
+.hive-settings .hsg-string-grid, .hive-settings .hsg-json-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 10px; }
+.hive-settings .hsg-wide { grid-column: 1 / -1; margin-bottom: 0; }
+.hive-settings .hsg-field, .hive-settings .hsg-json-field { display: grid; align-content: start; gap: 5px; }
+.hive-settings .hsg-label { color: var(--hsg-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.hive-settings .hsg-input, .hive-settings .hsg-textarea { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px; border: 1px solid var(--hsg-line); border-radius: 7px; background: var(--hsg-bg-2); color: var(--hsg-ink); font: inherit; font-size: 12px; }
+.hive-settings .hsg-input:focus, .hive-settings .hsg-textarea:focus, .hive-settings .hsg-btn:focus-visible { outline: 2px solid var(--hsg-accent); outline-offset: 1px; }
+.hive-settings .hsg-textarea { min-height: 150px; resize: vertical; font: 12px/1.5 "JetBrains Mono", "SFMono-Regular", Consolas, monospace; tab-size: 2; }
+.hive-settings .hsg-textarea[aria-invalid="true"] { border-color: var(--hsg-bad); }
+.hive-settings .hsg-field-error { color: var(--hsg-bad); font-size: 11px; overflow-wrap: anywhere; }
+.hive-settings .hsg-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.hive-settings .hsg-dirty { margin-right: auto; color: var(--hsg-warn); font-size: 11px; }
+.hive-settings .hsg-btn { padding: 7px 11px; border: 1px solid var(--hsg-line); border-radius: 7px; background: var(--hsg-bg-2); color: var(--hsg-ink); font: inherit; font-size: 12px; cursor: pointer; }
+.hive-settings .hsg-btn:hover:not(:disabled) { border-color: var(--hsg-accent); }
+.hive-settings .hsg-primary { border-color: var(--hsg-accent); background: var(--hsg-accent); color: #17130a; font-weight: 650; }
+.hive-settings .hsg-btn:disabled, .hive-settings input:disabled, .hive-settings textarea:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 620px) {
+  .hive-settings .hsg-header { grid-template-columns: 1fr; }
+  .hive-settings .hsg-header .hsg-btn { grid-column: 1; grid-row: auto; justify-self: start; }
+  .hive-settings .hsg-string-grid, .hive-settings .hsg-json-grid { grid-template-columns: 1fr; }
+  .hive-settings .hsg-wide { grid-column: auto; }
+}

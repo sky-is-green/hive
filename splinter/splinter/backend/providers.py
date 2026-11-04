@@ -78,25 +78,51 @@ AUTO_PREFIX = "auto://"
 
 
 def _find_llama_server_port() -> Optional[str]:
-    """Scan /proc for a running llama-server and return its --port value."""
+    """Find a running llama-server's ``--port`` on Linux or Windows."""
     port_re = re.compile(r"^--port\s*=(\d+)$")
+
+    def from_argv(argv: list[str]) -> Optional[str]:
+        names = [os.path.basename(a) for a in argv if a]
+        if not any(n.startswith("llama-server") for n in names):
+            return None
+        for i, arg in enumerate(argv):
+            match = port_re.match(arg)
+            if match:
+                return match.group(1)
+            if arg == "--port" and i + 1 < len(argv):
+                return argv[i + 1]
+        return None
+
+    if os.name == "nt":
+        try:
+            import psutil
+
+            for proc in psutil.process_iter(["name", "cmdline"]):
+                try:
+                    name = str(proc.info.get("name") or "")
+                    if not name.lower().startswith("llama-server"):
+                        continue
+                    port = from_argv(list(proc.info.get("cmdline") or []))
+                    if port:
+                        return port
+                except (psutil.Error, OSError):
+                    continue
+        except ImportError:
+            return None
+        return None
+
     for pid in os.listdir("/proc"):
         if not pid.isdigit():
             continue
         try:
             with open(f"/proc/{pid}/cmdline", "rb") as f:
-                argv = f.read().split(b"\x00")
+                argv = [a.decode(errors="replace")
+                        for a in f.read().split(b"\x00") if a]
         except OSError:
             continue
-        names = [os.path.basename(a.decode(errors="replace")) for a in argv if a]
-        if not any(n.startswith("llama-server") for n in names):
-            continue
-        for i, arg in enumerate(argv):
-            m = port_re.match(arg.decode(errors="replace"))
-            if m:
-                return m.group(1)
-            if arg == b"--port" and i + 1 < len(argv):
-                return argv[i + 1].decode(errors="replace")
+        port = from_argv(argv)
+        if port:
+            return port
     return None
 
 

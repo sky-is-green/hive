@@ -56,6 +56,30 @@ def read_eval(path: Path | None) -> dict:
     return json.loads(path.read_text())
 
 
+def _scrub_paths(value, work_root: str, home: str):
+    """Replace absolute machine paths in an eval record with placeholders."""
+    if isinstance(value, str):
+        return value.replace(work_root, "<work>").replace(home, "<home>")
+    if isinstance(value, list):
+        return [_scrub_paths(item, work_root, home) for item in value]
+    if isinstance(value, dict):
+        return {key: _scrub_paths(item, work_root, home)
+                for key, item in value.items()}
+    return value
+
+
+def copy_eval(src: Path, dst: Path, *, scrub: bool) -> None:
+    if not scrub:
+        link_or_copy(src, dst)
+        return
+    data = json.loads(src.read_text())
+    work_root = str(REPO_ROOT.parent)
+    home = str(Path.home())
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(json.dumps(
+        _scrub_paths(data, work_root, home), indent=1) + "\n", encoding="utf-8")
+
+
 def card(args, eval_data: dict, gguf_name: str | None,
          gguf_eval: dict | None = None) -> str:
     overall = (eval_data.get("overall") or {})
@@ -86,7 +110,7 @@ def card(args, eval_data: dict, gguf_name: str | None,
         gguf = (f"GGUF: `gguf/{gguf_name}` (Q4_K_M). Load with llama.cpp:\n\n"
                 "```sh\n"
                 f"llama-server -m gguf/{gguf_name} --alias {args.alias} "
-                "--host 127.0.0.1 --port 8156 -ngl 999 -c 8192 -np 2 "
+                f"--host 127.0.0.1 --port {args.port} -ngl 999 -c 8192 -np 2 "
                 "--jinja --reasoning off --no-webui\n"
                 "```\n\n"
                 "`--reasoning off` is required for this LFM3 template; without it "
@@ -173,12 +197,27 @@ def main() -> int:
     parser.add_argument("--repo", required=True)
     parser.add_argument("--title", default="")
     parser.add_argument("--base-model", default="LiquidAI/LFM3-1.7B-Base")
+    parser.add_argument(
+        "--adapter-base", default="",
+        help="Base recorded in adapter_config when the adapter is a delta on a "
+             "merged/intermediate checkpoint. Leave empty to preserve the "
+             "training metadata.")
     parser.add_argument("--alias", default="controller-1.7b-sft")
+    parser.add_argument("--port", type=int, default=8156)
     parser.add_argument("--eval", default="")
     parser.add_argument("--gguf-eval", default="")
     parser.add_argument("--suite", default="role suite")
     parser.add_argument("--baseline", default="")
     parser.add_argument("--license", default=str(DEFAULT_LICENSE))
+    parser.add_argument("--hero", default="",
+                        help="Optional PNG/WebP copied to assets/hero.png.")
+    parser.add_argument("--skip-adapter", action="store_true",
+                        help="Do not ship adapter/ (use when the adapter is a "
+                             "delta on a non-public intermediate checkpoint).")
+    parser.add_argument("--public", action="store_true",
+                        help="Print a public create_repo command (default private).")
+    parser.add_argument("--keep-paths", action="store_true",
+                        help="Do not scrub the local work root from eval JSONs.")
     args = parser.parse_args()
 
     run = Path(args.run).resolve()
@@ -188,14 +227,20 @@ def main() -> int:
 
     adapter = run / "adapter"
     merged = run / "merged"
-    if adapter.is_dir():
+    if adapter.is_dir() and not args.skip_adapter:
         copy_tree(adapter, out / "adapter")
         adapter_cfg = out / "adapter" / "adapter_config.json"
-        if adapter_cfg.is_file():
+        if adapter_cfg.is_file() and args.adapter_base:
             cfg = json.loads(adapter_cfg.read_text())
-            cfg["base_model_name_or_path"] = args.base_model
+            cfg["base_model_name_or_path"] = args.adapter_base
             adapter_cfg.unlink()  # break the hardlink before editing the release copy
             adapter_cfg.write_text(json.dumps(cfg, indent=2) + "\n")
+        # The release adapter should not carry the generic TRL card or a
+        # training-args blob with local output paths.
+        for stale in ("README.md", "training_args.bin"):
+            stale_path = out / "adapter" / stale
+            if stale_path.is_file():
+                stale_path.unlink()
     if merged.is_dir():
         copy_tree(merged, out / "model")
 
@@ -211,10 +256,19 @@ def main() -> int:
     gguf_eval = read_eval(gguf_eval_path)
     if eval_path and eval_path.is_file():
         (out / "eval").mkdir(exist_ok=True)
-        link_or_copy(eval_path, out / "eval" / eval_path.name)
+        copy_eval(eval_path, out / "eval" / eval_path.name,
+                  scrub=not args.keep_paths)
         for extra in run.glob("eval-*.json"):
             if extra.resolve() != eval_path:
-                link_or_copy(extra, out / "eval" / extra.name)
+                copy_eval(extra, out / "eval" / extra.name,
+                          scrub=not args.keep_paths)
+
+    if args.hero:
+        hero = Path(args.hero).expanduser()
+        if hero.is_file():
+            target = out / "assets" / "hero.png"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            link_or_copy(hero, target)
 
     license_src = Path(args.license)
     if license_src.is_file():
@@ -231,14 +285,16 @@ def main() -> int:
     print(f"release folder: {out}")
     for path in sorted(out.iterdir()):
         print(" ", path.name)
-    print("\nUpload:")
+    visibility = "public" if args.public else "private"
+    print(f"\nUpload ({visibility}; explicit --public is required to publish):")
     print(
         "python - <<'PY'\n"
         "from huggingface_hub import HfApi\n"
         f"api = HfApi()\n"
-        f"api.create_repo('{args.repo}', repo_type='model', private=False, exist_ok=True)\n"
+        f"api.create_repo('{args.repo}', repo_type='model', "
+        f"private={not args.public}, exist_ok=True)\n"
         f"api.upload_folder(folder_path='{out}', repo_id='{args.repo}', "
-        "commit_message='Add LFM3 controller specialist')\n"
+        f"commit_message='Add {args.alias} release')\n"
         "PY"
     )
     return 0

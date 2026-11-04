@@ -47,7 +47,9 @@ const MODEL_TIER = {
   scion35: "medium", scion176: "complex",
 };
 const MODEL_WEIGHTS = {
-  lfm3: 2.0, lfm3vl: 1.72, scion35: 10.56, scion176: 69.18,
+  lfm3: 1.02, lfm3vl: 1.72, scion35: 10.56, scion176: 69.18,
+  controller17: 1.1, reader17: 1.1, auditor17: 1.1,
+  dispatcher17: 1.1, clerk17: 1.1,
   guards: 0, "drone-heuristic": 0, ds41: null, "d1-2b": 1.72,
 };
 const LIB = { models: [], instances: [], ts: 0, error: "" };
@@ -288,6 +290,7 @@ const DEFAULT_PLACEMENTS = {
 };
 let rolesState = { ...DEFAULT_ROLES };
 let placementsState = { ...DEFAULT_PLACEMENTS };
+let resolvedRoles = {};
 let devicesState = [];
 let placementPlanState = null;
 let placementPlanSignature = "";
@@ -581,18 +584,21 @@ async function mountLibraryPanel() {
 
 async function loadRoles() {
   const [rolesR, catalogR] = await Promise.allSettled([
-    getJSON("/api/roles"),
+    getJSON("/api/v1/roles"),
     getJSON("/api/v1/cascade/roles"),
   ]);
   if (rolesR.status === "fulfilled") {
     rolesState = { ...DEFAULT_ROLES, ...(rolesR.value.roles || {}) };
     placementsState = { ...DEFAULT_PLACEMENTS, ...(rolesR.value.placements || {}) };
+    resolvedRoles = rolesR.value.resolved || {};
   } else {
     rolesState = { ...DEFAULT_ROLES };
     placementsState = { ...DEFAULT_PLACEMENTS };
+    resolvedRoles = {};
   }
   await refreshPlacementPlan();
   renderRoles();
+  renderChatRoles();
   renderRoleCatalog(catalogR.status === "fulfilled" ? (catalogR.value.roles || []) : null);
 }
 
@@ -665,6 +671,38 @@ function renderRoles() {
       await saveRoles();
     });
   });
+}
+
+function renderChatRoles() {
+  const select = $("#chat-role");
+  if (!select) return;
+  const current = select.value;
+  const roles = Object.entries(ROLE_META)
+    .filter(([key]) => key !== "risk")
+    .map(([key, meta]) => {
+      const model = rolesState[key];
+      const info = resolvedRoles[key] || {};
+      const chat = info.chat !== false && !!MODELS[model];
+      return chat ? { key, label: `${meta[0]} · ${MODELS[model].label}` } : null;
+    })
+    .filter(Boolean);
+  select.innerHTML = '<option value="">Role: direct model</option>' +
+    roles.map(r => `<option value="${esc(r.key)}">${esc(r.label)}</option>`).join("");
+  if (roles.some(r => r.key === current)) select.value = current;
+}
+
+async function loadChatRoles() {
+  try {
+    const data = await getJSON("/api/v1/roles");
+    rolesState = { ...DEFAULT_ROLES, ...(data.roles || {}) };
+    resolvedRoles = data.resolved || {};
+  } catch {
+    try {
+      const data = await getJSON("/api/roles");
+      rolesState = { ...DEFAULT_ROLES, ...(data.roles || {}) };
+    } catch { /* keep defaults */ }
+  }
+  renderChatRoles();
 }
 
 function roleConfigSignature() {
@@ -777,12 +815,17 @@ async function saveRoles() {
     showPlacementError(`Save blocked: placement cannot be proven for ${blocked.map(plan => plan.role).join(", ")}.`);
     return false;
   }
-  const res = await fetch("/api/roles", {
+  const res = await fetch("/api/v1/roles", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ roles: rolesState, placements: placementsState }),
   });
   if (!res.ok) throw new Error(`save failed ${res.status}`);
+  try {
+    const data = await res.json();
+    resolvedRoles = data.resolved || resolvedRoles;
+    renderChatRoles();
+  } catch { /* the note below is enough */ }
   const note = document.createElement("span");
   note.className = "save-state";
   note.textContent = " saved";
@@ -1137,7 +1180,8 @@ async function sendDirect() {
   const input = $("#chat-input");
   const text = input.value.trim();
   if (!text) return;
-  const modelId = $("#chat-model").value;
+  const role = $("#chat-role")?.value || "";
+  const modelId = role ? (rolesState[role] || $("#chat-model").value) : $("#chat-model").value;
   const cfg = resolveModel(modelId);
   if (!cfg) {
     $("#chat-note").textContent = "This library model is not loaded. Click Load first.";
@@ -1149,7 +1193,7 @@ async function sendDirect() {
   }
   input.value = "";
   const suggestion = await suggestRoute(text);
-  addBubble("user", text, `direct · ${cfg.label}${chatImage ? " · image" : ""}${suggestion ? " · route " + suggestion.tier : ""}`);
+  addBubble("user", text, `direct · ${cfg.label}${role ? " · role " + role : ""}${chatImage ? " · image" : ""}${suggestion ? " · route " + suggestion.tier : ""}`);
   const bubble = addBubble("assistant", "", "streaming…");
   const body = bubble.querySelector(".bubble-body");
   const meta = bubble.querySelector(".meta");
@@ -1167,13 +1211,15 @@ async function sendDirect() {
         ]
       : text;
     const payload = {
-      model: cfg.model,
       messages: [{ role: "user", content: userContent }],
       max_tokens: 1024, temperature: 0.2, stream: true,
       stream_options: { include_usage: true },
     };
+    if (role) payload.role = role;
+    else payload.model = cfg.model;
     if (modelId === "lfm3") payload.chat_template_kwargs = { enable_thinking: false };
-    const res = await fetch(`${cfg.base}/v1/chat/completions`, {
+    const url = role ? "/api/v1/role/chat/completions" : `${cfg.base}/v1/chat/completions`;
+    const res = await fetch(url, {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify(payload), signal: controller.signal,
     });
@@ -1194,7 +1240,7 @@ async function sendDirect() {
     }
     const seconds = (Date.now() - started) / 1000;
     const tokens = (usage || {}).completion_tokens || Math.round(answer.length / 4);
-    meta.textContent = `${seconds.toFixed(2)}s · ${tokens} tok · ${cfg.label}`;
+    meta.textContent = `${seconds.toFixed(2)}s · ${tokens} tok · ${role ? role + " · " : ""}${cfg.label}`;
     $("#chat-note").textContent = "";
     if (chatImage) {
       chatImage = null;
@@ -1202,7 +1248,7 @@ async function sendDirect() {
       $("#chat-image-name").textContent = "";
     }
     logTrace({
-      query: text, mode: "direct", actual_model: modelId,
+      query: text, mode: "direct", actual_model: modelId, role: role || undefined,
       suggested_tier: suggestion?.tier || "?",
       actual_tier: MODEL_TIER[modelId] || "?",
       latency_s: seconds, tokens, ok: true,
@@ -1212,7 +1258,7 @@ async function sendDirect() {
     if (!answer) body.textContent = failure;
     meta.textContent = failure;
     logTrace({
-      query: text, mode: "direct", actual_model: modelId,
+      query: text, mode: "direct", actual_model: modelId, role: role || undefined,
       suggested_tier: suggestion?.tier || "?",
       actual_tier: MODEL_TIER[modelId] || "?",
       latency_s: (Date.now() - started) / 1000, tokens: 0,
@@ -1262,10 +1308,11 @@ async function sendAgent() {
   const input = $("#chat-input");
   const text = input.value.trim();
   if (!text) return;
+  const role = $("#chat-role")?.value || "";
   input.value = "";
   const suggestion = await suggestRoute(text);
   agentConv = "ui-" + Date.now();
-  addBubble("user", text, `agent · conversation ${agentConv}`);
+  addBubble("user", text, `agent${role ? " · role " + role : ""} · conversation ${agentConv}`);
   const started = Date.now();
   const controller = new AbortController();
   agentAbort = controller;
@@ -1297,7 +1344,8 @@ async function sendAgent() {
   try {
     const res = await fetch("/api/v1/agent/stream", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message: text, conversation_id: agentConv }),
+      body: JSON.stringify({ message: text, conversation_id: agentConv,
+                             ...(role ? { role } : {}) }),
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
@@ -1885,6 +1933,7 @@ $("#chat-clear").addEventListener("click", () => {
   $("#chat-note").textContent = "";
 });
 populateChatModels();
+loadChatRoles();
 $("#nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-page]");
   if (b) show(b.dataset.page);
