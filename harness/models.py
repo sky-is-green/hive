@@ -100,7 +100,7 @@ def _default_binary() -> Path:
     return REPO_ROOT / "tools" / "llama.cpp" / exe
 
 
-BACKENDS = ("vulkan", "rocm", "cuda", "cpu", "sycl", "scion")
+BACKENDS = ("vulkan", "rocm", "cuda", "cpu", "sycl", "scion", "lfm3")
 # ``scion`` is the moe-corr-runtime fork (ternary PQ2_0 container + the
 # draft-mtp-sidecar drafter), staged at tools/backends/scion/llama-server.
 # The Scion stacks need it; the other backends are unchanged.
@@ -113,8 +113,16 @@ def _binary_for_backend(backend: Optional[str]) -> Optional[Path]:
     if not backend:
         return None
     exe = "llama-server.exe" if os.name == "nt" else "llama-server"
-    p = (REPO_ROOT / "tools" / "backends" / backend.strip().lower() / exe)
-    return p if p.is_file() else None
+    name = backend.strip().lower()
+    # The deployed app lives beside the service home; accept the app-local
+    # backend directory as a fallback when the root-owned tools tree cannot be
+    # written by the service user.
+    for base in (REPO_ROOT / "tools" / "backends",
+                 REPO_ROOT / "app" / "tools" / "backends"):
+        candidate = base / name / exe
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def backend_binary(backend: Optional[str]) -> Optional[Path]:

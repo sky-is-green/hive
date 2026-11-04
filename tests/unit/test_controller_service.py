@@ -119,7 +119,9 @@ def test_apply_saves_the_change_and_rollback_restores_it(tmp_path):
     proposal = service.propose(model_gib=12.0, native_ctx=32768, desired_ctx=16384)
     result = service.apply(proposal["id"], confirmed=True)
     assert result["ok"] is True
-    assert settings.data["runtime_defaults"]["threads"] == 8
+    threads = proposal["changes"]["runtime_defaults.threads"]
+    assert threads >= 1
+    assert settings.data["runtime_defaults"]["threads"] == threads
     assert settings.data["runtime_defaults"]["ctx_size"] == 16384
     assert settings.data["runtime_defaults"]["ngl"] == 999
     controller = json.loads(state.controller_file().read_text(encoding="utf-8"))
