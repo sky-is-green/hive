@@ -151,7 +151,8 @@ a separate editable package from this checkout):
 A source checkout keeps mutable state in the repo (`stacks/`,
 `models/gguf/`, `tools/backends/`, `harness_state/`). An installed wheel uses
 `HIVE_HOME` instead (default `~/.hive`), so the package directory stays
-read-only. The suite's grouped runs and the Studio are in
+read-only. The Studio/agent path is supported from a source checkout; the wheel
+target is the serve-only CLI. The suite's grouped runs and the Studio are in
 [`hivebench/README.md`](hivebench/README.md).
 
 ## The state

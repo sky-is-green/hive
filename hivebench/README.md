@@ -226,7 +226,8 @@ python3 -m venv .venv
 
 A wheel install keeps runtime state under `HIVE_HOME` (default `~/.hive`); a
 source checkout keeps the repo-local `stacks/`, `models/gguf/`,
-`tools/backends/` and `harness_state/` layout.
+`tools/backends/` and `harness_state/` layout. The Studio/agent path is
+supported from a source checkout; the wheel target is the serve-only CLI.
 
 Flat import names are preserved (`experiments.*`, `testing.*`, `tests.*`,
 `harness.*`, `deepseek_harness`); the system under test resolves as `splinter` /
