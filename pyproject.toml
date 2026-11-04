@@ -86,5 +86,12 @@ include = ["experiments*", "testing*", "tests*", "harness*"]
 
 [tool.setuptools.package-data]
 # The backend manifest is read-only source data; the checkout copy under
-# tools/backends still wins when one is present.
-harness = ["data/*.json"]
+# tools/backends still wins when one is present.  The console ships as data
+# because the release build serves it from the package, not the checkout.
+harness = [
+    "data/*.json",
+    "webui/*.html",
+    "webui/*.css",
+    "webui/*.js",
+    "webui/*.json",
+]
