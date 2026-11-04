@@ -3,8 +3,9 @@
 **This is a research harness with a supported local build path.** The reference
 serves are down or reserved for engine work, and the paid tier's key is
 expired. The free OpenCode API tier is measured separately. What is published
-is the measurement record, the code that produced it, the Hive 1.7B role
-roster, and the contracts the next phase is built against.
+is the measurement record, the code that produced it, and the contracts the
+next phase is built against; the five-model Hive 1.7B roster is the current
+release candidate.
 
 ## Measured (the same 28 organic tasks unless stated)
 
