@@ -90,7 +90,7 @@ service and it does not upload the hardware profile or prompt text by default.
 | | Terminal (`hive ui terminal`) | Web Studio (`hive ui web`) |
 |---|---|---|
 | **Startup cost** | Very low; curses only | FastAPI + browser + page assets |
-| **Remote use** | Natural over SSH; no port forwarding needed for the UI | Needs a browser path to `127.0.0.1:8765`, usually an SSH tunnel |
+| **Remote use** | Natural over SSH; no port forwarding needed for the UI | Needs a browser path to `127.0.0.1:8170`, usually an SSH tunnel |
 | **Visual density** | Compact, text-first | Forms, cards, tables, reports |
 | **Best for** | Live health, logs, quick inspection, stop controls | Setup, cascade forms, controller review, reports, API docs |
 | **Approval dialogs** | Press `a` for pending approvals, or use `hive tools pending` / `decide`; `w` opens the Studio | Pending cards in the Global panel, with the same decisions |
@@ -149,11 +149,11 @@ Use the terminal for live state and stops. If you need the Studio, forward the
 port over SSH:
 
 ```bash
-ssh -L 8765:127.0.0.1:8765 you@server
+ssh -L 8170:127.0.0.1:8170 -L 8765:127.0.0.1:8765 you@server
 # on the server:
 hive ui web --no-open
 # on your machine:
-open http://127.0.0.1:8765
+open http://127.0.0.1:8170
 ```
 
 If the Studio can be reached by anything other than localhost, set
