@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hive AI · Console</title>
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/styles.css?v=62">
+  <link rel="stylesheet" href="/fit_panel.css?v=41">
+  <link rel="stylesheet" href="/providers_panel.css?v=41">
+  <link rel="stylesheet" href="/lifecycle_panel.css?v=41">
+  <link rel="stylesheet" href="/training_panel.css?v=42">
+  <link rel="stylesheet" href="/library_panel.css?v=49">
+  <link rel="stylesheet" href="/runs_panel.css?v=52">
+  <link rel="stylesheet" href="/suggestions_panel.css?v=54">
+  <link rel="stylesheet" href="/presets_panel.css?v=59">
+  <link rel="stylesheet" href="/settings_panel.css?v=62">
+</head>
+<body>
+  <aside class="rail">
+    <div class="brand"><span class="hex">⬡</span> HIVE <em>AI</em></div>
+    <nav id="nav">
+      <button data-page="overview" class="active">Overview</button>
+      <button data-page="chat">Chat</button>
+      <button data-page="roles">Roles</button>
+      <button data-page="bench">Benchmark</button>
+      <button data-page="routing">Routing</button>
+      <button data-page="judge">Judge</button>
+      <button data-page="risk">Risk &amp; Approvals</button>
+      <button data-page="activity">Activity</button>
+      <button data-page="engines">Engines</button>
+      <button data-page="providers">Providers</button>
+      <button data-page="lifecycle">Lifecycle</button>
+      <button data-page="settings">Settings</button>
+      <button data-page="training">Training</button>
+      <button data-page="runs">Runs</button>
+      <button data-page="suggestions">Suggestions</button>
+      <button data-page="presets">Presets</button>
+      <button data-page="models">Models</button>
+    </nav>
+    <div class="rail-foot">
+      <span class="dot" id="rail-dot"></span>
+      <span id="rail-status">connecting…</span>
+      <small>localhost · preview</small>
+    </div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <div>
+        <h1 id="page-title">Overview</h1>
+        <p class="sub" id="page-sub">Live service and GPU state.</p>
+      </div>
+      <div class="top-actions">
+        <button class="ghost" id="refresh">Refresh</button>
+        <span class="pill" id="hive-pill">Hive …</span>
+      </div>
+    </header>
+
+    <section id="page-overview" class="page active">
+      <div class="cards" id="service-cards"></div>
+      <div class="grid two">
+        <div class="panel">
+          <div class="panel-head"><h2>GPU</h2><span class="muted" id="gpu-note"></span></div>
+          <div id="gpu-cards" class="gpu-grid"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Approvals</h2><span class="muted">pending</span></div>
+          <div id="pending" class="pending"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Recent activity</h2><span class="muted">latest 8</span></div>
+        <div class="table-wrap"><table id="recent"></table></div>
+      </div>
+    </section>
+
+    <section id="page-chat" class="page">
+      <div class="chat-shell">
+        <div class="chat-head">
+          <div>
+            <h2>Chat</h2>
+            <p class="muted">Direct model chat, or the Hive agent with tool approvals.</p>
+          </div>
+          <div class="chat-controls">
+            <div class="mode-toggle" id="chat-mode">
+              <button data-mode="direct" class="active">Direct</button>
+              <button data-mode="agent">Agent</button>
+              <button data-mode="ab">A/B</button>
+            </div>
+            <select id="chat-model"></select>
+            <select id="chat-role" title="Route this turn through a live role">
+              <option value="">Role: direct model</option>
+            </select>
+            <span class="muted model-state" id="chat-model-state"></span>
+            <button class="ghost" id="chat-load" hidden>Load</button>
+            <input type="file" id="chat-image" accept="image/*" hidden>
+            <button class="ghost" id="chat-attach" title="Attach an image for LFM3-VL">Attach</button>
+            <span class="muted image-name" id="chat-image-name"></span>
+            <button class="ghost" id="chat-stop" hidden>Stop</button>
+            <button class="ghost" id="chat-clear">Clear</button>
+          </div>
+        </div>
+        <div class="ab-bar" id="ab-bar" hidden>
+          <label>A <select id="ab-a"></select></label>
+          <label>B <select id="ab-b"></select></label>
+          <span class="muted">Both run concurrently. Library models must be loaded in Direct first.</span>
+        </div>
+        <div id="chat-log" class="chat-log">
+          <div class="chat-empty">Pick a model and ask something.</div>
+        </div>
+        <div class="composer">
+          <textarea id="chat-input" rows="3" placeholder="Ask Hive… or type /help for commands"></textarea>
+          <button id="chat-send" class="primary">Send</button>
+        </div>
+        <div class="chat-note" id="chat-note"></div>
+      </div>
+    </section>
+
+    <section id="page-roles" class="page">
+      <div class="panel">
+        <div class="panel-head"><h2>Role assignment</h2><span class="muted">preview config · saved locally</span></div>
+        <div class="table-wrap"><table id="roles-table"></table></div>
+      </div>
+      <div class="panel" id="placement-panel">
+        <div class="panel-head"><h2>Placement check</h2><span class="muted" id="placement-summary">Checking card policy…</span></div>
+        <p class="placement-error" id="placement-error" role="alert" hidden></p>
+        <div class="table-wrap"><table id="placement-table"></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Role catalog</h2><span class="muted" id="role-catalog-count">A1–H1</span></div>
+        <div class="table-wrap"><table id="role-catalog"></table></div>
+      </div>
+      <p class="note">The catalog is the full C1–H1 role taxonomy. Rows marked “unassigned” are candidates for the next role pass; add a role only when its model/capability is real.</p>
+    </section>
+
+    <section id="page-bench" class="page">
+      <div class="grid four" id="bench-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Model scorecard</h2><span class="muted" id="bench-meta">test split</span></div>
+        <div class="table-wrap"><table id="bench-table"></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Per-benchmark breakdown</h2><span class="muted">accuracy / median latency</span></div>
+        <div class="table-wrap"><table id="bench-matrix"></table></div>
+      </div>
+      <p class="note" id="bench-note"></p>
+    </section>
+
+    <section id="page-routing" class="page">
+      <div class="grid four" id="routing-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Live route traces</h2><span class="muted">suggested vs actual</span></div>
+        <div class="table-wrap"><table id="routing-table"></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Route targets</h2><span class="muted">tier → model → engine profile</span></div>
+        <div class="table-wrap"><table id="route-targets-table"></table></div>
+        <div class="target-actions">
+          <button class="approve" id="route-targets-save">Save targets</button>
+          <span class="muted" id="route-targets-msg"></span>
+        </div>
+      </div>
+      <div class="grid four" id="pref-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Human preference votes</h2><span class="muted">A/B comparisons</span></div>
+        <div class="table-wrap"><table id="pref-table"></table></div>
+      </div>
+      <p class="note">d1 primary, DroneRouter fallback. Remaining complex misses go to medium, not simple.</p>
+    </section>
+
+    <section id="page-judge" class="page">
+      <div class="grid four" id="judge-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Human preference profile</h2><span class="muted">from A/B votes</span><button class="ghost" id="judge-reset">Reset profile</button></div>
+        <div id="judge-profile" class="profile"></div>
+        <div id="judge-weights" class="weights"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Recent judge decisions</h2><span class="muted">auto vs human</span></div>
+        <div class="table-wrap"><table id="judge-table"></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>d1 decision</h2><span class="muted">calibrated · /v1/systemone</span></div>
+        <div class="decision-grid">
+          <label>State<textarea id="decision-state" rows="4">I was charged twice this month, please refund one of them.</textarea></label>
+          <label>Questions (JSON)<textarea id="decision-questions" rows="9">{
+  "refund": {"type": "noul", "instructions": "Is the customer asking for a refund?"},
+  "team": {"type": "choice", "instructions": "Which team should handle this?",
+           "criteria": {"billing": "Charges, refunds, invoices", "technical": "App faults"}},
+  "urgency": {"type": "score", "instructions": "How urgent is this?",
+              "criteria": ["Can wait", "Today", "Blocking the customer now"]}
+}</textarea></label>
+        </div>
+        <div class="target-actions">
+          <button class="approve" id="decision-run">Ask d1</button>
+          <span class="muted" id="decision-msg"></span>
+        </div>
+        <pre id="decision-out" class="decision-out"></pre>
+      </div>
+    </section>
+
+    <section id="page-risk" class="page">
+      <div class="panel">
+        <div class="panel-head"><h2>Pending approvals</h2><span class="muted" id="risk-pending-count">0 waiting</span></div>
+        <div id="risk-pending" class="pending"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Tool audit</h2><span class="muted">latest 30</span></div>
+        <div class="table-wrap"><table id="risk-table"></table></div>
+      </div>
+    </section>
+
+    <section id="page-activity" class="page">
+      <div class="panel">
+        <div class="panel-head"><h2>Activity</h2><span class="muted" id="activity-note">latest 30</span></div>
+        <div class="table-wrap"><table id="activity-table"></table></div>
+      </div>
+    </section>
+
+    <section id="page-engines" class="page">
+      <div class="grid four" id="engine-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Engine profile</h2><span class="muted" id="engine-meta">loading…</span></div>
+        <div class="engine-toolbar">
+          <label>profile <select id="engine-select"></select></label>
+          <button class="ghost" id="engine-add">New</button>
+          <button class="ghost" id="engine-dup">Duplicate</button>
+          <button class="ghost danger" id="engine-del">Delete</button>
+          <label class="inline-check"><input type="checkbox" id="engine-default"> default for new chats</label>
+        </div>
+        <div class="engine-form">
+          <div class="engine-grid">
+            <label>name <input id="engine-name" placeholder="local-bonsai"></label>
+            <label>kind <select id="engine-kind">
+              <option value="llama_cpp">llama_cpp</option>
+              <option value="lmstudio">lmstudio</option>
+              <option value="vllm">vllm</option>
+              <option value="ollama">ollama</option>
+              <option value="hosted">hosted</option>
+              <option value="strata">strata</option>
+            </select></label>
+            <label>base URL <input id="engine-url" placeholder="http://127.0.0.1:8156"></label>
+            <label>capabilities <input id="engine-caps" placeholder="streaming, prefix_caching, reasoning_toggle"></label>
+          </div>
+          <div class="engine-section">
+            <h3>Sampling defaults</h3>
+            <div class="engine-grid engine-sampling">
+              <label>temperature <input id="engine-temp" type="number" step="0.05" min="0" max="2"></label>
+              <label>top_p <input id="engine-topp" type="number" step="0.05" min="0" max="1"></label>
+              <label>top_k <input id="engine-topk" type="number"></label>
+              <label>min_p <input id="engine-minp" type="number" step="0.01"></label>
+              <label>repeat_penalty <input id="engine-rep" type="number" step="0.05"></label>
+              <label>presence_penalty <input id="engine-pres" type="number" step="0.1"></label>
+              <label>frequency_penalty <input id="engine-freq" type="number" step="0.1"></label>
+              <label>seed <input id="engine-seed" type="number"></label>
+              <label class="wide">stop <input id="engine-stop" placeholder="comma separated, optional"></label>
+            </div>
+          </div>
+          <div class="engine-section">
+            <h3>Load options</h3>
+            <p class="muted">JSON is passed through as the profile's advisory launch configuration. llama.cpp keys: <code>context</code>, <code>gpu_layers</code>, <code>threads</code>, <code>flash_attn</code>, <code>parallel_slots</code>. Strata keys: <code>repo</code>, <code>config</code>, <code>engine_args</code>, <code>ctx_flag</code>, <code>python</code>, <code>server</code>, <code>timeout_s</code>.</p>
+            <textarea id="engine-load" class="engine-json" spellcheck="false" placeholder='{"context": 16384, "gpu_layers": 99, "flash_attn": true}'></textarea>
+          </div>
+          <div class="engine-actions">
+            <button class="approve" id="engine-save">Save profile</button>
+            <button class="ghost" id="engine-reload">Reload</button>
+            <button class="ghost" id="engine-auto">Auto preset</button>
+            <select id="engine-model" title="Local model used by Auto preset"></select>
+            <button class="ghost" id="engine-export">Export</button>
+            <button class="ghost" id="engine-import-btn">Import</button>
+            <input type="file" id="engine-import" accept=".json" hidden>
+            <span class="muted" id="engine-msg"></span>
+          </div>
+        </div>
+      </div>
+      <div id="fit-panel"></div>
+      <p class="note">Engine sampling applies to new conversations through Splinter's default engine profile. Load options are advisory until the shell launches the server; base URL says where the engine lives. Changing the default affects new conversations, not ones already cached. Per-role profile binding is the next step.</p>
+    </section>
+
+    <section id="page-providers" class="page">
+      <div class="panel">
+        <div class="panel-head"><h2>Providers</h2><span class="muted">OpenAI-compatible endpoints</span></div>
+        <div id="providers-panel"></div>
+      </div>
+    </section>
+
+    <section id="page-lifecycle" class="page">
+      <div id="lifecycle-panel"></div>
+    </section>
+
+    <section id="page-settings" class="page">
+      <div id="settings-panel"></div>
+    </section>
+
+    <section id="page-training" class="page">
+      <div id="training-panel"></div>
+    </section>
+
+    <section id="page-runs" class="page">
+      <div id="runs-panel"></div>
+    </section>
+
+    <section id="page-suggestions" class="page">
+      <div id="suggestions-panel"></div>
+    </section>
+
+    <section id="page-presets" class="page">
+      <div id="presets-panel"></div>
+    </section>
+
+    <section id="page-models" class="page">
+      <div id="library-panel"></div>
+    </section>
+
+    <footer class="foot">
+      <span>Hive console preview · new shell</span>
+      <span id="clock"></span>
+    </footer>
+  </main>
+  <script src="/fit_panel.js?v=41"></script>
+  <script src="/providers_panel.js?v=41"></script>
+  <script src="/lifecycle_panel.js?v=41"></script>
+  <script src="/training_panel.js?v=42"></script>
+  <script src="/library_panel.js?v=49"></script>
+  <script src="/runs_panel.js?v=52"></script>
+  <script src="/suggestions_panel.js?v=54"></script>
+  <script src="/presets_panel.js?v=59"></script>
+  <script src="/settings_panel.js?v=62"></script>
+  <script src="/app.js?v=83"></script>
+</body>
+</html>
