@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import time
 import urllib.error
 import urllib.request
@@ -30,12 +31,7 @@ REPO_ROOT = ROOT.parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 HIVE = "http://127.0.0.1:8765"
-TRACES = ROOT / "routing.jsonl"
-PREFERENCES = ROOT / "preferences.jsonl"
-RATIONALES = ROOT / "preference_rationales.jsonl"
-JUDGE_MODEL = ROOT / "judge_model.json"
 BENCH_DIR = ROOT.parents[1] / "experiments" / "model-matrix"
-ROUTE_TARGETS = ROOT / "route_targets.json"
 DEFAULT_ROUTE_TARGETS = {
     "simple": {"model": "lfm3", "engine": "lfm3-1.7b"},
     "medium": {"model": "scion35", "engine": "scion-35b"},
@@ -43,8 +39,17 @@ DEFAULT_ROUTE_TARGETS = {
 }
 sys.path.insert(0, str(ROOT))
 import judge as judge_lib
+from harness import paths
 from harness.roles import load_roles, save_roles
 REPO = ROOT.parents[1]
+STATE = paths.state_dir()
+SEED_JUDGE_MODEL = ROOT / "judge_model.json"
+SEED_ROUTE_TARGETS = ROOT / "route_targets.json"
+TRACES = STATE / "console-routing.jsonl"
+PREFERENCES = STATE / "console-preferences.jsonl"
+RATIONALES = STATE / "console-preference-rationales.jsonl"
+JUDGE_MODEL = STATE / "console-judge-model.json"
+ROUTE_TARGETS = STATE / "console-route-targets.json"
 sys.path.insert(0, str(REPO / "splinter" / "splinter"))
 TIER = {"ultra_small": "simple", "medium": "medium", "escalation": "complex"}
 MODEL_ENDPOINTS = {
@@ -59,6 +64,15 @@ MODEL_ENDPOINTS = {
     "dispatcher17": "http://127.0.0.1:8163",
     "clerk17": "http://127.0.0.1:8164",
 }
+def _ensure_state() -> None:
+    """Create the console's writable state and seed read-only defaults."""
+    STATE.mkdir(parents=True, exist_ok=True)
+    if not JUDGE_MODEL.exists() and SEED_JUDGE_MODEL.is_file():
+        shutil.copy2(SEED_JUDGE_MODEL, JUDGE_MODEL)
+    if not ROUTE_TARGETS.exists() and SEED_ROUTE_TARGETS.is_file():
+        shutil.copy2(SEED_ROUTE_TARGETS, ROUTE_TARGETS)
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -184,6 +198,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _trace_post(self) -> None:
         try:
+            _ensure_state()
             payload = self._read_json()
             payload["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             payload["id"] = payload.get("id") or f"tr-{uuid.uuid4().hex[:10]}"
@@ -226,6 +241,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _preference_post(self) -> None:
         try:
+            _ensure_state()
             payload = self._read_json()
             payload["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             payload["id"] = payload.get("id") or f"pref-{uuid.uuid4().hex[:10]}"
@@ -234,7 +250,7 @@ class Handler(SimpleHTTPRequestHandler):
             model = None
             try:
                 rows = [json.loads(x) for x in PREFERENCES.read_text().splitlines() if x.strip()]
-                model = judge_lib.train(rows)
+                model = judge_lib.train(rows, path=JUDGE_MODEL)
             except Exception:
                 pass
             self._send_json({"ok": True, "id": payload["id"], "model": model})
@@ -276,6 +292,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _route_targets_post(self) -> None:
         try:
+            _ensure_state()
             payload = self._read_json()
             targets = {**DEFAULT_ROUTE_TARGETS, **(payload.get("targets") or {})}
             ROUTE_TARGETS.write_text(json.dumps({"targets": targets}, indent=2) + "\n")
@@ -285,15 +302,16 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _preference_reset(self) -> None:
         try:
+            _ensure_state()
             stamp = time.strftime("%Y%m%d-%H%M%S", time.gmtime())
-            archive = ROOT / "archive"
+            archive = STATE / "console-archive"
             archive.mkdir(exist_ok=True)
             moved = []
             for path in (PREFERENCES, RATIONALES):
                 if path.is_file():
                     target = archive / f"{path.stem}-{stamp}{path.suffix}"
                     path.replace(target)
-                    moved.append(str(target.relative_to(ROOT)))
+                    moved.append(str(target.relative_to(STATE)))
             if JUDGE_MODEL.is_file():
                 JUDGE_MODEL.unlink()
             self._send_json({"ok": True, "archived": moved})
@@ -641,6 +659,7 @@ def serve_in_thread(bind: str = "127.0.0.1", port: int = 8170,
     import threading
 
     configure(hive_url)
+    _ensure_state()
     server = ThreadingHTTPServer((bind, port), Handler)
     thread = threading.Thread(target=server.serve_forever,
                               name="hive-console", daemon=True)
@@ -655,6 +674,7 @@ def main() -> int:
     parser.add_argument("--hive", default="http://127.0.0.1:8765")
     args = parser.parse_args()
     configure(args.hive)
+    _ensure_state()
     print(f"serving {ROOT} on http://{args.bind}:{args.port}", flush=True)
     ThreadingHTTPServer((args.bind, args.port), Handler).serve_forever()
     return 0

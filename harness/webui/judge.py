@@ -185,10 +185,13 @@ def predict(pair: dict[str, Any], model: dict[str, Any] | None,
     return {**fallback, "features": feats}
 
 
-def train(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def train(rows: list[dict[str, Any]],
+          path: Path | None = None) -> dict[str, Any]:
     model = _fit(rows)
     model["loo_accuracy"] = loo_accuracy(rows)
-    MODEL_PATH.write_text(json.dumps(model, indent=2) + "\n")
+    target = Path(path) if path is not None else MODEL_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(model, indent=2) + "\n")
     return model
 
 
