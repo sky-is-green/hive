@@ -59,8 +59,10 @@ def ensure_hook_profile(dsh_home: str | Path, cwd: str | Path, *,
     patch_path = home / PATCH_FILE
     existing = patch_path.read_text(encoding="utf-8") if patch_path.is_file() else ""
     if f"id: {HOOK_ID}" in existing:
+        rendered_hooks = json.dumps(str(hooks_path))
         ours = (HOOK_PLUGIN in existing
-                and str(hooks_path) in existing
+                and (str(hooks_path) in existing
+                     or rendered_hooks in existing)
                 and "- insert:" in existing)
         return {
             "installed": ours,
