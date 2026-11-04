@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from backend.openai_compat import OpenAICompatBackend
 from cortex.e2e import FakeUltraSmall, MockTransport
-from harness.app import create_app
+from harness.app import ServerStartRequest, create_app
 from harness.roles import (
     DEFAULT_PLACEMENTS,
     DEFAULT_ROLES,
@@ -29,6 +29,14 @@ def test_roles_round_trip(tmp_path, monkeypatch):
     assert loaded["roles"]["controller"] == "scion35"
     assert loaded["placements"]["controller"] == "non_display"
     assert json.loads(path.read_text())["roles"]["controller"] == "scion35"
+
+
+def test_lfm3_launches_with_reasoning_off():
+    req = ServerStartRequest(backend="lfm3", alias="conductor-1.7b")
+    args = req.extra_args()
+    assert args[args.index("--reasoning") + 1] == "off"
+    explicit = ServerStartRequest(backend="lfm3", reasoning="on")
+    assert explicit.extra_args()[explicit.extra_args().index("--reasoning") + 1] == "on"
 
 
 def test_provider_aliases():

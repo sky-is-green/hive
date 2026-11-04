@@ -77,6 +77,7 @@ def main() -> int:
             "ngl": args.ngl,
             "backend": args.backend,
             "alias": alias,
+            "reasoning": "off",
             "register_provider": True,
             "claim_default": False,
         }

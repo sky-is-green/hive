@@ -1313,6 +1313,9 @@ class ServerStartRequest(BaseModel):
     batch_size: Optional[int] = None
     ubatch_size: Optional[int] = None
     alias: Optional[str] = None
+    # LFM3-family chat templates put the answer in reasoning unless the
+    # serving flag is off.  The Hive roster was trained with thinking off.
+    reasoning: Optional[str] = None  # off | on | auto
     mlock: bool = False
     no_mmap: bool = False
     api_key: Optional[str] = None  # protect llama-server (--api-key)
@@ -1342,6 +1345,11 @@ class ServerStartRequest(BaseModel):
             args += ["-ub", str(self.ubatch_size)]
         if self.alias:
             args += ["--alias", self.alias]
+        reasoning = self.reasoning
+        if reasoning is None and (self.backend or "").strip().lower() == "lfm3":
+            reasoning = "off"
+        if reasoning:
+            args += ["--reasoning", str(reasoning)]
         if self.mlock:
             args += ["--mlock"]
         if self.no_mmap:
@@ -1435,6 +1443,7 @@ class EngineEntry(BaseModel):
     name: str
     kind: str = "lmstudio"
     base_url: str = ""
+    provider: str = ""
     load_options: dict = {}
     capabilities: list[str] = []
     sampling: dict = {}
