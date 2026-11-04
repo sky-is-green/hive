@@ -62,7 +62,7 @@ MODEL_ENDPOINTS = {
     "reader17": "http://127.0.0.1:8159",
     "auditor17": "http://127.0.0.1:8162",
     "dispatcher17": "http://127.0.0.1:8163",
-    "clerk17": "http://127.0.0.1:8164",
+    "toolmanager17": "http://127.0.0.1:8164",
 }
 def _ensure_state() -> None:
     """Create the console's writable state and seed read-only defaults."""

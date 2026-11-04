@@ -44,6 +44,7 @@ def test_provider_aliases():
     assert provider_name("lfm3vl") == "local-LFM3-VL-2B-Q8_0"
     assert provider_name("d1-2b") == "local-d1-2B-Q8_0"
     assert provider_name("controller17") == "controller17"
+    assert provider_name("toolmanager17") == "toolmanager17"
 
 
 def test_provider_resolution_follows_a_library_launch():

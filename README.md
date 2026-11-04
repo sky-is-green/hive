@@ -42,7 +42,7 @@ Five small role specialists, served by the same harness:
 | [Hive Reader 1.7B](https://huggingface.co/SkyIsNotGreen/hive-reader-1.7b-v1) | mechanics + RAG |
 | [Hive Auditor 1.7B](https://huggingface.co/SkyIsNotGreen/hive-auditor-1.7b-v1) | placement + critic |
 | [Hive Dispatcher 1.7B](https://huggingface.co/SkyIsNotGreen/hive-dispatcher-1.7b-v1) | dispatcher |
-| [Hive Clerk 1.7B](https://huggingface.co/SkyIsNotGreen/hive-clerk-1.7b-v1) | agency |
+| [Hive Tool Manager 1.7B](https://huggingface.co/SkyIsNotGreen/hive-tool-manager-1.7b-v1) | agency |
 
 They are role specialists, not general chat models. The controller/planner seat
 is the Conductor; the other four cover document reading, placement/critique,

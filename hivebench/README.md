@@ -247,7 +247,7 @@ point external clients at it.
 The console Roles page is live, not a mock-up: it writes the role assignment
 that `/v1/roles`, `/v1/role/chat/completions` and the agent's `role` field read.
 The default roster is Conductor (controller + planner), Reader (mechanics +
-RAG), Auditor (placement + critic), Dispatcher, and Clerk, with Scion/d1/LFM3
+RAG), Auditor (placement + critic), Dispatcher, and Tool Manager, with Scion/d1/LFM3
 on the semantic and vision seats. `GET /v1/roles` reports whether each seat
 resolves to a configured provider.
 

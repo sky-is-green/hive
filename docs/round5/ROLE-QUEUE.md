@@ -20,7 +20,7 @@ stays live.
 | `auditor` | placement + critic (**Hive Auditor 1.7B**) | **passed and wired** — placement 44/46 HF, 43/46 GGUF; critic 36/38 HF, 35/38 GGUF |
 | `agency-dispatcher` | agency, dispatcher (**Hive Operator 1.7B**) | **failed** — dispatcher 0.950/0.925, agency 0.907/0.861; split |
 | `dispatcher` | dispatcher (**Hive Dispatcher 1.7B**) | **passed and wired** — 0.950 HF / 0.925 GGUF |
-| `agency` | agency (**Hive Clerk 1.7B**) | **passed and wired** — 0.977 HF / 0.930 GGUF |
+| `agency` | agency (**Hive Tool Manager 1.7B**) | **passed and wired** — 0.977 HF / 0.930 GGUF |
 | `merge-incident` | merge/CI coordinator, incident/rollback | queued |
 | — | router, judge, face | **not queued** — semantic roles stay Scion/d1 |
 
@@ -62,7 +62,7 @@ mix added controller/planner replay to the training corpus (800 placement,
 - Gate: **PASS**. Candidate on `:8162`, alias `auditor-1.7b`, wired for placement and critic.
 - Gate report: `work/train-runs/auditor-sft-v3/gate-report.json`.
 
-## Operator split: Hive Dispatcher + Hive Clerk
+## Operator split: Hive Dispatcher + Hive Tool Manager
 
 The combined agency+dispatcher adapter was too broad. v2, initialized from
 Conductor, reached dispatcher **0.950 HF / 0.925 GGUF** but agency only
@@ -70,11 +70,11 @@ Conductor, reached dispatcher **0.950 HF / 0.925 GGUF** but agency only
 
 - **Hive Dispatcher 1.7B** — dispatcher-only; **passed**, live on `:8163`,
   alias `dispatcher-1.7b`. Uses the dispatcher half of `operator-sft-v2`.
-- **Hive Clerk 1.7B** — agency-only; trained from `operator-sft-v2` on the
+- **Hive Tool Manager 1.7B** — agency-only; trained from `operator-sft-v2` on the
   360-row agency corpus, **passed** at **0.977 HF / 0.930 GGUF**, live on
-  `:8164`, alias `clerk-1.7b`.
+  `:8164`, alias `tool-manager-1.7b`.
 
-Dispatcher is the assignment/scheduling seat; Clerk is tool selection/order.
+Dispatcher is the assignment/scheduling seat; Tool Manager is tool selection/order.
 
 ## Roster complete
 
@@ -84,7 +84,7 @@ Dispatcher is the assignment/scheduling seat; Clerk is tool selection/order.
 | **Hive Reader 1.7B** | mechanics + RAG | `:8159` live |
 | **Hive Auditor 1.7B** | placement + critic | `:8162` live |
 | **Hive Dispatcher 1.7B** | dispatcher | `:8163` live |
-| **Hive Clerk 1.7B** | agency | `:8164` live |
+| **Hive Tool Manager 1.7B** | agency | `:8164` live |
 
 All five are separate adapters, each gated on its own held-out suites. Router,
 face, judge, vision and risk remain on Scion/d1/VL/guards.

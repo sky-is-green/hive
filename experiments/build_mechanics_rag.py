@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Build the combined mechanics + RAG (Hive Clerk) suites and corpus.
+"""Build the combined mechanics + RAG (Hive Reader) suites and corpus.
 
 Mechanics and RAG are both document-in / structured-answer-out roles. They are
 combined into one separate adapter so the live Conductor is untouched.

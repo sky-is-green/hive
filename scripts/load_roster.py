@@ -33,8 +33,8 @@ ROSTER = (
      8162, "auditor-1.7b"),
     ("hive-dispatcher-1.7b-v1-Q4_K_M", "hive-dispatcher-1.7b-v1-Q4_K_M",
      8163, "dispatcher-1.7b"),
-    ("hive-clerk-1.7b-v1-Q4_K_M", "hive-clerk-1.7b-v1-Q4_K_M",
-     8164, "clerk-1.7b"),
+    ("hive-tool-manager-1.7b-v1-Q4_K_M", "hive-tool-manager-1.7b-v1-Q4_K_M",
+     8164, "tool-manager-1.7b"),
 )
 
 

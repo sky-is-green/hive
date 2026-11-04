@@ -2,7 +2,7 @@
 """Package a named Hive specialist for a private Hugging Face release.
 
 Unlike ``package_role_specialist.py`` (one role), this script takes a release
-name and a list of roles, so Conductor/Reader/Auditor/Dispatcher/Clerk keep
+name and a list of roles, so Conductor/Reader/Auditor/Dispatcher/Tool Manager keep
 their product names and evaluation tables.
 """
 

@@ -49,7 +49,7 @@ const MODEL_TIER = {
 const MODEL_WEIGHTS = {
   lfm3: 1.02, lfm3vl: 1.72, scion35: 10.56, scion176: 69.18,
   controller17: 1.1, reader17: 1.1, auditor17: 1.1,
-  dispatcher17: 1.1, clerk17: 1.1,
+  dispatcher17: 1.1, toolmanager17: 1.1,
   guards: 0, "drone-heuristic": 0, ds41: null, "d1-2b": 1.72,
 };
 const LIB = { models: [], instances: [], ts: 0, error: "" };
@@ -234,14 +234,14 @@ const MODELS = {
   reader17: { label: "Hive Reader 1.7B", base: "/model/reader17", model: "reader-1.7b", note: "8159 · mechanics + RAG" },
   auditor17: { label: "Hive Auditor 1.7B", base: "/model/auditor17", model: "auditor-1.7b", note: "8162 · placement + critic" },
   dispatcher17: { label: "Hive Dispatcher 1.7B", base: "/model/dispatcher17", model: "dispatcher-1.7b", note: "8163 · dispatcher" },
-  clerk17: { label: "Hive Clerk 1.7B", base: "/model/clerk17", model: "clerk-1.7b", note: "8164 · agency" },
+  toolmanager17: { label: "Hive Tool Manager 1.7B", base: "/model/toolmanager17", model: "tool-manager-1.7b", note: "8164 · agency" },
 };
 const DEFAULT_ROLES = {
   planner: "scion35",
   controller: "controller17",
   router: "scion35",
   face: "scion35",
-  agency: "clerk17",
+  agency: "toolmanager17",
   mechanics: "reader17",
   judge: "d1-2b",
   rag: "reader17",
@@ -256,7 +256,7 @@ const ROLE_OPTIONS = {
   controller: ["controller17", "scion35", "scion176"],
   router: ["scion35", "d1-2b", "drone-heuristic"],
   face: ["scion35", "scion176", "lfm3", "ds41"],
-  agency: ["clerk17", "scion35", "scion176", "lfm3", "ds41"],
+  agency: ["toolmanager17", "scion35", "scion176", "lfm3", "ds41"],
   mechanics: ["reader17", "lfm3", "scion35", "ds41"],
   judge: ["d1-2b", "ds41"],
   rag: ["reader17", "lfm3", "scion35", "scion176", "ds41"],

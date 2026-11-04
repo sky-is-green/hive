@@ -77,11 +77,11 @@
     },
     {
       "id": "agency",
-      "name": "Hive Clerk 1.7B",
+      "name": "Hive Tool Manager 1.7B",
       "roles": ["agency"],
       "mode": "separate-adapter",
       "status": "passed",
-      "result": "agency 0.977 HF / 0.930 GGUF; :8164 clerk-1.7b"
+      "result": "agency 0.977 HF / 0.930 GGUF; :8164 tool-manager-1.7b"
     },
     {
       "id": "merge-incident",

@@ -106,7 +106,7 @@ artifacts.
 2. The **controller/planner** pair remains in this adapter and is live on
    `:8156`; the deterministic schedule guard is still the production follow-up.
 3. The roster is now five separate specialists: Conductor, Reader, Auditor,
-   Dispatcher and Clerk. Release visibility is handled by the release checklist;
+   Dispatcher and Tool Manager. Release visibility is handled by the release checklist;
    the weights stay private until that flip.
 
 ## Repro
