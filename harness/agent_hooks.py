@@ -27,10 +27,10 @@ PATCH_FILE = "cordis.patch.yml"
 
 def hook_command(python: str | Path | None = None) -> str:
     script = Path(__file__).resolve().with_name("tool_hook.py")
-    return " ".join((
-        shlex.quote(str(python or sys.executable)),
-        shlex.quote(str(script)),
-    ))
+    argv = [str(python or sys.executable), str(script)]
+    if os.name == "nt":
+        return subprocess.list2cmdline(argv)
+    return " ".join(shlex.quote(item) for item in argv)
 
 
 def hook_config(python: str | Path | None = None) -> dict[str, Any]:

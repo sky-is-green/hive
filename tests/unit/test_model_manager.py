@@ -425,6 +425,10 @@ def agent_client(client, monkeypatch, tmp_path):
     import harness.agent as agent_module
 
     monkeypatch.setattr(agent_module, "DeepSeekHarness", FakeHarness)
+    # The fake runtime owns no hook process; keep the hook/preflight path out
+    # of these model-routing tests. The hook installer has its own suite.
+    monkeypatch.setenv("HIVE_DSH_HOOK", "off")
+    monkeypatch.setattr(agent_module.shutil, "which", lambda _name: None)
     FakeHarness.instances = []
     # isolate the durable-session root so disk state never leaks between
     # tests or from live runs

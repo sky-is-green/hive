@@ -184,7 +184,12 @@ def workspace_path(raw: str) -> str:
     if not path.is_dir():
         raise SandboxError(f"workspace does not exist: {path}")
     rendered = str(path)
-    if ":" in rendered or "," in rendered:
+    # Docker volume syntax treats ':' and ',' as separators.  A Windows drive
+    # letter is the one colon Docker understands, and only as the first two
+    # characters (``C:\...``); reject every other colon and every comma.
+    drive = os.name == "nt" and bool(re.match(r"^[A-Za-z]:[\\/]", rendered))
+    rest = rendered[2:] if drive else rendered
+    if ":" in rest or "," in rendered:
         raise SandboxError("workspace path contains a Docker-invalid character")
     return rendered
 

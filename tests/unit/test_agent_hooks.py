@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -17,17 +19,17 @@ from harness.agent_hooks import (
 
 
 def test_hook_config_targets_pretooluse(tmp_path):
-    config = hook_config("/usr/bin/python3")
+    config = hook_config(sys.executable)
     hook = config["hooks"]["PreToolUse"][0]
     assert hook["matcher"] == "*"
     assert hook["hooks"][0]["type"] == "command"
-    assert "harness/tool_hook.py" in hook["hooks"][0]["command"]
-    assert "/usr/bin/python3" in hook["hooks"][0]["command"]
+    assert "tool_hook.py" in hook["hooks"][0]["command"]
+    assert Path(sys.executable).name in hook["hooks"][0]["command"]
 
 
 def test_hook_profile_is_installed_and_idempotent(tmp_path):
     home = tmp_path / "dsh-home"
-    first = ensure_hook_profile(home, tmp_path, python="/usr/bin/python3")
+    first = ensure_hook_profile(home, tmp_path, python=sys.executable)
     assert first["installed"] is True
     hooks = json.loads((home / "hive-hooks.json").read_text(encoding="utf-8"))
     assert hooks["hooks"]["PreToolUse"][0]["hooks"][0]["type"] == "command"
@@ -36,7 +38,7 @@ def test_hook_profile_is_installed_and_idempotent(tmp_path):
     assert f"id: {HOOK_ID}" in patch
     assert "hooks-claude-code" in patch
     assert "configPath:" in patch
-    second = ensure_hook_profile(home, tmp_path, python="/usr/bin/python3")
+    second = ensure_hook_profile(home, tmp_path, python=sys.executable)
     assert second["installed"] is True
     assert "already installed" in second["reason"]
     assert (home / "cordis.patch.yml").read_text(encoding="utf-8").count(
@@ -49,7 +51,7 @@ def test_a_conflicting_user_row_is_not_claimed(tmp_path):
     (home / "cordis.patch.yml").write_text(
         "- id: hooks-claude-code\n  name: '@example/not-hive'\n",
         encoding="utf-8")
-    result = ensure_hook_profile(home, tmp_path, python="/usr/bin/python3")
+    result = ensure_hook_profile(home, tmp_path, python=sys.executable)
     assert result["installed"] is False
     assert "different config" in result["reason"]
 
@@ -60,7 +62,7 @@ def test_existing_user_patch_is_preserved(tmp_path):
     patch = home / "cordis.patch.yml"
     patch.write_text("- id: my-own-row\n  name: '@example/plugin'\n",
                      encoding="utf-8")
-    result = ensure_hook_profile(home, tmp_path, python="/usr/bin/python3")
+    result = ensure_hook_profile(home, tmp_path, python=sys.executable)
     assert result["installed"] is True
     text = patch.read_text(encoding="utf-8")
     assert "my-own-row" in text
@@ -81,6 +83,7 @@ def _script(path: Path, body: str) -> Path:
     return path
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX script fixture")
 def test_preflight_refuses_an_inactive_hook(tmp_path):
     script = _script(tmp_path / "dsh", (
         "echo 'hooks-claude-code: failed to import: no protocol' >&2\n"
@@ -89,11 +92,13 @@ def test_preflight_refuses_an_inactive_hook(tmp_path):
         preflight_runtime(script, tmp_path / "home", tmp_path)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX script fixture")
 def test_preflight_accepts_a_clean_boot(tmp_path):
     script = _script(tmp_path / "dsh", "exit 0\n")
     preflight_runtime(script, tmp_path / "home", tmp_path)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX script fixture")
 def test_preflight_refuses_a_boot_failure_even_without_hook_text(tmp_path):
     script = _script(tmp_path / "dsh", "echo 'profile failed' >&2\nexit 1\n")
     with pytest.raises(RuntimeError, match="exited 1"):

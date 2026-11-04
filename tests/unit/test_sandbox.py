@@ -208,10 +208,10 @@ def test_workspace_path_rejects_bad_targets(tmp_path, monkeypatch):
         sandbox.workspace_path(str(tmp_path))
     with pytest.raises(sandbox.SandboxError, match="does not exist"):
         sandbox.workspace_path(str(root / "missing"))
-    colon = root / "task:bad"
-    colon.mkdir()
+    comma = root / "task,bad"
+    comma.mkdir()
     with pytest.raises(sandbox.SandboxError, match="Docker-invalid"):
-        sandbox.workspace_path(str(colon))
+        sandbox.workspace_path(str(comma))
     outside = tmp_path / "outside"
     outside.mkdir()
     link = root / "link"
