@@ -39,6 +39,13 @@ def test_lfm3_launches_with_reasoning_off():
     assert explicit.extra_args()[explicit.extra_args().index("--reasoning") + 1] == "on"
 
 
+def test_legacy_clerk_key_is_migrated(tmp_path, monkeypatch):
+    path = tmp_path / "roles.json"
+    monkeypatch.setenv("HIVE_ROLES_FILE", str(path))
+    path.write_text(json.dumps({"roles": {"agency": "clerk17"}}))
+    assert load_roles()["roles"]["agency"] == "toolmanager17"
+
+
 def test_provider_aliases():
     assert provider_name("lfm3") == "local-LFM3-1.7B-Q4_K_M"
     assert provider_name("lfm3vl") == "local-LFM3-VL-2B-Q8_0"

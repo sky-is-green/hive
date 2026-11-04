@@ -71,6 +71,12 @@ MODEL_PROVIDER_ALIASES: dict[str, str] = {
 
 # GGUF aliases.  A model loaded from the library is registered as
 # ``local-<file-stem>``, not as the role key, so match the served model too.
+# Old role files (and old live provider registries) used these keys.
+LEGACY_MODELS: dict[str, str] = {
+    "clerk17": "toolmanager17",
+    "clerk-1.7b": "tool-manager-1.7b",
+}
+
 MODEL_ALIASES: dict[str, str] = {
     "controller17": "conductor-1.7b",
     "reader17": "reader-1.7b",
@@ -106,7 +112,8 @@ def _clean(data: Any) -> tuple[dict[str, str], dict[str, str]]:
     raw_places = data.get("placements") if isinstance(data.get("placements"), dict) else {}
     roles = dict(DEFAULT_ROLES)
     placements = dict(DEFAULT_PLACEMENTS)
-    roles.update({str(k): str(v) for k, v in raw_roles.items() if v})
+    roles.update({str(k): LEGACY_MODELS.get(str(v), str(v))
+                  for k, v in raw_roles.items() if v})
     placements.update({str(k): str(v) for k, v in raw_places.items()})
     return roles, placements
 
