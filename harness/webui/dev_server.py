@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -62,6 +63,14 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def _upstream_headers(self, *, content_type: str | None = None) -> dict:
+        headers = {"content-type": content_type or self.headers.get(
+            "content-type", "application/json")}
+        token = os.environ.get("HARNESS_TOKEN", "").strip()
+        if token:
+            headers["x-splinter-token"] = token
+        return headers
+
     def _proxy(self, url: str, data: bytes | None = None) -> None:
         try:
             if data is None:
@@ -69,7 +78,7 @@ class Handler(SimpleHTTPRequestHandler):
                 data = self.rfile.read(length) if length else None
             req = urllib.request.Request(
                 url, data=data, method=self.command,
-                headers={"content-type": self.headers.get("content-type", "application/json")},
+                headers=self._upstream_headers(),
             )
             with urllib.request.urlopen(req, timeout=180) as resp:
                 body = resp.read()
@@ -101,7 +110,7 @@ class Handler(SimpleHTTPRequestHandler):
                 data = self.rfile.read(length) if length else None
             req = urllib.request.Request(
                 url, data=data, method=self.command,
-                headers={"content-type": self.headers.get("content-type", "application/json")},
+                headers=self._upstream_headers(),
             )
             resp = urllib.request.urlopen(req, timeout=3600)
             self.send_response(resp.status)
