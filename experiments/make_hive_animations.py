@@ -17,10 +17,12 @@ and the extracted answer.
 from __future__ import annotations
 
 import math
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import make_hive_heroes as h
 
 OUT = h.OUT
