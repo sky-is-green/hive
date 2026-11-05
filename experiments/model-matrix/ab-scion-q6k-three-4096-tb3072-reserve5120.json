@@ -1,0 +1,123 @@
+{
+  "models": {
+    "scion-q6k": {
+      "n": 3,
+      "accuracy": 0.3333,
+      "errors": 0,
+      "median_s": 18.605,
+      "p95_s": 18.605,
+      "total_completion_tokens": 5158,
+      "by_benchmark": {
+        "gsm8k": {
+          "n": 3,
+          "accuracy": 0.3333,
+          "errors": 0,
+          "median_s": 18.605,
+          "p95_s": 18.605,
+          "total_completion_tokens": 5158
+        }
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    }
+  ],
+  "samples": 1,
+  "rows": [
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let me work through the problem step by step.\n\n**Boxes sold:**\n\n- Sunday apple pie = 15 boxes (given).\n- Saturday apple pie = 4 fewer than Sunday = 15 \u2212 4 = **11 boxes**.\n- Saturday gingerbread = 10 boxes (given).\n- Sunday gingerbread = 5 more than Saturday = 10 + 5 = **15 boxes**.\n\nSo the totals are:\n- Saturday: 10 gingerbread + 11 apple pie\n- Sunday: 15 gingerbread + 15 apple pie\n\n**Prices:** gingerbread = $6 per box, apple pie = $15 per box.\n\n**Saturday earnings:**\n- Gingerbread: 10 \u00d7 $6 = $60\n- Apple pie: 11 \u00d7 $15 = $165\n- Saturday total = $60 + $165 = **$225**\n\n**Sunday earnings:**\n- Gingerbread: 15 \u00d7 $6 = $90\n- Apple pie: 15 \u00d7 $15 = $225\n- Sunday total = $90 + $225 = **$315**\n\n**Total for two days:** $225 + $315 = **$540**\n\nFinal answer: 540",
+      "wall_s": 15.043,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 188,
+        "completion_tokens": 695,
+        "total_tokens": 883,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 188,
+        "predicted_n": 695,
+        "prompt_per_second": 64.3,
+        "predicted_per_second": 57.4
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "Let's add up the birds Mack saw each day:\n\n- Days 1 and 2: 50 birds (total for those two days)\n- Day 3: 0 birds\n- Days 4 and 5: 120 birds (total for those two days)\n- Day 6: 20 birds\n- Day 7: 90 birds\n\nTotal birds over the 7 days = 50 + 0 + 120 + 20 + 90 = 290 birds.\n\nAverage per day = 290 \u00f7 7 \u2248 41.4 birds per day.\n\nFinal answer: 41.4",
+      "wall_s": 44.649,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 192,
+        "completion_tokens": 3239,
+        "total_tokens": 3431,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 192,
+        "predicted_n": 3239,
+        "prompt_per_second": 17.9,
+        "predicted_per_second": 95.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "**Step 1: Find the number of big coupons.**\nAnthony wants twice as many big coupons as small coupons.\nSmall coupons = 700\nBig coupons = 2 \u00d7 700 = **1400**\n\n**Step 2: Find the postage cost for the small coupons.**\nEach small coupon costs 5 cents.\n700 \u00d7 5 = **3500 cents**\n\n**Step 3: Find the postage cost for the big coupons.**\nEach big coupon costs 15 cents.\n1400 \u00d7 15 = **21000 cents**\n\n**Step 4: Add the two costs together.**\n3500 + 21000 = **24500 cents**\n\n(That is also equal to $245.00.)\n\nFinal answer: 24500",
+      "wall_s": 18.605,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 162,
+        "completion_tokens": 1224,
+        "total_tokens": 1386,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 162,
+        "predicted_n": 1224,
+        "prompt_per_second": 67.8,
+        "predicted_per_second": 75.5
+      },
+      "error": null
+    }
+  ]
+}

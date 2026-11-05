@@ -54,3 +54,30 @@ for that future run.
 - `experiments/model-matrix/ab-scion-q2-v0210-4096-tb3072.json`
 - `docs/SCION-DIRECT-AB.md` — the runbook
 - `experiments/compare_scion_direct_q2.py` — the comparison
+
+## No-corrections control (three tasks, 2026-11-05)
+
+Three arms on `gsm8k-0009`, `0015`, `0038`, same 8192 context, 4096 cap, 3072 thinking budget.
+The corrected arm was rerun at the same 5120/1024 VRAM reserve as the no-corrections arm, because the
+expert-cache placement changes with the reserve and can change an answer.
+
+| Task | Corrected, 3072 reserve | Corrected, 5120 reserve | No corrections, 5120 | Q2 bridge, 3072 |
+|---|---|---|---|---|
+| `0009` | FAIL 480 | **PASS 540** | **PASS 540** | **PASS 540** |
+| `0015` | FAIL 41 | FAIL 41.4 | FAIL 41 | **PASS 40** |
+| `0038` | FAIL 24500 | FAIL 24500 | **PASS 245** | FAIL 24500 |
+
+What this rules out:
+
+- **`0009` is not a correction defect.** The corrected model passes it once the reserve/cache matches;
+  the earlier 480 was cache-placement or sampling, not a stable branch error.
+- **`0015` is not a correction defect.** It fails with and without corrections; the direct model sums
+  the birds as 290 instead of 280. The Q2 bridge gets 40, but it differs in experts, PLE and body, so
+  that is not a corrections comparison.
+- **`0038` is a units/checker issue.** `24500 cents` and `245 dollars` are the same amount; the
+  checker expects the dollar form. The corrected arm answers cents, the no-corrections arm answers
+  dollars. This is not a quality difference.
+
+Conclusion: the local control does **not** support “the three failures are the trained corrections.”
+Only `0038` changes with the corrections, and both of its answers are mathematically correct. The F16
+body control is not needed to explain these three items.

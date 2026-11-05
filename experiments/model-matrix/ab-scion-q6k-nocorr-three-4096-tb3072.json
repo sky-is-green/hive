@@ -1,0 +1,123 @@
+{
+  "models": {
+    "scion-q6k": {
+      "n": 3,
+      "accuracy": 0.6667,
+      "errors": 0,
+      "median_s": 39.575,
+      "p95_s": 39.575,
+      "total_completion_tokens": 7120,
+      "by_benchmark": {
+        "gsm8k": {
+          "n": 3,
+          "accuracy": 0.6667,
+          "errors": 0,
+          "median_s": 39.575,
+          "p95_s": 39.575,
+          "total_completion_tokens": 7120
+        }
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    }
+  ],
+  "samples": 1,
+  "rows": [
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Saturday gingerbread boxes: 10  \nSunday gingerbread boxes: 10 + 5 = 15  \nSunday apple pie boxes: 15  \nSaturday apple pie boxes: 15 - 4 = 11  \n\nGingerbread earnings:\n- Saturday: 10 \u00d7 $6 = $60\n- Sunday: 15 \u00d7 $6 = $90\n- Total gingerbread: $60 + $90 = $150\n\nApple pie earnings:\n- Saturday: 11 \u00d7 $15 = $165\n- Sunday: 15 \u00d7 $15 = $225\n- Total apple pie: $165 + $225 = $390\n\nTotal earnings for two days:\n$150 + $390 = $540\n\nFinal answer: 540",
+      "wall_s": 14.048,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 188,
+        "completion_tokens": 659,
+        "total_tokens": 847,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 188,
+        "predicted_n": 659,
+        "prompt_per_second": 64.1,
+        "predicted_per_second": 59.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "Total birds seen over the week:\n- Days one and two: 50 birds\n- Day three: 0 birds\n- Days four and five: 120 birds\n- Day six: 20 birds\n- Day seven: 90 birds\n\nTotal = 50 + 0 + 120 + 20 + 90 = 290 birds\n\nNumber of days = 7\n\nAverage per day = 290 \u00f7 7 = 41.428571... \u2248 41 birds per day\n\nFinal answer: 41",
+      "wall_s": 39.575,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 192,
+        "completion_tokens": 3221,
+        "total_tokens": 3413,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 192,
+        "predicted_n": 3221,
+        "prompt_per_second": 19.0,
+        "predicted_per_second": 108.9
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "He wants to send out 700 small coupons.\n\nTwice as many big coupons means:\n700 \u00d7 2 = 1400 big coupons.\n\nSmall coupon postage:\n700 \u00d7 5 cents = 3500 cents.\n\nBig coupon postage:\n1400 \u00d7 15 cents = 21000 cents.\n\nTotal postage in cents:\n3500 + 21000 = 24500 cents.\n\nSince 100 cents = 1 dollar:\n24500 cents \u00f7 100 = 245 dollars.\n\nFinal answer: 245",
+      "wall_s": 40.431,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 162,
+        "completion_tokens": 3240,
+        "total_tokens": 3402,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 162,
+        "predicted_n": 3240,
+        "prompt_per_second": 16.6,
+        "predicted_per_second": 105.3
+      },
+      "error": null
+    }
+  ]
+}
