@@ -17,8 +17,8 @@
     "stack": "stacks/scion-flashnext-strata.json",
     "config": "stacks/strata/configs/scion-flashnext-176b-a6b-q6k.json"
   },
-  "sha256": null,
-  "sha256_status": "pending: the direct Q6K file is not on this box; fill it after the download",
+  "sha256": "236c6ef96f0a5c3bbf660101c51cb1fdcd6f63724d9341a3d5aedc568bd08cec",
+  "sha256_status": "verified 2026-11-05 against SHA256SUMS from the HF repo",
   "legacy": {
     "q2_bridge": {
       "gguf": "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q2_0.gguf",

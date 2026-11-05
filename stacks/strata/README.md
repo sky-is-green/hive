@@ -31,6 +31,20 @@ The engine `exe` is `build-hip-0.2.10/strata`, resolved against the config's `cw
 Only one of them can own port 8081 at a time. The stack launcher adopts an already-running server
 at the endpoint instead of killing it; `hive stop` only stops a process Hive started.
 
+## Chat template
+
+The Q6_K GGUF carries no `tokenizer.chat_template`. Build the pack with the Qwen3.8 template:
+
+```sh
+python3 tools/iq_pack.py --gguf "$SCION_MODELS/Scion-FlashNext-176B-A6B-Q6_K.gguf" \
+  --out "$SCION_MODELS/pack-q6k" --compat-bf16 \
+  --chat-template "$SCION_MODELS/pack-q2-ab/tokenizer/chat_template.jinja"
+```
+
+A pack with the one-line placeholder (`{{ messages[-1].content }}`) makes thinking mode repeat the
+prompt. The local `pack-q6k-ppl` was repaired in place with the Q2 template; `--chat-template`
+keeps a rebuild from reintroducing the stub.
+
 ## Model manifest
 
 `stacks/manifests/scion-flashnext-176b-a6b.json` records the model, container types, pack paths and
