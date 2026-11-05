@@ -18,12 +18,12 @@ from PIL import Image, ImageDraw
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "assets" / "heroes"
 
-W, H = 1100, 820
-TILE = 260
+W, H = 1000, 720
+TILE = 320
 FRAMES = 100
 DURATION = 100  # ms, 10 s loop
 GIF_FRAMES = 60
-GIF_SIZE = (900, 671)
+GIF_SIZE = (1000, 720)
 
 BG = (8, 14, 24, 255)
 HIVE_LINE = (88, 66, 25, 255)
@@ -32,13 +32,13 @@ HIVE_EDGE = (150, 105, 25, 255)
 PULSE = (255, 183, 3, 255)
 PULSE_CORE = (255, 241, 200, 255)
 
-CENTER = (550, 410)
+CENTER = (500, 180)
 HEROES = (
     ("conductor", CENTER),
-    ("reader", (270, 230)),
-    ("auditor", (830, 230)),
-    ("dispatcher", (270, 590)),
-    ("toolmanager", (830, 590)),
+    ("reader", (170, 180)),
+    ("auditor", (830, 180)),
+    ("dispatcher", (335, 540)),
+    ("toolmanager", (665, 540)),
 )
 
 
