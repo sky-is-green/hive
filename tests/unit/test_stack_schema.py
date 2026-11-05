@@ -369,6 +369,7 @@ def test_launch_block_round_trips_without_injecting_defaults():
         "endpoint": "http://127.0.0.1:8080/v1",
         "launch": {
             "kind": "strata", "repo": "~/strata", "config": "cfg.json",
+            "config_external": True,
             "engine_args": ["--prefill", "512"],
             "options": {"idle_unload_s": 600}, "timeout_s": 600,
         },
@@ -393,6 +394,7 @@ def test_launch_block_round_trips_without_injecting_defaults():
     ({"kind": "strata", "repo": "x", "config": "c",
       "options": {"args": []}}, "may not override"),
     ({"kind": "strata", "repo": "x", "config": "c", "timeout_s": 0}, "must be > 0"),
+    ({"kind": "strata", "repo": "x", "config": "c", "config_external": "yes"}, "true or false"),
     ({"kind": "strata", "repo": "x", "config": "c", "extra": 1}, "unknown field"),
 ])
 def test_launch_rejects_malformed_blocks(launch, match):

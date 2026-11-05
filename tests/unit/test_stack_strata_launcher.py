@@ -15,6 +15,7 @@ import pytest
 
 from harness.stack.schema import Tier
 from harness.stack.strata import StrataLauncher, merge_engine_args
+import harness.stack.strata as strata_module
 
 # ---------------------------------------------------------------------------
 # fakes
@@ -241,6 +242,41 @@ def test_resolve_refuses_paths_outside_the_repo(strata_tree, tmp_path):
         StrataLauncher().resolve(
             {"kind": "strata", "repo": str(strata_tree), "config": str(outside)},
             "http://127.0.0.1:18080/v1")
+
+
+def test_resolve_accepts_a_hive_owned_external_config(strata_tree, tmp_path, monkeypatch):
+    """A deployment config can live with the stack instead of in the engine checkout."""
+    monkeypatch.setattr(strata_module, "REPO_ROOT", tmp_path)
+    config = tmp_path / "stacks" / "strata" / "configs" / "m.json"
+    config.parent.mkdir(parents=True)
+    config.write_text("{}", encoding="utf-8")
+    resolved = StrataLauncher().resolve(
+        {"kind": "strata", "repo": str(strata_tree),
+         "config": "stacks/strata/configs/m.json", "config_external": True},
+        "http://127.0.0.1:18080/v1")
+    assert resolved["config"] == config.resolve()
+
+
+def test_resolve_expands_environment_variables(strata_tree, monkeypatch):
+    monkeypatch.setenv("TEST_STRATA_REPO", str(strata_tree))
+    monkeypatch.setenv("TEST_STRATA_CONFIG", "strata-q2_0-coexist.json")
+    resolved = StrataLauncher().resolve(
+        {"kind": "strata", "repo": "${TEST_STRATA_REPO}", "config": "$TEST_STRATA_CONFIG"},
+        "http://127.0.0.1:18080/v1")
+    assert resolved["repo"] == strata_tree.resolve()
+    assert resolved["config"] == (strata_tree / "strata-q2_0-coexist.json").resolve()
+
+
+def test_build_config_expands_environment_variables(tmp_path, monkeypatch):
+    monkeypatch.setenv("TEST_MODEL_DIR", "/models")
+    tier = _tier(tmp_path)
+    config = StrataLauncher().build_config(
+        {"args": ["--pack", "${TEST_MODEL_DIR}/pack", "--native", "$TEST_MODEL_DIR/m.gguf"],
+         "tokenizer": "${TEST_MODEL_DIR}/tokenizer", "port": 1},
+        tier.launch, tier, "http://127.0.0.1:18080/v1", tmp_path / "e.log")
+    assert config["args"][config["args"].index("--pack") + 1] == "/models/pack"
+    assert config["args"][config["args"].index("--native") + 1] == "/models/m.gguf"
+    assert config["tokenizer"] == "/models/tokenizer"
 
 
 def test_resolve_refuses_missing_repo_config_and_python(tmp_path):

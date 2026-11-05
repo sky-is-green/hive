@@ -1,0 +1,30 @@
+{
+  "model": "scion-flashnext-176b-a6b",
+  "family": "qwen3.8-flash-next",
+  "runtime_arch": "qwen4exp",
+  "gguf": "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6K.gguf",
+  "pack": "${SCION_MODELS}/pack-q6k",
+  "ple_gguf": "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6K.gguf",
+  "embd_gguf": "${SCION_MODELS}/scion-embd-bf16.gguf",
+  "tokenizer": "${SCION_MODELS}/pack-q6k/tokenizer",
+  "containers": {
+    "experts": "TQ1_0_g128 (type 143, formerly PTQ1_0)",
+    "corrections": "embedded F16 LoRA, 96 pairs (48 ffn_moe_out, 36 ssm_out, 12 attn_output)",
+    "ple": "Q4_0, 160 values / 90 B rows"
+  },
+  "engine": {
+    "min": "scion-v0.2.10-r1",
+    "stack": "stacks/scion-flashnext-strata.json",
+    "config": "stacks/strata/configs/scion-flashnext-176b-a6b-q6k.json"
+  },
+  "sha256": null,
+  "sha256_status": "pending: the direct Q6K file is not on this box; fill it after the download",
+  "legacy": {
+    "q2_bridge": {
+      "gguf": "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q2_0.gguf",
+      "pack": "${SCION_MODELS}/pack-q2-ab",
+      "stack": "stacks/scion-flashnext-strata-q2.json",
+      "note": "Strata-compatible repack of the Q6K release, not an official Scion Q2"
+    }
+  }
+}

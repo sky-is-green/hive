@@ -62,7 +62,7 @@ LAUNCH_KINDS: tuple[str, ...] = ("strata", "deepinfer")
 
 #: Fields a tier's ``launch`` object round-trips.
 _LAUNCH_FIELDS: tuple[str, ...] = (
-    "kind", "repo", "config", "python", "server", "engine_args", "options",
+    "kind", "repo", "config", "config_external", "python", "server", "engine_args", "options",
     "timeout_s", "ctx_flag",
 )
 
@@ -206,6 +206,12 @@ def validate_launch(value: Any, *, where: str = "tier launch") -> dict[str, Any]
         "repo": _as_text(value["repo"], f"{where} repo"),
         "config": _as_text(value["config"], f"{where} config"),
     }
+    external = value.get("config_external")
+    if external is not None:
+        if not isinstance(external, bool):
+            raise ValueError(
+                f"{where} config_external must be true or false, got {type(external).__name__}")
+        out["config_external"] = external
     python = _as_optional_text(value.get("python"), f"{where} python")
     if python is not None:
         out["python"] = python

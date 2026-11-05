@@ -1,0 +1,38 @@
+# Strata deployment configs (Hive-owned)
+
+These are Hive's copies of the Strata server configs. They are **not** engine source and are not
+read from the Strata checkout. The stack that uses one sets `config_external: true`, so the
+launcher resolves it against the Hive repo root.
+
+| File | Use |
+|---|---|
+| `configs/scion-flashnext-176b-a6b-q6k.json` | direct 176B Q6K/Q4_0 release; `TQ1_0_g128` experts, Q4_0 PLE, embedded corrections |
+| `configs/scion-flashnext-176b-a6b-q2_0.json` | legacy Q2 bridge (Q2_0 experts, Q5_0 PLE), kept as the comparison baseline |
+
+## Environment
+
+The configs use `$VAR` placeholders, expanded by `StrataLauncher.build_config` before the config is
+written:
+
+| Variable | Meaning |
+|---|---|
+| `STRATA_REPO` | the Strata checkout (engine, `serve/server.py`, `data/`) |
+| `SCION_MODELS` | the model directory holding the GGUF files, `pack-q6k`, `pack-q2-ab`, `scion-embd-bf16.gguf` |
+| `STRATA_DATA` | `strata-data` (MTP and expert-profile data) |
+
+The engine `exe` is `build-hip-0.2.10/strata`, resolved against the config's `cwd`
+(`$STRATA_REPO`). A packaged engine release can replace it with an absolute path.
+
+## Stacks
+
+- `stacks/scion-flashnext-strata.json` — the direct Q6K lane.
+- `stacks/scion-flashnext-strata-q2.json` — the legacy Q2 bridge lane.
+
+Only one of them can own port 8081 at a time. The stack launcher adopts an already-running server
+at the endpoint instead of killing it; `hive stop` only stops a process Hive started.
+
+## Model manifest
+
+`stacks/manifests/scion-flashnext-176b-a6b.json` records the model, container types, pack paths and
+the minimum engine release. The SHA-256 is intentionally blank until the direct Q6K file is
+downloaded and hashed; do not fill it from the Q2 bridge.

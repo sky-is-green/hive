@@ -687,8 +687,14 @@ def _tier_validation(stack: schema.Stack, args: argparse.Namespace) -> tuple[lis
         row = {"role": tier.role, "status": "ok", "detail": ""}
         launch_ok = True
         if tier.launch:
-            repo = Path(str(tier.launch.get("repo") or "")).expanduser()
-            if str(repo) and not repo.exists():
+            raw_repo = str(tier.launch.get("repo") or "")
+            repo_text = os.path.expandvars(raw_repo)
+            repo = Path(repo_text).expanduser()
+            if "$" in repo_text:
+                warnings.append(
+                    f"tier {tier.role!r}: launch repo {raw_repo} is unresolved "
+                    f"until the environment is set")
+            elif str(repo) and not repo.exists():
                 launch_ok = False
                 errors.append(f"tier {tier.role!r}: launch repo {repo} does not exist")
                 row.update(status="fail", detail="launch repo missing")

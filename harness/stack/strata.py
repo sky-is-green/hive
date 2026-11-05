@@ -49,6 +49,17 @@ def _is_flag(token: str) -> bool:
     return bool(_FLAG.match(token))
 
 
+def _expand_env(value: Any) -> Any:
+    """Expand ``$VAR``/``${VAR}`` in every string of a config tree."""
+    if isinstance(value, str):
+        return os.path.expandvars(value)
+    if isinstance(value, list):
+        return [_expand_env(item) for item in value]
+    if isinstance(value, Mapping):
+        return {key: _expand_env(item) for key, item in value.items()}
+    return value
+
+
 def merge_engine_args(base: list[str], overrides: list[str]) -> list[str]:
     """Merge a flag/value override list into a base argv in place.
 
@@ -124,22 +135,35 @@ class StrataLauncher:
     # resolution / generation (pure enough to test without processes)
     # ------------------------------------------------------------------
     def resolve(self, launch: Mapping[str, Any], endpoint: str) -> dict[str, Any]:
-        """Resolve and sanity-check the block's repo/config/python/port."""
-        repo = Path(str(launch.get("repo") or "")).expanduser()
+        """Resolve and sanity-check the block's repo/config/python/port.
+
+        Paths expand ``$VAR``/``${VAR}`` and ``~``.  A ``config`` is read from
+        the Strata repo by default; ``config_external: true`` reads it from the
+        Hive checkout instead (relative paths are then Hive-root relative), so
+        a deployment config can live with the stack that pins it.
+        """
+        repo = Path(os.path.expandvars(str(launch.get("repo") or ""))).expanduser()
         if not repo.is_dir():
             raise RuntimeError(f"strata repo not found: {repo}")
         repo = repo.resolve()
 
-        raw_config = Path(str(launch.get("config") or ""))
-        config = raw_config if raw_config.is_absolute() else repo / raw_config
+        external = bool(launch.get("config_external"))
+        raw_config = Path(os.path.expandvars(str(launch.get("config") or ""))).expanduser()
+        if raw_config.is_absolute():
+            config = raw_config
+        elif external:
+            config = REPO_ROOT / raw_config
+        else:
+            config = repo / raw_config
         config = config.resolve()
-        if config != repo and repo not in config.parents:
+        if not external and config != repo and repo not in config.parents:
             raise RuntimeError(
-                f"strata config {config} must stay inside the repo {repo}")
+                f"strata config {config} must stay inside the repo {repo} "
+                f"(set config_external: true for a Hive-owned config)")
         if not config.is_file():
             raise RuntimeError(f"strata config not found: {config}")
 
-        raw_python = Path(str(launch.get("python") or ".venv/bin/python")).expanduser()
+        raw_python = Path(os.path.expandvars(str(launch.get("python") or ".venv/bin/python"))).expanduser()
         python = raw_python if raw_python.is_absolute() else repo / raw_python
         # Keep the symlink path: a venv's python is a symlink to the system
         # interpreter, and resolving it would escape the venv's site-packages
@@ -164,6 +188,7 @@ class StrataLauncher:
     ) -> dict[str, Any]:
         """The generated server config: base + port + ctx/args + log + options."""
         config = json.loads(json.dumps(dict(base)))  # deep copy
+        config = _expand_env(config)
         config["port"] = endpoint_port(endpoint)
         # The context flag is the engine's own: the DeepSeek-V4.1 engine takes
         # `--ctx` and refuses anything it does not know, so the lane names it
