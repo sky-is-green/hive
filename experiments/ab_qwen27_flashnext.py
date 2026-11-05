@@ -61,6 +61,12 @@ ARMS: dict[str, dict[str, Any]] = {
         "role": "Q6 Flash-Next",
         "extra": {},
     },
+    "unsloth-flashnext-ud-q2k-xl": {
+        "base": "http://127.0.0.1:8081/v1",
+        "model": "unsloth-qwen38-flashnext-ud-q2_k_xl",
+        "role": "Unsloth UD-Q2_K_XL FlashNext",
+        "extra": {},
+    },
     "gsq-rco-q2": {
         "base": "http://127.0.0.1:8083/v1",
         "model": "Qwen3.8-Flash-Next-GSQ-RCO-Q2_0",
@@ -92,7 +98,7 @@ def main() -> int:
     rows: list[dict[str, Any]] = []
     for name in selected:
         arm = ARMS[name]
-        if args.thinking_budget > 0 and name.startswith("scion"):
+        if args.thinking_budget > 0 and name.startswith(("scion", "unsloth")):
             # Upstream 0.2.10 owns the controller: llama.cpp's request field caps
             # the thinking, and answer_room (on by default) keeps the answer room.
             arm = {**arm, "extra": {**arm.get("extra", {}),

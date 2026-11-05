@@ -1,0 +1,39 @@
+{
+  "name": "unsloth-flashnext-strata",
+  "version": 1,
+  "tiers": [
+    {
+      "role": "face",
+      "repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
+      "file": "Qwen3.8-Flash-Next-UD-Q2_K_XL-00001-of-00004.gguf",
+      "ctx": 8192,
+      "ngl": 99,
+      "backend": "strata",
+      "endpoint": "http://127.0.0.1:8081/v1",
+      "expect_model": "unsloth-qwen38-flashnext-ud-q2_k_xl",
+      "caps": {
+        "model_profile": "unsloth-flashnext-ud-q2_k_xl",
+        "containers": "Unsloth UD-Q2_K_XL: mixed IQ2/IQ3 experts, Q8_0/Q6_K body, IQ4_NL PLE",
+        "note": "same 30-task protocol; MoE streaming on 2x20GB"
+      },
+      "launch": {
+        "kind": "strata",
+        "repo": "${STRATA_REPO}",
+        "config": "stacks/strata/configs/unsloth-flashnext-ud-q2_k_xl.json",
+        "config_external": true,
+        "engine_args": [
+          "--vram-reserve-mib",
+          "6144",
+          "--vram-reserve-later-mib",
+          "1024",
+          "--prefill",
+          "4096"
+        ],
+        "timeout_s": 1200
+      }
+    }
+  ],
+  "routing": {
+    "workers_as": "subagent"
+  }
+}

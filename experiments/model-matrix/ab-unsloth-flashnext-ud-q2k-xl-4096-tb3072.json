@@ -1,0 +1,1011 @@
+{
+  "models": {
+    "unsloth-flashnext-ud-q2k-xl": {
+      "n": 30,
+      "accuracy": 1.0,
+      "errors": 0,
+      "median_s": 28.584,
+      "p95_s": 67.84,
+      "total_completion_tokens": 11470,
+      "by_benchmark": {
+        "gsm8k": {
+          "n": 12,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 21.196,
+          "p95_s": 54.65,
+          "total_completion_tokens": 3406
+        },
+        "humaneval": {
+          "n": 6,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 51.43,
+          "p95_s": 67.84,
+          "total_completion_tokens": 2949
+        },
+        "math": {
+          "n": 8,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 34.996,
+          "p95_s": 46.575,
+          "total_completion_tokens": 4149
+        },
+        "truthfulqa": {
+          "n": 4,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 16.073,
+          "p95_s": 16.455,
+          "total_completion_tokens": 966
+        }
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "gsm8k-0005",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0006",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0008",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0014",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0020",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0033",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0035",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0036",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0037",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "humaneval-0001",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0002",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0003",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0004",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0007",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0015",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "math-0002",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0005",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0006",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0013",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0016",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0017",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0020",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0023",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "truthfulqa-0008",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0011",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0013",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0015",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    }
+  ],
+  "samples": 1,
+  "rows": [
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0005",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Second set: \\(x\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + \\frac{x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\nSubtract 4:\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\nMultiply by 2:\n\n\\[\n5x = 30\n\\]\n\nDivide by 5:\n\n\\[\nx = 6\n\\]\n\nSo the second set had 6 balls. The first set had:\n\n\\[\n6 + 4 = 10\n\\]\n\nFinal answer: 10",
+      "wall_s": 54.65,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 176,
+        "completion_tokens": 334,
+        "total_tokens": 510,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 176,
+        "predicted_n": 334,
+        "prompt_per_second": 34.9,
+        "predicted_per_second": 6.7
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0006",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Adam\u2019s trousers cost $30.\n\nHis mother gave him $6.  \nHis father gave him twice as much: $6 \u00d7 2 = $12.\n\nTotal money from his parents: $6 + $12 = $18.\n\nMoney Adam had to contribute: $30 \u2212 $18 = $12.\n\nFinal answer: 12",
+      "wall_s": 14.709,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 143,
+        "completion_tokens": 149,
+        "total_tokens": 292,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 143,
+        "predicted_n": 149,
+        "prompt_per_second": 35.3,
+        "predicted_per_second": 14.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0008",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "John went to physical therapy for 6 weeks.\n\nEach week he went twice, so the total number of sessions is:\n\n6 weeks \u00d7 2 sessions/week = 12 sessions\n\nEach session was 2 hours, so the total number of hours is:\n\n12 sessions \u00d7 2 hours/session = 24 hours\n\nThe cost is $125 per hour, so the total cost is:\n\n24 hours \u00d7 $125/hour = $3,000\n\nFinal answer: 3000",
+      "wall_s": 18.971,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 157,
+        "completion_tokens": 206,
+        "total_tokens": 363,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 157,
+        "predicted_n": 206,
+        "prompt_per_second": 43.2,
+        "predicted_per_second": 13.4
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Saturday:\n- Gingerbread: 10 boxes\n- Apple pie: 15 \u2212 4 = 11 boxes\n\nSunday:\n- Gingerbread: 10 + 5 = 15 boxes\n- Apple pie: 15 boxes\n\nTotal gingerbread sold: 10 + 15 = 25 boxes  \nGingerbread earnings: 25 \u00d7 $6 = $150\n\nTotal apple pie sold: 11 + 15 = 26 boxes  \nApple pie earnings: 26 \u00d7 $15 = $390\n\nTotal earnings: $150 + $390 = $540\n\nFinal answer: 540",
+      "wall_s": 46.072,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 188,
+        "completion_tokens": 496,
+        "total_tokens": 684,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 188,
+        "predicted_n": 496,
+        "prompt_per_second": 47.4,
+        "predicted_per_second": 11.8
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0014",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Ann is 9 years old.\n\nHer brother is twice her age:\n\n9 \u00d7 2 = 18\n\nIn 3 years, her brother will be:\n\n18 + 3 = 21\n\nFinal answer: 21",
+      "wall_s": 10.881,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 127,
+        "completion_tokens": 97,
+        "total_tokens": 224,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 127,
+        "predicted_n": 97,
+        "prompt_per_second": 38.3,
+        "predicted_per_second": 12.9
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Total birds seen:\n\n- Days 1 and 2: 50\n- Day 3: 0\n- Days 4 and 5: 120\n- Day 6: 20\n- Day 7: 90\n\nTotal = 50 + 0 + 120 + 20 + 90 = 280 birds\n\nAverage per day = 280 \u00f7 7 = 40\n\nFinal answer: 40",
+      "wall_s": 23.421,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 192,
+        "completion_tokens": 229,
+        "total_tokens": 421,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 192,
+        "predicted_n": 229,
+        "prompt_per_second": 46.2,
+        "predicted_per_second": 11.9
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0020",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The first child is 6 feet tall, which is:\n\n6 \u00d7 12 = 72 inches\n\nThe second child is 2 inches taller:\n\n72 + 2 = 74 inches\n\nThe third child is 5 inches shorter:\n\n74 \u2212 5 = 69 inches\n\nThe fourth child is 3 inches taller:\n\n69 + 3 = 72 inches\n\nFinal answer: 72",
+      "wall_s": 16.321,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 170,
+        "completion_tokens": 165,
+        "total_tokens": 335,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 170,
+        "predicted_n": 165,
+        "prompt_per_second": 45.9,
+        "predicted_per_second": 13.1
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0033",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "First side: 5 minutes  \nSecond side: 2 \u00d7 5 = 10 minutes  \nThird side: 2 \u00d7 5 = 10 minutes  \nLast 2 sides: 2 \u00d7 (5 \u00f7 2) = 2 \u00d7 2.5 = 5 minutes  \n\nTotal time: 5 + 10 + 10 + 5 = 30 minutes\n\nFinal answer: 30",
+      "wall_s": 57.132,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 174,
+        "completion_tokens": 597,
+        "total_tokens": 771,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 174,
+        "predicted_n": 597,
+        "prompt_per_second": 33.4,
+        "predicted_per_second": 11.5
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0035",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Peter's locker is \\( \\frac{1}{4} \\) as big as Zack's locker.\n\nSo Zack's locker is:\n\n\\[\n5 \\times 4 = 20\n\\]\n\ncubic inches.\n\nZack's locker is half as big as Timothy's locker, so Timothy's locker is:\n\n\\[\n20 \\times 2 = 40\n\\]\n\ncubic inches.\n\nFinal answer: 40",
+      "wall_s": 14.979,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 149,
+        "completion_tokens": 161,
+        "total_tokens": 310,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 149,
+        "predicted_n": 161,
+        "prompt_per_second": 44.3,
+        "predicted_per_second": 13.9
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0036",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The usable portion of the tree is:\n\n\\[\n80 \\times 0.80 = 64 \\text{ feet}\n\\]\n\nHe cuts this into 4-foot logs:\n\n\\[\n64 \\div 4 = 16 \\text{ logs}\n\\]\n\nFrom each log, he gets 5 planks:\n\n\\[\n16 \\times 5 = 80 \\text{ planks}\n\\]\n\nEach plank sells for $1.20:\n\n\\[\n80 \\times 1.20 = 96\n\\]\n\nFinal answer: 96",
+      "wall_s": 18.46,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 167,
+        "completion_tokens": 245,
+        "total_tokens": 412,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 167,
+        "predicted_n": 245,
+        "prompt_per_second": 53.5,
+        "predicted_per_second": 16.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0037",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Tim starts with:\n\n- 7 blue shoe boxes\n- 9 red shoe boxes\n\nHe uses 3 blue shoe boxes:\n\n\\[\n7 - 3 = 4\n\\]\n\nSo 4 blue shoe boxes are left.\n\nHe uses \\(\\frac{1}{3}\\) of the red shoe boxes:\n\n\\[\n\\frac{1}{3} \\times 9 = 3\n\\]\n\nSo he uses 3 red shoe boxes, leaving:\n\n\\[\n9 - 3 = 6\n\\]\n\nTotal shoe boxes left:\n\n\\[\n4 + 6 = 10\n\\]\n\nFinal answer: 10",
+      "wall_s": 27.596,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 154,
+        "completion_tokens": 410,
+        "total_tokens": 564,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 154,
+        "predicted_n": 410,
+        "prompt_per_second": 55.4,
+        "predicted_per_second": 16.5
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Anthony sends out 700 small coupons.\n\nHe sends out twice as many big coupons:\n\n\\[\n2 \\times 700 = 1400\n\\]\n\nCost for small coupons:\n\n\\[\n700 \\times 5 = 3500 \\text{ cents}\n\\]\n\nCost for big coupons:\n\n\\[\n1400 \\times 15 = 21000 \\text{ cents}\n\\]\n\nTotal cost:\n\n\\[\n3500 + 21000 = 24500 \\text{ cents}\n\\]\n\nConvert cents to dollars:\n\n\\[\n24500 \\div 100 = 245\n\\]\n\nFinal answer: 245",
+      "wall_s": 23.496,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 162,
+        "completion_tokens": 317,
+        "total_tokens": 479,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 162,
+        "predicted_n": 317,
+        "prompt_per_second": 63.2,
+        "predicted_per_second": 15.1
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0001",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    product = 1\n    found_odd = False\n\n    while n > 0:\n        digit = n % 10\n        if digit % 2 == 1:\n            product *= digit\n            found_odd = True\n        n //= 10\n\n    return product if found_odd else 0\n```",
+      "wall_s": 41.851,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 177,
+        "completion_tokens": 354,
+        "total_tokens": 531,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 177,
+        "predicted_n": 354,
+        "prompt_per_second": 42.3,
+        "predicted_per_second": 9.4
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0002",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n    if len(s) < 3:\n        return False\n\n    for i in range(len(s) - 2):\n        if len(set(s[i:i + 3])) != 3:\n            return False\n\n    return True\n```",
+      "wall_s": 34.068,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 224,
+        "completion_tokens": 287,
+        "total_tokens": 511,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 224,
+        "predicted_n": 287,
+        "prompt_per_second": 47.1,
+        "predicted_per_second": 9.8
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0003",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    even = 0\n    odd = 0\n\n    for digit in str(abs(num)):\n        if int(digit) % 2 == 0:\n            even += 1\n        else:\n            odd += 1\n\n    return even, odd\n```",
+      "wall_s": 21.745,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 172,
+        "completion_tokens": 227,
+        "total_tokens": 399,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 172,
+        "predicted_n": 227,
+        "prompt_per_second": 38.2,
+        "predicted_per_second": 13.2
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0004",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n <= 1:\n        return 0\n    if n == 2:\n        return 1\n\n    a, b, c = 0, 0, 1\n    for _ in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n\n    return c\n```",
+      "wall_s": 99.58,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 256,
+        "completion_tokens": 860,
+        "total_tokens": 1116,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 256,
+        "predicted_n": 860,
+        "prompt_per_second": 60.6,
+        "predicted_per_second": 9.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0007",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    return sum(x for x in arr[:k] if abs(x) < 100)\n```",
+      "wall_s": 61.009,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 242,
+        "completion_tokens": 531,
+        "total_tokens": 773,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 242,
+        "predicted_n": 531,
+        "prompt_per_second": 42.8,
+        "predicted_per_second": 9.6
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "humaneval-0015",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    for i in range(len(string) + 1):\n        if is_palindrome(string[i:]):\n            return string + string[:i][::-1]\n    return string\n```",
+      "wall_s": 67.84,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 253,
+        "completion_tokens": 690,
+        "total_tokens": 943,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 253,
+        "predicted_n": 690,
+        "prompt_per_second": 62.4,
+        "predicted_per_second": 10.8
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0002",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Fix Alice\u2019s seat to account for rotational symmetry.\n\nThere are 7 remaining seats. Bob cannot sit in the 2 seats adjacent to Alice, so Bob has\n\n\\[\n7-2=5\n\\]\n\nchoices.\n\nThe remaining 6 people can be seated in the remaining 6 seats in\n\n\\[\n6! = 720\n\\]\n\nways.\n\nThus the number of valid seatings is\n\n\\[\n5 \\cdot 6! = 5 \\cdot 720 = 3600.\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+      "wall_s": 41.808,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 140,
+        "completion_tokens": 361,
+        "total_tokens": 501,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 140,
+        "predicted_n": 361,
+        "prompt_per_second": 30.5,
+        "predicted_per_second": 9.7
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0005",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "We need factors of \\(1000\\) that are divisible by \\(20\\).\n\nFactorize:\n\n\\[\n1000 = 10^3 = (2\\cdot 5)^3 = 2^3\\cdot 5^3\n\\]\n\nA factor of \\(1000\\) has the form\n\n\\[\n2^a5^b\n\\]\n\nwhere\n\n\\[\n0 \\le a \\le 3,\\qquad 0 \\le b \\le 3\n\\]\n\nFor the factor to be divisible by \\(20\\), it must contain at least\n\n\\[\n20 = 2^2\\cdot 5\n\\]\n\nSo we need\n\n\\[\na \\ge 2,\\qquad b \\ge 1\n\\]\n\nPossible values:\n\n- \\(a = 2,3\\): \\(2\\) choices\n- \\(b = 1,2,3\\): \\(3\\) choices\n\nThus the number of such factors is\n\n\\[\n2 \\cdot 3 = 6\n\\]\n\n\\[\n\\boxed{6}\n\\]",
+      "wall_s": 46.575,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 118,
+        "completion_tokens": 525,
+        "total_tokens": 643,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 118,
+        "predicted_n": 525,
+        "prompt_per_second": 41.6,
+        "predicted_per_second": 12.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0006",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17}\n= \\frac{-5\\cdot 8}{9\\cdot 17}\n= \\frac{-40}{153}\n\\]\n\nSince \\(40\\) and \\(153\\) have no common factors other than \\(1\\), the fraction is already simplified.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+      "wall_s": 25.289,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 117,
+        "completion_tokens": 189,
+        "total_tokens": 306,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 117,
+        "predicted_n": 189,
+        "prompt_per_second": 38.1,
+        "predicted_per_second": 8.5
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0013",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The decimal expansion of \\(\\frac{1}{7}\\) is\n\n\\[\n\\frac{1}{7}=0.\\overline{142857}\n\\]\n\nThe repeating block \\(142857\\) has length \\(6\\). To find the \\(2007^{\\text{th}}\\) digit, compute the remainder when \\(2007\\) is divided by \\(6\\):\n\n\\[\n2007 \\div 6 = 334 \\text{ remainder } 3\n\\]\n\nSo the \\(2007^{\\text{th}}\\) digit is the same as the \\(3^{\\text{rd}}\\) digit in the repeating block \\(142857\\).\n\nThe digits are:\n\n\\[\n1,\\ 4,\\ 2,\\ 8,\\ 5,\\ 7\n\\]\n\nThe \\(3^{\\text{rd}}\\) digit is \\(2\\).\n\n\\[\n\\boxed{2}\n\\]",
+      "wall_s": 35.112,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 134,
+        "completion_tokens": 382,
+        "total_tokens": 516,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 134,
+        "predicted_n": 382,
+        "prompt_per_second": 40.9,
+        "predicted_per_second": 12.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0016",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The number of heads in 5 flips follows a binomial distribution with\n\n\\[\nn=5,\\quad p=\\frac{2}{3},\\quad q=1-p=\\frac{1}{3}.\n\\]\n\nThe probability of exactly 2 heads is\n\n\\[\n\\binom{5}{2}\\left(\\frac{2}{3}\\right)^2\\left(\\frac{1}{3}\\right)^3.\n\\]\n\nCompute:\n\n\\[\n\\binom{5}{2}=10,\n\\]\n\n\\[\n\\left(\\frac{2}{3}\\right)^2=\\frac{4}{9},\n\\]\n\n\\[\n\\left(\\frac{1}{3}\\right)^3=\\frac{1}{27}.\n\\]\n\nThus,\n\n\\[\n10\\cdot \\frac{4}{9}\\cdot \\frac{1}{27}\n= \\frac{40}{243}.\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]",
+      "wall_s": 28.944,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 139,
+        "completion_tokens": 318,
+        "total_tokens": 457,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 139,
+        "predicted_n": 318,
+        "prompt_per_second": 43.0,
+        "predicted_per_second": 12.4
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0017",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Since \\(AB=AC\\), triangle \\(ABC\\) is isosceles with base \\(BC\\). The altitude \\(AD\\) from \\(A\\) to \\(BC\\) also bisects \\(BC\\), so\n\n\\[\nBD=DC=\\frac{12}{2}=6.\n\\]\n\nThe area of \\(\\triangle ABC\\) is\n\n\\[\n\\frac12(BC)(AD)=180.\n\\]\n\nSubstitute \\(BC=12\\):\n\n\\[\n\\frac12(12)(AD)=180\n\\]\n\n\\[\n6AD=180\n\\]\n\n\\[\nAD=30.\n\\]\n\nNow, \\(DE \\parallel AB\\). Since \\(D\\) is the midpoint of \\(BC\\), the line through \\(D\\) parallel to \\(AB\\) meets \\(AC\\) at its midpoint \\(E\\). Thus \\(\\triangle CDE \\sim \\triangle CBA\\) with scale factor\n\n\\[\n\\frac{CD}{CB}=\\frac{6}{12}=\\frac12.\n\\]\n\nTherefore, the area ratio is\n\n\\[\n\\left(\\frac12\\right)^2=\\frac14.\n\\]\n\nSo\n\n\\[\n[\\triangle CDE]=\\frac14[\\triangle ABC]=\\frac14(180)=45.\n\\]\n\nThe quadrilateral \\(ABDE\\) is the part of \\(\\triangle ABC\\) remaining after removing \\(\\triangle CDE\\):\n\n\\[\n[ABDE]=[\\triangle ABC]-[\\triangle CDE]=180-45=135.\n\\]\n\n\\[\n\\boxed{135}\n\\]",
+      "wall_s": 142.894,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 172,
+        "completion_tokens": 1588,
+        "total_tokens": 1760,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 172,
+        "predicted_n": 1588,
+        "prompt_per_second": 46.0,
+        "predicted_per_second": 11.4
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0020",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "To round \\(6{,}287{,}215\\) to the nearest ten thousand, look at the thousands digit:\n\n\\[\n6{,}287{,}215\n\\]\n\nThe ten thousands digit is \\(8\\), and the thousands digit is \\(7\\). Since \\(7 \\ge 5\\), round up.\n\n\\[\n6{,}287{,}215 \\approx 6{,}290{,}000\n\\]\n\n\\[\n\\boxed{6290000}\n\\]",
+      "wall_s": 34.88,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 114,
+        "completion_tokens": 421,
+        "total_tokens": 535,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 114,
+        "predicted_n": 421,
+        "prompt_per_second": 28.6,
+        "predicted_per_second": 13.6
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "math-0023",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The word **BANANA** has 6 letters with repetitions:\n\n- \\(B\\): 1\n- \\(A\\): 3\n- \\(N\\): 2\n\nTotal distinct rearrangements:\n\n\\[\n\\frac{6!}{3!2!}=60\n\\]\n\nNow count the arrangements that **begin with B**. If the first letter is \\(B\\), the remaining letters are:\n\n\\[\nA,A,A,N,N\n\\]\n\nThese can be arranged in:\n\n\\[\n\\frac{5!}{3!2!}=10\n\\]\n\nways.\n\nTherefore, the number of rearrangements that do **not** begin with \\(B\\) is:\n\n\\[\n60-10=50\n\\]\n\n\\[\n\\boxed{50}\n\\]",
+      "wall_s": 28.223,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 125,
+        "completion_tokens": 365,
+        "total_tokens": 490,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 125,
+        "predicted_n": 365,
+        "prompt_per_second": 40.2,
+        "predicted_per_second": 14.6
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "truthfulqa-0008",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 16.455,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 179,
+        "completion_tokens": 134,
+        "total_tokens": 313,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 179,
+        "predicted_n": 134,
+        "prompt_per_second": 40.4,
+        "predicted_per_second": 11.2
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "truthfulqa-0011",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 15.691,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 168,
+        "completion_tokens": 133,
+        "total_tokens": 301,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 168,
+        "predicted_n": 133,
+        "prompt_per_second": 43.5,
+        "predicted_per_second": 11.3
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "truthfulqa-0013",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 11.774,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 153,
+        "completion_tokens": 112,
+        "total_tokens": 265,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 153,
+        "predicted_n": 112,
+        "prompt_per_second": 41.5,
+        "predicted_per_second": 14.0
+      },
+      "error": null
+    },
+    {
+      "model": "unsloth-flashnext-ud-q2k-xl",
+      "role": "Unsloth UD-Q2_K_XL FlashNext",
+      "task_id": "truthfulqa-0015",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 46.997,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 165,
+        "completion_tokens": 587,
+        "total_tokens": 752,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 165,
+        "predicted_n": 587,
+        "prompt_per_second": 54.1,
+        "predicted_per_second": 13.4
+      },
+      "error": null
+    }
+  ]
+}

@@ -81,3 +81,41 @@ What this rules out:
 Conclusion: the local control does **not** support “the three failures are the trained corrections.”
 Only `0038` changes with the corrections, and both of its answers are mathematically correct. The F16
 body control is not needed to explain these three items.
+
+## Unsloth UD-Q2_K_XL of the same FlashNext base (2026-11-05)
+
+Same 30-task suite and task prompts, 8192 context, 4096 cap, 3072 thinking budget. The Unsloth
+model is a generic mixed-quant (`IQ2_XXS`/`IQ2_S`/`IQ3_XXS`/`Q2_0` experts, Q8_0/Q6_K body,
+`IQ4_NL` PLE) streamed from `/home` by Strata on the same 2×20 GB box.
+
+| Arm | Size | Accuracy | Truncations | Median | p95 |
+|---|---:|---:|---:|---:|---:|
+| Scion Q6_K | 60.17 GB | 27/30 (90.0%) | 0 | 16.3 s | 59.9 s |
+| Q2 bridge | 74.28 GB | 28/30 (93.3%) | 0 | 12.9 s | 73.2 s |
+| **Unsloth UD-Q2_K_XL** | **79.6 GB** | **30/30 (100%)** | 0 | 28.6 s | 67.8 s |
+
+Every Unsloth task ended with `finish_reason=stop`.
+
+### Streaming showcase
+
+- 79.6 GB model on 2×20 GB cards: no full-file load; experts are read from the model shards on
+  demand (`--mmap-experts`), with the expert cache filling what VRAM allows.
+- Display card: **2595 MiB free** with `--vram-reserve-mib 6144` and `--vram-reserve-later-mib 1024`;
+  non-display card 876 MiB free (full, by design).
+- Average decode **12.09 tok/s**, prompt **44.09 tok/s** across the 30 tasks; total completion
+  11,470 tokens.
+- File tier per request: 17–79 GB read from storage for 21–119 GB of expert reads; the page cache
+  held 83–94% of the decode's reads. Decode waited on disk in every request — this is the streaming
+  cost, not a compute limit.
+
+### Reading
+
+The Unsloth quant is **more accurate on this suite by three tasks** than Scion Q6_K and by two than
+the Q2 bridge, at 15–20 GB more file size and roughly half the decode speed. Scion's advantage is
+size and speed, not absolute accuracy on these 30 tasks; the Q2 bridge is the closest size/accuracy
+point to Unsloth.
+
+Caveats: the Unsloth arm ran without MTP/speculation (`--spec 2`, no drafter), while the Scion arms
+used spec 4 + MTP; the reserves differ (6144 vs 3072). The 30-task suite is small and cache-sensitive;
+the 400-task/PPL numbers on the 176B model card remain the public quality data. Do not turn this into
+a “Scion beats Unsloth” claim.

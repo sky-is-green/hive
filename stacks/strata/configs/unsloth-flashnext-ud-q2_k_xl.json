@@ -1,0 +1,53 @@
+{
+  "exe": "build-hip-0.2.10/strata",
+  "args": [
+    "--pack",
+    "${UNSLOTH_MODELS}/pack-unsloth",
+    "--native",
+    "${UNSLOTH_MODELS}/Qwen3.8-Flash-Next-UD-Q2_K_XL-00001-of-00004.gguf",
+    "--ple-gguf",
+    "${UNSLOTH_MODELS}/Qwen3.8-Flash-Next-UD-Q2_K_XL-00004-of-00004.gguf",
+    "--expert-profile",
+    "${STRATA_REPO}/data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "4096",
+    "--spec",
+    "2",
+    "--max-context",
+    "8192",
+    "--ple-io",
+    "direct",
+    "--mmap-experts",
+    "--vram-reserve-mib",
+    "6144",
+    "--vram-reserve-later-mib",
+    "1024",
+    "--pool-workers",
+    "15",
+    "--pcie-frac",
+    "0"
+  ],
+  "cwd": "${STRATA_REPO}",
+  "tokenizer": "${UNSLOTH_MODELS}/pack-unsloth/tokenizer",
+  "model_name": "unsloth-qwen38-flashnext-ud-q2_k_xl",
+  "log": "logs/unsloth_q2kxl.engine.log",
+  "lib_dirs": [
+    "/opt/rocm/lib"
+  ],
+  "port": 8081,
+  "backend": "hip",
+  "gpu": [
+    0,
+    1
+  ],
+  "gpus_asked": true,
+  "layer_split": "auto",
+  "answer_room": true,
+  "env": {
+    "STRATA_PREFILL_MMQ": "1",
+    "STRATA_PREFILL_RING": "96",
+    "STRATA_IO_THREADS": "32"
+  }
+}
