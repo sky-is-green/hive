@@ -51,6 +51,8 @@ They are role specialists, not general chat models. The controller/planner seat
 is the Conductor; the other four cover document reading, placement/critique,
 dispatch and agency. Router, face, judge and vision remain on Scion/d1/LFM3.
 
+All five are collected in the [Hive Series](https://huggingface.co/collections/SkyIsNotGreen/hive-series).
+
 ## One harness, any engine, placed per role
 
 A stack tier does not hard-code an engine. It names a **role** — in the cascade,

@@ -22,6 +22,8 @@ W, H = 1100, 820
 TILE = 260
 FRAMES = 100
 DURATION = 100  # ms, 10 s loop
+GIF_FRAMES = 60
+GIF_SIZE = (900, 671)
 
 BG = (8, 14, 24, 255)
 HIVE_LINE = (88, 66, 25, 255)
@@ -163,6 +165,20 @@ def compose_static() -> Image.Image:
     return img
 
 
+def save_gif(frames, path: Path) -> None:
+    picks = [round(i * (len(frames) - 1) / (GIF_FRAMES - 1))
+             for i in range(GIF_FRAMES)]
+    selected = [frames[i].convert("RGB").resize(GIF_SIZE,
+                                                Image.Resampling.LANCZOS)
+                for i in picks]
+    base = selected[0].quantize(colors=128, method=Image.Quantize.MEDIANCUT)
+    quantized = [frame.quantize(palette=base, dither=Image.Dither.NONE)
+                 for frame in selected]
+    quantized[0].save(path, save_all=True, append_images=quantized[1:],
+                      duration=round(10000 / GIF_FRAMES), loop=0,
+                      optimize=True, disposal=2)
+
+
 def main() -> int:
     animations = {name: load_animation(name) for name, _ in HEROES}
     frames = [compose(i / FRAMES, animations) for i in range(FRAMES)]
@@ -175,8 +191,11 @@ def main() -> int:
                    duration=DURATION, loop=0, quality=88, method=6)
     png = OUT / "hive-heroes.png"
     compose_static().save(png)
+    gif = OUT / "hive-heroes.gif"
+    save_gif(frames, gif)
     print(webp, webp.stat().st_size, "bytes", len(frames), "frames")
     print(png, png.stat().st_size, "bytes")
+    print(gif, gif.stat().st_size, "bytes", GIF_FRAMES, "frames")
     return 0
 
 

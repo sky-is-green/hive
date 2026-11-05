@@ -29,7 +29,7 @@ PALETTES["reader"] = {
     "bg2": (38, 26, 12),
     "accent": (255, 183, 3),       # hive honey
     "accent2": (196, 120, 45),     # warm copper for stored content
-    "hive": (105, 75, 18),          # dim honeycomb lines
+    "hive": (70, 48, 12),           # dim honeycomb lines
     "encode1": (30, 58, 138),      # deep blue reading path
     "encode2": (30, 58, 138),
     "low": (210, 60, 50),          # no-match red
@@ -46,7 +46,7 @@ PALETTES["conductor"] = {
     "bg2": (22, 30, 60),
     "accent": (255, 183, 3),
     "accent2": (78, 132, 255),
-    "hive": (105, 75, 18),
+    "hive": (40, 65, 90),
     "light": (246, 241, 227),
     "dark": (5, 8, 18),
     "glow": (78, 132, 255),
@@ -61,7 +61,7 @@ PALETTES["auditor"] = {
     "bg2": (38, 26, 14),
     "accent": (255, 183, 3),        # hive honey
     "accent2": (78, 132, 255),      # scan / active blue
-    "hive": (105, 75, 18),
+    "hive": (70, 50, 14),
     "copper": (196, 120, 45),       # model blocks
     "glass": (14, 22, 38),          # lens glass
     "low": (210, 60, 50),           # reject / over capacity
@@ -78,7 +78,7 @@ PALETTES["toolmanager"] = {
     "bg2": (40, 22, 60),
     "accent": (255, 183, 3),        # hive honey
     "accent2": (78, 132, 255),      # active blue
-    "hive": (95, 60, 120),          # dim purple honeycomb
+    "hive": (62, 42, 82),           # dim purple honeycomb
     "mid": (160, 130, 255),         # idle lavender
     "high": (70, 200, 110),         # selected / done
     "high_text": (35, 135, 70),
@@ -128,22 +128,7 @@ def label(draw, text: str, x: int, y: int, color, *, scale: int = 2,
     h.bitmap_text(draw, text, x, y, color, scale=scale, spacing=spacing)
 
 
-def _honeycomb(p, mask) -> Image.Image:
-    layer = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    r = 15
-    hh = int(round(math.sqrt(3) * r))
-    for row, cy in enumerate(range(30, 228, hh)):
-        for col, cx in enumerate(range(12, 248, 3 * r)):
-            ox = (1.5 * r) if row % 2 else 0
-            pts = [(cx + ox + r * math.cos(math.pi / 3 * i),
-                    cy + r * math.sin(math.pi / 3 * i)) for i in range(6)]
-            d.polygon(pts, outline=(*p.get("hive", p["bg2"]), 255))
-    layer.putalpha(ImageChops.multiply(layer.getchannel("A"), mask))
-    return layer
-
-
-def _honeycomb_uniform(p, mask, r: int = 18) -> Image.Image:
+def _honeycomb(p, mask, r: int = 18) -> Image.Image:
     """A true flat-top honeycomb: every cell shares its edges."""
     layer = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
@@ -159,8 +144,8 @@ def _honeycomb_uniform(p, mask, r: int = 18) -> Image.Image:
     return layer
 
 
-def dispatch_hex_points(inset: int = 0):
-    """The Dispatcher badge is 8% larger than the shared 256px badge."""
+def hero_hex_points(inset: int = 0):
+    """The 256px cards share one 8%-larger badge geometry."""
     return [(128 + (x - 128) * 1.08, 128 + (y - 128) * 1.08)
             for x, y in hex_points(inset)]
 
@@ -169,7 +154,7 @@ def badge_base(name: str = "reader") -> Image.Image:
     p = PALETTES[name]
     img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    points = dispatch_hex_points if name == "dispatcher" else hex_points
+    points = hero_hex_points
     d.polygon(points(0), fill=(*p["dark"], 255))
     d.polygon(points(2), fill=(*p["accent"], 255))
     d.polygon(points(6), fill=(*p["bg2"], 255))
@@ -177,8 +162,7 @@ def badge_base(name: str = "reader") -> Image.Image:
 
     inner = Image.new("L", (SIZE, SIZE), 0)
     ImageDraw.Draw(inner).polygon(points(10), fill=255)
-    pattern = _honeycomb_uniform if name == "dispatcher" else _honeycomb
-    img.alpha_composite(pattern(p, inner))
+    img.alpha_composite(_honeycomb(p, inner))
 
     d.rectangle((104, 18, 152, 21), fill=p["accent"])
     label(d, "HIVE", 105, 26, p["light"])
