@@ -45,6 +45,17 @@ A pack with the one-line placeholder (`{{ messages[-1].content }}`) makes thinki
 prompt. The local `pack-q6k-ppl` was repaired in place with the Q2 template; `--chat-template`
 keeps a rebuild from reintroducing the stub.
 
+## VRAM reserve
+
+The display is on DRM card1, which is HIP **CUDA0** (the first layer-split stage). Keep the split
+reserve:
+
+- `--vram-reserve-mib 5120` — first stage / display card
+- `--vram-reserve-later-mib 1024` — later stage / non-display card
+
+Measured with the Q2 pack loaded: display **2393 MiB free**, non-display **760 MiB free**. A single
+`--vram-reserve-mib 3072` left the display card at 765 MiB, which is too close to an OOM.
+
 ## Model manifest
 
 `stacks/manifests/scion-flashnext-176b-a6b.json` records the model, container types, pack paths and
