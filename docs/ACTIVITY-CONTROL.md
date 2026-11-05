@@ -149,7 +149,7 @@ Examples:
   {
     "id": "human-home-access",
     "action": "cease",
-    "match": {"field": "any", "regex": "/home/user|\\.guard"}
+    "match": {"field": "any", "regex": "/home/[^/]+|\\.guard"}
   },
   {
     "id": "curl-pipe-shell",

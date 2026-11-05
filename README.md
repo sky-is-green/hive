@@ -183,4 +183,4 @@ The serving engine, the hardware constraints and the engine options are in
 ## License
 
 MIT. The paper citations are in each paper, and the software citation is in
-[`CITATION.cff`](CITATION.cff).
+[`CITATION.cff`](CITATION.cff). Third-party notices are in [`NOTICES.md`](NOTICES.md).

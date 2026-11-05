@@ -2,31 +2,34 @@
 # pod-upload-parallel.sh - upload the whole GGUF as parallel chunks, then
 # concat on the pod (append+delete to fit 100 GB), sha, cap_eval, fetch, delete.
 set -u
-IP=<pod-ip>; PORT=27379
+WORK="${WORK:?set WORK}"
+TMP="${TMPDIR:-/tmp}/hive"
+mkdir -p "$TMP"
+IP="${POD_IP:?set POD_IP}"; PORT="${POD_PORT:?set POD_PORT}"
 KEY=$HOME/.ssh/id_runpod
-Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
+Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
-POD=<pod-id>
+POD="${POD_ID:?set POD_ID}"
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -p $PORT root@$IP"
 SCPOPT="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Compression=no -i $KEY -P $PORT"
 ( sleep 12600; curl -s --max-time 30 -X DELETE https://rest.runpod.io/v1/pods/$POD -H "Authorization: Bearer $(cat $HOME/.runpod-api-key)" >/dev/null 2>&1; echo "dead-man fired $POD" ) &
 
 $SSH 'ls -la /workspace/models/ 2>/dev/null; df -h /workspace | tail -1'
-rm -f <work>/tmp-export/chunk*
+rm -f $WORK/tmp-export/chunk*
 echo "=== splitting local file into 10 chunks $(date -u +%H:%M:%SZ)"
-split -b 7G -d --suffix-length=1 "$GGUF" <work>/tmp-export/chunk
-ls -la --block-size=M <work>/tmp-export/chunk* | awk '{print $5, $9}'
+split -b 7G -d --suffix-length=1 "$GGUF" $WORK/tmp-export/chunk
+ls -la --block-size=M $WORK/tmp-export/chunk* | awk '{print $5, $9}'
 
 echo "=== parallel upload (10 streams) $(date -u +%H:%M:%SZ)"
 T0=$(date +%s)
-for f in <work>/tmp-export/chunk*; do
+for f in $WORK/tmp-export/chunk*; do
   scp $SCPOPT "$f" root@$IP:/workspace/models/ &
 done
 wait
 T1=$(date +%s)
 python3 -c "dt=$T1-$T0; print(f'uploaded 65.8 GB in {dt}s = {65815/1e6/dt:.1f} MB/s ({65815/1e6/dt*8:.0f} Mbps)')"
-rm -f <work>/tmp-export/chunk*
+rm -f $WORK/tmp-export/chunk*
 
 echo "=== remote concat $(date -u +%H:%M:%SZ)"
 $SSH 'cd /workspace/models && rm -f qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf && for f in $(ls chunk* | sort); do cat "$f" >> qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf && rm -f "$f"; done; ls -la qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf; sha256sum qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf'

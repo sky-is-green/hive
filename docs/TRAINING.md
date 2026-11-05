@@ -9,7 +9,7 @@ Smoke that completed on 2026-10-30:
 
 ```sh
 HIP_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false \
-  /home/user/.unsloth/studio/unsloth_studio/bin/python \
+  "$HOME/.unsloth/studio/unsloth_studio/bin/python" \
   experiments/lfm3_cpt.py \
   --model-dir /run/media/.../work/models-hf/LFM3-1.7B-Base \
   --corpus /run/media/.../work/corpora/wikitext2-train.txt \
@@ -150,7 +150,7 @@ This is the ternary `--ste --rotate` path, not the LFM3 path. It writes
 
 1. **Training page integration.** The page builds a manifest and can launch a
    process, but the live Hive service still has no `HIVE_TERNARY_RUNNER` and
-   cannot read `/home/user/.unsloth`. Run these commands as your user until the
+   cannot read `$HOME/.unsloth`. Run these commands as your normal user until the
    runner/env is wired or a shared ROCm venv is installed.
 2. **Own-model HF bases.** Scion-35B and Bonsai 27B are local as GGUF only.
    For real fine-tuning, download the trainable HF base:

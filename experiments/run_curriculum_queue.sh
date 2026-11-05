@@ -8,14 +8,16 @@
 set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
-PY=/home/user/.unsloth/studio/unsloth_studio/bin/python
-RUN=../train-runs
+PY="${PY:-python3}"
+RUN="${RUN:-../train-runs}"
 CAND=$RUN/multirole-cpp-plan-v1
 BEFORE=$RUN/multirole-cpp-v1
-LOG=/tmp/opencode/curriculum_queue.log
-LLAMA_SRC=/tmp/opencode/llama-b11960-src
-SERVER=/run/media/user/<drive-id>/work/llama-b11960-vulkan/llama-b11960/llama-server
-QUANTIZE=/run/media/user/<drive-id>/work/llama-b11960-vulkan/llama-b11960/llama-quantize
+LOG="${LOG:-/tmp/hive/curriculum_queue.log}"
+LOGDIR="$(dirname "$LOG")"
+mkdir -p "$LOGDIR"
+LLAMA_SRC="${LLAMA_SRC:-/tmp/hive/llama-src}"
+SERVER="${LLAMA_SERVER:-llama-server}"
+QUANTIZE="${LLAMA_QUANTIZE:-llama-quantize}"
 TOKENIZERS_PARALLELISM=false
 export TOKENIZERS_PARALLELISM
 
@@ -29,7 +31,7 @@ restore_scion() {
   log "restoring scion"
   (cd ../strata && setsid nohup env STRATA_Q8_PACKED=0 ROCM_PATH=/opt/rocm \
     .venv/bin/python serve/server.py --engine strata --config strata-35b-a3b-hive.json \
-    --port 8082 >> /tmp/opencode/scion-35b-restart.log 2>&1 < /dev/null &)
+    --port 8082 >> "$LOGDIR/scion-35b-restart.log" 2>&1 < /dev/null &)
   for _ in $(seq 1 30); do
     curl -s -m 2 -o /dev/null http://127.0.0.1:8082/health && { log "scion ready"; return; }
     sleep 5
@@ -114,7 +116,7 @@ GGML_VK_VISIBLE_DEVICES=0 setsid nohup "$SERVER" \
   -m "$RUN/critic-sft-v1/critic-sft-v1-Q4_K_M.gguf" \
   --alias critic-1.7b-sft --host 127.0.0.1 --port 8159 \
   -ngl 999 -c 8192 -np 2 --jinja --reasoning off --no-webui \
-  >> /tmp/opencode/critic-server.log 2>&1 < /dev/null &
+  >> "$LOGDIR/critic-server.log" 2>&1 < /dev/null &
 for _ in $(seq 1 20); do
   curl -s -m 2 -o /dev/null http://127.0.0.1:8159/health && break
   sleep 2

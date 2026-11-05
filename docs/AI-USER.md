@@ -227,7 +227,7 @@ process:
 - Config: `/etc/hive-engine/ds41.json`, mode 0640 root:hive-engine.  It binds
   the 152 GB V41-GSQ model and the two Engram layers read-only into
   `/srv/hive-engine/model` and `/srv/hive-engine/engram`.  The service does
-  **not** see `/run/media/user` or `/home`; only those three mounts.
+  **not** see the media library or `/home`; only those three mounts.
 - GPU: `HIP_VISIBLE_DEVICES=1` (the spare card, PCI 0000:07:00.0); the display
   card stays with the desktop.  `hive-engine` is **not** in the docker group
   and has no docker socket.

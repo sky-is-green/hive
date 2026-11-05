@@ -13,7 +13,7 @@ model_list:
     litellm_params:
       model: openai/scion
       api_base: http://127.0.0.1:1234/v1
-      api_key: sk-local
+      api_key: os.environ/SCION_LOCAL_KEY
 
   - model_name: flash
     litellm_params:
@@ -41,7 +41,7 @@ litellm_settings:
   request_timeout: 600
 
 general_settings:
-  master_key: sk-hive-local
+  master_key: os.environ/LITELLM_MASTER_KEY
   # Spend tracking / virtual keys need PostgreSQL (LiteLLM 2026 dropped SQLite):
   #   database_url: postgresql://user:pass@127.0.0.1:5432/litellm
   # Routing and fallbacks work without a database.

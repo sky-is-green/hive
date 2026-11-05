@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 # Install the durable DeepSeek V4.1 engine service for Hive.
 #
-# Run as root:
-#   sudo ./deploy/ds41-engine/install.sh
+# Run as root, with the required paths:
+#   sudo SRC=... MODEL=... ENGRAM1=... ENGRAM14=... LIBSRC=... \
+#     ./deploy/ds41-engine/install.sh
 #
-# The defaults are this box's media paths. Override SRC, MODEL, ENGRAM1,
-# ENGRAM14 or LIBSRC if the model or the engine checkout moves.
+# Required: SRC, MODEL, ENGRAM1, ENGRAM14 and LIBSRC. Point them at the engine
+# checkout, the V41-GSQ directory, the two Engram layer directories and the
+# build-hip bin directory:
+#
+#   sudo SRC=... MODEL=... ENGRAM1=... ENGRAM14=... LIBSRC=... \
+#     ./deploy/ds41-engine/install.sh
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="${SRC:-/run/media/user/<drive-id>/work/strata-ds41}"
-MODEL="${MODEL:-/run/media/user/<drive-id>/work/models-p310/V41-GSQ}"
-ENGRAM1="${ENGRAM1:-/run/media/user/<drive-id>/work/v41-engram/layers1}"
-ENGRAM14="${ENGRAM14:-/run/media/user/<drive-id>/v41-engram/layers14}"
-LIBSRC="${LIBSRC:-/run/media/user/<drive-id>/work/prism-qwen4exp-shrink/build-hip/bin}"
+: "${SRC:?set SRC to the strata-ds41 checkout}"
+: "${MODEL:?set MODEL to the V41-GSQ directory}"
+: "${ENGRAM1:?set ENGRAM1 to the v41-engram layers1 directory}"
+: "${ENGRAM14:?set ENGRAM14 to the v41-engram layers14 directory}"
+: "${LIBSRC:?set LIBSRC to the build-hip bin directory}"
 BASE="${BASE:-/srv/hive-engine}"
 USER="${HIVE_ENGINE_USER:-hive-engine}"
 

@@ -47,13 +47,18 @@ PATH="$PWD/.venv/bin:$PATH" .venv/bin/prisma generate \
 
 Router settings: `simple-shuffle`, `num_retries: 2`, `fallbacks: [{scion: [flash]}]`.
 
+The `scion` route authenticates with `SCION_LOCAL_KEY`; it is a local
+placeholder for llama-server, not a cloud credential. Both it and the master
+key are defaulted in `start.sh` and can be overridden from the environment.
+
 ## Per-role virtual keys
 
 One key per cascade role, each with a daily budget and a model allow-list.
-Mint them with the master key (`sk-hive-local`):
+Mint them with the master key (`LITELLM_MASTER_KEY`; the local default is set in
+`start.sh`):
 
 ```sh
-curl -X POST localhost:4000/key/generate -H 'authorization: Bearer sk-hive-local' \
+curl -X POST localhost:4000/key/generate -H "authorization: Bearer $LITELLM_MASTER_KEY" \
   -H 'content-type: application/json' \
   -d '{"key_alias":"cascade-router","models":["flash"],"max_budget":0.25,"budget_duration":"1d"}'
 ```
@@ -76,7 +81,7 @@ pilot runner reads them per stage.
 
 ```sh
 curl localhost:4000/v1/chat/completions \
-  -H 'authorization: Bearer sk-hive-local' -H 'content-type: application/json' \
+  -H "authorization: Bearer $LITELLM_MASTER_KEY" -H 'content-type: application/json' \
   -d '{"model":"scion","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
 ```
 

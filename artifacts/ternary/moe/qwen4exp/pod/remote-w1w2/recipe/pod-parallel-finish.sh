@@ -2,18 +2,21 @@
 # pod-parallel-finish.sh - finish the upload with parallel chunked streams,
 # then sha-verify, cap_eval, fetch, delete. Replaces the single-stream rsync.
 set -u
-IP=<pod-ip>; PORT=27379
+WORK="${WORK:?set WORK}"
+TMP="${TMPDIR:-/tmp}/hive"
+mkdir -p "$TMP"
+IP="${POD_IP:?set POD_IP}"; PORT="${POD_PORT:?set POD_PORT}"
 KEY=$HOME/.ssh/id_runpod
-Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
+Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
-POD=<pod-id>
+POD="${POD_ID:?set POD_ID}"
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -p $PORT root@$IP"
 # fresh dead-man (3.5 h)
 ( sleep 12600; curl -s --max-time 30 -X DELETE https://rest.runpod.io/v1/pods/$POD -H "Authorization: Bearer $(cat $HOME/.runpod-api-key)" >/dev/null 2>&1; echo "dead-man fired $POD" ) &
 
 # 1. stop the old driver and its rsync (careful: driver must not see rsync fail)
-DRV=$(pgrep -f "bash /tmp/opencode/pod-cap-all.sh" | head -1 || true)
+DRV=$(pgrep -f "bash $TMP/pod-cap-all.sh" | head -1 || true)
 [ -n "${DRV:-}" ] && kill "$DRV" 2>/dev/null && echo "killed driver $DRV"
 sleep 1
 RS=$(pgrep -f "rsync -a --partial" | head -1 || true)
@@ -28,21 +31,21 @@ P=$($SSH "stat -c %s '$PART'")
 echo "partial $PART size=$P ($(python3 -c "print(f'{$P/1e9:.2f} GB')"))"
 
 # 3. local remainder + split into 5 GB chunks
-tail -c +$((P+1)) "$GGUF" > /tmp/opencode/rem.bin || { echo "tail failed"; exit 1; }
-REMSZ=$(stat -c %s /tmp/opencode/rem.bin)
+tail -c +$((P+1)) "$GGUF" > $TMP/rem.bin || { echo "tail failed"; exit 1; }
+REMSZ=$(stat -c %s $TMP/rem.bin)
 echo "remainder $(python3 -c "print(f'{$REMSZ/1e9:.2f} GB')")"
-split -b 5G -d --suffix-length=1 /tmp/opencode/rem.bin /tmp/opencode/rem.part
-ls /tmp/opencode/rem.part* | wc -l | xargs echo "chunks:"
+split -b 5G -d --suffix-length=1 $TMP/rem.bin $TMP/rem.part
+ls $TMP/rem.part* | wc -l | xargs echo "chunks:"
 
 # 4. parallel upload (all chunks at once)
 T0=$(date +%s)
-for f in /tmp/opencode/rem.part*; do
+for f in $TMP/rem.part*; do
   scp -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Compression=no -i "$KEY" -P "$PORT" "$f" root@$IP:/workspace/models/ &
 done
 wait
 T1=$(date +%s)
 python3 -c "dt=$T1-$T0; print(f'parallel upload: {$REMSZ/1e6/dt:.1f} MB/s ({$REMSZ/1e6/dt*8:.0f} Mbps) in {dt}s')"
-rm -f /tmp/opencode/rem.bin /tmp/opencode/rem.part*
+rm -f $TMP/rem.bin $TMP/rem.part*
 
 # 5. concat + sha verify
 $SSH "cd /workspace/models && cat '$PART' \$(ls rem.part* | sort) > qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf && rm -f '$PART' rem.part* && ls -la qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf && sha256sum qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf"

@@ -9,6 +9,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Local-only placeholders. The gateway binds 127.0.0.1; these are not cloud
+# credentials. Override them from the environment for a different setup.
+export LITELLM_MASTER_KEY="${LITELLM_MASTER_KEY:-sk-hive-local}"
+export SCION_LOCAL_KEY="${SCION_LOCAL_KEY:-sk-local}"
+
 export OPENCODE_GO_KEY="$(
   python3 - <<'PY'
 import json, os

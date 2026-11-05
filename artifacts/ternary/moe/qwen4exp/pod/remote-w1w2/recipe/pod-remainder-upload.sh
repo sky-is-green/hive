@@ -2,13 +2,16 @@
 # pod-remainder-upload.sh - append-only finish from the surviving rsync prefix.
 # Local chunk staging on DISK (root btrfs), NOT /tmp (16 GB tmpfs).
 set -u
-IP=<pod-ip>; PORT=27379
+WORK="${WORK:?set WORK}"
+TMP="${TMPDIR:-/tmp}/hive"
+mkdir -p "$TMP"
+IP="${POD_IP:?set POD_IP}"; PORT="${POD_PORT:?set POD_PORT}"
 KEY=$HOME/.ssh/id_runpod
-Q=<work>/hivebench/artifacts/ternary/moe/qwen4exp
+Q=$WORK/hivebench/artifacts/ternary/moe/qwen4exp
 GGUF=$Q/qwen4exp-48l-ptq1_0-corr-step3000-ple.gguf
 EXPECT=2f4bd083861b027ede8b81eacf5f8b808f04d3c72e612c42d54758a473aa22ba
-POD=<pod-id>
-WD=<work>/tmp-export
+POD="${POD_ID:?set POD_ID}"
+WD=$WORK/tmp-export
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $KEY -p $PORT root@$IP"
 SCPOPT="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Compression=no -i $KEY -P $PORT"
 ( sleep 12600; curl -s --max-time 30 -X DELETE https://rest.runpod.io/v1/pods/$POD -H "Authorization: Bearer $(cat $HOME/.runpod-api-key)" >/dev/null 2>&1; echo "dead-man fired $POD" ) &
