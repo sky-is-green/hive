@@ -1,0 +1,1011 @@
+{
+  "models": {
+    "scion-q6k": {
+      "n": 30,
+      "accuracy": 0.9,
+      "errors": 0,
+      "median_s": 16.335,
+      "p95_s": 59.877,
+      "total_completion_tokens": 39922,
+      "by_benchmark": {
+        "gsm8k": {
+          "n": 12,
+          "accuracy": 0.75,
+          "errors": 0,
+          "median_s": 9.183,
+          "p95_s": 47.495,
+          "total_completion_tokens": 13496
+        },
+        "humaneval": {
+          "n": 6,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 55.673,
+          "p95_s": 59.877,
+          "total_completion_tokens": 14471
+        },
+        "math": {
+          "n": 8,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 23.483,
+          "p95_s": 44.843,
+          "total_completion_tokens": 8259
+        },
+        "truthfulqa": {
+          "n": 4,
+          "accuracy": 1.0,
+          "errors": 0,
+          "median_s": 6.936,
+          "p95_s": 7.254,
+          "total_completion_tokens": 3696
+        }
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "gsm8k-0005",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0006",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0008",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0014",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0020",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0033",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0035",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0036",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0037",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "humaneval-0001",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0002",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0003",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0004",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0007",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "humaneval-0015",
+      "benchmark": "humaneval",
+      "bucket": "code"
+    },
+    {
+      "id": "math-0002",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0005",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0006",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0013",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0016",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0017",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0020",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "math-0023",
+      "benchmark": "math",
+      "bucket": "reasoning"
+    },
+    {
+      "id": "truthfulqa-0008",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0011",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0013",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    },
+    {
+      "id": "truthfulqa-0015",
+      "benchmark": "truthfulqa",
+      "bucket": "qa"
+    }
+  ],
+  "samples": 1,
+  "rows": [
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0005",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let the number of tennis balls retrieved in the second set be \\(x\\).\n\n- First set: \\(x + 4\\)\n- Second set: \\(x\\)\n- Third set: \\(\\frac{x}{2}\\)\n\nTotal retrieved:\n\n\\[\n(x + 4) + x + \\frac{x}{2} = 19\n\\]\n\nCombine terms:\n\n\\[\n2x + 4 + \\frac{x}{2} = 19\n\\]\n\n\\[\n\\frac{5x}{2} + 4 = 19\n\\]\n\n\\[\n\\frac{5x}{2} = 15\n\\]\n\n\\[\nx = 6\n\\]\n\nSo the second set had 6 balls, and the first set had:\n\n\\[\n6 + 4 = 10\n\\]\n\nFinal answer: 10",
+      "wall_s": 10.168,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 176,
+        "completion_tokens": 355,
+        "total_tokens": 531,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 176,
+        "predicted_n": 355,
+        "prompt_per_second": 69.4,
+        "predicted_per_second": 46.6
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0006",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The trousers cost $30.\n\n- Mother gave: $6\n- Father gave twice as much as the mother: 2 \u00d7 6 = $12\n- Total from parents: 6 + 12 = $18\n\nMoney Adam had to contribute from his savings: 30 \u2212 18 = $12\n\nFinal answer: 12",
+      "wall_s": 7.234,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 143,
+        "completion_tokens": 321,
+        "total_tokens": 464,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 143,
+        "predicted_n": 321,
+        "prompt_per_second": 63.5,
+        "predicted_per_second": 64.5
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0008",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let's solve this step by step:\n\n**Step 1: Find the total number of sessions.**\nJohn went to physical therapy for 6 weeks, and each week he went twice.\nTotal sessions = 6 weeks \u00d7 2 sessions per week = **12 sessions**\n\n**Step 2: Find the total number of hours.**\nEach session is 2 hours long.\nTotal hours = 12 sessions \u00d7 2 hours per session = **24 hours**\n\n**Step 3: Find the total cost.**\nEach hour costs $125.\nTotal cost = 24 hours \u00d7 $125 per hour = **$3,000**\n\nFinal answer: 3000",
+      "wall_s": 6.85,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 157,
+        "completion_tokens": 360,
+        "total_tokens": 517,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 157,
+        "predicted_n": 360,
+        "prompt_per_second": 61.7,
+        "predicted_per_second": 83.7
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0009",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "Let me work through the problem step by step.\n\n**Boxes sold:**\n\n- Sunday apple pie = 15 boxes (given).\n- Saturday apple pie = 4 fewer than Sunday = 15 \u2212 4 = **11 boxes**.\n- Saturday gingerbread = 10 boxes (given).\n- Sunday gingerbread = 5 more than Saturday = 10 + 5 = **15 boxes**.\n\nSo over the two days:\n- Gingerbread: 10 + 15 = 25 boxes\n- Apple pie: 11 + 15 = 26 boxes\n\n**Prices:** gingerbread = $6 per box, apple pie = $15 per box.\n\n**Earnings:**\n- Gingerbread: 25 \u00d7 $6 = $150\n- Apple pie: 26 \u00d7 $15 = $390\n\nTotal = $150 + $390 = **$480**\n\n(Check by day: Saturday = 10\u00d76 + 11\u00d715 = 60 + 165 = 225; Sunday = 15\u00d76 + 15\u00d715 = 90 + 225 = 315; 225 + 315 = 480.)\n\nFinal answer: 480",
+      "wall_s": 13.292,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 188,
+        "completion_tokens": 850,
+        "total_tokens": 1038,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 188,
+        "predicted_n": 850,
+        "prompt_per_second": 77.6,
+        "predicted_per_second": 78.2
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0014",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Ann is 9 years old.\n\nHer brother is twice her age, so the brother is currently:\n9 \u00d7 2 = 18 years old.\n\nIn 3 years, the brother will be:\n18 + 3 = 21 years old.\n\nFinal answer: 21",
+      "wall_s": 3.548,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 127,
+        "completion_tokens": 159,
+        "total_tokens": 286,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 127,
+        "predicted_n": 159,
+        "prompt_per_second": 61.9,
+        "predicted_per_second": 106.5
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0015",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "To find the average number of birds Mack saw per day, we first need to determine the total number of birds he saw over the entire week and then divide that total by the number of days in the week.\n\n**Step 1: Calculate the total number of birds.**\n- Days one and two: 50 birds (total for these two days)\n- Day three: 0 birds (he saw none)\n- Days four and five: 120 birds (total for these two days)\n- Day six: 20 birds\n- Day seven: 90 birds\n\nTotal birds = 50 + 0 + 120 + 20 + 90 = 290 birds.\n\n**Step 2: Determine the number of days.**\nThe week consists of 7 days (days one through seven).\n\n**Step 3: Calculate the average.**\nAverage = Total birds \u00f7 Number of days = 290 \u00f7 7 \u2248 41.42857142857143.\n\nRounding to the nearest whole number, Mack saw approximately 41 birds per day on average.\n\nFinal answer: 41",
+      "wall_s": 50.242,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 192,
+        "completion_tokens": 3347,
+        "total_tokens": 3539,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 192,
+        "predicted_n": 3347,
+        "prompt_per_second": 18.4,
+        "predicted_per_second": 83.8
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0020",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let's convert everything to inches and work through each child.\n\n- First child: 6 feet = 6 \u00d7 12 = **72 inches**\n- Second child: two inches taller than the first \u2192 72 + 2 = **74 inches**\n- Third child: five inches shorter than the second \u2192 74 \u2212 5 = **69 inches**\n- Fourth child: three inches taller than the third \u2192 69 + 3 = **72 inches**\n\nFinal answer: 72",
+      "wall_s": 5.176,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 170,
+        "completion_tokens": 254,
+        "total_tokens": 424,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 170,
+        "predicted_n": 254,
+        "prompt_per_second": 74.2,
+        "predicted_per_second": 88.1
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0033",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let's break down the time for each side of the Rubik's cube:\n\n- **First side**: 5 minutes\n- **Second side**: twice as long as the first = 2 \u00d7 5 = 10 minutes\n- **Third side**: twice as long as the first = 2 \u00d7 5 = 10 minutes\n- **Fourth side**: half as long as the first = 5 \u00f7 2 = 2.5 minutes\n- **Fifth side**: half as long as the first = 5 \u00f7 2 = 2.5 minutes\n\nThe problem states that once you get the 5th side, you have all 6 sides, so the 6th side doesn't require additional time.\n\nTotal time = 5 + 10 + 10 + 2.5 + 2.5 = 30 minutes\n\nFinal answer: 30",
+      "wall_s": 38.207,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 174,
+        "completion_tokens": 3282,
+        "total_tokens": 3456,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 174,
+        "predicted_n": 3282,
+        "prompt_per_second": 16.7,
+        "predicted_per_second": 117.6
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0035",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Peter's locker = 5 cubic inches.\n\nSince Peter's locker is 1/4 as big as Zack's locker, Zack's locker is 4 times Peter's:\nZack = 5 \u00d7 4 = 20 cubic inches.\n\nSince Zack's locker is half as big as Timothy's locker, Timothy's locker is 2 times Zack's:\nTimothy = 20 \u00d7 2 = 40 cubic inches.\n\nCheck: Timothy = 40 \u2192 Zack = 40/2 = 20 \u2192 Peter = 20/4 = 5. \u2713\n\nFinal answer: 40",
+      "wall_s": 17.494,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 149,
+        "completion_tokens": 359,
+        "total_tokens": 508,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 149,
+        "predicted_n": 359,
+        "prompt_per_second": 66.6,
+        "predicted_per_second": 23.5
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0036",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Here's the step-by-step solution:\n\n1. **Usable wood from the tree:**\n   80% of 80 feet = 0.8 \u00d7 80 = **64 feet**\n\n2. **Number of 4-foot logs:**\n   64 \u00f7 4 = **16 logs**\n\n3. **Number of planks:**\n   16 logs \u00d7 5 planks per log = **80 planks**\n\n4. **Total earnings:**\n   80 planks \u00d7 $1.2 per plank = **$96**\n\nFinal answer: 96",
+      "wall_s": 6.959,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 167,
+        "completion_tokens": 403,
+        "total_tokens": 570,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 167,
+        "predicted_n": 403,
+        "prompt_per_second": 74.8,
+        "predicted_per_second": 85.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0037",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "**Step 1: Identify the starting quantities.**\n- Blue shoe boxes: 7\n- Red shoe boxes: 9\n\n**Step 2: Determine how many are used.**\n- Blue used: 3\n- Red used: 1/3 of the red shoe boxes = 1/3 \u00d7 9 = 3\n\n**Step 3: Calculate what remains.**\n- Blue left: 7 \u2212 3 = 4\n- Red left: 9 \u2212 3 = 6\n\n**Step 4: Total red and blue shoe boxes left.**\n- 4 (blue) + 6 (red) = 10\n\nFinal answer: 10",
+      "wall_s": 8.198,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 154,
+        "completion_tokens": 533,
+        "total_tokens": 687,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 154,
+        "predicted_n": 533,
+        "prompt_per_second": 73.2,
+        "predicted_per_second": 87.5
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "gsm8k-0038",
+      "benchmark": "gsm8k",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": false,
+      "answer": "Here is the step-by-step solution:\n\n1. **Number of coupons:**\n   - Small coupons = 700\n   - Big coupons = twice as many = 2 \u00d7 700 = 1400\n\n2. **Postage cost for small coupons:**\n   - 700 \u00d7 5 cents = 3500 cents\n\n3. **Postage cost for big coupons:**\n   - 1400 \u00d7 15 cents = 21000 cents\n\n4. **Total postage:**\n   - 3500 + 21000 = 24500 cents\n\n5. **Convert to dollars:**\n   - 24500 cents \u00f7 100 = $245.00\n\nFinal answer: 24500",
+      "wall_s": 47.495,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 162,
+        "completion_tokens": 3273,
+        "total_tokens": 3435,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 162,
+        "predicted_n": 3273,
+        "prompt_per_second": 11.3,
+        "predicted_per_second": 98.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0001",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef digits(n):\n    \"\"\"Given a positive integer n, return the product of the odd digits.\n    Return 0 if all digits are even.\n    For example:\n    digits(1)  == 1\n    digits(4)  == 0\n    digits(235) == 15\n    \"\"\"\n    product = 1\n    found_odd = False\n\n    while n > 0:\n        digit = n % 10\n        if digit % 2 == 1:\n            product *= digit\n            found_odd = True\n        n //= 10\n\n    return product if found_odd else 0\n```",
+      "wall_s": 15.177,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 177,
+        "completion_tokens": 647,
+        "total_tokens": 824,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 177,
+        "predicted_n": 647,
+        "prompt_per_second": 77.3,
+        "predicted_per_second": 50.2
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0002",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n    if len(s) < 3:\n        return False\n    for i in range(len(s) - 2):\n        if s[i] == s[i+1] or s[i] == s[i+2] or s[i+1] == s[i+2]:\n            return False\n    return True\n```",
+      "wall_s": 11.014,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 224,
+        "completion_tokens": 694,
+        "total_tokens": 918,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 224,
+        "predicted_n": 694,
+        "prompt_per_second": 92.7,
+        "predicted_per_second": 80.8
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0003",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef even_odd_count(num):\n    \"\"\"Given an integer. return a tuple that has the number of even and odd digits respectively.\n\n     Example:\n        even_odd_count(-12) ==> (1, 1)\n        even_odd_count(123) ==> (1, 2)\n    \"\"\"\n    s = str(num)\n    digits = [c for c in s if c.isdigit()]\n    even = sum(1 for c in digits if int(c) % 2 == 0)\n    odd = len(digits) - even\n    return (even, odd)\n```",
+      "wall_s": 59.877,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 172,
+        "completion_tokens": 3223,
+        "total_tokens": 3395,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 172,
+        "predicted_n": 3223,
+        "prompt_per_second": 17.1,
+        "predicted_per_second": 64.5
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0004",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n < 0:\n        return 0\n    if n == 0:\n        return 0\n    if n == 1:\n        return 0\n    if n == 2:\n        return 1\n\n    a, b, c = 0, 0, 1\n    for _ in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n    return c\n```",
+      "wall_s": 59.648,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 256,
+        "completion_tokens": 3350,
+        "total_tokens": 3606,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 256,
+        "predicted_n": 3350,
+        "prompt_per_second": 14.0,
+        "predicted_per_second": 80.7
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0007",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    total = 0\n    for i in range(k):\n        x = arr[i]\n        if len(str(x)) <= 2:\n            total += x\n    return total\n```",
+      "wall_s": 51.698,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 242,
+        "completion_tokens": 3274,
+        "total_tokens": 3516,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 242,
+        "predicted_n": 3274,
+        "prompt_per_second": 23.0,
+        "predicted_per_second": 79.1
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "humaneval-0015",
+      "benchmark": "humaneval",
+      "bucket": "code",
+      "sample": 0,
+      "ok": true,
+      "answer": "```python\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n    for i in range(len(string) + 1):\n        if is_palindrome(string[i:]):\n            return string + string[:i][::-1]\n    return string\n```",
+      "wall_s": 80.271,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 253,
+        "completion_tokens": 3283,
+        "total_tokens": 3536,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 253,
+        "predicted_n": 3283,
+        "prompt_per_second": 22.9,
+        "predicted_per_second": 47.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0002",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "To remove the rotational equivalence, fix Alice at one seat. Then there are 7 remaining seats around the table.\n\nBob can sit:\n- in 2 seats adjacent to Alice, or\n- in 5 seats not adjacent to Alice.\n\nOnce Bob\u2019s seat is chosen, the remaining 6 people can be arranged in the remaining 6 seats in \\(6!\\) ways.\n\nThus the number of seatings where Alice and Bob are not adjacent is\n\n\\[\n5 \\cdot 6! = 5 \\cdot 720 = 3600.\n\\]\n\nEquivalently, total circular seatings are \\(7! = 5040\\), and adjacent seatings are \\(2 \\cdot 6! = 1440\\), so\n\n\\[\n5040 - 1440 = 3600.\n\\]\n\n\\[\n\\boxed{3600}\n\\]",
+      "wall_s": 37.788,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 140,
+        "completion_tokens": 1371,
+        "total_tokens": 1511,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 140,
+        "predicted_n": 1371,
+        "prompt_per_second": 67.0,
+        "predicted_per_second": 38.4
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0005",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "We need to count the factors of 1000 that are divisible by 20.\n\nFirst factorize:\n\n\\[\n1000 = 10^3 = (2 \\cdot 5)^3 = 2^3 \\cdot 5^3\n\\]\n\nAlso:\n\n\\[\n20 = 2^2 \\cdot 5\n\\]\n\nA factor of 1000 that is divisible by 20 must contain at least \\(2^2\\) and at least \\(5^1\\).\n\nSince the maximum powers in 1000 are \\(2^3\\) and \\(5^3\\), the possible exponent choices are:\n\n- For the factor of 2: exponent can be \\(2\\) or \\(3\\) \u2192 2 choices\n- For the factor of 5: exponent can be \\(1, 2,\\) or \\(3\\) \u2192 3 choices\n\nThus the number of such factors is:\n\n\\[\n2 \\times 3 = 6\n\\]\n\nThe factors are:\n\n\\[\n20,\\ 40,\\ 100,\\ 200,\\ 500,\\ 1000\n\\]\n\nTherefore, the final answer is:\n\n\\[\n\\boxed{6}\n\\]",
+      "wall_s": 25.395,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 118,
+        "completion_tokens": 1131,
+        "total_tokens": 1249,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 118,
+        "predicted_n": 1131,
+        "prompt_per_second": 63.2,
+        "predicted_per_second": 48.1
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0006",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Multiply the numerators and the denominators:\n\n\\[\n\\frac{-5}{9}\\cdot \\frac{8}{17}\n= \\frac{-5 \\cdot 8}{9 \\cdot 17}\n= \\frac{-40}{153}\n\\]\n\nSince \\(40\\) and \\(153\\) have no common factors, the fraction is already simplified.\n\n\\[\n\\boxed{-\\frac{40}{153}}\n\\]",
+      "wall_s": 5.952,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 117,
+        "completion_tokens": 257,
+        "total_tokens": 374,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 117,
+        "predicted_n": 257,
+        "prompt_per_second": 62.6,
+        "predicted_per_second": 63.0
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0013",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The decimal expansion of \\(\\frac{1}{7}\\) is\n\n\\[\n\\frac{1}{7}=0.\\overline{142857}.\n\\]\n\nThe repeating block has length \\(6\\), so the digits after the decimal point repeat every \\(6\\) positions.\n\nWe need the \\(2007^{\\text{th}}\\) digit after the decimal point. Compute its position modulo \\(6\\):\n\n\\[\n2007 = 6 \\cdot 334 + 3.\n\\]\n\nThus the \\(2007^{\\text{th}}\\) digit corresponds to the \\(3^{\\text{rd}}\\) digit in the repeating block \\(142857\\).\n\nThe digits in the block are:\n\n\\[\n\\begin{array}{c|c|c|c|c|c|c}\n\\text{position} & 1 & 2 & 3 & 4 & 5 & 6 \\\\\n\\hline\n\\text{digit} & 1 & 4 & 2 & 8 & 5 & 7\n\\end{array}\n\\]\n\nTherefore, the \\(2007^{\\text{th}}\\) digit is \\(2\\).\n\n\\[\n\\boxed{2}\n\\]",
+      "wall_s": 21.57,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 134,
+        "completion_tokens": 525,
+        "total_tokens": 659,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 134,
+        "predicted_n": 525,
+        "prompt_per_second": 18.9,
+        "predicted_per_second": 36.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0016",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Let \\(p = \\frac{2}{3}\\) be the probability of heads and \\(q = \\frac{1}{3}\\) be the probability of tails.\n\nFor exactly 2 heads in 5 flips, we use the binomial probability formula:\n\n\\[\nP(X=2) = \\binom{5}{2} p^2 q^3\n\\]\n\n\\[\n\\binom{5}{2} = 10\n\\]\n\n\\[\np^2 = \\left(\\frac{2}{3}\\right)^2 = \\frac{4}{9}\n\\]\n\n\\[\nq^3 = \\left(\\frac{1}{3}\\right)^3 = \\frac{1}{27}\n\\]\n\nSo,\n\n\\[\nP(X=2) = 10 \\cdot \\frac{4}{9} \\cdot \\frac{1}{27}\n= \\frac{40}{243}\n\\]\n\n\\[\n\\boxed{\\frac{40}{243}}\n\\]",
+      "wall_s": 19.232,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 139,
+        "completion_tokens": 583,
+        "total_tokens": 722,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 139,
+        "predicted_n": 583,
+        "prompt_per_second": 68.8,
+        "predicted_per_second": 33.9
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0017",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "Since \\(AB = AC\\), the altitude \\(AD\\) from \\(A\\) to \\(BC\\) also bisects \\(BC\\). Thus \\(D\\) is the midpoint of \\(BC\\), so\n\n\\[\nBD = DC = \\frac{12}{2} = 6.\n\\]\n\nThe area of \\(\\triangle ABC\\) is\n\n\\[\n180 = \\frac{1}{2} \\cdot BC \\cdot AD = \\frac{1}{2} \\cdot 12 \\cdot AD,\n\\]\n\nso\n\n\\[\nAD = 30.\n\\]\n\nBecause \\(DE \\parallel AB\\), \\(\\triangle CDE\\) is similar to \\(\\triangle CBA\\). Since \\(D\\) is the midpoint of \\(BC\\), the similarity ratio is\n\n\\[\n\\frac{CD}{CB} = \\frac{6}{12} = \\frac{1}{2}.\n\\]\n\nTherefore the area of \\(\\triangle CDE\\) is\n\n\\[\n\\left(\\frac{1}{2}\\right)^2 \\cdot 180 = \\frac{1}{4} \\cdot 180 = 45.\n\\]\n\nThe quadrilateral \\(ABDE\\) is the part of \\(\\triangle ABC\\) left after removing \\(\\triangle CDE\\), so\n\n\\[\n[ABDE] = 180 - 45 = 135.\n\\]\n\n\\[\n\\boxed{135}\n\\]",
+      "wall_s": 230.966,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 172,
+        "completion_tokens": 3409,
+        "total_tokens": 3581,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 172,
+        "predicted_n": 3409,
+        "prompt_per_second": 8.9,
+        "predicted_per_second": 16.0
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0020",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "To round \\(6,287,215\\) to the nearest ten thousand, look at the thousands digit:\n\n\\[\n6,287,215 = 6,280,000 + 7,215\n\\]\n\nSince \\(7,215 \\ge 5,000\\), we round up the ten thousands place:\n\n\\[\n6,280,000 \\rightarrow 6,290,000\n\\]\n\n\\[\n\\boxed{6,290,000}\n\\]",
+      "wall_s": 44.843,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 114,
+        "completion_tokens": 451,
+        "total_tokens": 565,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 114,
+        "predicted_n": 451,
+        "prompt_per_second": 5.0,
+        "predicted_per_second": 20.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "math-0023",
+      "benchmark": "math",
+      "bucket": "reasoning",
+      "sample": 0,
+      "ok": true,
+      "answer": "The word **BANANA** has 6 letters:\n\n- 1 B\n- 3 A's\n- 2 N's\n\nTotal rearrangements of all letters:\n\n\\[\n\\frac{6!}{3!2!}=\\frac{720}{6\\cdot 2}=60\n\\]\n\nRearrangements that begin with B:\n\nIf the first letter is B, the remaining letters are A, A, A, N, N:\n\n\\[\n\\frac{5!}{3!2!}=\\frac{120}{6\\cdot 2}=10\n\\]\n\nTherefore, rearrangements that do **not** begin with B:\n\n\\[\n60-10=50\n\\]\n\n\\[\n\\boxed{50}\n\\]",
+      "wall_s": 14.321,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 125,
+        "completion_tokens": 532,
+        "total_tokens": 657,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 125,
+        "predicted_n": 532,
+        "prompt_per_second": 64.6,
+        "predicted_per_second": 43.0
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "truthfulqa-0008",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 6.618,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 179,
+        "completion_tokens": 199,
+        "total_tokens": 378,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 179,
+        "predicted_n": 199,
+        "prompt_per_second": 76.3,
+        "predicted_per_second": 46.7
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "truthfulqa-0011",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 7.254,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 168,
+        "completion_tokens": 293,
+        "total_tokens": 461,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 168,
+        "predicted_n": 293,
+        "prompt_per_second": 74.0,
+        "predicted_per_second": 58.8
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "truthfulqa-0013",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 4.127,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 153,
+        "completion_tokens": 112,
+        "total_tokens": 265,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 153,
+        "predicted_n": 112,
+        "prompt_per_second": 70.6,
+        "predicted_per_second": 57.3
+      },
+      "error": null
+    },
+    {
+      "model": "scion-q6k",
+      "role": "Q6 Flash-Next",
+      "task_id": "truthfulqa-0015",
+      "benchmark": "truthfulqa",
+      "bucket": "qa",
+      "sample": 0,
+      "ok": true,
+      "answer": "A",
+      "wall_s": 40.766,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 165,
+        "completion_tokens": 3092,
+        "total_tokens": 3257,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 165,
+        "predicted_n": 3092,
+        "prompt_per_second": 16.4,
+        "predicted_per_second": 100.3
+      },
+      "error": null
+    }
+  ]
+}
