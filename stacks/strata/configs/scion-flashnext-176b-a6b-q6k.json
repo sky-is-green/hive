@@ -4,9 +4,9 @@
     "--pack",
     "${SCION_MODELS}/pack-q6k",
     "--native",
-    "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6K.gguf",
+    "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6_K.gguf",
     "--ple-gguf",
-    "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6K.gguf",
+    "${SCION_MODELS}/Scion-FlashNext-176B-A6B-Q6_K.gguf",
     "--embd-gguf",
     "${SCION_MODELS}/scion-embd-bf16.gguf",
     "--expert-profile",
@@ -54,5 +54,6 @@
     1
   ],
   "gpus_asked": true,
-  "layer_split": "auto"
+  "layer_split": "auto",
+  "answer_room": true
 }

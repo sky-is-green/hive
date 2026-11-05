@@ -54,5 +54,6 @@
     1
   ],
   "gpus_asked": true,
-  "layer_split": "auto"
+  "layer_split": "auto",
+  "answer_room": true
 }
