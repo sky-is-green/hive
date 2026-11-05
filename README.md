@@ -1,4 +1,7 @@
-<p align="center"><img src="docs/assets/hive-mark.svg" width="88" alt="Hive"></p>
+<p align="center">
+  <img src="assets/heroes/hive-heroes.gif" width="1000" alt="The five Hive 1.7B role specialists connected as a hive: Conductor in the center, with Reader, Auditor, Dispatcher and Tool Manager around it">
+</p>
+<p align="center"><sub>Five role specialists, one hive: Conductor at the center, with Reader, Auditor, Dispatcher and Tool Manager around it.</sub></p>
 
 # Hive
 
