@@ -6,7 +6,7 @@
 # Hive
 
 <p align="center">
-  <a href="https://github.com/sky-is-green/hive/actions/workflows/ci.yml"><img src="https://github.com/sky-is-green/hive/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/sky-is-green/hive/actions/workflows/ci.yml"><img src="https://github.com/sky-is-green/hive/actions/workflows/ci.yml/badge.svg?branch=main&v=2" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f?style=flat" alt="License: MIT"></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.10%2B-3776ab?style=flat&logo=python&logoColor=white" alt="Python 3.10+"></a>
   <a href="https://huggingface.co/collections/SkyIsNotGreen/hive-series"><img src="https://img.shields.io/badge/Hugging%20Face-Hive%20Series-ffd21e?style=flat&logo=huggingface&logoColor=black" alt="Hugging Face: Hive Series"></a>
