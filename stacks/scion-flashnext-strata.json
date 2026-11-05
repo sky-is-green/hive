@@ -24,9 +24,11 @@
         "config_external": true,
         "engine_args": [
           "--vram-reserve-mib",
-          "3072",
+          "5120",
           "--prefill",
-          "4096"
+          "4096",
+          "--vram-reserve-later-mib",
+          "1024"
         ],
         "timeout_s": 900
       },

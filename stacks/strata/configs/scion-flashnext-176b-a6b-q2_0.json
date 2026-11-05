@@ -27,13 +27,15 @@
     "direct",
     "--mmap-experts",
     "--vram-reserve-mib",
-    "3072",
+    "5120",
     "--pool-workers",
     "15",
     "--pcie-frac",
     "0",
     "--pipeline-windows",
-    "2"
+    "2",
+    "--vram-reserve-later-mib",
+    "1024"
   ],
   "cwd": "${STRATA_REPO}",
   "tokenizer": "${SCION_MODELS}/pack-q2-ab/tokenizer",
