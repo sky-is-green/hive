@@ -1,39 +1,101 @@
 # Splinter Memory: A Managed-Decay Context Curation Architecture for Long-Horizon LLM Conversations
 
-**A white paper for the open-source LLM and testing community**
+**A managed-decay context curation layer for long-horizon LLM conversations, with falsifiable predictions and the failures kept.**
 
----
+**sky-is-green** · Technical white paper · August 2026 \
+Project: <https://github.com/sky-is-green/hive> · License: MIT
 
-## Contents
+A model that has forgotten a fact is rarely uncertain. It answers from
+whatever is still in the window with the same confidence as a model that
+remembers. Every long conversation inherits this: the window fills, the
+oldest decisions fall out, and the model keeps talking.
 
+Splinter Memory is a context-curation layer outside the generative model. A
+small fleet of bidirectional encoders scores the stored conversation; a
+membrane deduplicates and detects topic drift; a retention pass applies
+managed decay; and a focal assembler builds a bounded, relevance-ranked
+window. The primary model sees only what matters, at a fixed budget, every
+turn.
+
+This is the paper: the architecture, four postulates, twelve falsifiable
+predictions, the measured verdicts and the failures I kept. The code is in
+[the repository](https://github.com/sky-is-green/hive); the reproduction map
+is [`REPRODUCE.md`](REPRODUCE.md); the test corpora ship in the same checkout,
+while the live run bundles are recorded (R), not published. Measurements are
+current to 2026-08-24: P1/P3/P4/P5/P7/P8/P9/P11
+PASS (P11 deterministically and live), P2 passes recall and fails precision,
+P6/P10 FAIL, and P12 is a registered draft.
+
+**Contents**
+
+- [The claim in one page](#the-claim-in-one-page)
 - [Abstract](#abstract)
-- [1. Introduction & Motivation](#1-introduction--motivation) · [1.1 The problem](#11-the-problem) · [1.2 The proposed remedy](#12-the-proposed-remedy) · [1.3 Scope of the evaluation](#13-the-scope-of-this-evaluation) · [1.4 Measured benefit](#14-the-user-visible-benefit-measured) · [1.5 Why it must be separate](#15-why-this-component-is-needed-why-it-affects-all-llm-usage-and-why-it-must-be-separate) · [1.6 KV-compression axes](#16-relationship-to-kv-compression-the-three-axes-turboquant-and-friends)
-- [2. Related Work](#2-related-work)
-- [3. Architectural Overview](#3-architectural-overview)
-- [4. Theoretical Foundations](#4-theoretical-foundations) · [Postulate 1: context curation](#postulate-1-the-context-curation-postulate) · [Postulate 2: managed decay](#postulate-2-the-managed-decay-postulate) · [Postulate 3: separation](#postulate-3-the-separation-postulate) · [Postulate 4: ground-truth bootstrap](#postulate-4-the-ground-truth-bootstrap-postulate)
-- [5. Hypotheses and Predictions](#5-hypotheses-and-predictions) · [P1 Constant throughput](#p1-constant-throughput-hypothesis) · [P2 Retrieval precision](#p2-retrieval-precision-hypothesis) · [P3 Context sufficiency](#p3-context-sufficiency-hypothesis) · [P4 Domain-dependent decay](#p4-domain-dependent-decay-curve) · [P5 Targeted masking](#p5-targeted-masking-hypothesis) · [P6 Confidence escalation](#p6-confidence-escalation-hypothesis) · [P7 Auditor agreement](#p7-auditor-agreement-hypothesis) · [P8 Heuristic-routing floor](#p8-heuristic-routing-floor-hypothesis) · [P9 Densest duplicate](#p9-densest-duplicate-hypothesis) · [P10 Drift reset](#p10-drift-reset-hypothesis) · [P11 Comb resurrection](#p11-comb-resurrection-hypothesis-pass-deterministically-2026-08-24-live-validation-completed-2026-08-24) · [P12 Fact distillation (draft)](#p12-store-time-fact-distillation-hypothesis-draft-2026-08-25-protocol-only)
-- [6. The Pipeline Efficiency Score (PES)](#6-the-pipeline-efficiency-score-pes)
-- [7. Experimental Protocol (Reproducibility)](#7-experimental-protocol-reproducibility)
-- [8. Measured Outcome Summary](#8-measured-outcome-summary)
-- [9. Threats to Validity & Known Limitations](#9-threats-to-validity--known-limitations)
-- [10. Open Questions](#10-open-questions)
-- [11. Licensing, Reproducibility, and Community Invitation](#11-licensing-reproducibility-and-community-invitation)
-- [12. The HiveBench System & Tooling](#12-the-hivebench-system--tooling)
+- [1. The problem](#1-the-problem)
+- [2. Related work](#2-related-work)
+- [3. The architecture](#3-the-architecture)
+- [4. The theory: four postulates](#4-the-theory-four-postulates)
+- [5. The hypotheses](#5-the-hypotheses)
+- [6. The score: PES](#6-the-score-pes)
+- [7. The protocol](#7-the-protocol)
+- [8. The measured results](#8-the-measured-results)
+- [9. Threats to validity and what is not claimed](#9-threats-to-validity-and-what-is-not-claimed)
+- [10. Open questions](#10-open-questions)
+- [11. Reproduce](#11-reproduce)
+- [12. The HiveBench system and tooling](#12-the-hivebench-system-and-tooling)
+- [13. License and community invitation](#13-license-and-community-invitation)
 - [References](#references)
 
----
+## The claim in one page
+
+| the claim | the measurement |
+|---|---|
+| Bounded context keeps throughput flat | decode 14.5 → 15.5 tps over 308+ turns (+6.7%, P1 PASS) |
+| Curation beats FIFO | splinter ≥ FIFO on 85.1% of 175 fact-retrievable turns (P3 PASS); post-run PES 80.0 GREEN vs rolling 12.2 / FIFO 11.6 |
+| Recall is real; precision is the ceiling | 90.3% deterministic recall (P2 recall PASS), 10.7% precision (P2 precision FAIL, encoder ceiling) |
+| Domains separate | code m90 1.8 vs prose m90 1.2 (P4 PASS) |
+| Densest duplicate wins | 12/12 informative turns; 32.3 vs 17.6 sufficiency per 1k tokens (P9 PASS) |
+| The comb resurrects old topics | 100% vs 20% return-turn recall under budget pressure (P11 PASS); live 79.8% |
+
+Three results carry the paper:
+
+1. **Bounded context is the lever.** A fixed, relevance-ranked window keeps
+   decode throughput flat across hundreds of turns (P1) and carries the fact
+   when history contains it (P2 recall, P3), while the naive FIFO window
+   evicts it.
+2. **Selection is the product; the generator is a commodity.** A small encoder
+   fleet plus a deterministic membrane beats FIFO on fact-retrievable turns
+   (P3) and finds the densest duplicate (P9). The failures are kept: P6 cannot
+   calibrate escalation, P10 cannot measure a drift-reset win, and P2 precision
+   is an encoder ceiling.
+3. **The ceiling is data-structural, not encoder size.** Six encoders,
+   including a 568M retrieval-specialized model, land on the same top-K curve.
+   The paper says what it cannot do (§9) instead of hiding it.
+
+What is not claimed: that retrieval precision is solved, that P6/P10 work,
+that the results generalise beyond the synthetic corpora and the measured
+single-model setup, or that the auditor is independent. The evidence and the
+caveats are in §9.
 
 ## Abstract
 
-Large language models (LLMs) exhibit well-documented degradation over long-horizon interactions: performance decays as conversation length grows, relevant information "falls off" rolling context windows, and generation speed slows with growing KV-cache state. We propose **Splinter Memory**, an external, multi-agent context curation architecture that decouples *context comprehension* from *context generation*. A fleet of small bidirectional encoder models ("drones") continuously scores, filters, compresses, and reassembles conversation history into a bounded, high-relevance context window that is then delivered to the primary autoregressive model via a cache-managed inference backend.
+Large language models degrade over long-horizon interactions: relevant facts
+fall off rolling windows, attention under-uses the middle of a large context,
+and KV-cache growth slows generation. Splinter Memory is an external context
+curation layer that decouples comprehension from generation. A fleet of small
+bidirectional encoders scores stored history; a membrane deduplicates and
+detects topic drift; a retention pass applies managed decay; and a focal
+assembler builds a bounded, relevance-ranked window for the primary model.
 
-This paper states the architectural theory, formalizes the mechanisms (targeted masking, tiered routing, managed decay, remembrance passes, deduplication, drift detection), and, critically, presents **labeled, falsifiable predictions** (P1-P11) with explicit logic chains and measurement protocols, so the community can reproduce, challenge, or extend the work. All claims are designed to be testable on consumer hardware with open-weight models. As of 2026-08-24 the protocol is measured end-to-end: P1/P3/P4/P5/P7/P8/P9/P11 PASS (P11 deterministically and live-validated), P2 passes on recall and is falsified on precision (the encoder ceiling, Threat 6), P6/P10 FAIL, each verdict with its evidence and confound fixes in the sections below. The companion tooling, the **HiveBench** evaluation suite and the HiveBench Studio sidecar (§12), ships with the protocol: deterministic diagnostics, self-contained run bundles, and an engine-agnostic backend layer, so the architecture can be driven against any local (LM Studio / llama.cpp, vLLM) or hosted OpenAI-compatible backend and its claims re-measured on demand.
+The paper states four postulates, formalizes the mechanisms, and presents
+twelve falsifiable predictions (P1–P12) with logic chains, protocols and
+falsification conditions. As of 2026-08-24 the protocol is measured
+end-to-end: P1/P3/P4/P5/P7/P8/P9/P11 PASS, P2 passes recall and fails precision
+at the encoder ceiling, P6/P10 FAIL, and P12 is a registered draft. The failures
+are part of the result.
 
----
+## 1. The problem
 
-## 1. Introduction & Motivation
-
-### 1.1 The problem
+### 1.1 Three failure modes
 
 Modern open-weight LLMs (e.g., Qwen 3 27B [[20]](#ref-20), Gemma 3 [[21]](#ref-21)) exhibit three compounding failure modes in long conversations:
 
@@ -66,9 +128,9 @@ flowchart TB
 
 ### 1.2 The proposed remedy
 
-We propose that context management should be **externalized** from the generative model. A small fleet of bidirectional encoders, which can run concurrently and cheaply, pre-processes the entire conversation history and produces a *curated, bounded, high-density context stream*. The primary model receives only what is predicted to matter, at a bounded size, for every turn.
+I propose that context management should be **externalized** from the generative model. A small fleet of bidirectional encoders, which can run concurrently and cheaply, pre-processes the entire conversation history and produces a *curated, bounded, high-density context stream*. The primary model receives only what is predicted to matter, at a bounded size, for every turn.
 
-This is a division of labor: the generative model does what it does best (generation); the encoder fleet does what it does best (comparison, similarity, filtering). We hypothesize this decomposition yields strictly better long-horizon behavior than feeding the primary model raw, unbounded context. The one-sentence version:
+This is a division of labor: the generative model does what it does best (generation); the encoder fleet does what it does best (comparison, similarity, filtering). I hypothesize this decomposition yields strictly better long-horizon behavior than feeding the primary model raw, unbounded context. The one-sentence version:
 
 ```mermaid
 flowchart LR
@@ -116,7 +178,7 @@ So the tests are not about intelligence, similarity to people, or any species-le
 
 The division this presupposes, selection done by the cheap encoder fleet, generation done by the primary model, is not merely assumed: the live data keeps confirming that the generative model is **good at producing answers; it is the wrong tool for selecting context** (see Postulate 3 and Threat 6). HiveBench's tests therefore measure the *selection* layer's decisions, not the generator's, and treat any attempt to "fix" retrieval by making the generator larger as a category error.
 
-**Why we need these tests.** The claim is falsifiable, and the live setting now speaks to it: the 2026-08-22 splinter-vs-baselines run (`20260822_211131`) is a clean live result, bounded context carried the fact when history contained it (deterministic P2 recall 90.3% ≥ 90% target), splinter ≥ FIFO on 85.1% of retrievable turns (P3), and post-run PES 80.0 GREEN vs rolling 12.2 / FIFO 11.6. The live runs also showed that the *measurement* had to be de-confounded first (cross-conversation contamination, hedge-reply poisoning, auditor sufficiency confounds, Threat 8, P2 note) before the policy itself could be read. The selection policy is the product, the generative model is a commodity, so if the policy is indistinguishable from FIFO the project has no reason to exist. The tests are also the only defense against silent failure modes that look healthy: a policy that retrieves most of what it stored can still starve if it stored little of what mattered (see the `ingestion_rate` / `perfect_hive_ceiling` decomposition in P2), and they give the calibration knobs (decay multiplier, drift threshold, budget ranges, routing threshold) an objective to be tuned against instead of a guess.
+**Why I need these tests.** The claim is falsifiable, and the live setting now speaks to it: the 2026-08-22 splinter-vs-baselines run (`20260822_211131`) is a clean live result, bounded context carried the fact when history contained it (deterministic P2 recall 90.3% ≥ 90% target), splinter ≥ FIFO on 85.1% of retrievable turns (P3), and post-run PES 80.0 GREEN vs rolling 12.2 / FIFO 11.6. The live runs also showed that the *measurement* had to be de-confounded first (cross-conversation contamination, hedge-reply poisoning, auditor sufficiency confounds, Threat 8, P2 note) before the policy itself could be read. The selection policy is the product, the generative model is a commodity, so if the policy is indistinguishable from FIFO the project has no reason to exist. The tests are also the only defense against silent failure modes that look healthy: a policy that retrieves most of what it stored can still starve if it stored little of what mattered (see the `ingestion_rate` / `perfect_hive_ceiling` decomposition in P2), and they give the calibration knobs (decay multiplier, drift threshold, budget ranges, routing threshold) an objective to be tuned against instead of a guess.
 
 **Why it is beneficial.** The tests convert "context management" from a vibe into a number: one block of the run report shows what the splinter stored, what it retrieved, and what the model itself failed to contribute, deterministic, replayable, and cheap, with no LLM-auditor opinion required. The recall/ingestion split tells us *which* knob to turn and stops us from blaming the architecture for a model's output distribution. They make the bounded-context argument concrete, the lost "off-screen" history is recovered by a selective policy, not mourned, and they publish the ceiling (`perfect_hive_ceiling`) so the metric cannot be gamed into looking better than the data allows.
 
@@ -159,7 +221,7 @@ Two caveats. (1) **Attribution:** Threat 7 already concedes the splinter's flat-
 
 ---
 
-## 2. Related Work
+## 2. Related work
 
 | Work | Relevance | How Splinter differs |
 |---|---|---|
@@ -177,7 +239,7 @@ Two caveats. (1) **Attribution:** Threat 7 already concedes the splinter's flat-
 
 ---
 
-## 3. Architectural Overview
+## 3. The architecture
 
 Splinter Memory is organized into five functional layers. (The implementation itself is the specification: `splinter/` in this repository, with the layer map below and the module tree in the repo.)
 
@@ -197,9 +259,9 @@ Splinter Memory is organized into five functional layers. (The implementation it
 
 ---
 
-## 4. Theoretical Foundations
+## 4. The theory: four postulates
 
-We ground the architecture in four explicit postulates. Each is stated so it can be accepted, challenged, or refined independently.
+I ground the architecture in four explicit postulates. Each is stated so it can be accepted, challenged, or refined independently.
 
 ### Postulate 1: The Context Curation Postulate
 > For a fixed token budget *B*, a context window assembled by relevance-ranked selection from the full conversation **dominates** a contiguous window of the same size *B* on downstream task quality, and this gap **widens monotonically** with conversation length.
@@ -252,7 +314,7 @@ flowchart LR
 
 ---
 
-## 5. Hypotheses and Predictions
+## 5. The hypotheses
 
 Each prediction below is **labeled** with its identifier, a falsifiable statement, the **logic chain** (premises → prediction), the **measurement protocol**, and the **falsification condition**. Repeating the protocol with the same hardware/model setup must reproduce the measured outcome.
 
@@ -476,9 +538,9 @@ Code (young facts, no stale penalty) tolerates aggressive decay, recall holds ab
 
 ---
 
-## 6. The Pipeline Efficiency Score (PES)
+## 6. The score: PES
 
-To make optimization measurable rather than impressionistic, we define a single composite metric. PES is a weighted sum of five normalized components:
+To make optimization measurable rather than impressionistic, I define a single composite metric. PES is a weighted sum of five normalized components:
 
 ```
 PES = 0.30·RetrievalPrecision
@@ -500,9 +562,9 @@ PES = 0.30·RetrievalPrecision
 
 ---
 
-## 7. Experimental Protocol (Reproducibility)
+## 7. The protocol
 
-To make all predictions reproducible on consumer hardware with open weights, we fix the following protocol.
+To make all predictions reproducible on consumer hardware with open weights, I fix the following protocol.
 
 **Hardware baseline:** Windows 11 (native; WSL2 optional for vLLM) on a single consumer GPU
 with ≥16 GB VRAM (e.g., RTX 4090); 32 GB system RAM. The environment this project was
@@ -553,7 +615,7 @@ documented integration seam (`docs/INTEGRATE.md`) rather than re-implementing it
 
 ---
 
-## 8. Measured Outcome Summary
+## 8. The measured results
 
 | Metric | Naive FIFO (baseline) | S3/S5 targets (design) | Measured (2026-08-23) |
 |---|---|---|---|
@@ -576,7 +638,9 @@ documented integration seam (`docs/INTEGRATE.md`) rather than re-implementing it
 
 ---
 
-## 9. Threats to Validity & Known Limitations
+## 9. Threats to validity and what is not claimed
+
+### 9.1 Threats to validity
 
 1. **Auditor circularity.** The auditor is the same model family being served. P7 mitigates via agreement checks, but agreement is not ground truth; a systematic shared bias between auditor and model is possible.
 2. **Synthetic-corpus bias.** Generated conversations may not capture real user messiness. Validation on real user conversations is mandatory before generalizing.
@@ -600,14 +664,31 @@ documented integration seam (`docs/INTEGRATE.md`) rather than re-implementing it
 
     *Figure 7: The B avenue: top-K retrieval precision for the stock, scaled (bge-m3), and task-tuned encoders, all on the same curve (data: table above).* **Conclusion: the ceiling is data-structural, not encoder-capacity.** The remedy is no longer "find a better encoder", the remaining options are (a) accept the ceiling (the context is fatter than needed, but the deterministic fact-presence evidence (P2 recall 90.3% live) shows the facts the model stated are in the context; the auditor's "100% sufficient" verdict is a corroborating *soft* signal (it sees the model's answer and is the same model family, Threat 1), not independent evidence of correctness) or (b) change the *task definition* (e.g., a classifier over chunk classes rather than cosine ranking).
 
-    **Matryoshka probe (2026-08-23):** bge-m3 truncated to 256 dimensions reproduces the full 1024-dim curve *exactly* on the same held-out pairs, the variable-size-embedding (MRL) technique [[9]](#ref-9) costs nothing on this set, confirming the sentence-transformers efficiency claim (smaller stored vectors, identical ranking) on our corpus.
+    **Matryoshka probe (2026-08-23):** bge-m3 truncated to 256 dimensions reproduces the full 1024-dim curve *exactly* on the same held-out pairs, the variable-size-embedding (MRL) technique [[9]](#ref-9) costs nothing on this set, confirming the sentence-transformers efficiency claim (smaller stored vectors, identical ranking) on this corpus.
 7. **Prefix-cache attribution.** On backends with automatic prefix caching (LM Studio / llama.cpp), flat throughput is co-produced by the splinter's bounded context *and* a byte-stable pinned system prefix whose KV is reused every turn. The naive FIFO baseline's window shifts each turn and never reuses KV, so the P1 comparison is "curation + stable prefix" vs. "shifting window" rather than raw context length. The falsification conditions are unchanged, but the throughput claim is attributable to both mechanisms, and replication on a backend without prefix caching (e.g., vLLM without pinned pages) may observe a smaller gap.
 8. **Evaluation-harness confounds.** Live validation surfaced two harness-level failure modes that look like architecture failures if unaddressed: (a) *cross-conversation contamination*, running multiple conversations through one context store lets earlier conversations' chunks crowd out the current one's, collapsing retrieval precision; conversations must be isolated per store; (b) *hedge-reply poisoning*, if the model's "no information" refusals are stored as chunks, they are later retrieved *as context* and perpetuate refusal, and a strict "answer only from context" system prompt forces exactly those refusals on first-mention turns; refusals should be filtered from the store and the prompt should permit clearly-marked general-knowledge fallback so facts can be ingested.
 9. **Decay-measurement interactions (2026-08-23).** Two properties of the decay/budget machinery shaped the P4 measurement and are themselves findings: (a) the adaptive budget's high-relevance feedback (bigger store → bigger budget → looser cutoff) washes the decay multiplier's effect out entirely, the P4 sweep holds the budget fixed to isolate it; (b) the stale factor (`×0.5` at age > 20) makes facts older than 20 turns unretrievable at every candidate multiplier, lowering the multiplier cannot recover them; only the remembrance/re-reference mechanics can. Both are regression-locked.
 
+### 9.2 What is not claimed
+
+- **Not that retrieval precision is solved.** P2's precision half is 10.7%
+  sentence-proxy precision; the encoder ceiling is the paper's central negative
+  result.
+- **Not that P6 or P10 work.** Both failed; the mechanisms and the
+  falsification records are kept.
+- **Not that the results generalise.** The corpora are synthetic, the live
+  backend is llama.cpp, and vLLM is mock-tested only.
+- **Not that the auditor is independent.** P7 is a single-rater, same-family
+  agreement measurement; it is a usability check, not ground truth.
+- **Not that flat throughput is solely the splinter.** Prefix caching on
+  llama.cpp co-produces P1 (Threat 7).
+- **Not that P12 is measured.** It is a registered draft, not a result.
+- **Not that the comb is a general archive.** The live P11 recall was 79.8%,
+  not the deterministic 100%.
+
 ---
 
-## 10. Open Questions
+## 10. Open questions
 
 1. Does the optimal decay curve converge across domains, or is per-domain tuning mandatory (P4)? **Partially answered (2026-08-23):** on the long-horizon corpus the domains separate beyond the 0.2 band (code m90 1.8 vs prose m90 1.2, P4 PASS), but the horizon corpus is synthetic; real logged conversations, and the stale-factor regime's interaction with any multiplier, remain open.
 2. At what conversation length does splinter-curated context *stop* dominating FIFO (i.e., is there a crossover point below which the added latency is pure overhead)?
@@ -617,15 +698,40 @@ documented integration seam (`docs/INTEGRATE.md`) rather than re-implementing it
 
 ---
 
-## 11. Licensing, Reproducibility, and Community Invitation
+## 11. Reproduce
 
-- All code, logs, and protocols are released open-source in this repository.
-- All test corpora are synthetic and ship in-repo for reuse (`../tests/fixtures/`).
-- We explicitly invite: (a) independent replication of P1-P11 on different hardware, and (b) adversarial construction of conversations that defeat the architecture. Contributions of domain-specific masked vocabularies and drone checkpoints are accepted **only under a verification gate**: reproducible training/evaluation scripts, provenance and license-compliance records, and maintainer review before inclusion, unverified third-party assets are not merged into the repository.
+Every headline claim maps to a command; [`REPRODUCE.md`](REPRODUCE.md) is the
+full map. From the repository root:
+
+```bash
+git clone https://github.com/sky-is-green/hive.git
+cd hive
+python3 -m venv .venv
+.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e .
+
+pytest tests/unit tests/integration -q
+python -m experiments.run_p1_p10 --mock
+python -m experiments.p5_targeted_masking --steps 300
+```
+
+The determinism levels are explicit:
+
+| level | meaning |
+|---|---|
+| **D — deterministic** | no LLM calls, no API key, no GPU; the exit code *is* the evidence |
+| **L — live** | needs an OpenAI-compatible backend and, practically, a GPU; re-measures the claim |
+| **R — recorded** | the number is in the paper with a run id, but the raw bundle is not published |
+
+The deterministic protocol tests are the strongest evidence:
+`pytest tests/integration/test_protocol.py -q` covers P3/P4/P9/P11. P1/P2/P7/P8
+and the live P11 run are **R** or **L**: they can be re-measured, but the run
+bundles behind §8 are not published. P6 and P10 have no passing test because
+they failed; that is the result, not a gap in the harness.
 
 ---
 
-## 12. The HiveBench System & Tooling
+## 12. The HiveBench system and tooling
 
 The architecture in this paper ships as a working system, not just results. HiveBench is the evaluation suite and Studio that drive it, built around one principle: **the system measures its own claims.** Every component that can be verified deterministically is (fixture ground-truth diagnostics, run bundles, replay sweeps); only what genuinely requires a live model runs live.
 
@@ -647,6 +753,33 @@ The architecture in this paper ships as a working system, not just results. Hive
 - A model-management layer (its own llama.cpp server lifecycle + live Hugging Face acquisition) means the Studio is not tied to a specific launcher application.
 
 **What this means for local LLM use.** The splinter itself is CPU-resident and engine-agnostic: it curates for any backend through the OpenAI-compatible seam, so the measured benefits (flat throughput, fact survival, bounded memory, no KV spill, bounded per-turn token cost) transfer to any local or hosted model. The evaluation suite makes the claim self-auditing: any deployment can re-run the deterministic diagnostics and the live protocol against its own model and hardware, and the comparison tool reports whether the policy improved or regressed. One caveat, carried over from the body of the paper: selection *efficiency* (retrieval precision) is capped by the encoder ceiling (Threat 6), the system is explicit about what it optimizes and what it cannot.
+
+---
+
+## 13. License and community invitation
+
+Splinter Memory is MIT-licensed. All code, logs and protocols are released
+open-source in this repository. The test corpora are synthetic and ship in-repo
+(`../tests/fixtures/`).
+
+```bibtex
+@misc{splinter-memory-2026,
+  title  = {Splinter Memory: A Managed-Decay Context Curation Architecture for Long-Horizon LLM Conversations},
+  author = {sky-is-green},
+  year   = {2026},
+  url    = {https://github.com/sky-is-green/hive},
+  note   = {Paper: https://github.com/sky-is-green/hive/blob/main/splinter/SPLINTER-WHITE-PAPER.md}
+}
+```
+
+**Community invitation.** I explicitly invite (a) independent replication of
+P1–P11 on different hardware, and (b) adversarial construction of conversations
+that defeat the architecture. Contributions of domain-specific masked
+vocabularies and drone checkpoints are accepted only under a verification
+gate: reproducible training/evaluation scripts, provenance and license
+compliance records, and maintainer review; unverified third-party assets are
+not merged. I would rather have a reproducible disagreement than a polished
+claim.
 
 ---
 

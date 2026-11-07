@@ -14,7 +14,7 @@ performs well over arbitrarily long conversations on consumer hardware.
 **HiveBench**, its evaluation suite and Studio sidecar, lives in the same
 repository: [`../hivebench/README.md`](../hivebench/README.md). It turns the
 white paper's falsifiable predictions
-([P1-P11](SPLINTER-WHITE-PAPER.md#5-hypotheses-and-predictions)) into executable
+([P1-P11](SPLINTER-WHITE-PAPER.md#5-the-hypotheses)) into executable
 tests with measured verdicts, an offline test suite, and the live benchmark
 harness.
 

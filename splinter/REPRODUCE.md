@@ -69,12 +69,12 @@ python -m experiments.run_p1_p10 --mock          # P1-P10 driver, offline
 | P3 context sufficiency | **D** | `pytest tests/integration/test_protocol.py::test_p3_long_conversations_close_sufficiency` | PASS — splinter ≥ FIFO on ≥80% of retrievable turns. |
 | P4 domain decay separation | **D** | `pytest tests/integration/test_protocol.py::test_p4_horizon_corpus_separates_domains` | PASS — code vs prose m90 gap >0.2. |
 | P5 targeted masking | **D** | `python -m experiments.p5_targeted_masking --steps 300 --output models/p5/report.json` | PASS — held-out precision beats random masking; far lower MLM loss. |
-| P6 escalation | R | (no passing test — mechanism premise failed) | **FAIL** by design; see white paper §7.6 and Threat 6. |
+| P6 escalation | R | (no passing test — mechanism premise failed) | **FAIL** by design; see white paper §5 (P6) and Threat 6. |
 | P7 auditor–human agreement | R | `python -m experiments.human_label` (GUI + rater) | PASS — 90.25% on 400 valid items. Not scriptable end-to-end. |
 | P8 routing accuracy | **D**/R | `pytest tests/unit/test_classifier.py` | Offline classifier behaviour here; the live 100% figure is recorded. |
 | P9 duplicate-pair merge | **D** | `pytest tests/integration/test_protocol.py::test_p9_duplicate_pairs_merge` | PASS. |
 | P9 densest-beats-recency | **D** | `pytest tests/integration/test_protocol.py::test_p9_densest_beats_recency` | PASS — densest wins on informative turns. |
-| P10 drift reset | R | (no passing test) | **FAIL** by design; white paper §7.10. |
+| P10 drift reset | R | (no passing test) | **FAIL** by design; see white paper §5 (P10). |
 | P11 comb resurrection | **D** | `pytest tests/integration/test_protocol.py::test_p11_comb_return_protocol_pass` | PASS — 100% return-turn recall under budget pressure. |
 
 The `tests/integration/test_protocol.py` checks are regression locks: they
