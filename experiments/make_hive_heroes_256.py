@@ -15,15 +15,90 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw
 
-import make_hive_heroes as h
-
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "assets" / "heroes"
 SIZE = 256
 S = 3
 PX = SIZE * S
 
-PALETTES = dict(h.PALETTES)
+# The 5x7 bitmap alphabet the 256px family draws its labels with.  The 96px
+# generators that used to own it were retired, so the font lives here now.
+FONT = {
+    "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "B": ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+    "C": ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
+    "D": ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+    "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    "F": ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+    "G": ["01110", "10001", "10000", "10111", "10001", "10001", "01111"],
+    "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "I": ["01110", "00100", "00100", "00100", "00100", "00100", "01110"],
+    "J": ["00111", "00010", "00010", "00010", "00010", "10010", "01100"],
+    "K": ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    "M": ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+    "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "P": ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+    "Q": ["01110", "10001", "10001", "10001", "10101", "10010", "01101"],
+    "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    "S": ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+    "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "U": ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "V": ["10001", "10001", "10001", "10001", "10001", "01010", "00100"],
+    "W": ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
+    "X": ["10001", "10001", "01010", "00100", "01010", "10001", "10001"],
+    "Y": ["10001", "10001", "01010", "00100", "00100", "00100", "00100"],
+    "Z": ["11111", "00001", "00010", "00100", "01000", "10000", "11111"],
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+    "3": ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "10000", "11110", "00001", "00001", "11110"],
+    "6": ["01110", "10000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00001", "01110"],
+    " ": ["00000"] * 7,
+    "-": ["00000", "00000", "00000", "11111", "00000", "00000", "00000"],
+    ".": ["00000", "00000", "00000", "00000", "00000", "01100", "01100"],
+}
+
+LABELS = {
+    "conductor": "CONDUCTOR",
+    "reader": "READER",
+    "auditor": "AUDITOR",
+    "dispatcher": "DISPATCHER",
+    "toolmanager": "TOOL MANAGER",
+}
+
+
+def bitmap_width(label: str, *, scale: int = 1, spacing: int = 1) -> int:
+    return (len(label) * (5 + spacing) - spacing) * scale
+
+
+def bitmap_text(draw, label: str, x: int, y: int, color, *,
+                scale: int = 1, spacing: int = 1) -> None:
+    """Left-aligned 5x7 text, for the word shown inside the lens."""
+    pitch = (5 + spacing) * scale
+    for i, char in enumerate(label):
+        glyph = FONT.get(char.upper(), FONT[" "])
+        for row, bits in enumerate(glyph):
+            for col, bit in enumerate(bits):
+                if bit == "1":
+                    px = x + i * pitch + col * scale
+                    py = y + row * scale
+                    draw.rectangle((px, py, px + scale - 1, py + scale - 1),
+                                   fill=color)
+
+
+def _glass_colour(p):
+    light, a2 = p["light"], p["accent2"]
+    return tuple(round(light[i] * 0.86 + a2[i] * 0.14) for i in range(3))
+
+
+PALETTES = {}
 PALETTES["reader"] = {
     "bg": (20, 14, 7),
     "bg2": (38, 26, 12),
@@ -125,7 +200,7 @@ def hex_points(inset: int = 0):
 
 def label(draw, text: str, x: int, y: int, color, *, scale: int = 2,
           spacing: int = 1) -> None:
-    h.bitmap_text(draw, text, x, y, color, scale=scale, spacing=spacing)
+    bitmap_text(draw, text, x, y, color, scale=scale, spacing=spacing)
 
 
 def _honeycomb(p, mask, r: int = 18) -> Image.Image:
@@ -170,8 +245,8 @@ def badge_base(name: str = "reader") -> Image.Image:
     d.polygon([(30, 174), (226, 174), (204, 232), (52, 232)],
               fill=p["dark"])
     d.line((30, 174, 226, 174), fill=p["accent"], width=2)
-    role_label = h.LABELS[name]
-    role_w = h.bitmap_width(role_label, scale=2)
+    role_label = LABELS[name]
+    role_w = bitmap_width(role_label, scale=2)
     label(d, role_label, 128 - role_w // 2, 182, p["light"])
     label(d, "1.7B", 105, 204, p["accent"])
     return img
@@ -210,7 +285,7 @@ def draw_book(img: Image.Image, p) -> None:
 
 def draw_centered_label(img: Image.Image, p, text: str) -> None:
     d = ImageDraw.Draw(img)
-    w = h.bitmap_width(text, scale=1)
+    w = bitmap_width(text, scale=1)
     x = 128 - w // 2
     y = 44
     label(d, text, x, y, p["accent"], scale=1)
@@ -227,7 +302,7 @@ def draw_chunk_card(img: Image.Image, p, rect, seed: int, *, selected=False,
     d = ImageDraw.Draw(img)
     x0, y0, x1, y1 = rect
     edge = edge or (p["accent"] if selected else p["accent2"])
-    fill = h._glass_colour(p) if selected else p["light"]
+    fill = _glass_colour(p) if selected else p["light"]
     d.rectangle((x0, y0, x1, y1), fill=fill, outline=edge, width=2)
     ink = p["accent2"]
     if dim:
@@ -284,7 +359,7 @@ def draw_lens(img: Image.Image, p, cx: int, cy: int, *,
     d.ellipse((cx - r_rim, cy - r_rim, cx + r_rim, cy + r_rim),
               fill=p["accent"])
     d.ellipse((cx - r_glass, cy - r_glass, cx + r_glass, cy + r_glass),
-              fill=h._glass_colour(p), outline=p["accent2"], width=1)
+              fill=_glass_colour(p), outline=p["accent2"], width=1)
     if status:
         _draw_status(d, p, cx, cy, status)
     elif card_lines:
@@ -297,7 +372,7 @@ def draw_context_card(img: Image.Image, p, rect, seed: int, *,
                       edge) -> None:
     d = ImageDraw.Draw(img)
     x0, y0, x1, y1 = rect
-    d.rectangle((x0, y0, x1, y1), fill=h._glass_colour(p),
+    d.rectangle((x0, y0, x1, y1), fill=_glass_colour(p),
                 outline=p["accent2"], width=2)
     d.line((x0, y0, x0, y1), fill=edge, width=4)
     for yy in (y0 + 7, y0 + 17):
@@ -312,7 +387,7 @@ def draw_context_beam(img: Image.Image, p, rect, *, pulse=1.0) -> None:
     left, right = x0 + 5, x1 - 5
     cx = (left + right) // 2
     blue = p["encode1"]
-    glass = h._glass_colour(p)
+    glass = _glass_colour(p)
     edge = tuple(round(glass[i] * (1.0 - pulse) + blue[i] * pulse)
                  for i in range(3))
     d.line((left, cy, cx, cy), fill=edge, width=2)
@@ -339,7 +414,7 @@ def draw_task_complete(img: Image.Image, p) -> None:
     x0, y0, x1, y1 = 136, 73, 212, 82
     d.rectangle((x0, y0, x1, y1), fill=p["high_text"], outline=p["high"],
                 width=1)
-    w = h.bitmap_width(TASK_COMPLETE, scale=1, spacing=0)
+    w = bitmap_width(TASK_COMPLETE, scale=1, spacing=0)
     label(d, TASK_COMPLETE, x0 + (76 - w) // 2, y0 + 1, p["light"],
           scale=1, spacing=0)
 
@@ -397,7 +472,7 @@ def draw_task_card(img: Image.Image, p, rect, letter: str, state: str,
     d.line((x0, y0, x0, y1), fill=edge, width=4)
     ink = p["light"] if state != "blocked" else _blend(p["light"], p["bg2"], 0.55)
     d.rectangle((x0 + 6, y0 + 8, x0 + 8, y0 + 10), fill=ink)
-    h.bitmap_text(d, letter, x0 + 12, y0 + 3, ink, scale=2)
+    bitmap_text(d, letter, x0 + 12, y0 + 3, ink, scale=2)
     if state == "done":
         d.line((x1 - 12, y0 + 8, x1 - 8, y0 + 12), fill=done, width=2)
         d.line((x1 - 8, y0 + 12, x1 - 2, y0 + 3), fill=done, width=2)
@@ -463,7 +538,7 @@ def draw_worker_card(img: Image.Image, p, rect, label_text: str,
         d.rectangle((sx, sy, sx + 13, sy + 10), fill=fill, outline=edge,
                     width=1)
         if filled:
-            h.bitmap_text(d, tasks[i], sx + 4, sy + 2, p["dark"], scale=1)
+            bitmap_text(d, tasks[i], sx + 4, sy + 2, p["dark"], scale=1)
 
 
 def draw_plan_card(img: Image.Image, p, *, mode: str = "ready",
@@ -474,16 +549,16 @@ def draw_plan_card(img: Image.Image, p, *, mode: str = "ready",
                 width=2)
     if mode == "ready":
         for text, yy in (("PLAN", y0 + 4), ("READY", y0 + 12)):
-            w = h.bitmap_width(text, scale=1)
+            w = bitmap_width(text, scale=1)
             label(d, text, x0 + (60 - w) // 2, yy, p["high"], scale=1)
     elif mode == "executing":
-        w = h.bitmap_width(EXECUTING, scale=1)
+        w = bitmap_width(EXECUTING, scale=1)
         label(d, EXECUTING, x0 + (60 - w) // 2, y0 + 4, p["mid"],
               scale=1)
         draw_spinner(img, p, (x0 + 21, y0 + 12, x0 + 39, y0 + 20),
                      spin_phase)
     else:
-        w = h.bitmap_width(COMPLETE, scale=1)
+        w = bitmap_width(COMPLETE, scale=1)
         label(d, COMPLETE, x0 + (60 - w) // 2, y0 + 4, p["high"], scale=1)
         cx = x0 + 30
         d.line((cx - 5, y0 + 15, cx - 1, y0 + 19), fill=p["high"], width=2)
@@ -563,7 +638,7 @@ def draw_dispatch_grid(img: Image.Image, p) -> None:
         x = dispatch_x(t)
         colour = p["low"] if t == DISPATCH_DEADLINE else p["mid"]
         text = str(t)
-        w = h.bitmap_width(text, scale=1)
+        w = bitmap_width(text, scale=1)
         label(d, text, x - w // 2, 54, colour, scale=1)
         d.line((x, 60, x, 64), fill=colour, width=1)
     deadline = dispatch_x(DISPATCH_DEADLINE)
@@ -647,7 +722,7 @@ def draw_dispatch_summary(img: Image.Image, p, *,
     if on_time:
         label(d, "ON TIME", 168, 163, ink, scale=1)
     elif status:
-        w = h.bitmap_width(status, scale=1)
+        w = bitmap_width(status, scale=1)
         label(d, status, 209 - w, 163, ink, scale=1)
 
 
@@ -729,8 +804,8 @@ def draw_tool_tile(img: Image.Image, p, rect, name: str, kind: str,
     ink = p["light"] if state != "idle" else _blend(p["light"], p["bg2"], 0.45)
     d.rectangle((x0, y0, x1, y1), fill=p["bg2"], outline=edge, width=2)
     draw_tool_icon(d, p, kind, x0, y0, ink)
-    w = h.bitmap_width(name, scale=1)
-    h.bitmap_text(d, name, x0 + ((x1 - x0) - w) // 2, y0 + 22, ink,
+    w = bitmap_width(name, scale=1)
+    bitmap_text(d, name, x0 + ((x1 - x0) - w) // 2, y0 + 22, ink,
                   scale=1)
     if state == "selected":
         d.line((x1 - 11, y0 + 6, x1 - 8, y0 + 9), fill=p["high"], width=2)
@@ -746,7 +821,7 @@ def draw_tool_pipeline(img: Image.Image, p, selected, *, done: bool) -> None:
     for name, xx in (("READ", x0 + 6), ("EDIT", x0 + 38),
                      ("TEST", x0 + 70)):
         col = p["light"] if name in selected else dim
-        h.bitmap_text(d, name, xx, y0 + 7, col, scale=1)
+        bitmap_text(d, name, xx, y0 + 7, col, scale=1)
     for ax, prev in ((x0 + 31, "READ"), (x0 + 63, "EDIT")):
         col = p["accent"] if prev in selected else dim
         d.line((ax, y0 + 8, ax + 3, y0 + 10), fill=col, width=1)
@@ -804,10 +879,10 @@ def draw_model_card(img: Image.Image, p, rect, name: str, size: str,
     d.rectangle((x0, y0, x1, y1), fill=p["bg2"], outline=edge, width=2)
     d.line((x0, y0, x0, y1), fill=edge, width=4)
     ink = p["light"] if state != "queued" else _blend(p["light"], p["bg2"], 0.45)
-    nw = h.bitmap_width(name, scale=1)
-    sw = h.bitmap_width(size, scale=1)
-    h.bitmap_text(d, name, x0 + (56 - nw) // 2, y0 + 6, ink, scale=1)
-    h.bitmap_text(d, size, x0 + (56 - sw) // 2, y0 + 15, p["accent"], scale=1)
+    nw = bitmap_width(name, scale=1)
+    sw = bitmap_width(size, scale=1)
+    bitmap_text(d, name, x0 + (56 - nw) // 2, y0 + 6, ink, scale=1)
+    bitmap_text(d, size, x0 + (56 - sw) // 2, y0 + 15, p["accent"], scale=1)
 
 
 def draw_rack(img: Image.Image, p, rect, name: str, capacity: str,
@@ -818,7 +893,7 @@ def draw_rack(img: Image.Image, p, rect, name: str, capacity: str,
     d.rectangle((x0, y0, x1, y1), fill=p["bg2"], outline=edge, width=2)
     d.line((x0, y0, x0, y1), fill=edge, width=4)
     label(d, name, x0 + 6, y0 + 4, p["light"], scale=1)
-    cw = h.bitmap_width(capacity, scale=1)
+    cw = bitmap_width(capacity, scale=1)
     label(d, capacity, x1 - 6 - cw, y0 + 4, p["accent"], scale=1)
     bx0, bx1 = x0 + 6, x1 - 6
     by0, by1 = y0 + 12, y0 + 16
@@ -836,7 +911,7 @@ def draw_rack(img: Image.Image, p, rect, name: str, capacity: str,
         if i < len(chips):
             d.rectangle((sx, sy, sx + 13, sy + 9), fill=p["copper"],
                         outline=p["high"], width=1)
-            h.bitmap_text(d, chips[i], sx + 1, sy + 1, p["dark"], scale=1)
+            bitmap_text(d, chips[i], sx + 1, sy + 1, p["dark"], scale=1)
         else:
             d.rectangle((sx, sy, sx + 13, sy + 9), fill=p["dark"],
                         outline=p["mid"], width=1)
@@ -876,7 +951,7 @@ def draw_verdict(img: Image.Image, p) -> None:
     x0, y0, x1, y1 = VERDICT_RECT
     d.rectangle((x0, y0, x1, y1), fill=p["dark"], outline=p["high"],
                 width=2)
-    w = h.bitmap_width(PASS, scale=1)
+    w = bitmap_width(PASS, scale=1)
     label(d, PASS, x0 + (60 - w) // 2, y0 + 4, p["high"], scale=1)
     cx = x0 + 30
     d.line((cx - 4, y0 + 14, cx - 1, y0 + 17), fill=p["high"], width=2)
