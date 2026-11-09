@@ -127,9 +127,9 @@ jobs:
           } -ThrottleLimit 4
           Write-Host "free after:  $([math]::Round((Get-PSDrive C).Free/1GB,1)) GB"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -142,7 +142,7 @@ jobs:
         run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pip wheels
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/.pip-cache
           key: pip-${{ runner.os }}-${{ steps.week.outputs.week }}
@@ -199,7 +199,7 @@ jobs:
       # The suite's only real encoder is paraphrase-MiniLM-L3-v2 (~90 MB);
       # cache it so repeat runs stay offline and no download can fail mid-test.
       - name: Cache encoder model
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.HF_HOME }}
           key: hf-${{ runner.os }}-minilm-l3-v2-v1
