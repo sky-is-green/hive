@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install the durable DeepSeek V4.1 engine service for Hive.
+# Install the durable DeepSeek V4.1 engine service (opt-in: manual start, not
+# enabled at boot and not wired into Hive).
 #
 # Run as root, with the required paths:
 #   sudo SRC=... MODEL=... ENGRAM1=... ENGRAM14=... LIBSRC=... \
@@ -29,7 +30,7 @@ die() { echo "x $*" >&2; exit 1; }
 for p in "$SRC/serve" "$SRC/tools" "$SRC/local" "$SRC/build-hip-pre/ds41_generate" \
          "$MODEL/V41-GSQ.gguf" "$ENGRAM1/engram-L1.safetensors" \
          "$ENGRAM14/engram-L14.safetensors" "$HERE/ds41.json" \
-         "$HERE/ds41-engine.service" "$HERE/hive.service.d/ds41.conf"; do
+         "$HERE/ds41-engine.service"; do
     [ -e "$p" ] || die "missing $p"
 done
 ls "$LIBSRC"/libggml*.so* >/dev/null 2>&1 || die "no libggml*.so* under $LIBSRC"
@@ -84,47 +85,38 @@ sed -e "s|@MODEL_SRC@|$MODEL|g" \
     "$HERE/ds41-engine.service" > "$UNIT_TMP"
 install -m 0644 -o root -g root "$UNIT_TMP" /etc/systemd/system/ds41-engine.service
 rm -f "$UNIT_TMP"
-install -d -o root -g root -m 0755 /etc/systemd/system/hive.service.d
-install -m 0644 -o root -g root "$HERE/hive.service.d/ds41.conf" \
-    /etc/systemd/system/hive.service.d/ds41.conf
 systemd-analyze verify /etc/systemd/system/ds41-engine.service
 systemctl daemon-reload
-systemctl enable --now ds41-engine.service
+# Opt-in: the engine is installed but NOT enabled at boot and NOT wired into
+# Hive.  The 2026-10-27 auto-start/auto-load experiment (the hive.service.d
+# ds41.conf drop-in and `systemctl enable --now`) was removed on 2026-11-11
+# after its stale bind mounts turned the unit into a restart loop.
+# Start it by hand when the DeepSeek-V4.1 route is needed:
+#   sudo systemctl start ds41-engine.service
 
-echo "=== engine health ==="
-for i in $(seq 1 240); do
-    if curl -fsS http://127.0.0.1:8150/health >/tmp/ds41-health.$$ 2>/dev/null; then
-        if grep -q '"loaded": true' /tmp/ds41-health.$$; then
-            echo "health_after=${i}s: $(cat /tmp/ds41-health.$$)"
-            break
-        fi
-    fi
-    sleep 1
-done
-rm -f /tmp/ds41-health.$$
-curl -fsS http://127.0.0.1:8150/health >/dev/null || die "engine health endpoint is not answering"
-
-echo "=== short inference ==="
-SHORT="$(curl -fsS -m 240 http://127.0.0.1:8150/v1/chat/completions \
-    -H 'Content-Type: application/json' \
-    -d '{"model":"deepseek-v4.1-flash-gsq","messages":[{"role":"user","content":"Reply with exactly DS41_INSTALL_OK"}],"max_tokens":32,"temperature":0}' \
-    | /usr/bin/python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("choices") or [{}])[0].get("message",{}).get("content") or "")')"
-echo "$SHORT" | grep -q 'DS41_INSTALL_OK' || die "engine answered but did not return DS41_INSTALL_OK: $SHORT"
-echo "ENGINE_INFERENCE_OK"
-
-echo "=== Hive ==="
-if systemctl is-active --quiet hive.service; then
-    systemctl restart hive.service
-    for i in $(seq 1 90); do
-        if curl -fsS http://127.0.0.1:8765/health >/tmp/hive-health.$$ 2>/dev/null; then
-            break
+echo "=== engine health (only when the engine is running) ==="
+if systemctl is-active --quiet ds41-engine.service; then
+    for i in $(seq 1 240); do
+        if curl -fsS http://127.0.0.1:8150/health >/tmp/ds41-health.$$ 2>/dev/null; then
+            if grep -q '"loaded": true' /tmp/ds41-health.$$; then
+                echo "health_after=${i}s: $(cat /tmp/ds41-health.$$)"
+                break
+            fi
         fi
         sleep 1
     done
-    echo "hive_health: $(cat /tmp/hive-health.$$ 2>/dev/null || true)"
-    rm -f /tmp/hive-health.$$
+    rm -f /tmp/ds41-health.$$
+    curl -fsS http://127.0.0.1:8150/health >/dev/null || die "engine health endpoint is not answering"
+
+    echo "=== short inference ==="
+    SHORT="$(curl -fsS -m 240 http://127.0.0.1:8150/v1/chat/completions \
+        -H 'Content-Type: application/json' \
+        -d '{"model":"deepseek-v4.1-flash-gsq","messages":[{"role":"user","content":"Reply with exactly DS41_INSTALL_OK"}],"max_tokens":32,"temperature":0}' \
+        | /usr/bin/python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("choices") or [{}])[0].get("message",{}).get("content") or "")')"
+    echo "$SHORT" | grep -q 'DS41_INSTALL_OK' || die "engine answered but did not return DS41_INSTALL_OK: $SHORT"
+    echo "ENGINE_INFERENCE_OK"
 else
-    echo "hive.service is not active; the ds41 drop-in is installed for its next start"
+    echo "engine is not running; skipped the health and inference checks"
 fi
 
 echo "=== isolation ==="
@@ -135,5 +127,5 @@ if [ -n "$PID" ] && [ -r "/proc/$PID/mountinfo" ]; then
     grep -E ' /home | /srv/hive-engine/(model|engram)' "/proc/$PID/mountinfo" | head -8 || true
 fi
 
-echo "done: ds41-engine.service is enabled and answering on 127.0.0.1:8150"
-echo "note: Hive's DSH route 'hive-local' must point at http://127.0.0.1:8150/v1; see docs/AI-USER.md"
+echo "done: ds41-engine.service is installed but not enabled; start it with: sudo systemctl start ds41-engine.service"
+echo "note: Hive runs with HIVE_DSH_MODEL=hive-local and no ds41 drop-in; see docs/AI-USER.md"

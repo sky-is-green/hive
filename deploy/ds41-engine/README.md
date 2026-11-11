@@ -1,7 +1,13 @@
 # DS4.1 engine service (durable)
 
 This bundle reproduces the local DeepSeek-V4.1-Flash-GSQ engine on the Hive
-box. It backs Hive's `hive-local` DSH route at `http://127.0.0.1:8150/v1`.
+box. It backs Hive's `hive-local` DSH route at `http://127.0.0.1:8150/v1`
+when it runs. The engine is opt-in: `install.sh` installs the unit but does
+not enable it at boot and does not wire it into Hive; start it by hand
+(`sudo systemctl start ds41-engine.service`). The auto-start/auto-load
+experiment (the `hive.service.d/ds41.conf` drop-in and `enable --now`) was
+removed on 2026-11-11 after stale bind mounts turned the unit into a
+restart loop.
 
 ## Files
 
@@ -9,11 +15,11 @@ box. It backs Hive's `hive-local` DSH route at `http://127.0.0.1:8150/v1`.
   wave 16/16, `--prompt-batch 8192`, `--arena-gib 4`, `--pf-b 0`, D3 default,
   no DSpark.
 - `ds41-engine.service` - the systemd unit template. `install.sh` substitutes
-  `@MODEL_SRC@`, `@ENGRAM1_SRC@` and `@ENGRAM14_SRC@`.
-- `hive.service.d/ds41.conf` - pins Hive to `hive-local` /
-  `deepseek-v4.1-flash-gsq` and orders Hive after the engine.
+  `@MODEL_SRC@`, `@ENGRAM1_SRC@` and `@ENGRAM14_SRC@`. Installed but not
+  enabled; Hive has no drop-in for it.
 - `install.sh` - root installer: account, app/binary/libs, read-only model and
-  Engram bind mounts, config, unit, drop-in, restart and verification.
+  Engram bind mounts, config, unit, and verification. It leaves the service
+  disabled; start it manually.
 - `../../docs/DS41-HF-POST.md` - the public write-up with the measured numbers.
 
 ## Install

@@ -133,10 +133,13 @@ DOCKER_HOST=unix:///run/user/<hive-ai-uid>/docker.sock
 ## Start Hive
 
 ```bash
-sudo systemctl enable --now hive.service
+sudo systemctl start hive.service
 curl http://127.0.0.1:8765/health
 curl -s http://127.0.0.1:8765/v1/sandbox/status | python3 -m json.tool
 ```
+
+`hive.service` is not enabled: it does not come up at boot. `enable` it only
+if you want that.
 
 The unit runs as `hive-ai`, binds only `127.0.0.1`, and makes only
 `/srv/hive-ai` writable at the mount level. The base, `app/`, and `venv/` are
@@ -208,9 +211,10 @@ adds its own `hooks-claude-code` row separately):
 
 `HIVE_LOCAL_API_KEY=lm-studio` is a local, non-secret placeholder; do not use
 a human or cloud key here. The unit sets `HIVE_DSH_PROVIDER=hive-local` and
-`HIVE_DSH_MODEL=deepseek-v4.1-flash-gsq`; the same values are pinned in
-`/etc/systemd/system/hive.service.d/ds41.conf` so a setup rerun cannot revert
-them. The provider/engine files stay under `/srv/hive-ai/state` so a
+`HIVE_DSH_MODEL=hive-local`. There is no `hive.service.d` drop-in: the
+2026-10-27 auto-start/auto-load experiment (a `ds41.conf` drop-in pinning
+`deepseek-v4.1-flash-gsq` and wanting the engine) was removed on 2026-11-11.
+The provider/engine files stay under `/srv/hive-ai/state` so a
 read-only app tree never blocks persistence. Point `HARNESS_LLAMA_SERVER` at
 the AI-readable llama.cpp binary and put the GGUF under
 `/srv/hive-ai/models/gguf` for the Qwen route; the DeepSeek-V4.1 route uses the
@@ -221,8 +225,10 @@ Strata engine service below instead.
 The local heavy tier is a durable system service, not a transient user
 process:
 
-- Unit: `/etc/systemd/system/ds41-engine.service`, enabled at boot, runs as
-  the dedicated `hive-engine` account, `MemoryMax=12G`, `MemoryHigh=9G`,
+- Unit: `/etc/systemd/system/ds41-engine.service`, installed but **not
+  enabled**: it does not come up at boot and nothing pulls it in; start it by
+  hand with `sudo systemctl start ds41-engine.service`. It runs as the
+  dedicated `hive-engine` account, `MemoryMax=12G`, `MemoryHigh=9G`,
   `ProtectSystem=strict`, `ProtectHome=yes`, `InaccessiblePaths=/home`.
 - Config: `/etc/hive-engine/ds41.json`, mode 0640 root:hive-engine.  It binds
   the 152 GB V41-GSQ model and the two Engram layers read-only into
@@ -232,9 +238,9 @@ process:
   card stays with the desktop.  `hive-engine` is **not** in the docker group
   and has no docker socket.
 - API: `http://127.0.0.1:8150/v1`, OpenAI-compatible, model id
-  `deepseek-v4.1-flash-gsq`, context 32768.  `hive.service` has
-  `Wants=`/`After=ds41-engine.service` via
-  `/etc/systemd/system/hive.service.d/ds41.conf`.
+  `deepseek-v4.1-flash-gsq`, context 32768, when the engine is running.
+  Nothing pulls the engine in: `hive.service` has no `ds41.conf` drop-in any
+  more.
 - Tuned 2026-10-27 for this 20 GB / 30 GiB box: `--prefill-chunk 1024`,
   `STRATA_SERVE_STEP_MAX=0`, `--prompt-batch 8192`, `--arena-gib 4`,
   `--pf-b 0`, `STRATA_PRESTAGE_GIB=1.5`, `STRATA_WAVE_THREADS=16`,
