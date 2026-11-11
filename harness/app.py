@@ -1459,6 +1459,13 @@ class EngineConfigRequest(BaseModel):
     )
 
 
+class AgentPresetWriteRequest(BaseModel):
+    """Write one user preset's agent.cordis.yml (never a system preset)."""
+
+    agentPreset: str = Field(..., min_length=1, max_length=80)
+    content: str = Field(..., min_length=1, max_length=262144)
+
+
 def _config_revision(payload: object) -> str:
     """A short, stable hash of a config payload (the optimistic-concurrency token).
 
@@ -1467,6 +1474,14 @@ def _config_revision(payload: object) -> str:
     """
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
+
+
+_AGENT_PRESET_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def _agent_presets_user_root() -> Path:
+    """The writable user preset root. Tests override this to a temp tree."""
+    return Path.home() / ".dsh" / ".agent-presets"
 
 
 _ASSISTANT_CONTEXT = """\
@@ -4502,10 +4517,10 @@ def create_app(
         import shutil
         shipped = REPO_ROOT.parent / "hivebench-studio" / "apps" / "cli" / "config" / "agent-presets" / src
         if not shipped.is_dir():
-            shipped = Path.home() / ".dsh" / ".agent-presets" / src
+            shipped = _agent_presets_user_root() / src
         if not shipped.is_dir():
             raise HTTPException(404, f"preset not found: {src}")
-        user_root = Path.home() / ".dsh" / ".agent-presets" / dst
+        user_root = _agent_presets_user_root() / dst
         if user_root.exists():
             raise HTTPException(409, f"preset already exists: {dst}")
         try:
@@ -4524,7 +4539,7 @@ def create_app(
         pid = str(body.get("agentPreset") or body.get("id") or "").strip()
         if not pid:
             raise HTTPException(422, "agentPreset required")
-        target = Path.home() / ".dsh" / ".agent-presets" / pid
+        target = _agent_presets_user_root() / pid
         if not target.is_dir():
             raise HTTPException(404, f"not a user preset: {pid}")
         import shutil
@@ -4544,15 +4559,46 @@ def create_app(
         pid = str(body.get("agentPreset") or body.get("id") or "").strip()
         if not pid:
             raise HTTPException(422, "agentPreset required")
-        # Search shipped then user
-        candidates = [
-            REPO_ROOT.parent / "hivebench-studio" / "apps" / "cli" / "config" / "agent-presets" / pid / "agent.cordis.yml",
-            Path.home() / ".dsh" / ".agent-presets" / pid / "agent.cordis.yml",
-        ]
-        for cand in candidates:
+        # Search shipped then user; trust comes from the tree, not a path guess.
+        shipped = (REPO_ROOT.parent / "hivebench-studio" / "apps" / "cli"
+                   / "config" / "agent-presets" / pid / "agent.cordis.yml")
+        user = _agent_presets_user_root() / pid / "agent.cordis.yml"
+        for cand, trust in ((shipped, "system"), (user, "user")):
             if cand.is_file():
-                return {"agentPreset": pid, "content": cand.read_text(encoding="utf-8"), "trust": "user" if ".dsh" in str(cand) else "system"}
+                return {"agentPreset": pid,
+                        "content": cand.read_text(encoding="utf-8"),
+                        "trust": trust}
         raise HTTPException(404, f"preset not found: {pid}")
+
+    @app.post("/v1/agent-presets/write")
+    async def agent_presets_write(req: AgentPresetWriteRequest):
+        """Write agent.cordis.yml for an existing user preset.
+
+        System presets are read-only: a caller must duplicate one to a user id
+        first. The id is validated, the target must already exist, and the
+        write is atomic.
+        """
+        pid = req.agentPreset.strip()
+        if not _AGENT_PRESET_ID.match(pid):
+            raise HTTPException(
+                422, "agentPreset must match ^[a-z0-9][a-z0-9-]*$")
+        target = _agent_presets_user_root() / pid / "agent.cordis.yml"
+        if not target.is_file():
+            raise HTTPException(404, f"not a user preset: {pid}")
+        tmp = target.with_name(target.name + ".tmp")
+        try:
+            mode = target.stat().st_mode
+            tmp.write_text(req.content, encoding="utf-8")
+            os.chmod(tmp, mode)
+            os.replace(tmp, target)
+        except OSError as exc:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            raise HTTPException(500, f"cannot write preset: {exc}")
+        return {"ok": True, "agentPreset": pid, "path": str(target),
+                "trust": "user"}
 
     @app.get("/v1/agent-presets/list")
     def agent_presets_list():
@@ -4626,7 +4672,7 @@ def create_app(
                         "order": m["order"],
                         "isDefault": d.name == "standard",
                     })
-        user_root = Path.home() / ".dsh" / ".agent-presets"
+        user_root = _agent_presets_user_root()
         if user_root.is_dir():
             for d in user_root.iterdir():
                 if d.is_dir() and re.match(r"^[a-z0-9][a-z0-9-]*$", d.name):

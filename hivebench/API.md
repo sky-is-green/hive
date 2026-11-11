@@ -121,6 +121,7 @@ curl http://127.0.0.1:8765/health
 | `POST` | `/v1/agent-presets/copy` | Copy an agent preset to a new id. |
 | `GET` | `/v1/agent-presets/list` | List available agent presets (system and user). |
 | `POST` | `/v1/agent-presets/read` | Read one agent preset's content. |
+| `POST` | `/v1/agent-presets/write` | Write agent.cordis.yml for an existing user preset. |
 | `POST` | `/v1/agent-presets/remove` | Delete a user agent preset. |
 | `POST` | `/v1/agent/cancel` | Cancel the in-flight agent turn for a conversation. |
 | `GET` | `/v1/agent/status` | Agent service state: running, model, last error. |

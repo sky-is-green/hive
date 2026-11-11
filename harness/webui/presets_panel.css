@@ -58,6 +58,7 @@
 .hive-presets .hpr-detail-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .hive-presets .hpr-detail-head h3 { margin: 0; font-size: 13px; }
 .hive-presets .hpr-content { max-height: 65vh; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--hpr-line); border-radius: 8px; background: #101216; color: var(--hpr-ink); font: 12px/1.5 "JetBrains Mono", "SFMono-Regular", Consolas, monospace; white-space: pre; }
+.hive-presets .hpr-editor { width: 100%; min-height: 360px; resize: vertical; tab-size: 2; }
 .hive-presets .hpr-read-message { color: var(--hpr-muted); font-size: 12px; }
 .hive-presets .hpr-read-error { color: var(--hpr-bad); }
 @media (max-width: 720px) {

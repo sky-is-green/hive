@@ -201,7 +201,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 | R0.2a | sandbox status/policy panel in the shell | done (read-only status; CLI remains the write path) |
 | R0.2b | process manager, engine log, server status | done (table, log tail, raw status, confirmed kill) |
 | R0.2c | live engine A/B compare | done (Engines panel; tok/s, winner, per-profile details) |
-| R0.2d | agent preset create/edit/save | pending |
+| R0.2d | agent preset create/edit/save | done (edit user presets; duplicate system presets; atomic write) |
 | R0.2e | prompt inspector (fix + port the backend payload) | pending |
 | R0.2f | setup wizard / hardware recommendation | pending |
 | R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | pending |
@@ -246,6 +246,12 @@ R0.2c ships the live A/B compare on the Engines page. It uses
 loading, and reports tokens/sec, the noise-aware winner and per-profile
 details. The shell proxy gives that route a one-hour timeout because two model
 loads can exceed the generic 180 s proxy limit.
+
+R0.2d makes user presets editable in the shell. It adds
+`POST /v1/agent-presets/write` (existing user presets only, validated id,
+atomic replace), keeps system presets read-only, and fixes trust detection in
+the read route to compare the actual user root instead of guessing from the
+string `.dsh`.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

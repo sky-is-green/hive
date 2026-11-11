@@ -46,6 +46,9 @@
       presets: [],
       selectedId: "",
       content: "",
+      originalContent: "",
+      editable: false,
+      editDirty: false,
       readStatus: "idle", // idle | loading | ready | error
       readError: null,
       error: null,
@@ -80,7 +83,7 @@
       var heading = node("div", "hpr-heading");
       heading.append(
         node("div", "", "Agent presets"),
-        node("p", "hpr-sub", "Browse system and user presets. Read or duplicate configurations; nothing is applied automatically.")
+        node("p", "hpr-sub", "Browse system and user presets, edit a user preset, or duplicate a system preset to make it yours. Nothing is applied automatically.")
       );
       ui.refresh = node("button", "hpr-btn", "Refresh");
       ui.refresh.type = "button";
@@ -127,12 +130,29 @@
       ui.detail.hidden = true;
       var detailHead = node("div", "hpr-detail-head");
       ui.detailTitle = node("h3", "", "");
+      var detailActions = node("div", "hpr-actions");
+      ui.editDirty = node("span", "hpr-dirty", "unsaved edits");
+      ui.editDirty.hidden = true;
+      ui.save = node("button", "hpr-btn hpr-primary", "Save");
+      ui.save.type = "button";
+      ui.save.addEventListener("click", savePreset);
+      ui.revert = node("button", "hpr-btn", "Revert");
+      ui.revert.type = "button";
+      ui.revert.addEventListener("click", revertPreset);
       ui.copyContent = node("button", "hpr-btn", "Copy to clipboard");
       ui.copyContent.type = "button";
       ui.copyContent.addEventListener("click", copyToClipboard);
-      detailHead.append(ui.detailTitle, ui.copyContent);
+      detailActions.append(ui.editDirty, ui.revert, ui.save, ui.copyContent);
+      detailHead.append(ui.detailTitle, detailActions);
       ui.readMessage = node("div", "hpr-read-message");
-      ui.content = node("pre", "hpr-content");
+      ui.content = document.createElement("textarea");
+      ui.content.className = "hpr-content hpr-editor";
+      ui.content.spellcheck = false;
+      ui.content.addEventListener("input", function () {
+        state.content = ui.content.value;
+        state.editDirty = state.content !== state.originalContent;
+        renderEditActions();
+      });
       ui.detail.append(detailHead, ui.readMessage, ui.content);
 
       root.append(heading, ui.status, ui.error, ui.notice, ui.groups, copyPanel, ui.detail);
@@ -227,25 +247,42 @@
       });
     }
 
+    function renderEditActions() {
+      if (!ui.save) return;
+      var busy = state.status === "loading" || state.status === "mutating";
+      var ready = state.readStatus === "ready";
+      ui.editDirty.hidden = !(state.editable && state.editDirty);
+      ui.save.disabled = !state.editable || !state.editDirty || !ready || busy;
+      ui.revert.disabled = !state.editable || !state.editDirty || !ready || busy;
+      ui.copyContent.disabled = !ready;
+      ui.content.readOnly = !state.editable || !ready;
+    }
+
     function renderDetail() {
       ui.detail.hidden = !state.selectedId;
       ui.detailTitle.textContent = state.selectedId
-        ? "agent.cordis.yml — " + state.selectedId : "";
-      ui.copyContent.disabled = state.readStatus !== "ready";
+        ? "agent.cordis.yml — " + state.selectedId +
+          (state.editable ? " (user, editable)" : " (system, read-only)")
+        : "";
       ui.readMessage.textContent = "";
       ui.readMessage.className = "hpr-read-message";
       if (state.readStatus === "loading") {
         ui.readMessage.textContent = "Loading agent.cordis.yml…";
-        ui.content.textContent = "";
+        ui.content.value = "";
       } else if (state.readStatus === "error") {
         ui.readMessage.classList.add("hpr-read-error");
         ui.readMessage.textContent = state.readError || "Could not read this preset.";
-        ui.content.textContent = "";
+        ui.content.value = "";
       } else if (state.readStatus === "ready") {
-        ui.content.textContent = state.content;
+        ui.content.value = state.content;
+        if (!state.editable) {
+          ui.readMessage.textContent =
+            "System preset — read-only. Duplicate it to make an editable user copy.";
+        }
       } else {
-        ui.content.textContent = "";
+        ui.content.value = "";
       }
+      renderEditActions();
     }
 
     function render() {
@@ -291,21 +328,68 @@
       if (!id || state.status === "loading" || state.status === "mutating") return Promise.resolve(state);
       state.selectedId = id;
       state.content = "";
+      state.originalContent = "";
+      state.editable = trustOf(preset) === "user";
+      state.editDirty = false;
       state.readStatus = "loading";
       state.readError = null;
       state.error = null;
       render();
       return request("POST", "/read", { agentPreset: id }).then(function (data) {
         state.content = data && typeof data.content === "string" ? data.content : "";
+        state.originalContent = state.content;
+        state.editDirty = false;
         state.readStatus = "ready";
       }).catch(function (err) {
         state.content = "";
+        state.originalContent = "";
+        state.editDirty = false;
         state.readStatus = "error";
         state.readError = String(err && err.message ? err.message : err);
       }).then(function () {
         render();
         return state;
       });
+    }
+
+    function savePreset() {
+      if (!state.selectedId || !state.editable || state.readStatus !== "ready" ||
+          state.status === "loading" || state.status === "mutating" || !state.editDirty) {
+        return Promise.resolve(state);
+      }
+      state.status = "mutating";
+      state.error = null;
+      state.notice = null;
+      render();
+      return request("POST", "/write", {
+        agentPreset: state.selectedId,
+        content: state.content,
+      }).then(function () {
+        state.originalContent = state.content;
+        state.editDirty = false;
+        return refresh().then(function () {
+          state.notice = "Saved user preset " + state.selectedId + ".";
+          render();
+        });
+      }).catch(function (err) {
+        state.status = "ready";
+        state.error = String(err && err.message ? err.message : err);
+      }).then(function () {
+        render();
+        return state;
+      });
+    }
+
+    function revertPreset() {
+      if (!state.editable || !state.editDirty) return Promise.resolve(state);
+      state.content = state.originalContent;
+      state.editDirty = false;
+      if (ui.content) ui.content.value = state.content;
+      state.notice = "Reverted unsaved edits.";
+      state.error = null;
+      renderEditActions();
+      render();
+      return Promise.resolve(state);
     }
 
     function copyToClipboard() {
