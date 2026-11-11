@@ -193,6 +193,20 @@ it; the Windows review checklist is in this doc; the unit suite is green.
 but `/server` is still the release-gated console (`docs/RELEASE-GATE.md` §4)
 and has workflows the shell does not. Do not delete `/server` yet.
 
+**Decision (2026-11-11):** port the gaps; keep the sandbox; drop only the
+deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
+
+| task | gap | status |
+|---|---|---|
+| R0.2a | sandbox status/policy panel in the shell | done (read-only status; CLI remains the write path) |
+| R0.2b | process manager, engine log, server status | pending |
+| R0.2c | live engine A/B compare | pending |
+| R0.2d | agent preset create/edit/save | pending |
+| R0.2e | prompt inspector (fix + port the backend payload) | pending |
+| R0.2f | setup wizard / hardware recommendation | pending |
+| R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | pending |
+| R0.2h | move the release gate; delete `/server` and its tests | pending |
+
 Keep `harness/webui/` as the canonical shell. Before deleting
 `render_server_page()` and the `/server` route, port or explicitly drop:
 
@@ -216,6 +230,10 @@ Keep `harness/webui/` as the canonical shell. Before deleting
 The deprecated **Linux / Docker Setup** tab is not the sandbox. It is a note
 about the old VHDX/WSL2 large-model path; dropping that tab does not remove
 `/v1/sandbox/*` or the sandbox policy.
+
+R0.2a ships the read-only sandbox status panel (Docker probe, image pin, limits,
+fallback). Policy writes stay in `hive sandbox policy/pin` until the API exposes
+a typed, validated policy contract.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

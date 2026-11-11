@@ -527,6 +527,7 @@ let runsPanel = null;
 let suggestionsPanel = null;
 let presetsPanel = null;
 let settingsPanel = null;
+let sandboxPanel = null;
 
 async function mountFitPanel() {
   if (!window.HiveFitPanel || !$("#fit-panel")) return;
@@ -556,6 +557,12 @@ async function mountSettingsPanel() {
   if (!window.HiveSettingsPanel || !$("#settings-panel")) return;
   if (!settingsPanel) settingsPanel = window.HiveSettingsPanel.mount($("#settings-panel"));
   return settingsPanel;
+}
+
+async function mountSandboxPanel() {
+  if (!window.HiveSandboxPanel || !$("#sandbox-panel")) return;
+  if (!sandboxPanel) sandboxPanel = window.HiveSandboxPanel.mount($("#sandbox-panel"));
+  return sandboxPanel.refresh();
 }
 
 async function mountPresetsPanel() {
@@ -1799,6 +1806,7 @@ function show(page) {
     engines: ["Engines", "Engine profiles, sampling and load options."],
     providers: ["Providers", "OpenAI-compatible endpoints and keys."],
     lifecycle: ["Lifecycle", "Load, unload and apply models and stacks."],
+    sandbox: ["Sandbox", "Docker isolation, image pin and local-fallback policy."],
     training: ["Training", "Ternary training runs and preset evidence."],
     runs: ["Runs", "Run history and report summaries."],
     suggestions: ["Suggestions", "Planner ideas for human review."],
@@ -1824,6 +1832,7 @@ async function refresh() {
     if (state.page === "engines") { await loadEngines(); await mountFitPanel(); }
     if (state.page === "providers") await mountProvidersPanel();
     if (state.page === "lifecycle") await mountLifecyclePanel();
+    if (state.page === "sandbox") await mountSandboxPanel();
     if (state.page === "training") await mountTrainingPanel();
     if (state.page === "runs") await mountRunsPanel();
     if (state.page === "suggestions") await mountSuggestionsPanel();
