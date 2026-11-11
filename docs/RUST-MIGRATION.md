@@ -63,11 +63,14 @@ transformers files. The control plane is not ML-bound.
 Bloat is localized, not pervasive:
 
 - `harness/reports.py:796` `render_server_page()` is a **3,369-line** embedded
-  legacy HTML/JS page beside the **8,934-line** `harness/webui/` console.
+  HTML/JS page beside the **8,934-line** `harness/webui/` shell. Neither is a
+  superset: `/server` is still the release-gated console and owns several
+  operational workflows the shell does not (see Appendix C).
 - Windows/WSL2/VHDX: about **800 lines** of setup code in `harness/app.py`
   (`_setup_tier`, `_ensure_vhdx`, `_list_drives`, `_setup_health`, plus the
   `/v1/setup/*` routes), **69** platform branches, **81** VHDX mentions, three
-  `.ps1` files (257 lines), and a nightly Windows CI leg.
+  `.ps1` files (257 lines), and a nightly Windows CI leg. Windows stays
+  supported long-term but is deferred behind a Linux-first boundary.
 - `experiments/cascade/results` holds **400** tracked files (~23.5 MB), much of it
   one-off run output and run scripts.
 
@@ -108,8 +111,9 @@ Bloat is localized, not pervasive:
 4. **Python stays the reference.** The papers and `experiments/` keep the
    Python implementation. A Rust memory encoder must match the reference within
    a stated tolerance before it can become the default.
-5. **Delete before porting.** Phase 0 removes the Windows/VHDX layer, the
-   duplicate console, stale run output and compatibility shims. A 1:1 port
+5. **Delete before porting.** Phase 0 removes the stale run output, the
+   compatibility shims and the duplicate pieces of the console, and it
+   quarantines the Windows-only path off the Linux-first runtime. A 1:1 port
    would preserve the bloat.
 6. **One phase per branch.** No mixed cleanup + port + feature commits on the
    integration branch. Every task has a claim and a gate.
@@ -153,31 +157,60 @@ it. The sidecar is optional for serve-only installs.
 **Goal:** a smaller, clearer Python baseline and a frozen surface to port
 against. **Estimated:** 2–4 weeks. **No Rust yet.**
 
-### R0.1 — Decide Windows support
+### R0.1 — Set the Windows boundary: Linux first, Windows later
 
-The repo still has a nightly Windows CI leg and a Windows install path. The
-0.2% PowerShell figure understates the Windows-specific code.
+**Decision:** Windows remains a supported target, but it is **deferred**. The
+active build, runtime and CI path are Linux-only until the Rust control plane
+is nearly finished. This avoids deleting a surface the project still wants,
+while taking it off the critical path.
 
-- If Windows is **not** supported: delete `splinter/setup.ps1`,
-  `tools/fetch_backend.ps1`, `tools/resume_evidence.ps1`; remove the
-  `_setup_tier` / `_ensure_vhdx` / `_list_drives` / `_setup_health` block and the
-  `/v1/setup/*` VHDX/drive routes; remove `taskkill`, `pythonw`,
-  `CREATE_NO_WINDOW` and the Windows CI leg.
-- If Windows **is** supported: keep it, but quarantine the VHDX/WSL2 path as an
-  optional module and state that Rust Phase 1 will use Job Objects.
+Actions:
 
-**Acceptance:** a written decision in this doc, the dead code removed (or
-quarantined), and the unit suite green.
+- Remove the Windows leg from the required push/PR CI matrix. Keep a
+  `workflow_dispatch` job only (no scheduled run) so the arm can be checked on
+  demand; it must not gate merges.
+- Move `_setup_tier` / `_ensure_vhdx` / `_list_drives` / `_setup_health` and the
+  `/v1/setup/*` VHDX/drive routes behind a Windows-only module or feature flag.
+  They may stay in the tree; they must not be imported on Linux.
+- Keep `taskkill`, `pythonw`, `CREATE_NO_WINDOW`, and the three `.ps1` scripts
+  inside a clearly labelled `platform/windows` boundary. Do not add new Windows
+  branches to Linux modules.
+- Record a Windows review checklist for later: install, paths, process groups
+  vs Job Objects, signals, Docker/WSL2, packaging, and CI.
+- The Rust supervisor designs a platform trait now (process group on Unix, Job
+  Object later); it does not implement Windows in Phase 1.
 
-### R0.2 — Pick one console
+**Acceptance:** Linux CI is the only required leg; Windows is manual or
+non-blocking; Windows-only imports are impossible on Linux and a test asserts
+it; the Windows review checklist is in this doc; the unit suite is green.
 
-- Keep `harness/webui/` (the `:8170` console) as the canonical Studio.
-- Delete `render_server_page()` and its `/server` route, or move the remaining
-  unique panels into `webui/` first.
-- Update the tests that assert against `/server`; delete tests for panels that
-  are intentionally gone.
+### R0.2 — Consolidate the consoles, after closing the gap
 
-**Acceptance:** one HTML surface, no duplicate panel logic, tests updated.
+**Audit result (2026-11-11, Appendix C):** `harness/webui/` is the target shell,
+but `/server` is still the release-gated console (`docs/RELEASE-GATE.md` §4)
+and has workflows the shell does not. Do not delete `/server` yet.
+
+Keep `harness/webui/` as the canonical shell. Before deleting
+`render_server_page()` and the `/server` route, port or explicitly drop:
+
+- Setup wizard and hardware recommendation (Home).
+- Process manager, engine log and server status (Settings / launch panel).
+- Live engine A/B compare (Engines); the shell's Benchmark page is a static
+  matrix, not the live bench.
+- Agent preset create/edit/save; the shell's Presets page only reads/duplicates.
+- Prompt inspector. The backend already returns `inspection` and exposes
+  `/v1/splinter/inspect/{id}`, but the legacy page calls undefined
+  `renderInspection()` / `fetchInspection()`.
+- Deep research queue, if Suggestions is not the same queue.
+- Command palette and pinned commands, if still wanted.
+- A visible Cascade link (`/cascade`) and Senses entry, if still wanted.
+
+Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
+the tests. Move the release gate to `harness/webui/` in the same change.
+
+**Acceptance:** one canonical shell; the gap list is either ported or explicitly
+dropped in this doc; the release gate exercises the surviving shell; tests
+updated.
 
 ### R0.3 — Prune run artifacts
 
@@ -230,8 +263,8 @@ lifecycle. These are the numbers the Rust phases must beat.
 
 ### Phase 0 gate (G0)
 
-- [ ] Windows decision recorded and applied.
-- [ ] One console only.
+- [ ] Windows boundary recorded: Linux-first, Windows deferred, manual CI only.
+- [ ] Console decision recorded; gap list ported or explicitly dropped.
 - [ ] Artifacts pruned; tracked repo under ~25 MB.
 - [ ] Compatibility shims gone.
 - [ ] Contract snapshot + golden corpus committed.
@@ -283,8 +316,9 @@ rust/
 
 Suggested crates: `clap`, `serde`/`serde_json`, `thiserror`, `tokio`,
 `reqwest`, `sysinfo`, `fs2`, `memmap2`, `hf-hub`, `tracing`,
-`ratatui`/`crossterm`, `blake3`, `zstd`, `nix` (Unix), `windows-sys` (only if
-Windows stays). Test crates: `assert_cmd`, `predicates`, `insta`, `tempfile`.
+`ratatui`/`crossterm`, `blake3`, `zstd`, `nix` (Unix); `windows-sys` is
+deferred with the Windows arm. Test crates: `assert_cmd`, `predicates`,
+`insta`, `tempfile`.
 
 Keep the CLI synchronous except the supervisor. Do not use async as a style
 choice; use it where the process/health/log loops need it.
@@ -293,7 +327,8 @@ choice; use it where the process/health/log loops need it.
 
 The supervisor is the reason to do this in Rust. Requirements:
 
-- Spawn each tier in its own process group/session; on Windows use a Job Object.
+- Spawn each tier in its own process group/session. Windows Job Objects are a
+  later platform-trait implementation, not part of Phase 1.
 - Record `pid`, process start time, argv hash, port, engine, log path.
 - Before signalling, verify the PID **and** the command line; never kill a
   reused PID.
@@ -505,8 +540,8 @@ Rust column and run it on the release candidate. Do not weaken it.
 
 ## 12. CI, packaging and release
 
-- Add a Rust job: fmt, clippy, test, `cargo deny`, cross-compile Linux x86_64
-  (and Windows only if kept).
+- Add a Rust job: fmt, clippy, test, `cargo deny`, cross-compile Linux x86_64.
+  Windows is manual only until the Windows review in §16.
 - Keep the Python job for `experiments/`, `splinter/` and the reference tests.
 - Build artifacts with `cargo-dist` or an equivalent: tarballs, checksums,
   SBOM, release notes.
@@ -544,7 +579,7 @@ Rust column and run it on the release candidate. Do not weaken it.
 | two-language maintenance | slower iteration | one owner per contract; sidecar boundary; phase gates |
 | ecosystem gaps (Playwright, HF, ONNX) | feature loss | keep Python for optional extras; prove parity before removing |
 | agent/claims workflow | gate friction | task IDs and claims per phase; one hotspot at a time |
-| Windows ambiguity | wasted porting | decide in R0.1 before Phase 1 |
+| Windows deferred | drift in the Windows arm | quarantine + manual/non-blocking CI + review checklist; no required Windows gate until late |
 | packaging/signing | release delay | cargo-dist spike in Phase 1, not at the end |
 | security regression | tool/sandbox exposure | keep Python gateway until Rust passes the same policy tests |
 
@@ -567,10 +602,11 @@ Each gate is a written go/no-go in this document with the measured evidence.
 
 ## 16. Open questions
 
-1. **Windows:** supported or dropped? This changes R0.1 and the supervisor
-   design (Job Objects vs process groups).
-2. **Canonical console:** is `harness/webui/` the future, or does `/server`
-   still have unique panels that must be preserved?
+1. **Windows review:** scheduled before the first Windows release; confirm the
+   checklist (install, paths, Job Objects, signals, Docker/WSL2, packaging, CI)
+   and whether the deferred arm still compiles.
+2. **Console gaps:** confirm which R0.2 items are ported to `webui/` and which
+   are explicitly dropped; move the release gate to the survivor.
 3. **Product target:** a single-binary local appliance, or a research harness
    with a supported CLI? The answer decides whether Phase 2/3 are funded.
 4. **Encoder parity:** what cosine tolerance and what corpus are acceptable
@@ -618,4 +654,91 @@ hive serve <stack> --once
 - `harness/stack/schema.py` (688) — the stack contract.
 - `harness/tui.py` (905) — the dashboard to port.
 - `harness/app.py` (5,747) and `harness/reports.py` (4,377) — API and the
-  legacy console to shrink.
+  console to consolidate.
+
+## Appendix C — console audit, 2026-11-11
+
+**Question:** what does `/server` do, and can it be deleted?
+
+**Method:** read `render_server_page()` (`harness/reports.py:796-4164`),
+`harness/webui/index.html` and its panels, the `/v1` references in both,
+`harness/__main__.py`, `harness/tui.py`, `harness/cli.py`,
+`docs/RELEASE-GATE.md`, and `hivebench/README.md`.
+
+**Finding:** neither console is a superset. `/server` is still the
+release-gated console and owns several operational workflows; the shell owns
+the newer analysis pages.
+
+| `/server` surface | what it does | `harness/webui/` equivalent | action |
+|---|---|---|---|
+| Home: setup wizard | detect hardware, recommend backend and model | partial: Engines fit panel, Models | port a compact wizard or link to Engines/Lifecycle |
+| Home: deep research queue | queue for the background worker | Suggestions (planner ideas) | verify it is the same queue; port if not |
+| Home: backend selector | Strata / llama.cpp / API | Settings, Providers, Engines | confirm coverage |
+| Setup: Docker/VHDX | deprecated Linux/Docker setup | none | drop |
+| Agent: presets | create, edit, save, duplicate | Presets only reads/duplicates | port create/edit/save |
+| Engines: profiles | model, endpoint, ctx, sampling, load | Engines + fit panel | covered |
+| Engines: live A/B | compare two profiles live | Benchmark is a static matrix | port the live A/B |
+| Library | local models, import, remove, dir, move | Models | covered except Windows move (deferred) |
+| Providers | config and keys | Providers | covered |
+| Hub | HF search, files, downloads | Models: HF finder + downloads | covered |
+| Inspector | last turn, selected/dropped chunks, timings | none | fix and port; backend exists |
+| Settings: index | searchable 35-setting index | Settings global form | port the index if wanted |
+| Settings: process manager, engine log, server status | CPU/RAM, kill, log, status | Overview/Lifecycle partial | port |
+| Settings: Global controls | encoder, memory, quality, MCP, runtime, controller | Settings JSON blocks | verify controller/profile coverage |
+| Training | training runs | Training | covered |
+| Chat pane | chat/agent, sessions, commands, attachments | Chat | verify agent mode and commands |
+| Launch panel | load/unload/status | Lifecycle + Engines | partial |
+| Command palette/pinned commands | Ctrl+K and pinned row | none | port if wanted |
+| Cascade / Senses | links to `/cascade` and senses | none | add nav links if wanted |
+
+Pages that exist only in the shell: Overview, Roles, Benchmark, Routing, Judge,
+Risk & Approvals, Activity, Lifecycle, Runs, Suggestions, Presets, Models,
+Settings.
+
+**Entry points are inconsistent:**
+
+| surface | opens |
+|---|---|
+| `hive ui web` | `python -m harness`, console on `:8170` (shell) |
+| `hive ui status` | probes `:8765` `/health`, reports `:8765` |
+| TUI `w` | `studio_api.base_url()` default `:8765` |
+| `:8765/` | redirects to `/runs` |
+| `docs/RELEASE-GATE.md` §4 | tests `/server` on `:8765` |
+| `hivebench/README.md` | says console on `:8170`, page table describes `/server` |
+
+**Latent bug:** `renderInspection()` and `fetchInspection()` are called in the
+`/server` page but are not defined anywhere in the tree, so the Inspector tab
+cannot populate. The backend side works: `Splinter.inspect_turn()` returns the
+detail, `/v1/splinter/stream` includes `inspection`, and
+`GET /v1/splinter/inspect/{conversation_id}` exists.
+
+**Recommendation:** keep `harness/webui/` as the canonical shell. Before
+deleting `/server`, port or drop the R0.2 gap list; add nav links to
+`/cascade` and `/docs`; make `hive ui status` and TUI `w` point at `:8170`;
+move the release gate to the shell. Then delete `render_server_page()` and its
+tests in one change.
+
+**Do not delete `/server` now.** It is the surface the release gate and TUI
+currently exercise, and the shell is missing process/log, live A/B, preset
+editing and inspector coverage.
+
+## Appendix D — Windows review checklist (deferred)
+
+Run this before the first Windows release; do not gate Linux work on it.
+
+- [ ] Fresh install from a clean checkout: venv, pip, extras, `hive setup`.
+- [ ] Paths: `HIVE_HOME`, `%LOCALAPPDATA%`, long paths, spaces, case-insensitive
+      filesystems.
+- [ ] Process supervision: Job Objects, process groups, `taskkill /T`, PID
+      reuse, orphan cleanup.
+- [ ] Signals: SIGTERM equivalent, graceful stop, console-less `pythonw`.
+- [ ] WSL2/VHDX/Docker: decide whether that path is still product or legacy.
+- [ ] Engine backends: Vulkan/ROCm/CPU, `llama-server.exe`, GPU probing (WMI).
+- [ ] Model library: hardlink/symlink/copy semantics, drive moves, permissions.
+- [ ] Sandbox: Docker Desktop, named pipes, path translation.
+- [ ] Packaging: wheel, standalone binary, code signing, SmartScreen.
+- [ ] CI: manual/nightly leg, runtime, disk space, cache.
+- [ ] Tests: platform-specific tests, line endings, file locks.
+- [ ] Docs: Windows install path and caveats.
+
+Update R0.1 from “deferred” when this review passes.
