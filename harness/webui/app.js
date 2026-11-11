@@ -519,6 +519,7 @@ async function engineImport(file) {
 }
 
 let fitPanel = null;
+let abPanel = null;
 let providersPanel = null;
 let lifecyclePanel = null;
 let trainingPanel = null;
@@ -534,6 +535,12 @@ async function mountFitPanel() {
   if (!window.HiveFitPanel || !$("#fit-panel")) return;
   if (!fitPanel) fitPanel = window.HiveFitPanel.mount($("#fit-panel"));
   await fitPanel.refresh();
+}
+
+async function mountAbPanel() {
+  if (!window.HiveAbPanel || !$("#ab-panel")) return;
+  if (!abPanel) abPanel = window.HiveAbPanel.mount($("#ab-panel"));
+  return abPanel.refresh();
 }
 
 async function mountProvidersPanel() {
@@ -1837,7 +1844,7 @@ async function refresh() {
     if (state.page === "roles") await loadRoles();
     if (state.page === "risk") await loadRisk();
     if (state.page === "activity") await loadActivity();
-    if (state.page === "engines") { await loadEngines(); await mountFitPanel(); }
+    if (state.page === "engines") { await loadEngines(); await mountFitPanel(); await mountAbPanel(); }
     if (state.page === "providers") await mountProvidersPanel();
     if (state.page === "lifecycle") await mountLifecyclePanel();
     if (state.page === "processes") await mountProcessesPanel();

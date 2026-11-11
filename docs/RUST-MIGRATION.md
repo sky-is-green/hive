@@ -200,7 +200,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 |---|---|---|
 | R0.2a | sandbox status/policy panel in the shell | done (read-only status; CLI remains the write path) |
 | R0.2b | process manager, engine log, server status | done (table, log tail, raw status, confirmed kill) |
-| R0.2c | live engine A/B compare | pending |
+| R0.2c | live engine A/B compare | done (Engines panel; tok/s, winner, per-profile details) |
 | R0.2d | agent preset create/edit/save | pending |
 | R0.2e | prompt inspector (fix + port the backend payload) | pending |
 | R0.2f | setup wizard / hardware recommendation | pending |
@@ -240,6 +240,12 @@ engine-log tail and the raw server status. The legacy page's `refreshProcesses`
 and `refresh` functions are undefined; the shell calls the live
 `/v1/processes`, `/v1/server/log`, `/v1/server/status` and `/v1/server/memory`
 routes directly.
+
+R0.2c ships the live A/B compare on the Engines page. It uses
+`/v1/engines/ab/bench` with two profiles and a base port, confirms before
+loading, and reports tokens/sec, the noise-aware winner and per-profile
+details. The shell proxy gives that route a one-hour timeout because two model
+loads can exceed the generic 180 s proxy limit.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

@@ -31,6 +31,13 @@ REPO_ROOT = ROOT.parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 HIVE = "http://127.0.0.1:8765"
+# Model-loading operations can run for minutes; the generic proxy timeout is
+# too short for them.
+LONG_PROXY_PATHS = (
+    "/api/v1/engines/ab/bench",
+    "/api/v1/engines/bench",
+    "/api/v1/ab/bench",
+)
 BENCH_DIR = ROOT.parents[1] / "experiments" / "model-matrix"
 DEFAULT_ROUTE_TARGETS = {
     "simple": {"model": "lfm3", "engine": "lfm3-1.7b"},
@@ -94,7 +101,10 @@ class Handler(SimpleHTTPRequestHandler):
                 url, data=data, method=self.command,
                 headers=self._upstream_headers(),
             )
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            timeout = 3600 if any(
+                self.path.startswith(path) for path in LONG_PROXY_PATHS
+            ) else 180
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 body = resp.read()
                 self.send_response(resp.status)
                 self.send_header("content-type", resp.headers.get("content-type", "application/json"))
