@@ -530,6 +530,7 @@ let presetsPanel = null;
 let settingsPanel = null;
 let sandboxPanel = null;
 let processesPanel = null;
+let inspectorPanel = null;
 
 async function mountFitPanel() {
   if (!window.HiveFitPanel || !$("#fit-panel")) return;
@@ -577,6 +578,12 @@ async function mountProcessesPanel() {
   if (!window.HiveProcessesPanel || !$("#processes-panel")) return;
   if (!processesPanel) processesPanel = window.HiveProcessesPanel.mount($("#processes-panel"));
   return processesPanel.refresh();
+}
+
+async function mountInspectorPanel() {
+  if (!window.HiveInspectorPanel || !$("#inspector-panel")) return;
+  if (!inspectorPanel) inspectorPanel = window.HiveInspectorPanel.mount($("#inspector-panel"));
+  return inspectorPanel.refresh();
 }
 
 async function mountPresetsPanel() {
@@ -1811,6 +1818,7 @@ function show(page) {
   const titles = {
     overview: ["Overview", "Live service and GPU state."],
     chat: ["Chat", "Prompt a model directly."],
+    inspector: ["Inspector", "Last turn's curated context, chunks and timings."],
     roles: ["Roles", "Choose which model serves which role."],
     bench: ["Benchmark", "Model matrix and role scorecards."],
     routing: ["Routing", "C1 tier selection, measured."],
@@ -1841,6 +1849,7 @@ async function refresh() {
     await loadGlobal();
     if (state.page === "overview") await loadOverview();
     if (state.page === "chat") populateChatModels();
+    if (state.page === "inspector") await mountInspectorPanel();
     if (state.page === "roles") await loadRoles();
     if (state.page === "risk") await loadRisk();
     if (state.page === "activity") await loadActivity();
