@@ -84,8 +84,11 @@ Bloat is localized, not pervasive:
   `backends`, `doctor`, `setup`, `tui`.
 - Process supervision and serve records.
 - Studio REST API and the tool gateway (Phase 2).
+- The sandbox runtime and policy, preserved throughout: Docker backend, pinned
+  image/digest, optional gVisor, workspace confinement, and audited fallback.
 - Memory core and encoder, only if Phase 3 passes its gate.
-- Native sandbox, WASM plugins and observability (Phase 4, optional).
+- A native Landlock/seccomp sandbox backend, WASM plugins and observability
+  (Phase 4, optional).
 
 ### Out of scope
 
@@ -204,6 +207,15 @@ Keep `harness/webui/` as the canonical shell. Before deleting
 - Deep research queue, if Suggestions is not the same queue.
 - Command palette and pinned commands, if still wanted.
 - A visible Cascade link (`/cascade`) and Senses entry, if still wanted.
+- A sandbox status/pin/fallback panel. The sandbox runtime itself is retained:
+  `/v1/sandbox/exec`, `harness/sandbox.py`, `hive sandbox`, the pinned digest,
+  the optional gVisor runtime and the local-fallback audit all stay. The shell
+  currently exposes only the `sandbox_enabled` toggle; add a status panel or
+  keep the CLI as the only surface.
+
+The deprecated **Linux / Docker Setup** tab is not the sandbox. It is a note
+about the old VHDX/WSL2 large-model path; dropping that tab does not remove
+`/v1/sandbox/*` or the sandbox policy.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.
@@ -424,6 +436,9 @@ memory and evaluation. **Estimated:** 3–6 months. **Depends on:** G1.
 - Add a native Linux sandbox (Landlock + seccomp + user namespaces) behind the
   existing `/v1/sandbox/exec` contract; Docker remains a backend, not the only
   one.
+- Keep the existing sandbox throughout: pinned image/digest, optional gVisor
+  runtime, workspace confinement, timeout/limits, and the audited local
+  fallback. The deprecated VHDX/Docker Setup tab is unrelated and may go.
 - Do not remove the local-fallback audit path.
 
 ### Phase 2 gate (G2)
@@ -674,7 +689,7 @@ the newer analysis pages.
 | Home: setup wizard | detect hardware, recommend backend and model | partial: Engines fit panel, Models | port a compact wizard or link to Engines/Lifecycle |
 | Home: deep research queue | queue for the background worker | Suggestions (planner ideas) | verify it is the same queue; port if not |
 | Home: backend selector | Strata / llama.cpp / API | Settings, Providers, Engines | confirm coverage |
-| Setup: Docker/VHDX | deprecated Linux/Docker setup | none | drop |
+| Setup: Docker/VHDX | deprecated note page for the old VHDX/WSL2 large-model setup; **not the sandbox** | none | drop the tab; keep `/v1/sandbox/*`, `harness/sandbox.py`, `hive sandbox` |
 | Agent: presets | create, edit, save, duplicate | Presets only reads/duplicates | port create/edit/save |
 | Engines: profiles | model, endpoint, ctx, sampling, load | Engines + fit panel | covered |
 | Engines: live A/B | compare two profiles live | Benchmark is a static matrix | port the live A/B |
