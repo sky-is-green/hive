@@ -199,7 +199,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 | task | gap | status |
 |---|---|---|
 | R0.2a | sandbox status/policy panel in the shell | done (read-only status; CLI remains the write path) |
-| R0.2b | process manager, engine log, server status | pending |
+| R0.2b | process manager, engine log, server status | done (table, log tail, raw status, confirmed kill) |
 | R0.2c | live engine A/B compare | pending |
 | R0.2d | agent preset create/edit/save | pending |
 | R0.2e | prompt inspector (fix + port the backend payload) | pending |
@@ -234,6 +234,12 @@ about the old VHDX/WSL2 large-model path; dropping that tab does not remove
 R0.2a ships the read-only sandbox status panel (Docker probe, image pin, limits,
 fallback). Policy writes stay in `hive sandbox policy/pin` until the API exposes
 a typed, validated policy contract.
+
+R0.2b ships the process manager (process table, CPU/RAM, confirmed kill), the
+engine-log tail and the raw server status. The legacy page's `refreshProcesses`
+and `refresh` functions are undefined; the shell calls the live
+`/v1/processes`, `/v1/server/log`, `/v1/server/status` and `/v1/server/memory`
+routes directly.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

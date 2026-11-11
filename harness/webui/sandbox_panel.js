@@ -98,19 +98,6 @@
       rootEl.innerHTML = "";
       var root = node("section", "hive-sandbox");
 
-      var head = node("div", "panel-head");
-      head.style.borderBottom = "0";
-      head.style.padding = "0 0 10px";
-      var titles = node("div");
-      titles.append(
-        node("h2", "", "Sandbox"),
-        node("p", "note", "Docker isolation, image pin and local-fallback policy.")
-      );
-      ui.refresh = node("button", "ghost", "Refresh");
-      ui.refresh.type = "button";
-      ui.refresh.addEventListener("click", refresh);
-      head.append(titles, ui.refresh);
-
       ui.message = node("div", "note");
       ui.message.style.margin = "0 0 10px";
 
@@ -149,7 +136,7 @@
         "<code>hive sandbox pin</code>, " +
         "<code>hive sandbox policy --local-fallback deny</code>.";
 
-      root.append(head, ui.message, ui.cards, grid, fallbackPanel, hint);
+      root.append(ui.message, ui.cards, grid, fallbackPanel, hint);
       rootEl.appendChild(root);
     }
 
@@ -158,9 +145,6 @@
       var policy = data.policy || {};
       var loading = state.status === "loading";
       var failed = state.status === "error";
-
-      ui.refresh.disabled = loading;
-      ui.refresh.textContent = loading ? "Loading…" : "Refresh";
 
       ui.message.textContent = failed ? state.error
         : loading ? "Reading sandbox status…"
