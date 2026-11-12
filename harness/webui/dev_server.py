@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import time
 import urllib.error
@@ -47,7 +48,10 @@ DEFAULT_ROUTE_TARGETS = {
 sys.path.insert(0, str(ROOT))
 import judge as judge_lib
 from harness import paths
-from harness.roles import load_roles, save_roles
+from harness.roles import (
+    LEGACY_MODELS, MODEL_ALIASES, MODEL_PROVIDER_ALIASES,
+    load_roles, save_roles,
+)
 REPO = ROOT.parents[1]
 STATE = paths.state_dir()
 SEED_JUDGE_MODEL = ROOT / "judge_model.json"
@@ -78,6 +82,88 @@ def _ensure_state() -> None:
         shutil.copy2(SEED_JUDGE_MODEL, JUDGE_MODEL)
     if not ROUTE_TARGETS.exists() and SEED_ROUTE_TARGETS.is_file():
         shutil.copy2(SEED_ROUTE_TARGETS, ROUTE_TARGETS)
+
+
+def _norm_model_name(value: object) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def _local_models() -> list[dict]:
+    """The sidecar's local GGUF library, or [] when it is unreachable."""
+    try:
+        with urllib.request.urlopen(HIVE + "/v1/models/local", timeout=3) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        models = payload.get("models")
+        return models if isinstance(models, list) else []
+    except Exception:  # noqa: BLE001 - the gate falls back to weights-only
+        return []
+
+
+def _match_local_model(
+    key: str,
+    info: dict,
+    local_models: list[dict],
+    *,
+    exact_only: bool = False,
+) -> dict | None:
+    """Find the local GGUF entry for a role model key/alias."""
+    names = {
+        key,
+        info.get("label"),
+        MODEL_ALIASES.get(key),
+        MODEL_PROVIDER_ALIASES.get(key),
+        LEGACY_MODELS.get(key),
+    }
+    wanted = {_norm_model_name(name) for name in names if name}
+    wanted = {name for name in wanted if len(name) >= 4}
+    if not wanted:
+        return None
+    for entry in local_models:
+        if not isinstance(entry, dict):
+            continue
+        candidates = {
+            _norm_model_name(entry.get("name")),
+            _norm_model_name(Path(str(entry.get("file") or "")).stem),
+        }
+        for candidate in candidates:
+            if not candidate:
+                continue
+            for name in wanted:
+                if exact_only:
+                    if candidate == name:
+                        return entry
+                elif name in candidate or candidate in name:
+                    return entry
+    return None
+
+
+def _attach_local_metadata(models: dict, local_models: list[dict]) -> dict:
+    """Attach GGUF metadata to matching role models, exact aliases first."""
+    matches = {
+        key: _match_local_model(str(key), info, local_models, exact_only=True)
+        for key, info in models.items()
+    }
+    claimed = {id(match) for match in matches.values() if match}
+    for key, info in models.items():
+        match = matches[key]
+        if match is None:
+            candidate = _match_local_model(
+                str(key), info, local_models, exact_only=False)
+            if candidate is not None and id(candidate) not in claimed:
+                match = candidate
+                claimed.add(id(candidate))
+        if match:
+            meta = match.get("gguf_metadata") or match.get("ggufMetadata")
+            if isinstance(meta, dict) and meta:
+                info["gguf_metadata"] = meta
+            size = match.get("size_gb")
+            try:
+                size_gb = float(size)
+            except (TypeError, ValueError):
+                size_gb = None
+            if size_gb is not None and size_gb > 0:
+                info["weights_gb"] = size_gb
+    return models
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -459,8 +545,16 @@ class Handler(SimpleHTTPRequestHandler):
                 raise ValueError("roles, placements, models, and devices are required")
             if not all(isinstance(payload[key], dict) for key in required[:3]):
                 raise ValueError("roles, placements, and models must be objects")
+            if not all(isinstance(value, dict)
+                       for value in payload["models"].values()):
+                raise ValueError("each model entry must be an object")
             if not isinstance(payload["devices"], list):
                 raise ValueError("devices must be an array")
+            try:
+                ctx = int(payload.get("ctx") or 8192)
+            except (TypeError, ValueError):
+                raise ValueError("ctx must be an integer")
+            kv = str(payload.get("kv") or "q8_0").strip().lower()
             devices = []
             for item in payload["devices"]:
                 if not isinstance(item, dict):
@@ -480,8 +574,11 @@ class Handler(SimpleHTTPRequestHandler):
                     total_gb=total_gb,
                     free_gb=free_gb,
                 ))
+            local_models = _local_models()
+            _attach_local_metadata(payload["models"], local_models)
             self._send_json(plan_roles(
-                payload["roles"], payload["placements"], payload["models"], devices,
+                payload["roles"], payload["placements"], payload["models"],
+                devices, ctx=ctx, kv=kv,
             ))
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
             self._send_json({"error": str(exc)}, 400)

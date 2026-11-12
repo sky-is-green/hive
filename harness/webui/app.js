@@ -772,8 +772,11 @@ function renderPlacementPlan(result) {
   $("#placement-table").innerHTML = `
     <thead><tr><th>role</th><th>model</th><th>policy</th><th>resolved card</th><th>check</th><th>reason</th></tr></thead>
     <tbody>${plans.map(plan => {
-      const size = MODEL_WEIGHTS[plan.model];
-      const sizeLabel = size == null ? "unknown" : `${size} GB`;
+      const need = Number(plan.need_gb);
+      const fallback = MODEL_WEIGHTS[plan.model];
+      const sizeLabel = Number.isFinite(need)
+        ? `${need.toFixed(1)} GB need`
+        : fallback == null ? "unknown" : `${fallback} GB`;
       const modelLabel = MODELS[plan.model]?.label || plan.model;
       const card = plan.resident ? "resident" : plan.device == null ? "—" : (() => {
         const found = devicesState.find(d => String(d.index) === String(plan.device));
@@ -827,6 +830,8 @@ async function refreshPlacementPlan() {
       placements: placementsState,
       models,
       devices: devicesState,
+      ctx: Number($("#placement-ctx")?.value || 8192),
+      kv: $("#placement-kv")?.value || "q8_0",
     });
     placementPlanState = result;
     placementPlanSignature = roleConfigSignature();
@@ -2089,6 +2094,10 @@ $("#chat-clear").addEventListener("click", () => {
 });
 populateChatModels();
 loadChatRoles();
+for (const id of ["placement-ctx", "placement-kv"]) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("change", () => { refreshPlacementPlan(); });
+}
 $("#nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-page]");
   if (b) show(b.dataset.page);

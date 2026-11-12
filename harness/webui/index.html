@@ -140,6 +140,15 @@
       <div class="panel" id="placement-panel">
         <div class="panel-head"><h2>Placement check</h2><span class="muted" id="placement-summary">Checking card policy…</span></div>
         <p class="placement-error" id="placement-error" role="alert" hidden></p>
+        <div class="engine-actions" style="padding: 0 15px 10px">
+          <label class="inline">context <input id="placement-ctx" type="number" value="8192" min="512" step="512" style="width:8rem" title="Context used for the KV part of the placement check."></label>
+          <label class="inline">KV cache <select id="placement-kv" title="KV cache quantisation used for the estimate.">
+            <option value="q8_0" selected>q8_0</option>
+            <option value="f16">f16</option>
+            <option value="q4_0">q4_0</option>
+          </select></label>
+          <span class="muted">Weights + architecture-aware KV, not a full load probe.</span>
+        </div>
         <div class="table-wrap"><table id="placement-table"></table></div>
       </div>
       <div class="panel">
@@ -353,6 +362,6 @@
   <script src="/inspector_panel.js?v=2"></script>
   <script src="/setup_panel.js?v=3"></script>
   <script src="/security_panel.js?v=3"></script>
-  <script src="/app.js?v=93"></script>
+  <script src="/app.js?v=94"></script>
 </body>
 </html>
