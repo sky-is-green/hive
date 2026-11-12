@@ -178,10 +178,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--models-dir", default="",
                         help="local GGUF library directory (default models/gguf)")
     parser.add_argument(
-        "--no-auto-start", action="store_true",
-        help="do not auto-launch llama-server even when a local model exists",
-    )
-    parser.add_argument(
         "--setup", action="store_true",
         help="guided first-run check: create providers.local.json if missing, "
              "probe for a reachable backend, and print the next command",
@@ -289,9 +285,8 @@ def main(argv: list[str] | None = None) -> int:
             open_url = url
             print(f"Hive console unavailable ({exc}); using {url}", flush=True)
 
-    # Auto-start removed: studio no longer loads an LLM on boot.
-    # Models are started explicitly via POST /v1/server/start or the UI Load button.
-    # The --no-auto-start flag is kept for compatibility but is now the default.
+    # Models are started explicitly via POST /v1/server/start or the UI Load
+    # button; the Studio does not load an LLM on boot.
 
     # Detached instances record every managed server so --stop can take the
     # whole stack down (taskkill /T cannot reach the grandchildren).

@@ -120,12 +120,7 @@ from harness.training import (
 from harness.ui import invocation_cards, stack_tab
 from logs.event_logger import EventLogger
 from retention.store import ContextStore
-try:  # current sibling layout: <home>/splinter
-    from splinter.server import create_app as create_splinter_app
-except ModuleNotFoundError as exc:  # legacy pre-rename checkout: <home>/strata
-    if (exc.name or "").split(".")[0] != "splinter":
-        raise
-    from strata.server import create_app as create_splinter_app
+from splinter.server import create_app as create_splinter_app
 
 
 def _list_runs(runs_root: Path) -> list[dict]:
@@ -1635,6 +1630,23 @@ def create_app(
 
                 return JSONResponse({"detail": "invalid or missing token"},
                                     status_code=401)
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def windows_setup_guard(request: Request, call_next):
+        """The VHDX/WSL2 setup path is Windows-only and quarantined on Linux.
+
+        Linux uses llama.cpp/Strata directly; these routes stay in the tree for
+        the later Windows review but are not part of the Linux surface.
+        """
+        if sys.platform != "win32" and request.url.path.startswith("/v1/setup/"):
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                {"detail": "the VHDX/WSL2 setup path is Windows-only and "
+                           "quarantined on Linux"},
+                status_code=410,
+            )
         return await call_next(request)
 
     st = _State(

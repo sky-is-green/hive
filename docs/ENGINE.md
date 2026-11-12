@@ -106,7 +106,7 @@ scripts/install_amd_engine.sh            # or: --copy, SKIP_BUILD=1, PRISM_DIR=.
 tools/backends/rocm/llama-server --version
 
 # serve the 125B FreeToken-shape stack
-.venv/bin/python -m harness --no-open --no-auto-start &      # sidecar on :8765
+.venv/bin/python -m harness --no-open &      # sidecar on :8765
 curl -sX POST localhost:8765/v1/stacks/prism-125b/validate
 curl -sX POST localhost:8765/v1/stacks/prism-125b/apply
 curl -s localhost:8765/v1/stacks/status

@@ -4,7 +4,8 @@ on:
   push:
     branches: [main, hive_test]
   pull_request:
-  # The slow windows leg also runs nightly, and on demand on any branch.
+  # Linux is the active platform. The Windows leg is manual-only until the
+  # dedicated Windows review; it must not gate merges.
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -17,6 +18,10 @@ on:
         description: "pytest-xdist workers (1 = serial)"
         type: string
         default: "4"
+      windows:
+        description: "Include the Windows leg (manual review only)"
+        type: boolean
+        default: false
 
 concurrency:
   # A superseded push should cancel its running matrix: R18 pushed three times
@@ -26,10 +31,8 @@ concurrency:
 
 jobs:
   select_os:
-    # Compute the matrix before the runners queue.  The windows leg is the slow
-    # one (hosted runner + windows FS); it runs where merge-time correctness
-    # matters — main, PRs, nightly, manual dispatch — and not on every
-    # hive_test iteration push, which only needs the fast ubuntu signal.
+    # Linux is the required leg. Windows is manual-only (workflow_dispatch
+    # with windows=true) until the Windows review; it never gates a merge.
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.matrix.outputs.os }}
@@ -37,10 +40,10 @@ jobs:
       - id: matrix
         shell: bash
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" != "refs/heads/main" ]; then
-            echo 'os=["ubuntu-latest"]' >> "${GITHUB_OUTPUT}"
-          else
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.windows }}" = "true" ]; then
             echo 'os=["ubuntu-latest","windows-latest"]' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'os=["ubuntu-latest"]' >> "${GITHUB_OUTPUT}"
           fi
 
   tests:

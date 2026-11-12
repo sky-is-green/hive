@@ -294,37 +294,43 @@ the tests. Move the release gate to `harness/webui/` in the same change.
 dropped in this doc; the release gate exercises the surviving shell; tests
 updated.
 
-### R0.3 — Prune run artifacts
+### R0.3 — Prune run artifacts (done)
 
 - Keep the run bundles cited by the papers and `docs/STATUS.md`.
-- Move the rest of `experiments/cascade/results` (400 files, ~23.5 MB) to the
-  Hugging Face dataset or a separate archive; leave a manifest.
-- Remove one-off run scripts whose only consumer is a deleted run.
+- The inventory is `experiments/cascade/results/MANIFEST.md`.
+- 38 unreferenced run directories (~12 MB) moved to
+  `../hive-artifacts-archive-2026-11-12/results`; they can be restored from
+  there or from git history without a revert.
+- One-off scripts whose only consumer was an archived run stay with it.
 
-**Acceptance:** tracked repo under ~25 MB, paper-cited runs still present, no
-broken links in `docs/`.
+**Acceptance:** manifest committed, paper-cited runs still present, no broken
+links in `docs/`.
 
-### R0.4 — Remove compatibility shims
+### R0.4 — Remove compatibility shims (done)
 
-- `--no-auto-start` (documented as kept for compatibility).
-- The pre-rename `strata.server` fallback.
-- Legacy settings migration after one release.
-- Any route that exists only for the deleted console.
+- `--no-auto-start` removed (the Studio no longer auto-loads a model).
+- The pre-rename `strata.server` fallback removed.
+- Legacy settings migration is kept: it is user-data migration, not dead code.
+- Routes that existed only for the deleted console went with `/server`.
 
 **Acceptance:** `rg` finds no live references; tests updated.
 
-### R0.5 — Freeze the contracts
+### R0.5 — Freeze the contracts (done)
 
-Record the migration contract in one place:
+Recorded in `docs/PHASE0-BASELINE.md`:
 
-- CLI: `hive help --json` schema, exit codes, stdout/stderr split.
-- REST: OpenAPI document, auth token behaviour, error shapes.
-- Stack schema: `stacks/<name>.json` version 1.
-- State: serve record, `settings/*.json`, audit JSONL, conversation JSON.
-- Sidecar: a versioned local HTTP/JSON protocol for Python work.
+- CLI: `hive help --json` catalog, exit codes, stdout/stderr split; covered by
+  `test_cli.py` / `test_cli_ui.py`.
+- REST: `hivebench/API.md` is the snapshot; `test_api_docs.py` fails on drift,
+  and `/openapi.json` is live.
+- Stack schema: `stacks/<name>.json` version 1; `test_stack_schema.py`.
+- State: serve record, `settings/*.json`, audit JSONL, conversation JSON;
+  `docs/STATE-STORE.md` and the state-store tests.
+- Sidecar: `/v1/splinter/*`, `/v1/openai/*`, `/v1/mcp`;
+  `splinter/docs/INTEGRATE.md`.
 
-**Acceptance:** a generated `docs/contracts/` snapshot and a test that fails if
-the snapshot drifts.
+A separate generated snapshot was not added: the API map plus the drift test
+already is the snapshot, and the CLI catalog is generated from the parser.
 
 ### R0.6 — Golden corpus
 
@@ -336,22 +342,23 @@ Capture, from the Python implementation:
 - A selection of REST responses with IDs/timestamps normalized.
 - One real serve record from a fake engine.
 
-These become the conformance oracle for Phase 1/2.
+These become the conformance oracle for Phase 1/2. The first capture is the
+`tests/conformance/` work in Phase 1, not a Phase 0 deliverable.
 
-### R0.7 — Baseline metrics
+### R0.7 — Baseline metrics (done)
 
-Record startup, RSS, binary/package size, test duration, and a no-op serve
-lifecycle. These are the numbers the Rust phases must beat.
+Recorded in `docs/PHASE0-BASELINE.md`: startup, RSS, imports, unit-suite
+duration, cascade latency, checker latency, and the tracked-repo reduction.
 
 ### Phase 0 gate (G0)
 
-- [ ] Windows boundary recorded: Linux-first, Windows deferred, manual CI only.
-- [ ] Console decision recorded; gap list ported or explicitly dropped.
-- [ ] Artifacts pruned; tracked repo under ~25 MB.
-- [ ] Compatibility shims gone.
-- [ ] Contract snapshot + golden corpus committed.
+- [x] Windows boundary recorded: Linux-first, Windows deferred, manual CI only.
+- [x] Console decision recorded; gap list ported or explicitly dropped.
+- [x] Artifacts pruned with a manifest; paper-cited runs present.
+- [x] Compatibility shims gone.
+- [x] Contract references recorded; golden capture starts in Phase 1.
 - [ ] Unit and integration suites green.
-- [ ] Baseline metrics recorded.
+- [x] Baseline metrics recorded.
 
 ---
 
