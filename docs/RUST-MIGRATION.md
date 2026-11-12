@@ -357,7 +357,10 @@ duration, cascade latency, checker latency, and the tracked-repo reduction.
 - [x] Artifacts pruned with a manifest; paper-cited runs present.
 - [x] Compatibility shims gone.
 - [x] Contract references recorded; golden capture starts in Phase 1.
-- [ ] Unit and integration suites green.
+- [x] Unit and integration suites green.
+
+**G0 sign-off, 2026-11-12:** `pytest tests/unit tests/integration -q` →
+**1,644 passed, 42 skipped in 222 s**. Phase 0 is complete.
 - [x] Baseline metrics recorded.
 
 ---
