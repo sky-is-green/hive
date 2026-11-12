@@ -531,6 +531,7 @@ let settingsPanel = null;
 let sandboxPanel = null;
 let processesPanel = null;
 let inspectorPanel = null;
+let setupPanel = null;
 
 async function mountFitPanel() {
   if (!window.HiveFitPanel || !$("#fit-panel")) return;
@@ -584,6 +585,12 @@ async function mountInspectorPanel() {
   if (!window.HiveInspectorPanel || !$("#inspector-panel")) return;
   if (!inspectorPanel) inspectorPanel = window.HiveInspectorPanel.mount($("#inspector-panel"));
   return inspectorPanel.refresh();
+}
+
+async function mountSetupPanel() {
+  if (!window.HiveSetupPanel || !$("#setup-panel")) return;
+  if (!setupPanel) setupPanel = window.HiveSetupPanel.mount($("#setup-panel"));
+  return setupPanel.refresh();
 }
 
 async function mountPresetsPanel() {
@@ -1927,6 +1934,7 @@ function show(page) {
   $$(".page").forEach(p => p.classList.toggle("active", p.id === `page-${page}`));
   const titles = {
     overview: ["Overview", "Live service and GPU state."],
+    setup: ["Setup", "Detect hardware, rank local models and load the first one."],
     chat: ["Chat", "Prompt a model directly."],
     inspector: ["Inspector", "Last turn's curated context, chunks and timings."],
     roles: ["Roles", "Choose which model serves which role."],
@@ -1958,6 +1966,7 @@ async function refresh() {
   try {
     await loadGlobal();
     if (state.page === "overview") await loadOverview();
+    if (state.page === "setup") await mountSetupPanel();
     if (state.page === "chat") populateChatModels();
     if (state.page === "inspector") await mountInspectorPanel();
     if (state.page === "roles") await loadRoles();
