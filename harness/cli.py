@@ -1505,6 +1505,9 @@ def cmd_encoder_embed(args: argparse.Namespace) -> int:
 def cmd_ui(args: argparse.Namespace) -> int:
     """Switch between the terminal dashboard and the web Studio."""
     mode = args.mode or "status"
+    host = args.host or "127.0.0.1"
+    api_url = f"http://{host}:{args.port or 8765}"
+    console_url = f"http://{host}:{args.console_port or 8170}"
     if mode == "terminal":
         return cmd_tui(args)
     if mode == "web":
@@ -1513,6 +1516,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
             argv += ["--host", args.host]
         if args.port:
             argv += ["--port", str(args.port)]
+        if args.console_port:
+            argv += ["--console-port", str(args.console_port)]
         if args.detach:
             argv.append("--detach")
         if args.no_open:
@@ -1522,18 +1527,23 @@ def cmd_ui(args: argparse.Namespace) -> int:
         state_dir = getattr(args, "state_dir", None) or str(serve_state.state_dir())
         argv += ["--state-dir", state_dir]
         env = dict(os.environ)
-        env["HIVE_TOOL_URL"] = f"http://127.0.0.1:{args.port or 8765}"
+        env["HIVE_TOOL_URL"] = api_url
+        env["HIVE_CONSOLE_URL"] = console_url
         return subprocess.call(argv, cwd=str(REPO_ROOT), env=env)
-    # status: show the web endpoint and how to switch without starting it
-    url = f"http://{args.host or '127.0.0.1'}:{args.port or 8765}"
-    alive = False
-    try:
-        with urllib.request.urlopen(f"{url}/health", timeout=0.8) as response:
-            alive = response.status == 200
-    except Exception:  # noqa: BLE001 - "not running" is the useful answer
-        alive = False
+
+    def _alive(url: str, path: str) -> bool:
+        try:
+            with urllib.request.urlopen(f"{url}{path}", timeout=0.8) as response:
+                return response.status == 200
+        except Exception:  # noqa: BLE001 - "not running" is the useful answer
+            return False
+
+    # status: show both surfaces and how to switch without starting one
+    api_alive = _alive(api_url, "/health")
+    console_alive = _alive(console_url, "/")
     payload = {
-        "web": {"running": alive, "url": url},
+        "web": {"running": console_alive, "url": console_url},
+        "api": {"running": api_alive, "url": api_url},
         "terminal": {"command": "hive ui terminal"},
         "switch": {"web": "hive ui web", "terminal": "hive ui terminal"},
     }
@@ -1542,7 +1552,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
     else:
         termui.header("interfaces")
         termui.kv([
-            ("web", f"{url} · {'running' if alive else 'not running'}"),
+            ("web", f"{console_url} · {'running' if console_alive else 'not running'}"),
+            ("api", f"{api_url} · {'running' if api_alive else 'not running'}"),
             ("terminal", "hive ui terminal"),
             ("start web", "hive ui web"),
         ])
@@ -2712,7 +2723,9 @@ def build_parser() -> argparse.ArgumentParser:
     ui.add_argument("--host", default="127.0.0.1",
                     help="web bind host (default 127.0.0.1)")
     ui.add_argument("--port", type=int, default=8765,
-                    help="web port (default 8765)")
+                    help="API port (default 8765)")
+    ui.add_argument("--console-port", type=int, default=8170,
+                    help="web console port (default 8170)")
     ui.add_argument("--detach", action="store_true",
                     help="start the web Studio in the background")
     ui.add_argument("--no-open", action="store_true",

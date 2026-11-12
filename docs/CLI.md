@@ -314,16 +314,19 @@ scripts; `fetch` is the portable path a new user needs.
 The two working surfaces share the same state:
 
 ```bash
-hive ui status              # web URL + whether it is running
+hive ui status              # console + API URLs and whether each is running
 hive ui terminal            # the curses dashboard
-hive ui web                 # Studio in the foreground
+hive ui web                 # Studio console in the foreground (:8170)
 hive ui web --detach        # Studio in the background, opens a browser
 hive ui web --mock          # model-free Studio fixture
 ```
 
-`hive ui` never starts a second web server. `hive ui terminal` is the same
-dashboard as `hive tui`; the TUI's `w` key opens a **running** Studio in the
-browser and tells you to run `hive ui web` if it is not running. Press `a` in
+`hive ui` never starts a second web server. The JSON API and the web console
+are separate ports in the same process: `--port` sets the API (default `8765`)
+and `--console-port` sets the console (default `8170`). `hive ui terminal` is
+the same dashboard as `hive tui`; the TUI's `w` key opens a **running**
+console in the browser and tells you to run `hive ui web` if it is not
+running. Press `a` in
 the TUI to open pending tool approvals: `o` allows once, `s` allows the
 session, `g` allows always (global), `d` denies, and `r` refreshes. The web
 Studio's Global tab carries a copyable `hive ui terminal` command. The pros and

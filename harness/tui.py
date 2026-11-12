@@ -532,20 +532,20 @@ class App:
     # actions
     # ------------------------------------------------------------------
     def _open_web(self) -> None:
-        """Open the running Studio; never start a server from inside curses."""
+        """Open the running Studio console; never start a server in curses."""
         import urllib.request
         import webbrowser
 
-        url = studio_api.base_url()
+        url = studio_api.console_url()
         try:
-            with urllib.request.urlopen(f"{url}/health", timeout=0.5) as response:
+            with urllib.request.urlopen(url, timeout=0.8) as response:
                 if response.status != 200:
                     raise OSError("not healthy")
         except Exception:  # noqa: BLE001 - "not running" is the useful answer
-            self.message = "web UI not running; run `hive ui web` in a shell"
+            self.message = "web console not running; run `hive ui web` in a shell"
             return
         if webbrowser.open(url):
-            self.message = "opened the web UI"
+            self.message = "opened the web console"
         else:
             self.message = f"open {url} in a browser"
 

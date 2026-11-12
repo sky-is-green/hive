@@ -205,7 +205,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 | R0.2e | prompt inspector (fix + port the backend payload) | done (standalone Inspector page; live state/inspect APIs) |
 | R0.2e-b | Splinter chat mode in the shell (the Inspector currently sees API/external conversations) | done (Splinter mode; stream + Inspector handoff) |
 | R0.2f | setup wizard / hardware recommendation | done (hardware cards, 8k fit ranking, Strata, one-click profile + load) |
-| R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | pending |
+| R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | done |
 | R0.2h | move the release gate; delete `/server` and its tests | pending |
 
 Keep `harness/webui/` as the canonical shell. Before deleting
@@ -272,6 +272,14 @@ context, the optional Strata backend, and a confirmed one-click path that
 creates the engine profile and starts the model. It uses
 `/v1/server/status`, `/v1/models/local`, `/v1/engines/preset`,
 `/v1/engines`, `/v1/server/start` and `/v1/provider/config`.
+
+R0.2g adds Cascade and API-docs rail links and proxies `/cascade`, `/docs`,
+`/openapi.json` and `/redoc` through the console port. `hive ui status` now
+reports both the console (`:8170`) and the API (`:8765`), `hive ui web` passes
+`--console-port`, and the TUI `w` key opens the console. This also fixed a
+pre-existing `/cascade` 500: the route passed a `defaults=` argument the
+renderer did not accept, while the page already loads that baseline from
+`/v1/studio/settings`.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

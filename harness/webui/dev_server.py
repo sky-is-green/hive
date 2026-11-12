@@ -559,6 +559,9 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.startswith("/view/"):
             self._proxy(HIVE + self.path)
             return
+        if self.path.startswith(("/cascade", "/docs", "/openapi.json", "/redoc")):
+            self._proxy(HIVE + self.path)
+            return
         if self.path.startswith("/probe/"):
             parts = self.path.split("/", 3)
             port = parts[2]

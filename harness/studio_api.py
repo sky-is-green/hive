@@ -15,6 +15,7 @@ import urllib.request
 from typing import Any
 
 DEFAULT_URL = "http://127.0.0.1:8765"
+DEFAULT_CONSOLE_URL = "http://127.0.0.1:8170"
 
 
 class StudioAPIError(RuntimeError):
@@ -24,6 +25,12 @@ class StudioAPIError(RuntimeError):
 def base_url(url: str | None = None) -> str:
     return (url or os.environ.get("HIVE_STUDIO_URL")
             or DEFAULT_URL).rstrip("/")
+
+
+def console_url(url: str | None = None) -> str:
+    """The web console, which is a different port from the JSON API."""
+    return (url or os.environ.get("HIVE_CONSOLE_URL")
+            or DEFAULT_CONSOLE_URL).rstrip("/")
 
 
 def call(path: str, *, method: str = "GET",

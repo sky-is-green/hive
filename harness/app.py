@@ -5729,7 +5729,7 @@ def create_app(
             p.name for p in cascade_api.CASCADE_DIR.glob("*.json")
         ) if cascade_api.CASCADE_DIR.is_dir() else []
         return HTMLResponse(
-            render_cascade_page(task_files, defaults=st.controls()["quality"]),
+            render_cascade_page(task_files),
             headers=_NO_STORE)
 
     @app.get("/favicon.svg")
