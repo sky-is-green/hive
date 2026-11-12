@@ -59,6 +59,93 @@ def test_models_list_matches_the_python_gguf_parser(rust_bin, cli_env, fixture_l
     assert parse_json(py) == parse_json(rs)
 
 
+def test_models_dir_read_matches(rust_bin, cli_env, fixture_library):
+    env, _ = cli_env
+    args = ["models", "dir", "--models-dir", str(fixture_library), "--json"]
+    py, rs = run_both(rust_bin, args, env)
+    assert py.returncode == rs.returncode == 0
+    assert parse_json(py) == parse_json(rs)
+
+
+def test_models_dir_set_matches(rust_bin, cli_env, tmp_path):
+    env, _ = cli_env
+    python_state = tmp_path / "python-state"
+    rust_state = tmp_path / "rust-state"
+    target = tmp_path / "new-library"
+    py = run_python(
+        ["models", "dir", str(target), "--json"],
+        {**env, "HIVE_STATE_DIR": str(python_state)},
+    )
+    rs = run_rust(
+        rust_bin,
+        ["models", "dir", str(target), "--json"],
+        {**env, "HIVE_STATE_DIR": str(rust_state)},
+    )
+    assert py.returncode == rs.returncode == 0
+    assert parse_json(py) == parse_json(rs)
+    assert (python_state / "models_dir.txt").read_text() == str(target)
+    assert (rust_state / "models_dir.txt").read_text() == str(target)
+
+
+def test_models_import_and_remove_match(rust_bin, cli_env, tmp_path):
+    env, _ = cli_env
+    source = tmp_path / "model.gguf"
+    source.write_bytes(b"GGUF")
+    python_models = tmp_path / "python-models"
+    rust_models = tmp_path / "rust-models"
+    python_state = tmp_path / "python-state"
+    rust_state = tmp_path / "rust-state"
+    python_env = {**env, "HIVE_STATE_DIR": str(python_state)}
+    rust_env = {**env, "HIVE_STATE_DIR": str(rust_state)}
+    import_args = ["models", "import", str(source), "--json"]
+    py = run_python([*import_args, "--models-dir", str(python_models)], python_env)
+    rs = run_rust(rust_bin, [*import_args, "--models-dir", str(rust_models)], rust_env)
+    assert py.returncode == rs.returncode == 0
+    assert _normalize_paths(parse_json(py), python_models) == _normalize_paths(
+        parse_json(rs), rust_models
+    )
+    assert (python_models / "model.gguf").is_file()
+    assert (rust_models / "model.gguf").is_file()
+
+    py = run_python(
+        ["models", "remove", "model.gguf", "--yes", "--json", "--models-dir", str(python_models)],
+        python_env,
+    )
+    rs = run_rust(
+        rust_bin,
+        ["models", "remove", "model.gguf", "--yes", "--json", "--models-dir", str(rust_models)],
+        rust_env,
+    )
+    assert py.returncode == rs.returncode == 0
+    assert _normalize_paths(parse_json(py), python_models) == _normalize_paths(
+        parse_json(rs), rust_models
+    )
+    assert not (python_models / "model.gguf").exists()
+    assert not (rust_models / "model.gguf").exists()
+
+
+def test_models_import_folder_matches(rust_bin, cli_env, tmp_path):
+    env, _ = cli_env
+    source = tmp_path / "folder" / "nested"
+    source.mkdir(parents=True)
+    (source / "a.gguf").write_bytes(b"GGUF")
+    python_models = tmp_path / "python-models"
+    rust_models = tmp_path / "rust-models"
+    py = run_python(
+        ["models", "import", str(source.parent), "--json", "--models-dir", str(python_models)],
+        env,
+    )
+    rs = run_rust(
+        rust_bin,
+        ["models", "import", str(source.parent), "--json", "--models-dir", str(rust_models)],
+        env,
+    )
+    assert py.returncode == rs.returncode == 0
+    assert _normalize_paths(parse_json(py), python_models) == _normalize_paths(
+        parse_json(rs), rust_models
+    )
+
+
 def test_stacks_list_matches(rust_bin, cli_env, fixture_stacks):
     env, _ = cli_env
     args = ["stacks", "list", "--stacks-dir", str(fixture_stacks), "--json"]
@@ -70,7 +157,7 @@ def test_stacks_list_matches(rust_bin, cli_env, fixture_stacks):
 def _normalize_uptime(value):
     if isinstance(value, dict):
         return {
-            key: (round(item, 0) if key == "uptime_s" else _normalize_uptime(item))
+            key: (0 if key == "uptime_s" else _normalize_uptime(item))
             for key, item in value.items()
         }
     if isinstance(value, list):
@@ -200,6 +287,54 @@ def test_logs_json_matches(rust_bin, cli_env, live_proc, tmp_path):
         assert parse_json(py) == parse_json(rs)
 
 
+def test_stacks_show_and_validate_match(
+    rust_bin, cli_env, fixture_stacks, fixture_library
+):
+    env, _ = cli_env
+    for name in ("a-first", "b-second"):
+        args = ["stacks", "show", name, "--stacks-dir", str(fixture_stacks)]
+        py, rs = run_both(rust_bin, args, env)
+        assert py.returncode == rs.returncode == 0, name
+        assert py.stdout == rs.stdout, name
+
+    args = [
+        "stacks",
+        "validate",
+        "a-first",
+        "--stacks-dir",
+        str(fixture_stacks),
+        "--models-dir",
+        str(fixture_library),
+        "--json",
+    ]
+    py, rs = run_both(rust_bin, args, env)
+    assert py.returncode == rs.returncode
+    assert parse_json(py) == parse_json(rs)
+
+    args = ["stacks", "show", "e-bad-role", "--stacks-dir", str(fixture_stacks)]
+    py, rs = run_both(rust_bin, args, env)
+    assert py.returncode == rs.returncode == 1
+    assert py.stderr == rs.stderr
+
+
+def test_backends_json_matches(rust_bin, cli_env):
+    env, _ = cli_env
+    for args in (["backends", "--json"], ["backends", "list", "--json"]):
+        py, rs = run_both(rust_bin, args, env)
+        assert py.returncode == rs.returncode == 0
+        assert parse_json(py) == parse_json(rs)
+
+
+def _normalize_paths(value, root: Path):
+    if isinstance(value, dict):
+        return {key: _normalize_paths(item, root) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_paths(item, root) for item in value]
+    if isinstance(value, str):
+        return value.replace(str(root), "<root>")
+    return value
+
+
 def test_help_catalog_is_identical(rust_bin, cli_env):
     env, _ = cli_env
     for topic in (
@@ -208,7 +343,13 @@ def test_help_catalog_is_identical(rust_bin, cli_env):
         "stop",
         "logs",
         "models list",
+        "models dir",
+        "models import",
+        "models remove",
         "stacks list",
+        "stacks show",
+        "stacks validate",
+        "backends list",
         "doctor",
         "config",
         "version",

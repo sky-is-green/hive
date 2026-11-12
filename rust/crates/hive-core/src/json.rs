@@ -20,6 +20,13 @@ pub fn to_string_pretty(value: &Value) -> String {
     escape_non_ascii(&raw)
 }
 
+/// Pretty JSON for a struct whose declaration order is the wire order
+/// (`stacks show` needs Python's field order, not `sort_keys`).
+pub fn to_string_ordered<T: serde::Serialize>(value: &T) -> String {
+    let raw = serde_json::to_string_pretty(value).unwrap_or_else(|_| "null".into());
+    escape_non_ascii(&raw)
+}
+
 /// Escape every non-ASCII scalar as `\uXXXX` (surrogate pairs above the BMP).
 fn escape_non_ascii(input: &str) -> String {
     if input.is_ascii() {

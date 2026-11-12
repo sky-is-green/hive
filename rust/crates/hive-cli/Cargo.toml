@@ -16,4 +16,5 @@ hive-models = { path = "../hive-models" }
 hive-state = { path = "../hive-state" }
 hive-supervisor = { path = "../hive-supervisor" }
 libc.workspace = true
+serde.workspace = true
 serde_json.workspace = true

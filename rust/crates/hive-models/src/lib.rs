@@ -7,6 +7,8 @@
 
 pub mod gguf;
 pub mod library;
+pub mod ops;
 
 pub use gguf::read_metadata;
 pub use library::Library;
+pub use ops::resolve_model;

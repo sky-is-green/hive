@@ -444,7 +444,7 @@ fn spawn_local(
     let role = tier.get("role").and_then(Value::as_str).unwrap_or("?");
     let file = tier.get("file").and_then(Value::as_str).unwrap_or("");
     let repo = tier.get("repo").and_then(Value::as_str).unwrap_or("");
-    let model = resolve_model(file, &options.models_dir).ok_or_else(|| {
+    let model = hive_models::resolve_model(file, &options.models_dir).ok_or_else(|| {
         if !repo.is_empty() && repo != "local" {
             format!(
                 "model {file:?} is not local; the Rust supervisor does not \
@@ -609,53 +609,6 @@ fn wait_healthy(engine: &mut Engine, timeout: f64) -> Result<(), String> {
         "llama-server did not become healthy within {timeout:.0}s; see {}",
         engine.log.display()
     ))
-}
-
-fn resolve_model(name: &str, models_dir: &Path) -> Option<PathBuf> {
-    let candidate = Path::new(name);
-    if candidate.is_file() {
-        return Some(
-            candidate
-                .canonicalize()
-                .unwrap_or_else(|_| candidate.to_path_buf()),
-        );
-    }
-    let direct = models_dir.join(name);
-    if direct.is_file() {
-        return Some(direct.canonicalize().unwrap_or(direct));
-    }
-    let mut matches: Vec<PathBuf> = walkdir(models_dir)
-        .into_iter()
-        .filter(|path| {
-            path.extension().is_some_and(|ext| ext == "gguf")
-                && path
-                    .file_stem()
-                    .map(|stem| stem.to_string_lossy().contains(name))
-                    .unwrap_or(false)
-                || path.file_name().map(|file| file == name).unwrap_or(false)
-        })
-        .collect();
-    matches.sort();
-    matches
-        .into_iter()
-        .next()
-        .map(|path| path.canonicalize().unwrap_or(path))
-}
-
-fn walkdir(root: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    let Ok(entries) = std::fs::read_dir(root) else {
-        return out;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            out.extend(walkdir(&path));
-        } else {
-            out.push(path);
-        }
-    }
-    out
 }
 
 fn binary_for(backend: &str, options: &Options) -> Result<PathBuf, String> {

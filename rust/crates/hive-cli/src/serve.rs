@@ -8,9 +8,9 @@ use std::time::{Duration, Instant};
 
 use chrono::Local;
 use hive_core::backends::Manifest;
-use hive_core::json;
 use hive_core::paths::Paths;
 use hive_core::stacks;
+use hive_core::{json, py_repr};
 use hive_state::Record;
 use hive_supervisor::Applied;
 use serde_json::{Map, Value};
@@ -144,7 +144,7 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
     if options.as_json {
         print!("{}", json::pretty(&Value::Object(record.clone())));
     } else {
-        println!("stack {stack_name:?} applied");
+        println!("stack {} applied", py_repr(&stack_name));
         print_tiers(&applied.tiers, &options.host);
         println!(
             "  name {}  pid {}  {}",
@@ -247,14 +247,15 @@ fn check_existing(paths: &Paths, name: &str, replace: bool) -> Result<(), String
     if hive_state::pid_matches(&record) {
         if !replace {
             return Err(format!(
-                "serve {name:?} is already running (pid {}); use --replace or --name",
+                "serve {} is already running (pid {}); use --replace or --name",
+                py_repr(name),
                 record.get("pid").and_then(Value::as_i64).unwrap_or(0)
             ));
         }
         let pid = record.get("pid").and_then(Value::as_i64).unwrap_or(0);
         let (ok, message) = hive_state::terminate(pid, false, 15.0);
         if !ok {
-            return Err(format!("cannot replace serve {name:?}: {message}"));
+            return Err(format!("cannot replace serve {}: {message}", py_repr(name)));
         }
     }
     hive_state::remove_record(&paths.serve_dir, name);
@@ -412,7 +413,7 @@ fn detach(
     while Instant::now() < deadline {
         if let Ok(Some(status)) = child.try_wait() {
             let tail = hive_state::tail_lines(&log, 20).unwrap_or_default();
-            eprintln!("hive serve: {name:?} exited with code {status}");
+            eprintln!("hive serve: {} exited with code {status}", py_repr(name));
             eprintln!("  log  {}", log.display());
             for line in tail {
                 eprintln!("  {line}");
@@ -431,7 +432,8 @@ fn detach(
         let _ = hive_state::terminate(child_pid, true, 5.0);
         let _ = child.wait();
         eprintln!(
-            "hive serve: {name:?} did not become ready within {:.0}s",
+            "hive serve: {} did not become ready within {:.0}s",
+            py_repr(name),
             options.timeout
         );
         eprintln!("  log  {}", log.display());
@@ -445,7 +447,8 @@ fn detach(
         print!("{}", json::pretty(&Value::Object(record)));
     } else {
         println!(
-            "serving {name:?} · pid {} · detached",
+            "serving {} · pid {} · detached",
+            py_repr(name),
             record.get("pid").and_then(Value::as_i64).unwrap_or(0)
         );
         let tiers = record
@@ -478,7 +481,7 @@ fn print_status(stack: &str, tiers: &[Value], as_json: bool, host: &str) {
         payload.insert("warnings".into(), Value::Array(Vec::new()));
         print!("{}", json::pretty(&Value::Object(payload)));
     } else {
-        println!("stack {stack:?} applied");
+        println!("stack {} applied", py_repr(stack));
         print_tiers(tiers, host);
     }
 }

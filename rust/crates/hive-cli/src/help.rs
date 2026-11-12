@@ -15,7 +15,10 @@ pub fn run(topic: Vec<String>, as_json: bool) -> Result<u8, String> {
     let mut command = Cli::command();
     for token in &topic {
         let Some(next) = command.find_subcommand(token).cloned() else {
-            eprintln!("hive help: unknown command {:?}", topic.join(" "));
+            eprintln!(
+                "hive help: unknown command {}",
+                hive_core::py_repr(&topic.join(" "))
+            );
             return Ok(2);
         };
         command = next;

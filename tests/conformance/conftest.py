@@ -222,6 +222,14 @@ def fixture_stacks(tmp_path: Path) -> Path:
             "typo": True,
         },
     )
+    write(
+        "e-bad-role",
+        {
+            "name": "e-bad-role",
+            "version": 1,
+            "tiers": [{"role": "boss", "repo": "local", "file": "a.gguf"}],
+        },
+    )
     return stacks
 
 

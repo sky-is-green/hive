@@ -113,7 +113,8 @@ impl Manifest {
             .find(|entry| entry.name == key)
             .ok_or_else(|| {
                 HiveError::invalid(format!(
-                    "unknown backend {name:?}; known: {}",
+                    "unknown backend {}; known: {}",
+                    crate::py_repr(name),
                     self.names().collect::<Vec<_>>().join(", ")
                 ))
             })

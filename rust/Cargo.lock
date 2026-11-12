@@ -245,6 +245,7 @@ dependencies = [
  "hive-state",
  "hive-supervisor",
  "libc",
+ "serde",
  "serde_json",
 ]
 
@@ -285,6 +286,7 @@ name = "hive-supervisor"
 version = "0.2.0"
 dependencies = [
  "hive-core",
+ "hive-models",
  "libc",
  "serde_json",
 ]

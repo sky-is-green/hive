@@ -388,7 +388,8 @@ The first Rust slice is on `rust-migration`:
   health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
 - Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers and
   endpoint adoption), `version`, `config`, `doctor`, `help --json`,
-  `models list`, `stacks list`, `status`, `stop`, `logs`.
+  `models list/dir/import/remove`, `stacks list/show/validate`, `backends`/
+  `backends list`, `status`, `stop`, `logs`.
 - `help --json` is generated from the live clap tree; every ported command is
   byte-identical to Python's catalog (the root catalog lists only ported
   commands until the rest land).
@@ -401,10 +402,10 @@ The first Rust slice is on `rust-migration`:
   `harness.cli` and `rust/target/debug/hive`.
 
 Not ported yet: `hive tui`, generated stacks (`serve --model`), `--fetch`,
-launch-backed endpoints (Strata/DeepInfer), the remaining `models`/`stacks`
-subcommands, `backends`, `setup`, and the Python-only surfaces (`cascade`,
-`tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`,
-`encoder`). They stay on the Python side until their phase.
+launch-backed endpoints (Strata/DeepInfer), `models search/files/download`,
+`backends fetch`, `setup`, and the Python-only surfaces (`cascade`, `tools`,
+`sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`). They
+stay on the Python side until their phase.
 
 ### Scope
 
@@ -491,8 +492,9 @@ The supervisor is the reason to do this in Rust. Requirements:
 
 - [x] Ported commands produce byte-compatible JSON for the golden corpus
       (volatile fields normalized): `version`, `config`, `doctor`,
-      `help --json`, `models list`, `stacks list`, `status`, `stop`, `logs`,
-      `serve --list/--backends`.
+      `help --json`, `models list/dir/import/remove`,
+      `stacks list/show/validate`, `status`, `stop`, `logs`,
+      `serve --list/--backends`, `backends`/`backends list`.
 - [x] `hive serve` starts/stops an engine; `status` finds it from a second
       shell; `logs` tails both supervisor and tier logs. (Validated with a
       fake OpenAI-compatible engine; a real `llama-server` run still needs a

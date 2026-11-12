@@ -1,7 +1,10 @@
+mod backends_cmd;
 mod commands;
 mod help;
+mod models_cmd;
 mod probe;
 mod serve;
+mod stacks_cmd;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -188,6 +191,17 @@ pub enum Command {
         command: StacksCommand,
     },
 
+    /// server builds declared, installed or fetched
+    #[command(long_about = "Inspect the declared engine server builds, or fetch a \
+                      portable llama.cpp release.")]
+    Backends {
+        /// machine-readable output
+        #[arg(long)]
+        json: bool,
+        #[command(subcommand)]
+        command: Option<BackendsCommand>,
+    },
+
     /// check the box before serving
     #[command(
         long_about = "Check Python, paths, engines, cards, host memory, ports, and \
@@ -258,6 +272,63 @@ pub enum ModelsCommand {
         #[arg(long)]
         json: bool,
     },
+
+    /// show or set the models directory
+    #[command(
+        long_about = "Print the resolved GGUF library path, or set a new one with \
+                      PATH/--set. The setting persists."
+    )]
+    Dir {
+        /// a directory to use from now on
+        path: Option<String>,
+        /// set the models directory (same as the positional)
+        #[arg(long)]
+        set: Option<String>,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// link a local GGUF or folder into the library
+    #[command(
+        long_about = "Link one local .gguf file, or every .gguf in a folder, into \
+                      the library. --copy copies instead of linking."
+    )]
+    Import {
+        /// a .gguf file or a folder containing GGUFs
+        path: String,
+        /// copy the file instead of hardlink/symlink
+        #[arg(long)]
+        copy: bool,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// delete one GGUF from the library
+    #[command(
+        long_about = "Delete one GGUF from the library. --yes is required; the \
+                      command never deletes outside the configured library."
+    )]
+    Remove {
+        /// file name or relative path inside the library
+        file: String,
+        /// confirm the deletion
+        #[arg(long)]
+        yes: bool,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -268,6 +339,55 @@ pub enum StacksCommand {
         /// directory of stack files (default: <repo>/stacks)
         #[arg(long)]
         stacks_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// print one stack as JSON
+    #[command(
+        long_about = "Print one stack's resolved JSON. --json is accepted for \
+                      symmetry; this command always prints JSON."
+    )]
+    Show {
+        /// stack name or path
+        stack: String,
+        /// directory of stack files (default: <repo>/stacks)
+        #[arg(long)]
+        stacks_dir: Option<PathBuf>,
+        /// accepted for symmetry; show always prints JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// check a stack without starting it
+    #[command(
+        long_about = "Validate a stack file without launching an engine. --strict \
+                      treats warnings as failures."
+    )]
+    Validate {
+        /// stack name or path
+        stack: String,
+        /// directory of stack files (default: <repo>/stacks)
+        #[arg(long)]
+        stacks_dir: Option<PathBuf>,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// treat warnings as failures
+        #[arg(long)]
+        strict: bool,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum BackendsCommand {
+    /// list declared backends
+    #[command(long_about = "List declared backends and whether each is installed.")]
+    List {
         /// machine-readable JSON on stdout
         #[arg(long)]
         json: bool,

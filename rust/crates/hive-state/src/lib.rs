@@ -32,7 +32,8 @@ pub fn validate_name(name: &str) -> Result<String, String> {
     let valid_rest = chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
     if text.len() > 64 || !valid_start || !valid_rest {
         return Err(format!(
-            "invalid serve name {name:?}: use 1-64 letters, digits, '.', '_' or '-'"
+            "invalid serve name {}: use 1-64 letters, digits, '.', '_' or '-'",
+            hive_core::py_repr(name)
         ));
     }
     Ok(text.to_owned())

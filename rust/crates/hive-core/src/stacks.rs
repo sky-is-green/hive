@@ -109,15 +109,6 @@ fn parse_tier(data: &Value) -> Result<Value> {
     for key in ["role", "repo", "file"] {
         text(object.get(key), &format!("tier {key}"))?;
     }
-    if let Some(role) = object.get("role").and_then(Value::as_str) {
-        let role = role.trim();
-        if !ROLES.contains(&role) {
-            return Err(crate::HiveError::invalid(format!(
-                "role {role:?} is not one of {}",
-                ROLES.join(", ")
-            )));
-        }
-    }
     if let Some(ctx) = object.get("ctx") {
         integer(ctx, "tier ctx", 1)?;
     }
@@ -203,12 +194,133 @@ pub fn check_stack_name(name: &str) -> std::result::Result<String, String> {
         stem = stripped.trim();
     }
     if stem.is_empty() || stem == "." || stem == ".." || stem.starts_with('.') {
-        return Err(format!("stack name must be a bare filename, got {name:?}"));
+        return Err(format!(
+            "stack name must be a bare filename, got {}",
+            crate::py_repr(name)
+        ));
     }
     if stem.contains('/') || stem.contains('\\') || stem.contains('\0') {
-        return Err(format!("stack name must be a bare filename, got {name:?}"));
+        return Err(format!(
+            "stack name must be a bare filename, got {}",
+            crate::py_repr(name)
+        ));
     }
     Ok(stem.to_owned())
+}
+
+/// Structural errors only: `[]` means the shape is valid.
+pub fn validate_shape(stack: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let Some(object) = stack.as_object() else {
+        return vec!["expected a stack object".into()];
+    };
+    if let Some(name) = object.get("name").and_then(Value::as_str) {
+        if let Err(error) = check_stack_name(name) {
+            errors.push(error);
+        }
+    } else {
+        errors.push("stack name is missing".into());
+    }
+    if let Some(routing) = object.get("routing")
+        && !routing.is_object()
+    {
+        errors.push(format!(
+            "routing must be an object, got {}",
+            json_type(routing)
+        ));
+    }
+    let tiers = match object.get("tiers") {
+        Some(Value::Array(tiers)) => tiers,
+        None | Some(Value::Null) => {
+            errors.push("stack has no tiers (every stack needs a face tier)".into());
+            return errors;
+        }
+        Some(other) => {
+            errors.push(format!(
+                "stack tiers must be a list, got {}",
+                json_type(other)
+            ));
+            return errors;
+        }
+    };
+    if tiers.is_empty() {
+        errors.push("stack has no tiers (every stack needs a face tier)".into());
+        return errors;
+    }
+    let mut seen: Vec<(String, usize)> = Vec::new();
+    for (index, tier) in tiers.iter().enumerate() {
+        let position = index + 1;
+        let label = format!("tier {position}");
+        let role = tier.get("role").and_then(Value::as_str).unwrap_or("");
+        if role.trim().is_empty() {
+            errors.push(format!("{label}: missing tier role"));
+        } else if !ROLES.contains(&role.trim()) {
+            errors.push(format!(
+                "{label}: role {} is not one of {}",
+                crate::py_repr(role),
+                ROLES.join(", ")
+            ));
+        } else if let Some((_, first)) = seen.iter().find(|(name, _)| name == role.trim()) {
+            errors.push(format!(
+                "{label}: duplicate tier role {} (already used by tier {first})",
+                crate::py_repr(role)
+            ));
+        } else {
+            seen.push((role.trim().to_owned(), position));
+        }
+        for key in ["repo", "file"] {
+            if tier
+                .get(key)
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|text| !text.is_empty())
+                .is_none()
+            {
+                errors.push(format!("{label}: missing {key}"));
+            }
+        }
+        match tier.get("ctx") {
+            None => {}
+            Some(value) => match value.as_i64() {
+                Some(ctx) if ctx > 0 => {}
+                _ => errors.push(format!(
+                    "{label}: ctx must be a positive integer, got {value}"
+                )),
+            },
+        }
+        if let Some(launch) = tier.get("launch")
+            && !launch.is_null()
+        {
+            if !launch.is_object() {
+                errors.push(format!(
+                    "{label}: launch must be an object, got {}",
+                    json_type(launch)
+                ));
+            } else if tier
+                .get("endpoint")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|text| !text.is_empty())
+                .is_none()
+            {
+                errors.push(format!(
+                    "{label}: launch requires an endpoint (the contract it brings up)"
+                ));
+            }
+        }
+    }
+    errors
+}
+
+fn json_type(value: &Value) -> &'static str {
+    match value {
+        Value::Null => "NoneType",
+        Value::Bool(_) => "bool",
+        Value::Number(_) => "int",
+        Value::String(_) => "str",
+        Value::Array(_) => "list",
+        Value::Object(_) => "dict",
+    }
 }
 
 /// `stacks list` rows, sorted by name. Unreadable or malformed files are skipped.
@@ -292,11 +404,12 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_role_is_refused() {
+    fn a_bad_role_is_refused_by_the_shape_check() {
         let data = json!({
             "name": "x", "version": 1,
             "tiers": [{"role": "boss", "repo": "r", "file": "f"}]
         });
-        assert!(parse_stack(&data).is_err());
+        let stack = parse_stack(&data).unwrap();
+        assert!(!validate_shape(&stack).is_empty());
     }
 }

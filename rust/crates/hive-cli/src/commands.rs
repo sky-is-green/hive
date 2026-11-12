@@ -6,13 +6,13 @@ use std::time::Duration;
 
 use hive_core::backends::Manifest;
 use hive_core::paths::Paths;
-use hive_core::{hardware, json, platform_display, python, stacks, version};
+use hive_core::{hardware, json, platform_display, py_repr, python, stacks, version};
 use hive_models::Library;
 use hive_state::Record;
 use serde_json::{Map, Number, Value};
 
 use crate::probe::probe;
-use crate::{Cli, Command, ModelsCommand, StacksCommand};
+use crate::{BackendsCommand, Cli, Command, ModelsCommand, StacksCommand};
 
 type Cmd = Result<u8, String>;
 
@@ -83,9 +83,43 @@ pub fn run(cli: Cli) -> ExitCode {
         }) => cmd_doctor(&paths, strict, as_json),
         Some(Command::Models { command }) => match command {
             ModelsCommand::List { json: as_json, .. } => cmd_models_list(&paths, as_json),
+            ModelsCommand::Dir {
+                path,
+                set,
+                json: as_json,
+                ..
+            } => crate::models_cmd::dir(&paths, path.as_deref(), set.as_deref(), as_json),
+            ModelsCommand::Import {
+                path,
+                copy,
+                json: as_json,
+                ..
+            } => crate::models_cmd::import(&paths, &path, copy, as_json),
+            ModelsCommand::Remove {
+                file,
+                yes,
+                json: as_json,
+                ..
+            } => crate::models_cmd::remove(&paths, &file, yes, as_json),
         },
         Some(Command::Stacks { command }) => match command {
             StacksCommand::List { json: as_json, .. } => cmd_stacks_list(&paths, as_json),
+            StacksCommand::Show { stack, .. } => crate::stacks_cmd::show(&paths, &stack),
+            StacksCommand::Validate {
+                stack,
+                strict,
+                json: as_json,
+                ..
+            } => crate::stacks_cmd::validate(&paths, &stack, strict, as_json),
+        },
+        Some(Command::Backends {
+            json: as_json,
+            command,
+        }) => match command {
+            None => crate::backends_cmd::list(&paths, as_json),
+            Some(BackendsCommand::List { json: sub_json }) => {
+                crate::backends_cmd::list(&paths, sub_json || as_json)
+            }
         },
         Some(Command::Status {
             json: as_json,
@@ -136,11 +170,23 @@ fn overrides(command: &Option<Command>) -> (Option<PathBuf>, Option<PathBuf>) {
             ..
         }) => (models_dir.clone(), stacks_dir.clone()),
         Some(Command::Models {
-            command: ModelsCommand::List { models_dir, .. },
+            command:
+                ModelsCommand::List { models_dir, .. }
+                | ModelsCommand::Dir { models_dir, .. }
+                | ModelsCommand::Import { models_dir, .. }
+                | ModelsCommand::Remove { models_dir, .. },
         }) => (models_dir.clone(), None),
         Some(Command::Stacks {
-            command: StacksCommand::List { stacks_dir, .. },
+            command: StacksCommand::List { stacks_dir, .. } | StacksCommand::Show { stacks_dir, .. },
         }) => (None, stacks_dir.clone()),
+        Some(Command::Stacks {
+            command:
+                StacksCommand::Validate {
+                    models_dir,
+                    stacks_dir,
+                    ..
+                },
+        }) => (models_dir.clone(), stacks_dir.clone()),
         Some(Command::Doctor {
             models_dir,
             stacks_dir,
@@ -906,7 +952,8 @@ fn cmd_logs(
                 .collect::<Vec<_>>()
                 .join(", ");
             eprintln!(
-                "hive logs: tier {role:?} is not in this serve (roles: {})",
+                "hive logs: tier {} is not in this serve (roles: {})",
+                py_repr(role),
                 if roles.is_empty() { "none" } else { &roles }
             );
             return Ok(2);
@@ -914,7 +961,10 @@ fn cmd_logs(
         if tier.get("base_url").and_then(Value::as_str).is_some()
             || tier.get("port").and_then(Value::as_i64).is_none()
         {
-            eprintln!("hive logs: tier {role:?} is an endpoint; its log belongs to that endpoint");
+            eprintln!(
+                "hive logs: tier {} is an endpoint; its log belongs to that endpoint",
+                py_repr(role)
+            );
             return Ok(1);
         }
         let port = tier.get("port").and_then(Value::as_i64).unwrap_or(0);
@@ -1009,7 +1059,7 @@ fn resolve_one(records: &[Record], name: Option<&str>) -> Result<Record, String>
                 return Ok(record.clone());
             }
         }
-        return Err(format!("no such serve {name:?}"));
+        return Err(format!("no such serve {}", py_repr(name)));
     }
     if records.is_empty() {
         return Err("nothing is running".into());
