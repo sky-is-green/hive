@@ -650,15 +650,21 @@ Rust column and run it on the release candidate. Do not weaken it.
   runtime install.
 - Version both from the same `VERSION` source; the sidecar protocol has its own
   version.
+- **No `main` merge or release tag until the entire rewrite passes the final
+  gate** (see §13). `rust-migration` is the integration branch until then.
 
 ---
 
-## 13. Rollback and rewind
+## 13. Branch, merge and rollback policy
 
+- **`main` is frozen at `pre-rust-migration` (`008d758`) for the entire
+  rewrite.** No Phase branch, cleanup, or intermediate Rust phase merges to
+  `main`. Only the final rewrite gate may update it.
 - `pre-rust-migration` tag and `backup/hive-test-008d758` branch mark the exact
   pre-migration base.
-- `rust-migration` is the integration branch; each task lands on a short-lived
-  branch and merges only at its gate.
+- `rust-migration` is the long-lived integration branch; each task lands on a
+  short-lived branch and merges into it only at its gate. That is not a
+  `main` merge.
 - The Python implementation is not deleted until one release after the Rust
   default and a green release gate.
 - The Rust binary is additive until G2: users can run `hive-py` or the Python
