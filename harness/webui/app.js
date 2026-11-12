@@ -1017,6 +1017,26 @@ let agentAbort = null;
 let agentWatch = null;
 let agentConv = "ui-" + Date.now();
 
+function newSplinterConv() {
+  return "shell-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
+}
+
+let splinterConv = (() => {
+  try {
+    return localStorage.getItem("hive-splinter-conv") || newSplinterConv();
+  } catch (_) {
+    return newSplinterConv();
+  }
+})();
+
+function resetSplinterConv() {
+  splinterConv = newSplinterConv();
+  try {
+    localStorage.setItem("hive-splinter-conv", splinterConv);
+    localStorage.removeItem("hive-inspect-conv");
+  } catch (_) { /* storage is optional */ }
+}
+
 function chatTranscript() {
   const rows = [];
   document.querySelectorAll("#chat-log .bubble").forEach(bubble => {
@@ -1042,7 +1062,7 @@ function chatCommandHelp() {
     "/new — start a fresh chat",
     "/clear — same as /new",
     "/model [id] — show or select a model",
-    "/mode direct|agent|ab — switch chat mode",
+    "/mode direct|splinter|agent|ab — switch chat mode",
     "/status — current model, mode, and message count",
   ].join("\n");
 }
@@ -1077,6 +1097,7 @@ async function runChatCommand(line) {
   }
   if (name === "new" || name === "clear") {
     chatHistory = [];
+    resetSplinterConv();
     $("#chat-log").innerHTML = '<div class="chat-empty">Fresh chat. Pick a model and ask something.</div>';
     $("#chat-note").textContent = "New chat started.";
     return;
@@ -1115,8 +1136,8 @@ async function runChatCommand(line) {
   }
   if (name === "mode") {
     const mode = args.toLowerCase();
-    if (!["direct", "agent", "ab"].includes(mode)) {
-      addBubble("assistant", "Usage: /mode direct|agent|ab", "command");
+    if (!["direct", "splinter", "agent", "ab"].includes(mode)) {
+      addBubble("assistant", "Usage: /mode direct|splinter|agent|ab", "command");
       return;
     }
     const btn = [...document.querySelectorAll("#chat-mode button")].find(b => b.dataset.mode === mode);
@@ -1144,6 +1165,7 @@ async function sendChat() {
   }
   if (chatMode === "agent") return sendAgent();
   if (chatMode === "ab") return sendAB();
+  if (chatMode === "splinter") return sendSplinter();
   return sendDirect();
 }
 
@@ -1202,6 +1224,94 @@ async function readSSE(res, onEvent) {
     }
   }
   if (buffer.trim()) handle(buffer);
+}
+
+async function sendSplinter() {
+  const input = $("#chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  const suggestion = await suggestRoute(text);
+  addBubble("user", text,
+    `splinter · ${splinterConv}${suggestion ? " · route " + suggestion.tier : ""}`);
+  const bubble = addBubble("assistant", "", "curating…");
+  const body = bubble.querySelector(".bubble-body");
+  const meta = bubble.querySelector(".meta");
+  const started = Date.now();
+  const controller = new AbortController();
+  agentAbort = controller;
+  $("#chat-send").disabled = true;
+  $("#chat-stop").hidden = false;
+  let answer = "";
+  let turn = null;
+  let tokenCount = 0;
+  let budget = 0;
+  let usage = null;
+  let stored = false;
+  let failure = null;
+  try {
+    const res = await fetch("/api/v1/splinter/stream", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: text, conversation_id: splinterConv }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    await readSSE(res, event => {
+      if (event.type === "meta") {
+        turn = event.turn;
+        tokenCount = event.token_count || 0;
+        budget = event.budget || 0;
+        meta.textContent = `curated ${tokenCount}/${budget} tokens · turn ${turn}`;
+      } else if (event.type === "delta" && event.text) {
+        answer += event.text;
+        body.textContent = answer;
+        $("#chat-log").scrollTop = $("#chat-log").scrollHeight;
+      } else if (event.type === "done") {
+        usage = event;
+        stored = !!event.stored;
+      } else if (event.type === "error") {
+        failure = event.error || "unknown error";
+      }
+    });
+    if (!answer.trim()) {
+      answer = failure ? "Error: " + failure : "(empty reply)";
+      body.textContent = answer;
+    }
+    const seconds = (Date.now() - started) / 1000;
+    const tokens = usage && usage.tokens ? usage.tokens : 0;
+    const tps = usage && usage.tokens_per_sec ? ` · ${usage.tokens_per_sec} tok/s` : "";
+    const storedText = stored ? " · stored" : " · not stored";
+    meta.textContent = `splinter · ${seconds.toFixed(2)}s` +
+      (tokens ? ` · ${tokens} tok` : "") + tps + storedText +
+      (turn ? ` · turn ${turn}` : "");
+    try {
+      localStorage.setItem("hive-splinter-conv", splinterConv);
+      localStorage.setItem("hive-inspect-conv", splinterConv);
+    } catch (_) { /* storage is optional */ }
+    $("#chat-note").textContent =
+      "Splinter turn complete. Open Inspector to see the curated context.";
+    logTrace({
+      query: text, mode: "splinter", actual_model: "splinter",
+      suggested_tier: suggestion?.tier || "?", actual_tier: "medium",
+      latency_s: seconds, tokens: tokens, ok: !failure,
+    });
+  } catch (err) {
+    const stopped = err.name === "AbortError";
+    failure = stopped ? "Stopped." : "Error: " + err.message;
+    if (!answer) body.textContent = failure;
+    meta.textContent = failure;
+    logTrace({
+      query: text, mode: "splinter", actual_model: "splinter",
+      suggested_tier: suggestion?.tier || "?", actual_tier: "medium",
+      latency_s: (Date.now() - started) / 1000, tokens: 0,
+      ok: false, error: failure,
+    });
+  } finally {
+    agentAbort = null;
+    $("#chat-send").disabled = false;
+    $("#chat-stop").hidden = true;
+  }
 }
 
 async function sendDirect() {
@@ -1910,7 +2020,9 @@ $("#chat-mode").addEventListener("click", e => {
     ? "Agent uses Hive's configured provider (DS4.1); role selection is not wired to the agent yet."
     : chatMode === "ab"
       ? "A/B runs both models concurrently; choose models on different cards for best latency."
-      : "";
+      : chatMode === "splinter"
+        ? "Splinter curates the context for the configured provider; the model picker is not used. Open Inspector after a turn."
+        : "";
 });
 $("#chat-input").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendChat(); }
@@ -1963,6 +2075,7 @@ $("#chat-clear").addEventListener("click", () => {
   $("#chat-image").value = "";
   $("#chat-image-name").textContent = "";
   chatHistory = [];
+  resetSplinterConv();
   $("#chat-log").innerHTML = '<div class="chat-empty">Pick a model and ask something.</div>';
   $("#chat-note").textContent = "";
 });

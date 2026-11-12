@@ -203,7 +203,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 | R0.2c | live engine A/B compare | done (Engines panel; tok/s, winner, per-profile details) |
 | R0.2d | agent preset create/edit/save | done (edit user presets; duplicate system presets; atomic write) |
 | R0.2e | prompt inspector (fix + port the backend payload) | done (standalone Inspector page; live state/inspect APIs) |
-| R0.2e-b | Splinter chat mode in the shell (the Inspector currently sees API/external conversations) | pending |
+| R0.2e-b | Splinter chat mode in the shell (the Inspector currently sees API/external conversations) | done (Splinter mode; stream + Inspector handoff) |
 | R0.2f | setup wizard / hardware recommendation | pending |
 | R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | pending |
 | R0.2h | move the release gate; delete `/server` and its tests | pending |
@@ -258,10 +258,14 @@ R0.2e adds the Inspector page. It reads `/v1/splinter/state` and
 `/v1/splinter/inspect/{conversation}` and shows the summary, selected/dropped
 chunks, assembled preview and stage timings. The legacy `renderInspection()`
 and `fetchInspection()` functions are undefined, so none of that broken JS was
-reused. **Known gap:** the shell's Chat is Direct/Agent/A-B only and does not
-create Splinter conversations, so the Inspector currently lists conversations
-created through the API or an external client. A Splinter chat mode is the
-separate R0.2e-b task.
+reused.
+
+R0.2e-b adds Splinter mode to the shell chat. It streams
+`/v1/splinter/stream`, persists the conversation id, and writes
+`hive-inspect-conv` so the Inspector opens the turn that was just run. The
+mock Studio's stream path bypasses its fake backend and talks to the configured
+provider directly, so the smoke test used a tiny local OpenAI-compatible
+stream server; the end-to-end chat → Inspector handoff passed.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

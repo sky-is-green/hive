@@ -322,12 +322,17 @@
         var data = await fetchJSON(base + "/splinter/state");
         state.conversations = data && data.conversations ? data.conversations : {};
         var ids = Object.keys(state.conversations);
+        var preferred = "";
+        try {
+          preferred = localStorage.getItem("hive-inspect-conv") || "";
+        } catch (_) { /* storage is optional */ }
         if (!ids.length) {
           state.selected = "";
           state.inspection = null;
           state.notice = "No active Splinter conversations.";
         } else if (!state.selected || ids.indexOf(state.selected) < 0) {
-          state.selected = ids[0];
+          state.selected = preferred && ids.indexOf(preferred) >= 0
+            ? preferred : ids[0];
           await loadInspection(state.selected);
         } else {
           await loadInspection(state.selected);
