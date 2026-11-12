@@ -62,10 +62,11 @@ transformers files. The control plane is not ML-bound.
 
 Bloat is localized, not pervasive:
 
-- `harness/reports.py:796` `render_server_page()` is a **3,369-line** embedded
-  HTML/JS page beside the **8,934-line** `harness/webui/` shell. Neither is a
-  superset: `/server` is still the release-gated console and owns several
-  operational workflows the shell does not (see Appendix C).
+- `harness/reports.py:796` `render_server_page()` was a **3,369-line** embedded
+  HTML/JS page beside the **8,934-line** `harness/webui/` shell. At the audit
+  neither was a superset: `/server` was the release-gated console and owned
+  several operational workflows the shell did not (see Appendix C). R0.2h has
+  since removed it.
 - Windows/WSL2/VHDX: about **800 lines** of setup code in `harness/app.py`
   (`_setup_tier`, `_ensure_vhdx`, `_list_drives`, `_setup_health`, plus the
   `/v1/setup/*` routes), **69** platform branches, **81** VHDX mentions, three
@@ -189,9 +190,10 @@ it; the Windows review checklist is in this doc; the unit suite is green.
 
 ### R0.2 — Consolidate the consoles, after closing the gap
 
-**Audit result (2026-11-11, Appendix C):** `harness/webui/` is the target shell,
-but `/server` is still the release-gated console (`docs/RELEASE-GATE.md` §4)
-and has workflows the shell does not. Do not delete `/server` yet.
+**Audit result (2026-11-11, Appendix C):** at the audit, `harness/webui/` was
+the target shell, but `/server` was still the release-gated console
+(`docs/RELEASE-GATE.md` §4) and had workflows the shell did not. R0.2h has
+since ported those gaps and removed it.
 
 **Decision (2026-11-11):** port the gaps; keep the sandbox; drop only the
 deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
@@ -792,30 +794,25 @@ Settings.
 
 **Entry points are inconsistent:**
 
-| surface | opens |
+| surface | opens (after R0.2g) |
 |---|---|
 | `hive ui web` | `python -m harness`, console on `:8170` (shell) |
-| `hive ui status` | probes `:8765` `/health`, reports `:8765` |
-| TUI `w` | `studio_api.base_url()` default `:8765` |
+| `hive ui status` | probes and reports both the console `:8170` and API `:8765` |
+| TUI `w` | `studio_api.console_url()` default `:8170` |
 | `:8765/` | redirects to `/runs` |
-| `docs/RELEASE-GATE.md` §4 | tests `/server` on `:8765` |
-| `hivebench/README.md` | says console on `:8170`, page table describes `/server` |
+| `docs/RELEASE-GATE.md` §4 | tests the `:8170` shell |
+| `hivebench/README.md` | page table lists the shell pages |
 
-**Latent bug:** `renderInspection()` and `fetchInspection()` are called in the
-`/server` page but are not defined anywhere in the tree, so the Inspector tab
-cannot populate. The backend side works: `Splinter.inspect_turn()` returns the
-detail, `/v1/splinter/stream` includes `inspection`, and
-`GET /v1/splinter/inspect/{conversation_id}` exists.
+**Latent bug (fixed):** the old `/server` page called `renderInspection()` and
+`fetchInspection()`, which were not defined anywhere in the tree, so its
+Inspector tab could not populate. R0.2e replaced it with a working Inspector
+page backed by `Splinter.inspect_turn()`, `/v1/splinter/stream` and
+`GET /v1/splinter/inspect/{conversation_id}`.
 
-**Recommendation:** keep `harness/webui/` as the canonical shell. Before
-deleting `/server`, port or drop the R0.2 gap list; add nav links to
-`/cascade` and `/docs`; make `hive ui status` and TUI `w` point at `:8170`;
-move the release gate to the shell. Then delete `render_server_page()` and its
-tests in one change.
-
-**Do not delete `/server` now.** It is the surface the release gate and TUI
-currently exercise, and the shell is missing process/log, live A/B, preset
-editing and inspector coverage.
+**Recommendation (executed):** keep `harness/webui/` as the canonical shell;
+port the gap list; add nav links to `/cascade` and `/docs`; point
+`hive ui status` and TUI `w` at `:8170`; move the release gate; then delete
+`render_server_page()` and its tests. R0.2h did exactly that.
 
 ## Appendix D — Windows review checklist (deferred)
 
