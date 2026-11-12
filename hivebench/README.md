@@ -17,7 +17,7 @@ on your own hardware — plus the deterministic suite that proves the measuremen
 
 The evaluation suite + the Studio sidecar for the
 [Splinter Memory](../splinter/README.md) system. The
-Studio serves **143 REST operations** across 131 paths (134 operations under `/v1/`).
+Studio serves **143 REST operations** across 131 paths (135 operations under `/v1/`).
 **New here?** Start with [The Hive Book](../docs/book/README.md), especially the
 terminal-versus-web chapter.
 The suite is green (**1715 tests pass, 5 skipped**, verified Nov 4); the live
@@ -311,11 +311,11 @@ a single hive theme (yellow/black) across every page.
 | Page | What it does |
 |---|---|
 | `/` → `/runs` | Run bundle index |
-| `/server` | The console: **Home**, **Settings**, **Global**, **Cascade** + a "More tools" group (Agent, Engines, Local library, Providers, Hub, Inspector, Training). The chat pane is the middle column; the launch panel is on the right |
+| `:8170` shell | The console: **Overview**, **Setup**, **Chat**, **Inspector**, **Roles**, **Benchmark**, **Routing**, **Judge**, **Risk & Approvals**, **Activity**, **Engines**, **Providers**, **Lifecycle**, **Processes**, **Sandbox**, **Settings**, **Training**, **Runs**, **Suggestions**, **Presets**, **Models**. Cascade and API docs are rail links |
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |
-| `/docs` | Live OpenAPI docs for all 106 operations |
+| `/docs` | Live OpenAPI docs for all operations |
 
 ### Papers
 
@@ -345,8 +345,8 @@ a single hive theme (yellow/black) across every page.
   [Working modes](../docs/book/01-working-modes.md).
 - **Home tab** — orientation, quick links, and the **backend selector**
   (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
-- **Settings tab** — a searchable settings index: 35 settings across 9
-  categories, each linking to where it lives.
+- **Settings tab** — the global controls and configuration blocks (memory,
+  quality, MCP, runtime, encoder, Strata), plus the sandbox and tool toggles.
 - **Global tab** — the harness-wide controls, in one place: **the encoder**
   (the small model that does the retrieval and the memory management — the
   one you pick is the one that runs), the memory and RAG defaults, the
@@ -416,7 +416,7 @@ a single hive theme (yellow/black) across every page.
 - **Dev server** — run it on a port you and your agent can both open, and
   iterate on the UI together.
 
-### API surface (134 operations across 122 paths under `/v1/`)
+### API surface (135 operations across 123 paths under `/v1/`)
 
 | Area | Endpoints |
 |---|---|

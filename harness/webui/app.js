@@ -532,6 +532,7 @@ let sandboxPanel = null;
 let processesPanel = null;
 let inspectorPanel = null;
 let setupPanel = null;
+let securityPanel = null;
 
 async function mountFitPanel() {
   if (!window.HiveFitPanel || !$("#fit-panel")) return;
@@ -591,6 +592,12 @@ async function mountSetupPanel() {
   if (!window.HiveSetupPanel || !$("#setup-panel")) return;
   if (!setupPanel) setupPanel = window.HiveSetupPanel.mount($("#setup-panel"));
   return setupPanel.refresh();
+}
+
+async function mountSecurityPanel() {
+  if (!window.HiveSecurityPanel || !$("#security-panel")) return;
+  if (!securityPanel) securityPanel = window.HiveSecurityPanel.mount($("#security-panel"));
+  return securityPanel.refresh();
 }
 
 async function mountPresetsPanel() {
@@ -1971,6 +1978,7 @@ async function refresh() {
     if (state.page === "inspector") await mountInspectorPanel();
     if (state.page === "roles") await loadRoles();
     if (state.page === "risk") await loadRisk();
+    if (state.page === "risk") await mountSecurityPanel();
     if (state.page === "activity") await loadActivity();
     if (state.page === "engines") { await loadEngines(); await mountFitPanel(); await mountAbPanel(); }
     if (state.page === "providers") await mountProvidersPanel();

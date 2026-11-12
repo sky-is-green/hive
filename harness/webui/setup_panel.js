@@ -95,6 +95,7 @@
       strata: null,
       models: [],
       loaded: [],
+      controller: null,
       error: "",
       notice: "",
       busy: "",
@@ -139,7 +140,70 @@
       ui.models.appendChild(ui.modelsTable);
       ui.modelsPanel.append(modelsHead, ui.models);
 
-      root.append(intro, ui.cards, ui.strataPanel, ui.modelsPanel);
+      ui.controllerPanel = node("div", "panel");
+      var ctrlHead = node("div", "panel-head");
+      ctrlHead.append(node("h2", "", "Hardware profile & controller"),
+        node("span", "muted", "local · deterministic"));
+      var ctrlBody = node("div");
+      ctrlBody.style.padding = "12px 15px";
+      var ctrlRow = node("div", "engine-actions");
+      var consentLabel = node("label", "inline-check");
+      ui.consent = document.createElement("input");
+      ui.consent.type = "checkbox";
+      consentLabel.append(ui.consent, node("span", "", "allow hardware scan"));
+      ui.scan = node("button", "ghost", "Scan this machine");
+      ui.scan.type = "button";
+      ui.scan.addEventListener("click", scanHardware);
+      ui.ctrlRefresh = node("button", "ghost", "Refresh");
+      ui.ctrlRefresh.type = "button";
+      ui.ctrlRefresh.addEventListener("click", refresh);
+      ctrlRow.append(consentLabel, ui.scan, ui.ctrlRefresh);
+
+      ui.ctrlStatus = node("div", "note");
+      ui.ctrlStatus.style.margin = "8px 0";
+
+      var ctrlForm = node("div", "engine-actions");
+      ui.modelGib = document.createElement("input");
+      ui.modelGib.type = "number";
+      ui.modelGib.step = "0.1";
+      ui.modelGib.placeholder = "model GiB";
+      ui.modelGib.style.width = "8rem";
+      ui.nativeCtx = document.createElement("input");
+      ui.nativeCtx.type = "number";
+      ui.nativeCtx.placeholder = "native ctx";
+      ui.nativeCtx.style.width = "8rem";
+      ui.desiredCtx = document.createElement("input");
+      ui.desiredCtx.type = "number";
+      ui.desiredCtx.placeholder = "max ctx";
+      ui.desiredCtx.style.width = "8rem";
+      ui.propose = node("button", "ghost", "Propose");
+      ui.propose.type = "button";
+      ui.propose.addEventListener("click", proposeController);
+      ui.apply = node("button", "approve", "Apply latest");
+      ui.apply.type = "button";
+      ui.apply.addEventListener("click", applyController);
+      ui.revert = node("button", "ghost", "Revert last");
+      ui.revert.type = "button";
+      ui.revert.addEventListener("click", revertController);
+      ctrlForm.append(ui.modelGib, ui.nativeCtx, ui.desiredCtx,
+        ui.propose, ui.apply, ui.revert);
+
+      ui.proposal = document.createElement("pre");
+      ui.proposal.style.margin = "10px 0 0";
+      ui.proposal.style.padding = "10px";
+      ui.proposal.style.background = "#0d0f12";
+      ui.proposal.style.color = "#c9d1d9";
+      ui.proposal.style.maxHeight = "260px";
+      ui.proposal.style.overflow = "auto";
+      ui.proposal.style.fontSize = "11.5px";
+      ui.proposal.style.whiteSpace = "pre-wrap";
+      ui.proposal.hidden = true;
+      ui.ctrlMessage = node("div", "note");
+      ctrlBody.append(ctrlRow, ui.ctrlStatus, ctrlForm, ui.proposal, ui.ctrlMessage);
+      ui.controllerPanel.append(ctrlHead, ctrlBody);
+
+      root.append(intro, ui.cards, ui.strataPanel, ui.modelsPanel,
+        ui.controllerPanel);
       rootEl.appendChild(root);
     }
 
@@ -243,12 +307,131 @@
       ui.modelsTable.appendChild(tbody);
     }
 
+    function renderController() {
+      var ctrl = state.controller || {};
+      var profile = ctrl.profile;
+      if (profile) {
+        var cpu = profile.cpu || {};
+        var ram = profile.ram || {};
+        var gpus = Array.isArray(profile.gpus) ? profile.gpus.length : 0;
+        ui.ctrlStatus.textContent = "profile " + (profile.profile_id || "?") +
+          " · " + (cpu.logical ?? cpu.physical ?? "?") + " CPU" +
+          " · " + gb(ram.total_gb) + " RAM" +
+          " · " + gpus + (gpus === 1 ? " GPU" : " GPUs");
+      } else {
+        ui.ctrlStatus.textContent =
+          "No hardware profile yet. Tick “allow hardware scan” and scan.";
+      }
+      var latest = ctrl.latest_proposal;
+      ui.proposal.hidden = !latest;
+      ui.proposal.textContent = latest ? JSON.stringify(latest, null, 2) : "";
+      ui.apply.disabled = !latest || !!state.busy;
+      ui.revert.disabled = !!state.busy;
+      ui.scan.disabled = state.status === "loading" || !!state.busy;
+      ui.propose.disabled = state.status === "loading" || !!state.busy;
+      ui.ctrlRefresh.disabled = state.status === "loading" || !!state.busy;
+    }
+
+    function ctrlNote(text, bad) {
+      ui.ctrlMessage.textContent = text || "";
+      ui.ctrlMessage.style.color = bad ? "var(--bad)" : "";
+    }
+
+    async function scanHardware() {
+      if (state.busy) return;
+      if (!ui.consent.checked) {
+        ctrlNote("Tick “allow hardware scan” first.", true);
+        return;
+      }
+      state.busy = "controller";
+      ctrlNote("Scanning…");
+      render();
+      try {
+        await postJSON(base + "/profiles/scan", { consent: "hardware" });
+        await refresh();
+        ctrlNote("Hardware profile saved; no settings were changed.");
+      } catch (err) {
+        ctrlNote("Scan failed: " + (err && err.message ? err.message : err), true);
+      }
+      state.busy = "";
+      render();
+    }
+
+    async function proposeController() {
+      if (state.busy) return;
+      var body = {};
+      var gib = Number(ui.modelGib.value);
+      if (isFinite(gib) && gib > 0) body.model_gib = gib;
+      var nativeCtx = Number(ui.nativeCtx.value);
+      if (isFinite(nativeCtx) && nativeCtx > 0) body.native_ctx = nativeCtx;
+      var desiredCtx = Number(ui.desiredCtx.value);
+      if (isFinite(desiredCtx) && desiredCtx > 0) body.desired_ctx = desiredCtx;
+      state.busy = "controller";
+      ctrlNote("Building a proposal…");
+      render();
+      try {
+        var data = await postJSON(base + "/controller/propose", body);
+        state.controller = state.controller || {};
+        state.controller.latest_proposal = data.proposal || data;
+        ctrlNote("Proposal created. Review the changes before applying.");
+      } catch (err) {
+        ctrlNote("Propose failed: " + (err && err.message ? err.message : err), true);
+      }
+      state.busy = "";
+      render();
+    }
+
+    async function applyController() {
+      if (state.busy) return;
+      var latest = state.controller && state.controller.latest_proposal;
+      if (!latest || !latest.id) {
+        ctrlNote("There is no proposal to apply.", true);
+        return;
+      }
+      if (!confirmFn(
+        "Apply proposal " + latest.id + "?\n\nThis changes the allowlisted runtime settings. " +
+        "You can revert the last change.")) return;
+      state.busy = "controller";
+      ctrlNote("Applying…");
+      render();
+      try {
+        await postJSON(base + "/controller/apply", {
+          proposal_id: latest.id,
+          confirm: true,
+        });
+        await refresh();
+        ctrlNote("Applied " + latest.id + ".");
+      } catch (err) {
+        ctrlNote("Apply failed: " + (err && err.message ? err.message : err), true);
+      }
+      state.busy = "";
+      render();
+    }
+
+    async function revertController() {
+      if (state.busy) return;
+      if (!confirmFn("Revert the last applied controller change?")) return;
+      state.busy = "controller";
+      ctrlNote("Reverting…");
+      render();
+      try {
+        await postJSON(base + "/controller/revert", { confirm: true });
+        await refresh();
+        ctrlNote("Reverted the last controller change.");
+      } catch (err) {
+        ctrlNote("Revert failed: " + (err && err.message ? err.message : err), true);
+      }
+      state.busy = "";
+      render();
+    }
+
     function render() {
       ui.refresh.disabled = state.status === "loading" || !!state.busy;
       renderMessage();
       renderCards();
       renderStrata();
       renderModels();
+      renderController();
     }
 
     async function refresh() {
@@ -260,6 +443,7 @@
         var results = await Promise.allSettled([
           fetchJSON(base + "/server/status"),
           fetchJSON(base + "/studio/strata"),
+          fetchJSON(base + "/controller/status"),
         ]);
         var status = results[0].status === "fulfilled" ? results[0].value : null;
         if (!status) throw new Error(results[0].reason || "server status unavailable");
@@ -291,6 +475,7 @@
           })
           .slice(0, 8);
         state.strata = results[1].status === "fulfilled" ? results[1].value : {};
+        state.controller = results[2].status === "fulfilled" ? results[2].value : null;
         state.status = "ready";
       } catch (err) {
         state.status = "error";

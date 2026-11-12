@@ -17,7 +17,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from harness.app import create_app
-from harness.reports import SETTINGS_INDEX
 
 README = Path(__file__).resolve().parents[2] / "hivebench" / "README.md"
 METHODS = ("GET", "POST", "PUT", "DELETE", "PATCH")
@@ -80,21 +79,6 @@ def test_readme_endpoint_counts_are_true(app):
     assert int(match.group(2)) == v1_paths, (
         f"the API surface heading says {match.group(2)} paths; the app serves "
         f"{v1_paths} under /v1/"
-    )
-
-
-def test_readme_settings_counts_are_true():
-    text = _text()
-    match = re.search(r"(\d+) settings across (\d+)\s*\n?\s*categories", text)
-    assert match, "the README no longer states the settings counts"
-    categories = {s.get("cat") for s in SETTINGS_INDEX}
-    assert int(match.group(1)) == len(SETTINGS_INDEX), (
-        f"the README says {match.group(1)} settings; the index has "
-        f"{len(SETTINGS_INDEX)}"
-    )
-    assert int(match.group(2)) == len(categories), (
-        f"the README says {match.group(2)} categories; the index has "
-        f"{len(categories)}: {sorted(categories)}"
     )
 
 

@@ -423,7 +423,7 @@ hive web policy --allow-downloads
 hive web grant http://127.0.0.1:8765 --access private --scope global
 hive web grants
 hive web fetch https://example.com/docs
-hive web fetch http://127.0.0.1:8765/server --allow-private --session s1
+hive web fetch http://127.0.0.1:8765/v1/server/status --allow-private --session s1
 hive web fetch https://example.com/file --download file.bin
 hive web revoke http://127.0.0.1:8765
 ```

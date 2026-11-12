@@ -206,7 +206,7 @@ deprecated VHDX setup tab. The work lands on `phase0/console-gaps`.
 | R0.2e-b | Splinter chat mode in the shell (the Inspector currently sees API/external conversations) | done (Splinter mode; stream + Inspector handoff) |
 | R0.2f | setup wizard / hardware recommendation | done (hardware cards, 8k fit ranking, Strata, one-click profile + load) |
 | R0.2g | Cascade/docs links; `hive ui status` and TUI `w` point at `:8170` | done |
-| R0.2h | move the release gate; delete `/server` and its tests | pending |
+| R0.2h | move the release gate; delete `/server` and its tests | done |
 
 Keep `harness/webui/` as the canonical shell. Before deleting
 `render_server_page()` and the `/server` route, port or explicitly drop:
@@ -280,6 +280,12 @@ reports both the console (`:8170`) and the API (`:8765`), `hive ui web` passes
 pre-existing `/cascade` 500: the route passed a `defaults=` argument the
 renderer did not accept, while the page already loads that baseline from
 `/v1/studio/settings`.
+
+R0.2h ports the remaining `/server` safety surfaces: tool policy/grants on
+Risk & Approvals, and the hardware profile/controller on Setup. The release
+gate now exercises the `:8170` shell. The old page, its training pane, its
+settings index and `harness/global_controls.py` are deleted; `harness/reports.py`
+drops from 4,377 to ~588 lines. A regression test asserts `/server` is gone.
 
 Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
 the tests. Move the release gate to `harness/webui/` in the same change.

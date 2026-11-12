@@ -302,7 +302,6 @@ inherit a parent's session grants for the same tool identity/origin.
 | `GET` | `/favicon.svg` | Studio favicon (hive hexagon). |
 | `GET` | `/health` | Liveness probe: the sidecar is up. |
 | `GET` | `/runs` | HTML index of run bundles. |
-| `GET` | `/server` | The Studio console page (chat, models, engines, providers, hub, settings). |
 | `GET` | `/stacks` | The stack management page. |
 | `GET` | `/view/{run_dir}` | Rendered HTML report page for a run bundle. |
 
@@ -322,7 +321,6 @@ inherit a parent's session grants for the same tool identity/origin.
 - `/favicon.svg` — Studio favicon (hive hexagon).
 - `/health` — Liveness probe: the sidecar is up.
 - `/runs` — HTML index of run bundles.
-- `/server` — The Studio console page (chat, models, engines, providers, hub, settings).
 - `/stacks` — The stack management page.
 - `/view/{run_dir}` — Rendered HTML report page for a run bundle.
 

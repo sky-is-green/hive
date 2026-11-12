@@ -98,7 +98,6 @@ from harness.cascade import api as cascade_api
 from harness.reports import (
     render_report_page,
     render_runs_page,
-    render_server_page,
     render_cascade_page,
     resolve_run_dir,
 )
@@ -4724,11 +4723,6 @@ def create_app(
     def hub_downloads():
         """Download job states (queued/downloading/done/error)."""
         return {"downloads": models_manager.downloads_status()}
-
-    @app.get("/server", response_class=HTMLResponse)
-    def server_page():
-        """The Studio console page (chat, models, engines, providers, hub, settings)."""
-        return HTMLResponse(render_server_page(), headers=_NO_STORE)
 
     # ------------------------------------------------------------------
     # Stack tab (T44 mount): the T41 fragment + T42 invocation cards, fed by

@@ -111,15 +111,3 @@ def test_unloading_retires_the_provider_and_profile_it_orphans(client):
     # the default must not keep pointing at the dead one either
     assert (st.registry.default or "").lower() != "local-x"
     assert (st.engines.default or "").lower() != "local-x"
-
-
-def test_the_page_carries_the_load_bar(client):
-    """The bar is in the page, with the bits the script drives."""
-    page = client.get("/server").text
-    assert 'id="loadbar"' in page
-    assert 'id="loadbar-title"' in page
-    assert 'id="loadbar-detail"' in page
-    assert "function showLoadBar(" in page
-    assert "function hideLoadBar(" in page
-    # a successful unload says so, as a toast
-    assert "showToast('Unload Successful')" in page

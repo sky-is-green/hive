@@ -213,30 +213,28 @@ Known non-gating TUI limits:
 Start a model-free Studio:
 
 ```bash
-python -m harness --mock --no-open --port 8765
+python -m harness --mock --no-open --port 8765 --console-port 8170
 ```
 
-- [ ] `/server` loads with no uncaught JavaScript errors.
-- [ ] Top navigation shows Studio, Runs, Cascade, **Senses**, API docs.
-- [ ] The active page has `aria-current="page"`; every nav item has a title.
-- [ ] Top tabs are Home, Settings, Global, Cascade, More tools; each tooltip says what it changes.
-- [ ] `/runs` lists bundles and opens a report.
-- [ ] `/cascade` launches the form; the Senses panel says it is disabled and never fabricates an embedding.
+- [ ] `http://127.0.0.1:8170` loads with no uncaught JavaScript errors.
+- [ ] The rail lists Overview, Setup, Chat, Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Suggestions, Presets, Models.
+- [ ] The rail links **Cascade** and **API docs** open `/cascade` and `/docs`.
+- [ ] **Setup** detects hardware and ranks local models; nothing loads until a model's **Set up** is clicked, and that click confirms first.
+- [ ] **Chat** has Direct, Splinter, Agent and A/B modes. A Splinter turn streams a reply and writes the conversation id.
+- [ ] **Inspector** lists that Splinter conversation and shows the summary, selected/dropped chunks, assembled preview and timings.
+- [ ] **Engines** → live A/B asks for two profiles and a base port, confirms before loading, and reports the winner and tokens/sec.
+- [ ] **Processes** shows the process table, engine-log tail and raw server status; **Kill** asks first and never targets the sidecar.
+- [ ] **Sandbox** shows Docker availability, the pinned image/digest, limits and the local-fallback policy. Policy writes stay in `hive sandbox`.
+- [ ] **Risk & Approvals** saves the tier and master switches, revokes one/all grants after confirmation, shows pending decisions and the audit.
+- [ ] **Setup** → Hardware profile & controller: scan refuses without consent; propose creates a reviewable proposal; apply requires confirmation; revert restores the last change.
+- [ ] **Presets**: system presets are read-only; user presets open in an editor with Save/Revert and Remove.
+- [ ] **Settings** loads the global controls and the memory/quality/MCP/runtime JSON blocks; a save persists.
+- [ ] Training, Runs, Suggestions and Models pages load their data.
+- [ ] `/runs` lists bundles and opens a report; `/cascade` launches the form; the Senses panel says it is disabled and never fabricates an embedding.
 - [ ] `POST /v1/cascade/senses` returns **503 unconfigured** while no encoder is attached; this is expected.
-- [ ] Global → **Hardware profile & controller** is visible. **Scan this machine** refuses until the consent checkbox is ticked.
-- [ ] After consent, scan shows the profile summary; no settings are applied by the scan.
-- [ ] **Propose** shows `changes`, `evidence`, and any warnings. **Apply with confirmation** asks first; **Revert last** restores the previous values.
-- [ ] The Global tab's ordinary **Save the baseline** still works and does not overwrite the controller panel state.
-- [ ] `POST /v1/controller/apply` without `confirm=true` is refused.
-- [ ] Global → **Tool policy & grants** shows the Guarded default; saving Strict/Trusted/Open persists.
-- [ ] **Revoke all grants** asks first and clears the list.
-- [ ] The panel states that the live DSH runtime smoke test is still pending. A release must not claim agent tool enforcement without a separate PASS.
-- [ ] The PreToolUse hook is installed under the DSH home; if it is not, agent turns are refused.
-- [ ] Global → **Working modes** explains the two surfaces and copies `hive ui terminal`.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).
 - [ ] At 1200 px, 760 px, and 390 px wide, the page remains usable; no horizontal scroll except intentional code/tables.
-- [ ] Keyboard focus is visible; the command palette opens with `Ctrl+K`; Escape closes it.
-- [ ] Empty/error states are readable and do not show raw tracebacks.
+- [ ] Keyboard focus is visible; empty/error states are readable and do not show raw tracebacks.
 - [ ] Stop the Studio cleanly; no orphan engine child is left behind.
 
 ---

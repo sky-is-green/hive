@@ -938,16 +938,10 @@ def test_models_local_and_hub_routes(client, monkeypatch):
     assert any(d["key"] == "r:f.gguf" for d in downloads)
 
 
-def test_server_page_serves(client):
+def test_the_old_server_page_is_gone(client):
     c, _app = client
     page = c.get("/server")
-    assert page.status_code == 200
-    assert "HiveBench Studio" in page.text
-    assert "/v1/server/status" in page.text
-    # the chat pane streams through the splinter
-    assert "/v1/splinter/stream" in page.text
-    assert "chatlog" in page.text
-    assert page.headers.get("cache-control") == "no-store"
+    assert page.status_code == 404
 
 
 # ---------------------------------------------------------------------------
