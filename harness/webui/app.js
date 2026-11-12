@@ -828,12 +828,6 @@ async function refreshPlacementPlan() {
       models,
       devices: devicesState,
     });
-    if (result && result.unavailable) {
-      placementPlanState = null;
-      $("#placement-summary").textContent = "Placement check unavailable";
-      showPlacementError(`${result.unavailable} Saving is disabled.`);
-      return null;
-    }
     placementPlanState = result;
     placementPlanSignature = roleConfigSignature();
     renderPlacementPlan(result);

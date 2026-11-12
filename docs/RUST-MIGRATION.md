@@ -292,8 +292,9 @@ drops from 4,377 to ~588 lines. A regression test asserts `/server` is gone.
 
 Post-review cleanup (2026-11-12): the Suggestions inbox page and the
 `/api/hive_build/suggestions` dev-server endpoints were removed. A planner
-queue is not a local-first harness surface; the placement check keeps its
-graceful fallback.
+queue is not a local-first harness surface. The Roles placement gate now uses
+the built-in `harness/placement.py` (a weights-only preflight), so the missing
+`hive_build.placement` dependency is gone.
 
 **Acceptance:** one canonical shell; the gap list is either ported or explicitly
 dropped in this doc; the release gate exercises the surviving shell; tests

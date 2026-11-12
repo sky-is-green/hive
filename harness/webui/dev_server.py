@@ -15,7 +15,6 @@ thread because it proxies same-origin to the FastAPI sidecar and needs no CORS.
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 import os
 import shutil
@@ -79,19 +78,6 @@ def _ensure_state() -> None:
         shutil.copy2(SEED_JUDGE_MODEL, JUDGE_MODEL)
     if not ROUTE_TARGETS.exists() and SEED_ROUTE_TARGETS.is_file():
         shutil.copy2(SEED_ROUTE_TARGETS, ROUTE_TARGETS)
-
-
-def _optional_module(name: str):
-    """Import an optional console feature, or return None when it is absent.
-
-    ``harness.hive_build`` is a local planner package; a clean checkout does
-    not have it. The console degrades to an explicit unavailable state instead
-    of crashing the request handler.
-    """
-    try:
-        return importlib.import_module(name)
-    except ModuleNotFoundError:
-        return None
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -463,17 +449,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             from math import isfinite
 
-            module = _optional_module("harness.hive_build.placement")
-            if module is None:
-                self._send_json({
-                    "unavailable": "The placement planner (harness.hive_build) "
-                                   "is not installed; saving is disabled.",
-                    "plans": [],
-                    "summary": {"total": 0, "ok": 0, "warn": 0, "blocked": 0},
-                })
-                return
-            Device = module.Device
-            plan_roles = module.plan_roles
+            from harness.placement import Device, plan_roles
 
             payload = self._read_json()
             if not isinstance(payload, dict):
