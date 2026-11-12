@@ -459,63 +459,6 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
 
-    def _suggestions_get(self) -> None:
-        try:
-            from urllib.parse import parse_qs, urlsplit
-
-            module = _optional_module("harness.hive_build.suggestions")
-            if module is None:
-                self._send_json({
-                    "suggestions": [],
-                    "summary": {"total": 0, "by_status": {}},
-                    "unavailable": "The planner package (harness.hive_build) "
-                                   "is not installed; suggestions are unavailable.",
-                })
-                return
-            query = parse_qs(urlsplit(self.path).query)
-            limit = int(query.get("limit", ["50"])[0])
-            rows = module.list(limit=limit)
-            self._send_json({"suggestions": rows, "summary": module.summary()})
-        except (TypeError, ValueError) as exc:
-            self._send_json({"error": str(exc)}, 400)
-        except Exception as exc:  # noqa: BLE001
-            self._send_json({"error": str(exc)}, 500)
-
-    def _suggestions_post(self) -> None:
-        try:
-            module = _optional_module("harness.hive_build.suggestions")
-            if module is None:
-                self._send_json({
-                    "error": "The planner package (harness.hive_build) is not "
-                             "installed; suggestions are unavailable.",
-                }, 503)
-                return
-            record = module.add(self._read_json())
-            self._send_json({"ok": True, "suggestion": record}, 201)
-        except (TypeError, ValueError) as exc:
-            self._send_json({"error": str(exc)}, 400)
-        except Exception as exc:  # noqa: BLE001
-            self._send_json({"error": str(exc)}, 500)
-
-    def _suggestion_status_patch(self, suggestion_id: str) -> None:
-        try:
-            module = _optional_module("harness.hive_build.suggestions")
-            if module is None:
-                self._send_json({
-                    "error": "The planner package (harness.hive_build) is not "
-                             "installed; suggestions are unavailable.",
-                }, 503)
-                return
-            payload = self._read_json()
-            record = module.set_status(suggestion_id, payload.get("status"))
-            self._send_json({"ok": True, "suggestion": record})
-        except KeyError as exc:
-            self._send_json({"error": str(exc)}, 404)
-        except (TypeError, ValueError) as exc:
-            self._send_json({"error": str(exc)}, 400)
-        except Exception as exc:  # noqa: BLE001
-            self._send_json({"error": str(exc)}, 500)
-
     def _placement_plan_post(self) -> None:
         try:
             from math import isfinite
@@ -569,9 +512,6 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         from urllib.parse import urlsplit
-        if urlsplit(self.path).path == "/api/hive_build/suggestions":
-            self._suggestions_get()
-            return
         if self.path == "/api/roles":
             self._roles_get()
             return
@@ -627,9 +567,6 @@ class Handler(SimpleHTTPRequestHandler):
         if urlsplit(self.path).path == "/api/placement/plan":
             self._placement_plan_post()
             return
-        if urlsplit(self.path).path == "/api/hive_build/suggestions":
-            self._suggestions_post()
-            return
         if self.path == "/api/roles":
             self._roles_post()
             return
@@ -675,16 +612,6 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_error(404, "unknown model")
                 return
             self._proxy_model(f"{base}/{rest}")
-            return
-        self.send_error(404)
-
-    def do_PATCH(self) -> None:  # noqa: N802
-        from urllib.parse import unquote, urlsplit
-
-        prefix = "/api/hive_build/suggestions/"
-        path = urlsplit(self.path).path
-        if path.startswith(prefix) and path[len(prefix):] and "/" not in path[len(prefix):]:
-            self._suggestion_status_patch(unquote(path[len(prefix):]))
             return
         self.send_error(404)
 

@@ -217,7 +217,7 @@ python -m harness --mock --no-open --port 8765 --console-port 8170
 ```
 
 - [ ] `http://127.0.0.1:8170` loads with no uncaught JavaScript errors.
-- [ ] The rail lists Overview, Setup, Chat, Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Suggestions, Presets, Models.
+- [ ] The rail lists Overview, Setup, Chat, Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Presets, Models.
 - [ ] The rail links **Cascade** and **API docs** open `/cascade` and `/docs`.
 - [ ] **Setup** detects hardware and ranks local models; nothing loads until a model's **Set up** is clicked, and that click confirms first.
 - [ ] **Chat** has Direct, Splinter, Agent and A/B modes. A Splinter turn streams a reply and writes the conversation id.
@@ -229,7 +229,7 @@ python -m harness --mock --no-open --port 8765 --console-port 8170
 - [ ] **Setup** → Hardware profile & controller: scan refuses without consent; propose creates a reviewable proposal; apply requires confirmation; revert restores the last change.
 - [ ] **Presets**: system presets are read-only; user presets open in an editor with Save/Revert and Remove.
 - [ ] **Settings** loads the global controls and the memory/quality/MCP/runtime JSON blocks; a save persists.
-- [ ] Training, Runs, Suggestions and Models pages load their data.
+- [ ] Training, Runs and Models pages load their data.
 - [ ] `/runs` lists bundles and opens a report; `/cascade` launches the form; the Senses panel says it is disabled and never fabricates an embedding.
 - [ ] `POST /v1/cascade/senses` returns **503 unconfigured** while no encoder is attached; this is expected.
 - [ ] `/docs` matches the actual routes (the API-doc test covers this).

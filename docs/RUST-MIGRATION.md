@@ -221,7 +221,8 @@ Keep `harness/webui/` as the canonical shell. Before deleting
 - Prompt inspector. The backend already returns `inspection` and exposes
   `/v1/splinter/inspect/{id}`, but the legacy page calls undefined
   `renderInspection()` / `fetchInspection()`.
-- Deep research queue, if Suggestions is not the same queue.
+- The **Suggestions inbox** is dropped: a planner queue is not a local-first
+  harness surface (decision 2026-11-12).
 - Command palette and pinned commands, if still wanted.
 - A visible Cascade link (`/cascade`) and Senses entry, if still wanted.
 - A sandbox status/pin/fallback panel. The sandbox runtime itself is retained:
@@ -289,8 +290,10 @@ gate now exercises the `:8170` shell. The old page, its training pane, its
 settings index and `harness/global_controls.py` are deleted; `harness/reports.py`
 drops from 4,377 to ~588 lines. A regression test asserts `/server` is gone.
 
-Then delete `render_server_page()`, its `/server` route, its CSS/JS, and update
-the tests. Move the release gate to `harness/webui/` in the same change.
+Post-review cleanup (2026-11-12): the Suggestions inbox page and the
+`/api/hive_build/suggestions` dev-server endpoints were removed. A planner
+queue is not a local-first harness surface; the placement check keeps its
+graceful fallback.
 
 **Acceptance:** one canonical shell; the gap list is either ported or explicitly
 dropped in this doc; the release gate exercises the surviving shell; tests
@@ -769,7 +772,7 @@ the newer analysis pages.
 | `/server` surface | what it does | `harness/webui/` equivalent | action |
 |---|---|---|---|
 | Home: setup wizard | detect hardware, recommend backend and model | partial: Engines fit panel, Models | port a compact wizard or link to Engines/Lifecycle |
-| Home: deep research queue | queue for the background worker | Suggestions (planner ideas) | verify it is the same queue; port if not |
+| Home: deep research queue | queue for the background worker | none (the Suggestions inbox was removed) | dropped as out of scope |
 | Home: backend selector | Strata / llama.cpp / API | Settings, Providers, Engines | confirm coverage |
 | Setup: Docker/VHDX | deprecated note page for the old VHDX/WSL2 large-model setup; **not the sandbox** | none | drop the tab; keep `/v1/sandbox/*`, `harness/sandbox.py`, `hive sandbox` |
 | Agent: presets | create, edit, save, duplicate | Presets only reads/duplicates | port create/edit/save |
@@ -789,8 +792,7 @@ the newer analysis pages.
 | Cascade / Senses | links to `/cascade` and senses | none | add nav links if wanted |
 
 Pages that exist only in the shell: Overview, Roles, Benchmark, Routing, Judge,
-Risk & Approvals, Activity, Lifecycle, Runs, Suggestions, Presets, Models,
-Settings.
+Risk & Approvals, Activity, Lifecycle, Runs, Presets, Models, Settings.
 
 **Entry points are inconsistent:**
 

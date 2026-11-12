@@ -213,7 +213,7 @@ way to know which one you have is to wire them and then measure.
 
 | | |
 |---|---|
-| the console | the `:8170` shell: Setup, Chat (Direct / Splinter / Agent / A-B), Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Suggestions, Presets, Models; Cascade and API docs are rail links |
+| the console | the `:8170` shell: Setup, Chat (Direct / Splinter / Agent / A-B), Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Presets, Models; Cascade and API docs are rail links |
 | the chat | Splinter mode (one curated reply) or Agent mode (the tool loop); the reply says who produced it |
 | the launch panel | llama.cpp or Strata, per engine, from the profiles; stop closes the connection so the *engine* stops; unload gives the VRAM back and retires the orphans |
 | the cascade console | every runner knob in one form, with the Settings page's quality defaults as its starting values |

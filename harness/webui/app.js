@@ -525,7 +525,6 @@ let lifecyclePanel = null;
 let trainingPanel = null;
 let libraryPanel = null;
 let runsPanel = null;
-let suggestionsPanel = null;
 let presetsPanel = null;
 let settingsPanel = null;
 let sandboxPanel = null;
@@ -604,12 +603,6 @@ async function mountPresetsPanel() {
   if (!window.HivePresetsPanel || !$("#presets-panel")) return;
   if (!presetsPanel) presetsPanel = window.HivePresetsPanel.mount($("#presets-panel"));
   return presetsPanel;
-}
-
-async function mountSuggestionsPanel() {
-  if (!window.HiveSuggestionsPanel || !$("#suggestions-panel")) return;
-  if (!suggestionsPanel) suggestionsPanel = window.HiveSuggestionsPanel.mount($("#suggestions-panel"));
-  return suggestionsPanel;
 }
 
 async function mountRunsPanel() {
@@ -1963,7 +1956,6 @@ function show(page) {
     sandbox: ["Sandbox", "Docker isolation, image pin and local-fallback policy."],
     training: ["Training", "Ternary training runs and preset evidence."],
     runs: ["Runs", "Run history and report summaries."],
-    suggestions: ["Suggestions", "Planner ideas for human review."],
     presets: ["Agent presets", "System and user agent configurations."],
     settings: ["Settings", "Global Studio controls and defaults."],
     models: ["Models", "Library, download folder and Hugging Face finder."],
@@ -1993,7 +1985,6 @@ async function refresh() {
     if (state.page === "sandbox") await mountSandboxPanel();
     if (state.page === "training") await mountTrainingPanel();
     if (state.page === "runs") await mountRunsPanel();
-    if (state.page === "suggestions") await mountSuggestionsPanel();
     if (state.page === "presets") await mountPresetsPanel();
     if (state.page === "settings") await mountSettingsPanel();
     if (state.page === "models") await mountLibraryPanel();

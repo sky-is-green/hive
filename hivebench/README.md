@@ -310,7 +310,7 @@ a single hive theme (yellow/black) across every page.
 | Page | What it does |
 |---|---|
 | `/` → `/runs` | Run bundle index |
-| `:8170` shell | The console: **Overview**, **Setup**, **Chat**, **Inspector**, **Roles**, **Benchmark**, **Routing**, **Judge**, **Risk & Approvals**, **Activity**, **Engines**, **Providers**, **Lifecycle**, **Processes**, **Sandbox**, **Settings**, **Training**, **Runs**, **Suggestions**, **Presets**, **Models**. Cascade and API docs are rail links |
+| `:8170` shell | The console: **Overview**, **Setup**, **Chat**, **Inspector**, **Roles**, **Benchmark**, **Routing**, **Judge**, **Risk & Approvals**, **Activity**, **Engines**, **Providers**, **Lifecycle**, **Processes**, **Sandbox**, **Settings**, **Training**, **Runs**, **Presets**, **Models**. Cascade and API docs are rail links |
 | `/cascade` | Hive Cascade launch console — every runner knob, advanced collapsed |
 | `/runs`, `/view/{run}` | Browse and inspect run bundles (rendered reports) |
 | `/stacks` | Stack management (multi-tier model stacks) |

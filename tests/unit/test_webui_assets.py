@@ -38,6 +38,16 @@ def test_every_script_asset_exists():
     assert not missing, f"missing shell assets: {missing}"
 
 
+def test_the_suggestions_inbox_is_removed():
+    html = _html()
+    assert 'data-page="suggestions"' not in html
+    assert "suggestions_panel.js" not in html
+    assert not (ROOT / "suggestions_panel.js").exists()
+    assert not (ROOT / "suggestions_panel.css").exists()
+    assert "/api/hive_build/suggestions" not in (
+        ROOT / "dev_server.py").read_text(encoding="utf-8")
+
+
 @pytest.mark.skipif(NODE is None, reason="node not installed")
 @pytest.mark.parametrize("path", sorted(ROOT.glob("*.js")), ids=lambda p: p.name)
 def test_shell_javascript_is_syntactically_valid(path: Path):
