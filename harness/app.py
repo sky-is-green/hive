@@ -208,7 +208,7 @@ __CARDS_CSS__
 </head>
 <body>
 <div class="stk-page">
-<a class="stk-back" href="/server">&larr; Studio</a>
+<a class="stk-back" href="/runs">&larr; Runs</a>
 __STACK_TAB__
 <section>
 <div class="stk-head"><h2 style="margin-top:0">Invocations</h2>

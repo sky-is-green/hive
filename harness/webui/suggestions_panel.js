@@ -24,7 +24,7 @@
   function mount(root) {
     if (!root || !root.appendChild) throw new TypeError("mount requires a DOM element");
 
-    var state = { suggestions: [], summary: { total: 0, by_status: {} }, loading: false, error: "" };
+    var state = { suggestions: [], summary: { total: 0, by_status: {} }, loading: false, error: "", unavailable: "" };
     var shell = element("section", "hive-suggestions");
     var header = element("header", "hs-head");
     var heading = element("div", "hs-heading");
@@ -71,12 +71,14 @@
 
     function render() {
       list.replaceChildren();
-      message.textContent = state.error || (state.loading ? "Loading suggestions…" : "");
-      message.className = "hs-message" + (state.error ? " hs-message--error" : "");
+      message.textContent = state.error || state.unavailable ||
+        (state.loading ? "Loading suggestions…" : "");
+      message.className = "hs-message" +
+        (state.error ? " hs-message--error" : state.unavailable ? " hs-message--empty" : "");
       refreshButton.disabled = state.loading;
       submit.disabled = state.loading;
 
-      if (!state.loading && !state.error && state.suggestions.length === 0) {
+      if (!state.loading && !state.error && !state.unavailable && state.suggestions.length === 0) {
         message.textContent = "No suggestions yet. Add one above or refresh later.";
         message.className = "hs-message hs-message--empty";
       }
@@ -149,6 +151,7 @@
       return request(ENDPOINT + "?limit=50").then(function (body) {
         state.suggestions = Array.isArray(body.suggestions) ? body.suggestions : [];
         state.summary = body.summary || { total: state.suggestions.length, by_status: {} };
+        state.unavailable = body.unavailable || "";
         state.loading = false;
         render();
         return state.suggestions;

@@ -81,10 +81,9 @@ sees an answer key; the verifier reads a gold-stripped `runtime_spec`.
 - The **curated context**: a store with decay, dedup, a topic-drift
   detector, a comb (the SSD archive that can resurrect what fell out of the
   budget), and a medium drone for the hard candidates.
-- **`/import <path>`** — shows the LLM a file: the text rides along with
-  your next message *and* lands in the conversation's store, so it is there
-  for later turns. Secrets are redacted on the way in; binary files are
-  refused.
+- **Chat and Inspector** — Splinter mode streams a curated turn; the
+  Inspector shows the selected/dropped chunks, assembled preview and stage
+  timings for that conversation.
 - **MCP** — the memory over `POST /v1/mcp`, with the tools an external
   client may call, and a read-only mode.
 - **Global harness controls** — one place for everything the harness does:
@@ -339,57 +338,36 @@ a single hive theme (yellow/black) across every page.
 ### Console features
 
 - **Two front doors** — `hive ui terminal` opens the low-overhead dashboard;
-  `hive ui web` opens the full Studio. The TUI's `w` key opens a running Studio,
-  and `a` opens the pending-approval overlay. The Studio's Global tab copies
-  the terminal command back. See
+  `hive ui web` opens the shell. The TUI's `w` key opens a running console,
+  and `a` opens the pending-approval overlay. `hive ui status` reports both
+  the console (`:8170`) and the API (`:8765`). See
   [Working modes](../docs/book/01-working-modes.md).
-- **Home tab** — orientation, quick links, and the **backend selector**
-  (Strata / Llama.cpp / API — one source of truth for the Studio and Cascade).
-- **Settings tab** — the global controls and configuration blocks (memory,
+- **Overview and Setup** — live service/GPU state, then hardware detection,
+  an 8k model ranking, optional Strata registration, and a one-click engine
+  profile + load.
+- **Settings page** — the global controls and configuration blocks (memory,
   quality, MCP, runtime, encoder, Strata), plus the sandbox and tool toggles.
-- **Global tab** — the harness-wide controls, in one place: **the encoder**
-  (the small model that does the retrieval and the memory management — the
-  one you pick is the one that runs), the memory and RAG defaults, the
-  cascade's defaults, the MCP surface, the runtime a new engine is launched
-  with. The separate Splinter menu is gone; there is one home for all of it.
-- **Hardware profile & controller** — also in Global: an explicit-consent
-  local scan, a deterministic E0 proposal (threads, context, GPU layers and
-  resident experts only), the evidence and warnings behind it, and a
-  confirmed apply with rollback. Optional request text adds features and,
-  with the explicit encoder checkbox, a CPU vector trace; the lazy encoder
-  has a configurable idle-unload timer. Nothing is applied by scanning, and
-  no prompt or hardware profile leaves the machine.
-- **Command palette** (Ctrl+K) — every console command, searchable. Fifteen
+- **Hardware profile & controller** — in Setup: an explicit-consent local
+  scan, a deterministic E0 proposal, the evidence and warnings, and a
+  confirmed apply with rollback.
+- **Chat commands** — `/help`, `/save`, `/compact`, `/new`, `/model`,
+  `/mode`, `/status` in the chat input.
+- **Command API** — `/v1/commands` exposes the operational command set;
   commands ship today: `help`, `new`, `save`, `model`, `mode`, `provider`,
   `engine`, `bench`, `train`, `status`, `cascade`, `sandbox`, `compact`, `dev`,
   `import`.
-- **Your commands, at hand** — the row above the chat bar holds the commands
-  you pick (the picker sits at its far right); every one carries a small red
-  `x` to take it off the row. Tabs work the same way: pin the ones you use.
-- **`/import <path>`** — shows the LLM a file: the text rides along with your
-  next message and lands in the conversation's store, so it is there for later
-  turns too. Text files only; secrets in the file are redacted on the way in.
-- **Dev mode** — `/dev on` reveals the developer surface (the deep-research
-  queue, the Docker/VHDX setup tab, the raw server status). Off by default.
-- **Chat voices** — every message says who produced it: the model, the studio
-  encoder, the **Command Console** (cyan), and you (black on yellow, no label
-  — you know you typed it).
-- **The launch console** — the dials a run actually needs, with one tab per
-  engine: the shared ones (the context window, the port) above, then
-  **llama.cpp** (the model, the GPU layers, the auto-fit, the devices, the
-  threads, the slots, the KV cache, the batch sizes, the alias) or
-  **Strata** (the config profile, the checkout, the VRAM reserve, the
-  prefill, the spec depth, the extra engine flags). Start launches the
-  engine the tab names.
+- **Image attach** — the Chat composer attaches an image for LFM3-VL-2B.
+- **Chat voices** — messages distinguish the user, the model, the agent and
+  errors; the meta line names the mode/model that produced the turn.
+- **Engines and Lifecycle** — reusable engine profiles (model, context, GPU
+  layers, sampling, provider reference) and the launch/stop controls; Setup
+  can create a profile and load the first model in one confirmed step.
 - **Stop and Unload, two different things** — **Stop** (in the chat) closes the
   provider connection, so the engine stops generating at once instead of
   finishing a reply nobody is waiting for; both llama.cpp and strata stop on
-  the disconnect, and a closed tab stops the turn too. **Unload** (in the
-  Launch panel) releases the model itself: the local llama.cpp instances and
-  the Strata engine give their VRAM back, and the profiles stay.
-- **The load bar** — while a model loads or unloads, a bar across the bottom
-  of the screen says what is happening (and, when a load fails, why it
-  failed). A successful unload says so in a toast.
+  the disconnect. **Unload** (in Lifecycle) releases the model itself: the
+  local llama.cpp instances and the Strata engine give their VRAM back, and
+  the profiles stay.
 - **Model library** — search Hugging Face for GGUF repos, list files, download
   with progress, manage the local folder.
 - **Engines** — reusable profiles (model, context, GPU layers, sampling, provider
@@ -543,8 +521,8 @@ models are. The measurements, the refusals and the remaining work are in
 - **A trained encoder** — the app assistant is the dsh agent plus the
   Studio's own API map (prompt-context, v1). A dedicated small model tuned
   for app navigation needs a usage-harvest → dataset → train pipeline.
-- **A file explorer and diff view** — OpenCode-style side panels; the model
-  can already read a file (`/import`), you cannot yet browse one.
+- **A file explorer and diff view** — OpenCode-style side panels; the agent
+  can read a file, you cannot yet browse one.
 - Live batteries stay live-gated in CI (skipped without a backend); threshold
   benchmarks stay out of CI on purpose — shared runners flake them.
 

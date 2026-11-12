@@ -730,6 +730,10 @@ traces are ignored.
 
 ## Console & UI (2026-10-19)
 
+> **Historical snapshot.** This section describes the pre-Phase-0 `/server`
+> console. That page was removed on 2026-11-12; the current `:8170` shell is
+> documented in [`hivebench/README.md`](../hivebench/README.md).
+
 The cascade is now fully controllable from the Studio:
 
 - **`/cascade` page** — every runner knob (judge, repair, gate, gate_head, gate_threshold, temperature, max_tokens, reasoning, human_gate, api_fallback, router, router_mode, escalation lane toggle) in one form. Defaults work out of the box; advanced settings collapsed.

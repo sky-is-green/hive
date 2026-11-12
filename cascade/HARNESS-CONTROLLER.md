@@ -153,7 +153,7 @@ operator can change the table without changing the loop.
 
 ## The three drivers
 
-- **Local** (the Studio's Global tab, or a local controller model): the
+- **Local** (the Studio's Settings page, or a local controller model): the
   loop above, the 35B as the bulk, the escalation to Bonsai, the human
   gate before the API.
 - **API**: the frontier model is the controller. It calls the *same*

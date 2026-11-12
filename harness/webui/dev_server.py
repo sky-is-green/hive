@@ -15,6 +15,7 @@ thread because it proxies same-origin to the FastAPI sidecar and needs no CORS.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import shutil
@@ -80,9 +81,29 @@ def _ensure_state() -> None:
         shutil.copy2(SEED_ROUTE_TARGETS, ROUTE_TARGETS)
 
 
+def _optional_module(name: str):
+    """Import an optional console feature, or return None when it is absent.
+
+    ``harness.hive_build`` is a local planner package; a clean checkout does
+    not have it. The console degrades to an explicit unavailable state instead
+    of crashing the request handler.
+    """
+    try:
+        return importlib.import_module(name)
+    except ModuleNotFoundError:
+        return None
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def end_headers(self) -> None:
+        # The shell's HTML names the versioned assets. A cached index.html
+        # otherwise pins an old panel version after a deploy.
+        if self.path.split("?", 1)[0] in ("/", "/index.html"):
+            self.send_header("cache-control", "no-store")
+        super().end_headers()
 
     def _upstream_headers(self, *, content_type: str | None = None) -> dict:
         headers = {"content-type": content_type or self.headers.get(
@@ -441,12 +462,20 @@ class Handler(SimpleHTTPRequestHandler):
     def _suggestions_get(self) -> None:
         try:
             from urllib.parse import parse_qs, urlsplit
-            from harness.hive_build import suggestions
 
+            module = _optional_module("harness.hive_build.suggestions")
+            if module is None:
+                self._send_json({
+                    "suggestions": [],
+                    "summary": {"total": 0, "by_status": {}},
+                    "unavailable": "The planner package (harness.hive_build) "
+                                   "is not installed; suggestions are unavailable.",
+                })
+                return
             query = parse_qs(urlsplit(self.path).query)
             limit = int(query.get("limit", ["50"])[0])
-            rows = suggestions.list(limit=limit)
-            self._send_json({"suggestions": rows, "summary": suggestions.summary()})
+            rows = module.list(limit=limit)
+            self._send_json({"suggestions": rows, "summary": module.summary()})
         except (TypeError, ValueError) as exc:
             self._send_json({"error": str(exc)}, 400)
         except Exception as exc:  # noqa: BLE001
@@ -454,9 +483,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _suggestions_post(self) -> None:
         try:
-            from harness.hive_build import suggestions
-
-            record = suggestions.add(self._read_json())
+            module = _optional_module("harness.hive_build.suggestions")
+            if module is None:
+                self._send_json({
+                    "error": "The planner package (harness.hive_build) is not "
+                             "installed; suggestions are unavailable.",
+                }, 503)
+                return
+            record = module.add(self._read_json())
             self._send_json({"ok": True, "suggestion": record}, 201)
         except (TypeError, ValueError) as exc:
             self._send_json({"error": str(exc)}, 400)
@@ -465,10 +499,15 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _suggestion_status_patch(self, suggestion_id: str) -> None:
         try:
-            from harness.hive_build import suggestions
-
+            module = _optional_module("harness.hive_build.suggestions")
+            if module is None:
+                self._send_json({
+                    "error": "The planner package (harness.hive_build) is not "
+                             "installed; suggestions are unavailable.",
+                }, 503)
+                return
             payload = self._read_json()
-            record = suggestions.set_status(suggestion_id, payload.get("status"))
+            record = module.set_status(suggestion_id, payload.get("status"))
             self._send_json({"ok": True, "suggestion": record})
         except KeyError as exc:
             self._send_json({"error": str(exc)}, 404)
@@ -480,7 +519,18 @@ class Handler(SimpleHTTPRequestHandler):
     def _placement_plan_post(self) -> None:
         try:
             from math import isfinite
-            from harness.hive_build.placement import Device, plan_roles
+
+            module = _optional_module("harness.hive_build.placement")
+            if module is None:
+                self._send_json({
+                    "unavailable": "The placement planner (harness.hive_build) "
+                                   "is not installed; saving is disabled.",
+                    "plans": [],
+                    "summary": {"total": 0, "ok": 0, "warn": 0, "blocked": 0},
+                })
+                return
+            Device = module.Device
+            plan_roles = module.plan_roles
 
             payload = self._read_json()
             if not isinstance(payload, dict):

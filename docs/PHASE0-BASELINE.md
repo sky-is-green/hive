@@ -12,7 +12,7 @@ must preserve.
 | `hive version` | 79–151 ms, 32,296 KB peak RSS |
 | `import harness.app` | 327 ms, 65,312 KB peak RSS |
 | `import torch` | 862 ms |
-| unit suite | 1,506 passed, 39 skipped, ~105 s |
+| unit + integration suite | 1,644 passed, 42 skipped, 222 s (unit-only: 1,506 / 39, 105 s) |
 | cascade per item | 8.9–9.2 s |
 | execution checker | 0.23 ms median |
 | tracked Python | 131,539 LOC before Phase 0 |

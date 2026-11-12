@@ -328,8 +328,8 @@ the same dashboard as `hive tui`; the TUI's `w` key opens a **running**
 console in the browser and tells you to run `hive ui web` if it is not
 running. Press `a` in
 the TUI to open pending tool approvals: `o` allows once, `s` allows the
-session, `g` allows always (global), `d` denies, and `r` refreshes. The web
-Studio's Global tab carries a copyable `hive ui terminal` command. The pros and
+session, `g` allows always (global), `d` denies, and `r` refreshes.
+`hive ui status` reports both surfaces and the switch commands. The pros and
 cons of each surface are in the [interface chapter](book/01-working-modes.md).
 
 ```bash

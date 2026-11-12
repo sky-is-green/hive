@@ -213,10 +213,10 @@ way to know which one you have is to wire them and then measure.
 
 | | |
 |---|---|
-| the console | Home, Settings, Global, Cascade, and a "More tools" group (Agent, Engines, Local library, Providers, Hub, Inspector, Training) |
+| the console | the `:8170` shell: Setup, Chat (Direct / Splinter / Agent / A-B), Inspector, Roles, Benchmark, Routing, Judge, Risk & Approvals, Activity, Engines, Providers, Lifecycle, Processes, Sandbox, Settings, Training, Runs, Suggestions, Presets, Models; Cascade and API docs are rail links |
 | the chat | Splinter mode (one curated reply) or Agent mode (the tool loop); the reply says who produced it |
 | the launch panel | llama.cpp or Strata, per engine, from the profiles; stop closes the connection so the *engine* stops; unload gives the VRAM back and retires the orphans |
-| the cascade console | every runner knob in one form, with the Global tab's Quality block as its starting values |
+| the cascade console | every runner knob in one form, with the Settings page's quality defaults as its starting values |
 | the harvest | every turn (the query, the reply, the curation that was used) written to a jsonl, off by default - this is the data the encoder is trained on |
 
 ### Answer quality reporting and API escalation

@@ -61,14 +61,10 @@ Mirrors `POST /v1/protocol/run`: a directory under `runs_root` with
 
 ## UI
 
-- The `Training` tab lives in the console's **"More tools" group** (the
-  console's tab strip is Home / Settings / Cascade, then a collapsed group
-  with the rest).  Tabs can be **pinned**: a pinned tab moves up into the
-  always-visible row, so Training can sit next to Home if that is where you
-  work.
-- Its pane is rendered by `harness.reports.render_training_pane()`
-  (self-contained, wires its own click listener so the big tab script is
-  untouched).
+- The **Training** page is a page in the `:8170` shell, backed by
+  `harness/webui/training_panel.js`.
+- It calls `/v1/training/*`; launching is only from an explicit click, never
+  on mount.
 - Results appear in `/runs` and `/view/{run}` via `render_report_page`, which
   dispatches on `report["kind"] == "training"`.
 
