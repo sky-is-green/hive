@@ -1,0 +1,14 @@
+[package]
+name = "hive-models"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+memmap2.workspace = true
+serde_json.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

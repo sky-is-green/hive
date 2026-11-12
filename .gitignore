@@ -143,3 +143,6 @@ vendor/deepinfer/deepinfer/_so/
 vendor/deepinfer/csrc/*_hip.cpp
 vendor/deepinfer/csrc/graph_timer/*_hip.cpp
 vendor/deepinfer_amd/csrc/*_hip.cpp
+
+# Rust build output
+rust/target/

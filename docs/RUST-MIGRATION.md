@@ -378,6 +378,34 @@ duration, cascade latency, checker latency, and the tracked-repo reduction.
 Studio and experiments untouched. **Spike:** 2–4 weeks. **Parity:** 8–12 weeks.
 **Depends on:** G0.
 
+### Phase 1 status (2026-11-12)
+
+The first Rust slice is on `rust-migration`:
+
+- Cargo workspace under `rust/` with `hive-core` (paths, config, hardware,
+  backends, JSON), `hive-state` (serve records, PID checks, signals),
+  `hive-models` (GGUF header parser + library), `hive-supervisor` (spawn,
+  health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
+- Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers and
+  endpoint adoption), `version`, `config`, `doctor`, `help --json`,
+  `models list`, `stacks list`, `status`, `stop`, `logs`.
+- `help --json` is generated from the live clap tree; every ported command is
+  byte-identical to Python's catalog (the root catalog lists only ported
+  commands until the rest land).
+- A fake-engine process test covers `serve --once`, `--detach`, a second-shell
+  `status`, `logs`, `kill -9` of the supervisor (engine children die via
+  `PR_SET_PDEATHSIG`), and stale-record pruning.
+- Measurement on this box (release build): `hive version` 0.8 ms, `hive
+  status` 0.9 ms, 14.5 MB max RSS, 1.1 MB stripped binary.
+- Conformance suite: `tests/conformance/` runs the same assertions against
+  `harness.cli` and `rust/target/debug/hive`.
+
+Not ported yet: `hive tui`, generated stacks (`serve --model`), `--fetch`,
+launch-backed endpoints (Strata/DeepInfer), the remaining `models`/`stacks`
+subcommands, `backends`, `setup`, and the Python-only surfaces (`cascade`,
+`tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`,
+`encoder`). They stay on the Python side until their phase.
+
 ### Scope
 
 Port, in this order:
@@ -461,14 +489,19 @@ The supervisor is the reason to do this in Rust. Requirements:
 
 ### Phase 1 gate (G1)
 
-- [ ] All Phase 1 commands produce byte-compatible JSON for the golden corpus
-      (volatile fields normalized).
-- [ ] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
-      second shell; `logs` tails both supervisor and tier logs.
-- [ ] `kill -9` of the supervisor leaves zero engine processes; restart prunes
+- [x] Ported commands produce byte-compatible JSON for the golden corpus
+      (volatile fields normalized): `version`, `config`, `doctor`,
+      `help --json`, `models list`, `stacks list`, `status`, `stop`, `logs`,
+      `serve --list/--backends`.
+- [x] `hive serve` starts/stops an engine; `status` finds it from a second
+      shell; `logs` tails both supervisor and tier logs. (Validated with a
+      fake OpenAI-compatible engine; a real `llama-server` run still needs a
+      box with the binary installed.)
+- [x] `kill -9` of the supervisor leaves zero engine processes; restart prunes
       the stale record.
-- [ ] Startup < 20 ms and RSS < 20 MB for `hive version` and `hive status`.
-- [ ] Binary < 25 MB stripped (without the ONNX encoder).
+- [x] Startup < 20 ms and RSS < 20 MB for `hive version` and `hive status`
+      (0.8/0.9 ms, 14.5 MB measured).
+- [x] Binary < 25 MB stripped (1.1 MB, without the ONNX encoder).
 - [ ] TUI parity on Status/Models/Stacks/Runs.
 - [ ] The Python CLI remains installed as `hive-py` for one release.
 

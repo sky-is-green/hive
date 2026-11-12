@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, hive_test]
+    branches: [main, hive_test, rust-migration]
   pull_request:
   # Linux is the active platform. The Windows leg is manual-only until the
   # dedicated Windows review; it must not gate merges.
@@ -160,6 +160,22 @@ jobs:
           # run blocks in single quotes, so $VAR expansion never happens there.
           pip install -e splinter
           pip install -e ".[studio,eval,test]"
+
+      - name: Install Rust toolchain (Linux)
+        if: runner.os == 'Linux'
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Build and unit-test the Rust CLI (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cargo test --manifest-path rust/Cargo.toml
+          cargo build --manifest-path rust/Cargo.toml
+
+      - name: Run Rust CLI conformance (Linux)
+        if: runner.os == 'Linux'
+        env:
+          HIVE_RUST_BIN: ${{ github.workspace }}/rust/target/debug/hive
+        run: python -m pytest tests/conformance -q
 
       - name: Disk headroom
         shell: bash

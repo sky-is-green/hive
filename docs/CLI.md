@@ -45,6 +45,27 @@ suite's model downloads are not required.  An installed wheel keeps mutable
 state under `HIVE_HOME` (default `~/.hive`) instead of site-packages; a source
 checkout uses the repo.  `hive doctor` tells you what is missing.
 
+## Rust Phase 1 binary
+
+The `rust-migration` branch carries a Rust CLI and supervisor under `rust/`. It
+is not installed as `hive` yet; the Python console script above remains the
+default until G1 is complete.
+
+```bash
+cargo build --manifest-path rust/Cargo.toml
+./rust/target/debug/hive version --json
+./rust/target/debug/hive doctor --json
+./rust/target/debug/hive serve peer-2tier --detach
+./rust/target/debug/hive status
+```
+
+The ported commands are listed in `docs/RUST-MIGRATION.md`. The conformance
+suite runs the same assertions against both implementations:
+
+```bash
+python -m pytest tests/conformance -q
+```
+
 ## Help and the command catalog
 
 `hive --help` is the human index.  `hive help <command>` opens the same help as
