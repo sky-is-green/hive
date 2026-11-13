@@ -190,7 +190,16 @@ Severity:
 
 ## Phase 3 — memory and encoder
 
-No caveats recorded yet.
+| ID | Caveat | Severity | Status | Close when |
+|---|---|---|---|---|
+| P3-01 | The native ONNX encoder is built and parity-tested, but not integrated into the sidecar or daemon; the runtime still computes embeddings in Python. | blocker | open | The sidecar/daemon uses `hive-encoder` for embeddings and can run without torch/transformers/sentence-transformers. |
+| P3-02 | The memory core (`ContextStore`, hygiene, decay, dedup, drift, comb, assembly, budget selection) is still Python. | blocker | open | The Rust memory core matches P1–P11/28-task replays and is the default path. |
+| P3-03 | ONNX Runtime adds a 27 MB release binary and a `libstdc++` runtime dependency; the combined install size has not been measured against the Python/torch path. | should | open | Release packaging compares the two installs and accepts the smaller/leaner path. |
+| P3-04 | The encoder model is discovered from `HIVE_ENCODER_DIR`, `<repo>/models/encoder`, or the HF cache; it is not packaged or downloaded by Hive. | should | open | The encoder asset ships with the install or has a documented, checksummed fetch path. |
+| P3-05 | MC-dropout confidence and vocabulary boost are not ported; only raw embeddings are native. | should | open | The native scorer matches `UltraSmallDrone.score` including confidence/boost knobs. |
+| P3-06 | Bulk throughput is roughly at parity and varies by machine; the native advantage is startup/RSS and one-text latency. | minor | open | A stable benchmark gate records the accepted tradeoff. |
+| P3-07 | Only `paraphrase-MiniLM-L3-v2` is ONNX-validated; other `ultra_model` choices need their own export and parity corpus. | should | open | Supported encoders are listed with per-model parity tests. |
+| P3-08 | Native encoder tests require the HF model cache and Python sentence-transformers as the oracle; they skip otherwise. | minor | open | A frozen vector/golden corpus removes the Python oracle requirement. |
 
 ## Phase 4 — optional differentiators
 
@@ -207,6 +216,6 @@ No caveats recorded yet.
 | X-03 | JSON is the compatibility contract; human output/help text is approximate. | minor | open | Accepted or human snapshots are added. |
 | X-04 | No user-facing changelog or migration guide for the `hive` → Rust switch. | should | open | A migration note ships with the final switch. |
 | X-05 | No automated rollback from the Rust `hive` to `hive-py`. | should | open | The install/switch path documents or automates rollback. |
-| X-06 | The Python Studio/eval/memory surfaces stay Python by design. | intentional | open | Accepted as the Phase 3 boundary. |
+| X-06 | The Python Studio/eval surfaces stay Python by design; memory is the Phase 3 native target. | intentional | open | Accepted as the Phase 3 boundary. |
 | X-07 | Docs can drift as phases move; historical markers are not a substitute for a link audit. | minor | open | Pre-merge link/doc audit passes. |
 | X-08 | No structured audit/telemetry in the Rust supervisor yet. | intentional | open | Phase 2 adds tracing/audit where needed. |

@@ -756,13 +756,26 @@ Do this only if one of these is true:
 - Replay the P1–P11 fixtures and the 28-task cascade; compare reports.
 - Switch the default only after parity and an A/B with no quality regression.
 
+### Phase 3 status (2026-11-13)
+
+The encoder slice is in `rust/crates/hive-encoder`:
+
+- ONNX Runtime via `ort` + `tokenizers`; no Python process.
+- 1,000-text parity: min cosine **> 0.99999**, max abs error **< 1e-4**,
+  identical top-5 retrieval ids.
+- Release benchmark: 0.085 s cold load, 166 MB peak RSS, ~2× the Python
+  one-text-at-a-time rate; bulk throughput roughly parity. Details in
+  `docs/PHASE3-ENCODER.md`.
+- Not integrated into the sidecar/daemon yet; the memory core is still Python.
+
 ### Phase 3 gate (G3)
 
 - [ ] Install no longer needs torch/transformers/sentence-transformers for the
       default runtime.
-- [ ] Encoder parity within tolerance on the corpus.
+- [x] Encoder parity within tolerance on the corpus.
 - [ ] P1–P11 and the 28-task cascade match the reference.
-- [ ] Assembly latency not worse; RSS/install materially lower.
+- [ ] Assembly latency not worse; RSS/install materially lower (encoder slice
+      passes; memory core pending).
 - [ ] Python reference still reproducible from the same commit.
 
 ---
