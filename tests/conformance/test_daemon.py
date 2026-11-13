@@ -987,3 +987,63 @@ def test_runs_index_and_report_json(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=5)
+
+
+def test_hive_ui_detach_starts_the_daemon_and_console(tmp_path):
+    cli = Path(os.environ.get("HIVE_RUST_BIN", REPO / "rust" / "target" / "debug" / "hive"))
+    daemon = REPO / "rust" / "target" / "debug" / "hive-daemon"
+    if not cli.is_file() or not daemon.is_file():
+        pytest.skip("hive/hive-daemon binaries are not built")
+    port = _free_port()
+    env = {
+        **os.environ,
+        **_home(tmp_path),
+        "HIVE_PYTHON": sys.executable,
+        "HIVE_DAEMON_BIN": str(daemon),
+        "TZ": "UTC",
+    }
+    result = subprocess.run(
+        [
+            str(cli),
+            "ui",
+            "web",
+            "--detach",
+            "--no-open",
+            "--port",
+            str(port),
+            "--console-port",
+            str(port),
+        ],
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    deadline = time.time() + 20
+    health = {}
+    while time.time() < deadline:
+        try:
+            status, _, health = _request(port, "/health")
+            if status == 200 and health.get("ok") is True:
+                break
+        except OSError:
+            pass
+        time.sleep(0.1)
+    assert health.get("ok") is True, health
+    sidecar_pid = health["sidecar"]["pid"]
+    assert _alive(sidecar_pid)
+
+    status, headers, body = _raw_request(port, "/")
+    assert status == 200
+    assert headers["content-type"].startswith("text/html")
+    assert b"<html" in body.lower()
+
+    pidfile = tmp_path / "home" / "logs" / "daemon.pid"
+    daemon_pid = int(pidfile.read_text().strip())
+    os.kill(daemon_pid, 15)
+    deadline = time.time() + 15
+    while time.time() < deadline and (_alive(daemon_pid) or _alive(sidecar_pid)):
+        time.sleep(0.2)
+    assert not _alive(daemon_pid)
+    assert not _alive(sidecar_pid)

@@ -603,6 +603,10 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
+- **`hive ui`.** `hive ui status` reports the API and shell surfaces, `hive ui
+  terminal` opens the TUI, and `hive ui web` starts `hive-daemon` (foreground or
+  `--detach`, pidfile `logs/daemon.pid`). The Rust daemon serves the shell on
+  the API port, so `--console-port` is accepted for parity but ignored.
 - **Run bundles.** `GET /v1/runs` lists `runs/` newest-first with kind,
   `has_report`, and mtime; `GET /v1/report/{run}` returns `run_report.json`
   after path-traversal checks. The rendered `/view/*` and `/runs` HTML pages

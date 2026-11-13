@@ -5,6 +5,7 @@ mod models_cmd;
 mod probe;
 mod serve;
 mod stacks_cmd;
+mod ui;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -259,6 +260,44 @@ pub enum Command {
         /// directory of stack files (default: <repo>/stacks)
         #[arg(long)]
         stacks_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// switch between terminal and web interfaces
+    #[command(
+        long_about = "Use the terminal dashboard or the web Studio. With no mode, \
+                      report the web endpoint and the switch commands."
+    )]
+    Ui {
+        /// target interface (default: status)
+        #[arg(
+            value_parser = ["web", "terminal", "status"],
+            default_value = "status"
+        )]
+        mode: String,
+        /// web bind host (default 127.0.0.1)
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+        /// API port (default 8765)
+        #[arg(long, default_value_t = 8765)]
+        port: u16,
+        /// web console port (default 8170)
+        #[arg(long, default_value_t = 8170)]
+        console_port: u16,
+        /// start the web Studio in the background
+        #[arg(long)]
+        detach: bool,
+        /// do not open a browser
+        #[arg(long)]
+        no_open: bool,
+        /// start the Studio in model-free mock mode
+        #[arg(long)]
+        mock: bool,
+        /// studio state directory (passed through to the web UI)
+        #[arg(long)]
+        state_dir: Option<PathBuf>,
         /// machine-readable JSON on stdout
         #[arg(long)]
         json: bool,

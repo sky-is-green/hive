@@ -49,6 +49,8 @@ pub struct DaemonConfig {
     /// Spawn `python -m harness` on `sidecar_port` when no URL is configured.
     pub spawn_sidecar: bool,
     pub sidecar_port: u16,
+    /// Extra arguments passed to the managed `python -m harness` sidecar.
+    pub sidecar_args: Vec<String>,
     /// `harness/webui` root; `None` disables static console serving.
     pub webui: Option<PathBuf>,
     pub token: Option<String>,
@@ -69,6 +71,7 @@ impl DaemonConfig {
             sidecar_url: sidecar_url.filter(|url| !url.trim().is_empty()),
             spawn_sidecar: false,
             sidecar_port: 8766,
+            sidecar_args: Vec::new(),
             webui,
             token,
             paths,
@@ -168,6 +171,7 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
             models_dir: config.paths.models_dir.clone(),
             log_dir: config.paths.log_dir.clone(),
             port: config.sidecar_port,
+            extra_args: config.sidecar_args.clone(),
         };
         let sidecar = Arc::new(Sidecar::start(spec)?);
         config.sidecar_url = Some(sidecar.url().to_owned());

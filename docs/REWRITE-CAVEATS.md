@@ -150,7 +150,7 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P2-01 | The daemon now spawns and owns the Python sidecar, but it is still a standalone binary: `hive ui`/the console entry point does not start it. | should | open | The normal console entry point starts the daemon instead of Python uvicorn. |
+| P2-01 | The daemon now spawns and owns the Python sidecar, but it is still a standalone binary: `hive ui`/the console entry point does not start it. | should | fixed — `hive ui web` | The normal console entry point starts the daemon instead of Python uvicorn. |
 | P2-02 | Sidecar lifecycle is not implemented: no spawn, restart/backoff, version handshake, or drain on daemon shutdown. | should | fixed — managed sidecar | Sidecar start/stop/restart and a `/health` version handshake are covered by tests. |
 | P2-03 | `/v1/config` and `/v1/version` are new Rust routes with no Python counterpart or frozen golden contract. | should | open | Their schemas are frozen in the golden corpus and documented. |
 | P2-04 | `/health` returns 200 with `ok:false` when the sidecar is down; Python `/health` only reports sidecar liveness. | intentional | open | Accepted as daemon readiness semantics, or aligned with Python. |
@@ -180,6 +180,7 @@ Severity:
 | P2-28 | `GET /v1/models` (served model IDs from a provider endpoint) still proxies; the native server status covers loaded engines only. | should | open | The served-model listing reads native instances and provider records. |
 | P2-29 | Daemon hub tests use `HIVE_HF_API`/`HIVE_HF_BASE` overrides; production defaults are the public Hugging Face endpoints. | minor | open | The overrides are documented as test hooks, or the hub client is injectable without env. |
 | P2-30 | `/v1/runs` and `/v1/report/*` are native, but the rendered `/view/*` and `/runs` HTML pages still proxy to Python's report renderer. | should | open | The report renderer is native, or those pages are accepted as Python-only until the report group moves. |
+| P2-31 | `hive ui web` serves the console on the API port; `--console-port` is accepted for Python CLI parity but ignored. `--detach` writes `logs/daemon.pid`; there is no `hive ui stop` verb. | minor | open | The console can bind its historical port, or the divergence is documented and accepted. |
 
 
 ## Phase 3 — memory and encoder

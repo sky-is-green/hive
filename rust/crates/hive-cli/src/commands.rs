@@ -29,6 +29,29 @@ pub fn run(cli: Cli) -> ExitCode {
             }
         }
         Some(Command::Tui) => run_tui(&paths),
+        Some(Command::Ui {
+            mode,
+            host,
+            port,
+            console_port: _,
+            detach,
+            no_open,
+            mock,
+            state_dir,
+            json: as_json,
+        }) => crate::ui::run(
+            &paths,
+            crate::ui::Options {
+                mode,
+                host,
+                port,
+                detach,
+                no_open,
+                mock,
+                state_dir,
+                as_json,
+            },
+        ),
         Some(Command::Serve {
             stack,
             list,

@@ -1271,6 +1271,117 @@
       "prog": "hive config"
     },
     {
+      "arguments": [
+        {
+          "choices": [
+            "web",
+            "terminal",
+            "status"
+          ],
+          "default": "status",
+          "flags": [],
+          "help": "target interface (default: status)",
+          "kind": "argument",
+          "name": "mode",
+          "nargs": "?"
+        }
+      ],
+      "commands": [],
+      "description": "Use the terminal dashboard or the web Studio. With no mode, report the web endpoint and the switch commands.",
+      "name": "ui",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": "127.0.0.1",
+          "flags": [
+            "--host"
+          ],
+          "help": "web bind host (default 127.0.0.1)",
+          "kind": "option",
+          "name": "host"
+        },
+        {
+          "default": 8765,
+          "flags": [
+            "--port"
+          ],
+          "help": "API port (default 8765)",
+          "kind": "option",
+          "name": "port",
+          "type": "int"
+        },
+        {
+          "default": 8170,
+          "flags": [
+            "--console-port"
+          ],
+          "help": "web console port (default 8170)",
+          "kind": "option",
+          "name": "console_port",
+          "type": "int"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--detach"
+          ],
+          "help": "start the web Studio in the background",
+          "kind": "option",
+          "name": "detach",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--no-open"
+          ],
+          "help": "do not open a browser",
+          "kind": "option",
+          "name": "no_open",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--mock"
+          ],
+          "help": "start the Studio in model-free mock mode",
+          "kind": "option",
+          "name": "mock",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--state-dir"
+          ],
+          "help": "studio state directory (passed through to the web UI)",
+          "kind": "option",
+          "name": "state_dir"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive ui",
+      "prog": "hive ui"
+    },
+    {
       "arguments": [],
       "commands": [],
       "description": "Print Hive, Python, and platform versions.",

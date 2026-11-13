@@ -33,6 +33,9 @@ struct Args {
     /// do not serve the console shell
     #[arg(long)]
     no_webui: bool,
+    /// start the sidecar in model-free mock mode
+    #[arg(long)]
+    mock: bool,
 }
 
 #[tokio::main]
@@ -52,6 +55,9 @@ async fn main() -> ExitCode {
     }
     if args.no_webui {
         config.webui = None;
+    }
+    if args.mock {
+        config.sidecar_args.push("--mock".into());
     }
     match run(config).await {
         Ok(()) => ExitCode::SUCCESS,

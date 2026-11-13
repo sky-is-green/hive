@@ -422,6 +422,25 @@ def _normalize_paths(value, root: Path):
     return value
 
 
+def test_ui_status_json_matches(rust_bin, cli_env):
+    env, _ = cli_env
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    args = [
+        "ui",
+        "status",
+        "--port",
+        str(port),
+        "--console-port",
+        str(port),
+        "--json",
+    ]
+    py, rs = run_both(rust_bin, args, env)
+    assert py.returncode == rs.returncode == 0
+    assert parse_json(py) == parse_json(rs)
+
+
 def test_help_catalog_is_identical(rust_bin, cli_env):
     env, _ = cli_env
     for topic in (

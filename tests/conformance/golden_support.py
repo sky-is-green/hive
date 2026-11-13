@@ -178,6 +178,7 @@ RUST_COMMANDS = {
     "setup",
     "doctor",
     "config",
+    "ui",
     "version",
     "help",
 }
