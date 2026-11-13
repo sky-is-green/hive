@@ -30,6 +30,7 @@ def _binary(name: str) -> Path:
 
 
 def _normalize_store(payload: dict) -> dict:
+    payload["ingest_block_prefixes"] = []
     for chunk in payload.get("chunks", []):
         chunk["timestamp"] = ""
     return payload
@@ -391,3 +392,76 @@ def test_context_assembly_matches_python(tmp_path):
     assert actual["token_count"] == expected.token_count
     assert actual["budget"] == expected.budget
     assert actual["drift_detected"] == expected.drift_detected
+
+
+def test_codec_repair_matches_python():
+    if str(SPLINTER) not in sys.path:
+        sys.path.insert(0, str(SPLINTER))
+    from retention.codec import normalize_codec
+
+    def misdecode(original: str, codec: str) -> str:
+        return original.encode("utf-8").decode(codec, errors="replace")
+
+    originals = [
+        "Fix applied — verified this round.",
+        "ingest → store → re-inject",
+        'He said "stop it" repeatedly.',
+        "© 2026 splinter",
+        "- item one\n• item two",
+        "GPU 状态: RX 7900 XTX — verified → ok",
+        "mâchoire rêve cœur",
+    ]
+    cases = []
+    for original in originals:
+        cases.append(original)
+        cases.append(misdecode(original, "cp1252"))
+        cases.append(misdecode(original, "latin-1"))
+        cases.append(misdecode(misdecode(original, "latin-1"), "cp1252"))
+    for text in cases:
+        result = subprocess.run(
+            [str(_binary("memory")), "codec", "--text", text, "--json"],
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        assert result.returncode == 0, result.stderr
+        actual = json.loads(result.stdout)["text"]
+        assert actual == normalize_codec(text), text
+        assert actual == normalize_codec(actual), text
+
+
+def test_hygiene_matches_python():
+    from retention.hygiene import DEFAULT_INGEST_BLOCK_PREFIXES, prepare_for_storage
+
+    boiler = DEFAULT_INGEST_BLOCK_PREFIXES[0]
+    cases = [
+        "",
+        "   \n  ",
+        boiler,
+        boiler + "\nReal question about the GPU.",
+        boiler + "\nkey: sk-abcdef1234567890abcdef ok",
+        "key: sk-abcdef1234567890abcdef",
+        "plain ascii text",
+    ]
+    for text in cases:
+        for sanitize in (True, False):
+            result = subprocess.run(
+                [
+                    str(_binary("memory")),
+                    "prepare",
+                    "--text",
+                    text,
+                    "--sanitize",
+                    "true" if sanitize else "false",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                timeout=30,
+            )
+            assert result.returncode == 0, (result.stderr, text)
+            actual = json.loads(result.stdout)["text"]
+            assert actual == prepare_for_storage(text, sanitize=sanitize), (
+                text,
+                sanitize,
+            )

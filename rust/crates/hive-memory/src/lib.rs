@@ -7,9 +7,11 @@
 
 pub mod assemble;
 pub mod budget;
+pub mod codec;
 pub mod comb;
 pub mod dedup;
 pub mod drift;
+pub mod hygiene;
 pub mod remembrance;
 pub mod vocab;
 
@@ -17,8 +19,6 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-
-const TRUNCATION_MARK: &str = "\n…[truncated]";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chunk {
@@ -75,8 +75,11 @@ impl Default for ContextStore {
             turn_index: BTreeMap::new(),
             max_chunks: None,
             sanitize: true,
-            max_chunk_chars: 4000,
-            ingest_block_prefixes: Vec::new(),
+            max_chunk_chars: hygiene::DEFAULT_MAX_CHUNK_CHARS,
+            ingest_block_prefixes: hygiene::default_ingest_block_prefixes()
+                .iter()
+                .map(|prefix| (*prefix).to_owned())
+                .collect(),
         }
     }
 }
@@ -129,30 +132,12 @@ impl ContextStore {
     }
 
     fn prepare(&self, text: &str) -> Option<String> {
-        if text.trim().is_empty() {
-            return None;
-        }
-        let mut out = text.to_owned();
-        if !self.ingest_block_prefixes.is_empty() {
-            let kept: Vec<&str> = out
-                .lines()
-                .filter(|line| {
-                    let stripped = line.trim_start();
-                    !self
-                        .ingest_block_prefixes
-                        .iter()
-                        .any(|prefix| stripped.starts_with(prefix))
-                })
-                .collect();
-            out = kept.join("\n");
-            if out.trim().is_empty() {
-                return None;
-            }
-        }
-        if self.sanitize && out.chars().count() > self.max_chunk_chars {
-            out = out.chars().take(self.max_chunk_chars).collect::<String>() + TRUNCATION_MARK;
-        }
-        Some(out)
+        hygiene::prepare_for_storage(
+            text,
+            self.max_chunk_chars,
+            &self.ingest_block_prefixes,
+            self.sanitize,
+        )
     }
 
     fn evict_overflow(&mut self) {

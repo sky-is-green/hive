@@ -935,6 +935,7 @@ version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
+ "encoding_rs",
  "hive-core",
  "hive-encoder",
  "md5",

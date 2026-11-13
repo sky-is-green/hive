@@ -81,14 +81,15 @@ exported and added to the parity corpus.
 
 - chunk storage, MD5 fingerprint dedup, turn indexing, LRU eviction;
 - `DecayMatrix` and cosine retrieval over native embeddings;
+- hygiene/codec repair (mojibake, boilerplate, secrets, length cap);
 - semantic dedup, topic drift, adaptive budget, remembrance, and the comb
   (JSONL surplus store with lexical recall);
 - native context assembly (without comb/remembrance wiring yet);
-- parity tests for store operations, dedup, drift, remembrance, and assembly
-  against Python.
+- parity tests for store operations, hygiene/codec, dedup, drift, remembrance,
+  and assembly against Python.
 
-Still Python: codec/hygiene normalization, comb/remembrance integration in the
-assembler, the P1–P11 replay, and making the native path the default.
+Still Python: comb/remembrance integration in the assembler, the P1–P11
+replay, and making the native path the default.
 
 ## Torch-free install
 

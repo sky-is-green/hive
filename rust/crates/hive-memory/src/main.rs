@@ -20,6 +20,22 @@ struct Args {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Repair legacy-codec mojibake
+    Codec {
+        #[arg(long, allow_hyphen_values = true)]
+        text: String,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Run the write-side hygiene pipeline
+    Prepare {
+        #[arg(long, allow_hyphen_values = true)]
+        text: String,
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+        sanitize: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Replay add/turn operations and print the resulting store
     Replay {
         #[arg(long)]
@@ -111,6 +127,46 @@ fn main() -> ExitCode {
 
 fn run(args: Args) -> Result<(), String> {
     match args.command {
+        Command::Codec {
+            text,
+            json: as_json,
+        } => {
+            let repaired = hive_memory::codec::normalize_codec(&text);
+            if as_json {
+                print!(
+                    "{}",
+                    hive_core::json::pretty(&serde_json::json!({"text": repaired}))
+                );
+            } else {
+                println!("{repaired}");
+            }
+            Ok(())
+        }
+        Command::Prepare {
+            text,
+            sanitize,
+            json: as_json,
+        } => {
+            let prefixes: Vec<String> = hive_memory::hygiene::default_ingest_block_prefixes()
+                .iter()
+                .map(|prefix| (*prefix).to_owned())
+                .collect();
+            let prepared = hive_memory::hygiene::prepare_for_storage(
+                &text,
+                hive_memory::hygiene::DEFAULT_MAX_CHUNK_CHARS,
+                &prefixes,
+                sanitize,
+            );
+            if as_json {
+                print!(
+                    "{}",
+                    hive_core::json::pretty(&serde_json::json!({"text": prepared}))
+                );
+            } else {
+                println!("{}", prepared.unwrap_or_default());
+            }
+            Ok(())
+        }
         Command::Replay {
             file,
             json: as_json,
