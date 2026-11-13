@@ -10,34 +10,76 @@ use std::time::{Duration, Instant};
 use crate::paths::{Paths, expand};
 
 /// `HIVE_PYTHON`, then the active virtualenv, then the checkout venv, then PATH.
+///
+/// Reporting commands use this forgiving form. Processes that cannot run
+/// without Python must use [`resolve`]: a set-but-unusable `HIVE_PYTHON` is an
+/// operator error, not an invitation to silently pick a different interpreter.
 pub fn find(paths: &Paths) -> PathBuf {
+    resolve(paths).unwrap_or_else(|_| PathBuf::from("python3"))
+}
+
+/// Resolve an interpreter or explain why the configured one cannot be used.
+///
+/// Unlike [`find`], a present `HIVE_PYTHON` is authoritative: if it is missing,
+/// not a file, or not executable, that is an error. The same applies to an
+/// explicitly set, unusable `VIRTUAL_ENV`.
+pub fn resolve(paths: &Paths) -> Result<PathBuf, String> {
     if let Some(raw) = env::var_os("HIVE_PYTHON") {
-        let candidate = expand(Path::new(&raw));
-        if candidate.is_file() {
-            return candidate;
+        let text = raw.to_string_lossy();
+        if text.trim().is_empty() {
+            return Err("HIVE_PYTHON is set but empty".to_owned());
         }
+        let candidate = expand(Path::new(&raw));
+        if usable(&candidate) {
+            return Ok(candidate);
+        }
+        return Err(format!(
+            "HIVE_PYTHON points at {}, which is not an executable file",
+            candidate.display()
+        ));
     }
     if let Some(raw) = env::var_os("VIRTUAL_ENV") {
         let candidate = PathBuf::from(raw).join("bin/python");
-        if candidate.is_file() {
-            return candidate;
+        if usable(&candidate) {
+            return Ok(candidate);
         }
+        return Err(format!(
+            "VIRTUAL_ENV is set but {} is not an executable file; set HIVE_PYTHON or unset VIRTUAL_ENV",
+            candidate.display()
+        ));
     }
     for root in [Some(paths.repo.as_path()), Some(paths.home.as_path())]
         .into_iter()
         .flatten()
     {
         let candidate = root.join(".venv/bin/python");
-        if candidate.is_file() {
-            return candidate;
+        if usable(&candidate) {
+            return Ok(candidate);
         }
     }
     for name in ["python3", "python"] {
         if let Some(found) = which(name) {
-            return found;
+            return Ok(found);
         }
     }
-    PathBuf::from("python3")
+    Err("no Python interpreter found; set HIVE_PYTHON".to_owned())
+}
+
+fn usable(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::metadata(path)
+            .map(|meta| meta.permissions().mode() & 0o111 != 0)
+            .unwrap_or(false)
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
 }
 
 /// `platform.python_version()`, or a best-effort fallback.

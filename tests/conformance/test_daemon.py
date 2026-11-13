@@ -10,6 +10,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
@@ -139,23 +140,37 @@ def _request(
         )
 
 
-def _start_daemon(sidecar_port: int, *, token: str | None = None) -> tuple[subprocess.Popen, int]:
+def _start_daemon(
+    *,
+    sidecar_url: str | None = None,
+    sidecar_port: int | None = None,
+    token: str | None = None,
+    env_extra: dict[str, str] | None = None,
+) -> tuple[subprocess.Popen, int]:
+    """Start the daemon against an external sidecar, a managed one, or none."""
     port = _free_port()
     env = dict(os.environ)
     if token:
         env["HARNESS_TOKEN"] = token
     else:
         env.pop("HARNESS_TOKEN", None)
+    if env_extra:
+        env.update(env_extra)
+    args = [
+        str(_daemon_bin()),
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+    ]
+    if sidecar_url:
+        args += ["--sidecar-url", sidecar_url]
+    elif sidecar_port is not None:
+        args += ["--sidecar-port", str(sidecar_port)]
+    else:
+        args += ["--no-sidecar"]
     process = subprocess.Popen(
-        [
-            str(_daemon_bin()),
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-            "--sidecar-url",
-            f"http://127.0.0.1:{sidecar_port}",
-        ],
+        args,
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
@@ -177,16 +192,55 @@ def _start_daemon(sidecar_port: int, *, token: str | None = None) -> tuple[subpr
     raise AssertionError("daemon did not become ready")
 
 
+def _wait_health(
+    port: int,
+    *,
+    managed: bool | None = None,
+    pid_not: int | None = None,
+    timeout: float = 90,
+) -> dict:
+    deadline = time.time() + timeout
+    last: dict = {}
+    while time.time() < deadline:
+        status, _, payload = _request(port, "/health")
+        last = payload
+        assert status == 200
+        sidecar = payload.get("sidecar") or {}
+        if payload.get("ok") is True:
+            if managed is not None and sidecar.get("managed") is not managed:
+                time.sleep(0.2)
+                continue
+            if pid_not is not None and sidecar.get("pid") == pid_not:
+                time.sleep(0.2)
+                continue
+            return payload
+        time.sleep(0.2)
+    raise AssertionError(f"sidecar did not become healthy: {last}")
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def test_group_one_routes_and_proxy_fallback():
     sidecar = _Sidecar()
     process = None
     try:
-        process, port = _start_daemon(sidecar.port)
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
 
         status, headers, payload = _request(port, "/health")
         assert status == 200
         assert headers["x-hive-owner"] == "rust"
-        assert payload == {"ok": True, "conversations": 7}
+        assert payload["ok"] is True
+        assert payload["conversations"] == 7
+        assert payload["sidecar"]["managed"] is False
+        assert payload["sidecar"]["url"] == f"http://127.0.0.1:{sidecar.port}"
 
         status, headers, payload = _request(port, "/v1/setup/status")
         assert status == 410
@@ -245,7 +299,9 @@ def test_token_guard_and_sidecar_health():
     sidecar = _Sidecar()
     process = None
     try:
-        process, port = _start_daemon(sidecar.port, token="required")
+        process, port = _start_daemon(
+            sidecar_url=f"http://127.0.0.1:{sidecar.port}", token="required"
+        )
 
         status, _, payload = _request(port, "/health")
         assert status == 200
@@ -273,7 +329,7 @@ def test_token_guard_and_sidecar_health():
 def test_health_reports_a_dead_sidecar_without_failing_liveness():
     process = None
     try:
-        process, port = _start_daemon(_free_port())
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{_free_port()}")
         status, _, payload = _request(port, "/health")
         assert status == 200
         assert payload["ok"] is False
@@ -282,3 +338,89 @@ def test_health_reports_a_dead_sidecar_without_failing_liveness():
         if process is not None:
             process.terminate()
             process.wait(timeout=5)
+
+
+def test_managed_sidecar_starts_proxies_restarts_and_stops():
+    """The daemon owns a real FastAPI sidecar: start, proxy, restart, stop."""
+    process = None
+    first_pid = second_pid = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={"HIVE_PYTHON": sys.executable},
+        )
+        health = _wait_health(port, managed=True)
+        first_pid = health["sidecar"]["pid"]
+        assert isinstance(first_pid, int)
+        assert health["sidecar"]["url"].startswith("http://127.0.0.1:")
+        with urllib.request.urlopen(
+            f"{health['sidecar']['url']}/health", timeout=5
+        ) as response:
+            direct = json.loads(response.read())
+        assert direct["service"] == "hive-sidecar"
+        assert direct["version"]
+
+        status, headers, payload = _request(port, "/v1/commands")
+        assert status == 200
+        assert headers["x-hive-owner"] == "python"
+        assert payload["commands"]
+
+        # Kill the sidecar; the supervisor must bring up a replacement.
+        os.kill(first_pid, 9)
+        health = _wait_health(port, managed=True, pid_not=first_pid)
+        second_pid = health["sidecar"]["pid"]
+        assert second_pid != first_pid
+        status, headers, payload = _request(port, "/v1/commands")
+        assert status == 200
+        assert headers["x-hive-owner"] == "python"
+
+        # Daemon shutdown stops the sidecar's process group.
+        process.terminate()
+        process.wait(timeout=20)
+        process = None
+        deadline = time.time() + 10
+        while time.time() < deadline and _alive(second_pid):
+            time.sleep(0.2)
+        assert not _alive(second_pid)
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=20)
+        for pid in (first_pid, second_pid):
+            if pid and _alive(pid):
+                try:
+                    os.kill(pid, 9)
+                except ProcessLookupError:
+                    pass
+                raise AssertionError(f"leaked sidecar pid {pid}")
+
+
+def test_managed_sidecar_rejects_an_unusable_HIVE_PYTHON():
+    port = _free_port()
+    env = dict(os.environ)
+    env["HIVE_PYTHON"] = "/nonexistent/hive-python"
+    process = subprocess.Popen(
+        [
+            str(_daemon_bin()),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+            "--sidecar-port",
+            "0",
+        ],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        code = process.wait(timeout=15)
+        error = process.stderr.read() if process.stderr else ""
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+    assert code != 0
+    assert "HIVE_PYTHON" in error
+    assert "not an executable file" in error

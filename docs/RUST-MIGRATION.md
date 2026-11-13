@@ -577,11 +577,19 @@ The first daemon slice is on `rust-migration`:
   method, path/query, headers, and body, and marks responses with
   `x-hive-owner: rust|python`.
 - `HARNESS_TOKEN`/`x-splinter-token` guards `/v1/*`; CORS is permissive for
-  this slice. The daemon expects an already-running sidecar; spawn/restart is
-  the next slice.
-- Tests: three daemon integration tests against a fake sidecar (native routes,
-  proxy method/body/header/status preservation, token guard, dead-sidecar
-  health), plus Rust route tests.
+  this slice.
+- **Managed sidecar.** With no `--sidecar-url`/`HIVE_SIDECAR_URL`, the daemon
+  resolves Python strictly (a set-but-unusable `HIVE_PYTHON` is a startup
+  error), starts `python -m harness --no-console --no-open` on a private
+  loopback port (`--sidecar-port`, 0 picks a free port), waits for `/health`
+  plus the `service`/`version` handshake, restarts it with 1s→30s backoff, and
+  stops its process group on daemon shutdown. `--no-sidecar` runs native routes
+  only; an explicit URL never spawns.
+- Tests: five daemon integration tests. The fake sidecar covers native routes
+  and proxy method/body/header/status/token preservation; the managed test
+  starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
+  observes a restart, then checks shutdown leaves no sidecar process. A final
+  test proves an unusable `HIVE_PYTHON` exits non-zero with a clear error.
 
 ### Route groups, in order
 

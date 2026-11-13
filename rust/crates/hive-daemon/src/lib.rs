@@ -26,13 +26,20 @@ use serde_json::{Map, Value};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
+pub mod sidecar;
+use sidecar::Sidecar;
+
 pub const OWNER_HEADER: &str = "x-hive-owner";
 
 #[derive(Clone)]
 pub struct DaemonConfig {
     pub host: String,
     pub port: u16,
+    /// An already-running sidecar. When set, the daemon never spawns one.
     pub sidecar_url: Option<String>,
+    /// Spawn `python -m harness` on `sidecar_port` when no URL is configured.
+    pub spawn_sidecar: bool,
+    pub sidecar_port: u16,
     pub token: Option<String>,
     pub paths: Paths,
 }
@@ -47,6 +54,8 @@ impl DaemonConfig {
             host: host.into(),
             port,
             sidecar_url: sidecar_url.filter(|url| !url.trim().is_empty()),
+            spawn_sidecar: false,
+            sidecar_port: 8766,
             token,
             paths: Paths::discover(None, None),
         }
@@ -56,20 +65,33 @@ impl DaemonConfig {
 pub struct AppState {
     pub config: DaemonConfig,
     client: reqwest::Client,
+    managed: Option<Arc<Sidecar>>,
 }
 
 impl AppState {
     pub fn new(config: DaemonConfig) -> Self {
+        Self::with_sidecar(config, None)
+    }
+
+    fn with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Self {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(300))
             .build()
             .unwrap_or_default();
-        Self { config, client }
+        Self {
+            config,
+            client,
+            managed,
+        }
     }
 }
 
 pub fn router(config: DaemonConfig) -> Router {
-    let state = Arc::new(AppState::new(config));
+    router_with_sidecar(config, None)
+}
+
+fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Router {
+    let state = Arc::new(AppState::with_sidecar(config, managed));
     Router::new()
         .route("/health", get(health))
         .route("/v1/setup/status", get(setup_status))
@@ -82,16 +104,44 @@ pub fn router(config: DaemonConfig) -> Router {
         .with_state(state)
 }
 
-pub async fn run(config: DaemonConfig) -> Result<(), String> {
+pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
     let bind = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&bind)
         .await
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
-    tracing::info!(%bind, sidecar = ?config.sidecar_url, "hive daemon listening");
-    axum::serve(listener, router(config))
+
+    let managed = if config.spawn_sidecar && config.sidecar_url.is_none() {
+        let python = python::resolve(&config.paths)?;
+        let spec = sidecar::SidecarSpec {
+            python,
+            repo: config.paths.repo.clone(),
+            state_dir: config.paths.state_dir.clone(),
+            models_dir: config.paths.models_dir.clone(),
+            log_dir: config.paths.log_dir.clone(),
+            port: config.sidecar_port,
+        };
+        let sidecar = Arc::new(Sidecar::start(spec)?);
+        config.sidecar_url = Some(sidecar.url().to_owned());
+        Some(sidecar)
+    } else {
+        None
+    };
+
+    tracing::info!(
+        %bind,
+        sidecar = ?config.sidecar_url,
+        managed = managed.is_some(),
+        "hive daemon listening"
+    );
+    let result = axum::serve(listener, router_with_sidecar(config, managed.clone()))
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string());
+    // Always take the sidecar down, including after a serve error.
+    if let Some(sidecar) = managed {
+        sidecar.shutdown().await;
+    }
+    result
 }
 
 async fn shutdown_signal() {
@@ -142,6 +192,17 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
     let mut payload = Map::new();
     payload.insert("ok".into(), Value::Bool(ok));
     payload.insert("conversations".into(), Value::from(conversations));
+    let mut sidecar = Map::new();
+    sidecar.insert("managed".into(), Value::Bool(state.managed.is_some()));
+    if let Some(url) = &state.config.sidecar_url {
+        sidecar.insert("url".into(), Value::String(url.clone()));
+    }
+    if let Some(managed) = &state.managed
+        && let Some(pid) = managed.pid().await
+    {
+        sidecar.insert("pid".into(), Value::from(pid));
+    }
+    payload.insert("sidecar".into(), Value::Object(sidecar));
     if let Some(error) = error {
         payload.insert("error".into(), Value::String(error));
     }

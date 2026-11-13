@@ -355,7 +355,11 @@ def test_health_reports_zero_conversations(client):
     c, _app = client
     r = c.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"ok": True, "conversations": 0}
+    body = r.json()
+    assert body["ok"] is True
+    assert body["conversations"] == 0
+    assert body["service"] == "hive-sidecar"
+    assert body["version"]
 
 
 def test_git_exclude_protection_is_idempotent(tmp_path):

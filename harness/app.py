@@ -1684,8 +1684,19 @@ def create_app(
 
     @app.get("/health")
     def health():
-        """Liveness probe: the sidecar is up."""
-        return {"ok": True, "conversations": len(st.hives)}
+        """Liveness probe plus the version the Rust daemon handshakes with."""
+        try:
+            from importlib.metadata import version as _version
+
+            sidecar_version = _version("hivebench")
+        except Exception:  # noqa: BLE001 - source checkout without metadata
+            sidecar_version = "unknown"
+        return {
+            "ok": True,
+            "conversations": len(st.hives),
+            "service": "hive-sidecar",
+            "version": sidecar_version,
+        }
 
     @app.get("/v1/setup/status")
     def setup_status(context: int = 32768, dual: bool = False, vhdx: str | None = None, model_gb: float | None = None):

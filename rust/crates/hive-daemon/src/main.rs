@@ -4,6 +4,9 @@ use clap::Parser;
 use hive_daemon::{DaemonConfig, run};
 
 /// Hive Phase 2 daemon: native routes plus a Python sidecar proxy.
+///
+/// With no `--sidecar-url`, the daemon starts and supervises its own
+/// `python -m harness` sidecar using `HIVE_PYTHON`.
 #[derive(Debug, Parser)]
 #[command(name = "hive-daemon", version)]
 struct Args {
@@ -13,13 +16,16 @@ struct Args {
     /// public API port (default 8765)
     #[arg(long, default_value_t = 8765)]
     port: u16,
-    /// Python sidecar base URL (default HIVE_SIDECAR_URL or :8766)
-    #[arg(
-        long,
-        env = "HIVE_SIDECAR_URL",
-        default_value = "http://127.0.0.1:8766"
-    )]
-    sidecar_url: String,
+    /// use an already-running sidecar instead of spawning one
+    /// (default HIVE_SIDECAR_URL)
+    #[arg(long, env = "HIVE_SIDECAR_URL", conflicts_with = "no_sidecar")]
+    sidecar_url: Option<String>,
+    /// private loopback port for the managed sidecar; 0 picks a free port
+    #[arg(long, default_value_t = 8766)]
+    sidecar_port: u16,
+    /// do not spawn or proxy a sidecar (native routes only)
+    #[arg(long)]
+    no_sidecar: bool,
 }
 
 #[tokio::main]
@@ -31,7 +37,9 @@ async fn main() -> ExitCode {
         )
         .init();
     let args = Args::parse();
-    let config = DaemonConfig::new(args.host, args.port, Some(args.sidecar_url));
+    let mut config = DaemonConfig::new(args.host, args.port, args.sidecar_url);
+    config.spawn_sidecar = config.sidecar_url.is_none() && !args.no_sidecar;
+    config.sidecar_port = args.sidecar_port;
     match run(config).await {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

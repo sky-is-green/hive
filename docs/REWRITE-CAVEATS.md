@@ -63,7 +63,7 @@ Severity:
 | P1-03 | Python-only verbs (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`) are not proxied by Rust. | blocker | open | Phase 2 proxy covers them, or they are explicitly accepted as Python-only. |
 | P1-04 | Root `hive help --json` lists only ported commands. | intentional | open | P1-03 lands, or the subset is accepted. |
 | P1-05 | There is no installable Rust release artifact, signed binary, or package-manager story. | blocker | open | `cargo build --release` is wrapped in a documented install/release path. |
-| P1-06 | Rust Python discovery is heuristic (`HIVE_PYTHON`, `VIRTUAL_ENV`, checkout `.venv`, PATH). Decision: reuse `HIVE_PYTHON` as the explicit sidecar contract; discovery is only a development fallback. | should | accepted — use existing `HIVE_PYTHON` | Phase 2 daemon reads `HIVE_PYTHON` first and fails clearly when it names a missing/unusable interpreter. |
+| P1-06 | Rust Python discovery is heuristic (`HIVE_PYTHON`, `VIRTUAL_ENV`, checkout `.venv`, PATH). Decision: reuse `HIVE_PYTHON` as the explicit sidecar contract; discovery is only a development fallback. | should | fixed — strict sidecar resolve | Phase 2 daemon reads `HIVE_PYTHON` first and fails clearly when it names a missing/unusable interpreter. |
 | P1-07 | `hive version --json` takes ~21 ms because it spawns Python; plain `version`/`status` meet the 20 ms budget. | minor | open | Cache the Python version or accept the JSON-only cost. |
 | P1-08 | Human output and clap help text are not byte-identical to argparse; JSON is the compatibility contract. | minor | open | Accepted, or human output is snapshotted. |
 | P1-09 | No shell completions or man pages. | minor | open | Completions/man pages are generated. |
@@ -151,8 +151,8 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P2-01 | The daemon is a standalone binary; it is not wired into `hive ui`/the console, and it does not spawn the Python sidecar. | should | open | The daemon starts/owns the sidecar and is reachable from the normal console entry point. |
-| P2-02 | Sidecar lifecycle is not implemented: no spawn, restart/backoff, version handshake, or drain on daemon shutdown. | should | open | Sidecar start/stop/restart and a `/health` version handshake are covered by tests. |
+| P2-01 | The daemon now spawns and owns the Python sidecar, but it is still a standalone binary: `hive ui`/the console entry point does not start it. | should | open | The normal console entry point starts the daemon instead of Python uvicorn. |
+| P2-02 | Sidecar lifecycle is not implemented: no spawn, restart/backoff, version handshake, or drain on daemon shutdown. | should | fixed — managed sidecar | Sidecar start/stop/restart and a `/health` version handshake are covered by tests. |
 | P2-03 | `/v1/config` and `/v1/version` are new Rust routes with no Python counterpart or frozen golden contract. | should | open | Their schemas are frozen in the golden corpus and documented. |
 | P2-04 | `/health` returns 200 with `ok:false` when the sidecar is down; Python `/health` only reports sidecar liveness. | intentional | open | Accepted as daemon readiness semantics, or aligned with Python. |
 | P2-05 | Auth is only the `HARNESS_TOKEN` env and a plain string compare; no config file, rotation, or constant-time compare. | should | open | Token source and comparison are hardened/documented. |
@@ -162,7 +162,7 @@ Severity:
 | P2-09 | No OpenAPI/TypeScript generation or generated client. | should | open | OpenAPI/TS output is part of CI. |
 | P2-10 | Every response carries the new `x-hive-owner` header; clients do not expect it. | minor | open | Accepted as harmless, or gated behind a debug/version flag. |
 | P2-11 | `/v1/setup/status` is 410 on Linux (matching Python's guard); the Windows proxy branch is untested. | deferred | open | Windows review resumes; the Linux 410 remains intentional. |
-| P2-12 | Proxy tests use a fake Python HTTP server, not the real FastAPI sidecar. | should | open | A conformance test starts the real `harness` sidecar and proxies a route. |
+| P2-12 | Proxy tests use a fake Python HTTP server, not the real FastAPI sidecar. | should | fixed — managed-sidecar conformance | A conformance test starts the real `harness` sidecar and proxies a route. |
 | P2-13 | Daemon is loopback/HTTP only; no TLS or remote-bind hardening. | intentional | open | Remote/TLS deployment becomes a supported mode. |
 | P2-14 | No rate limits or request-size limits at the public port. | should | open | Limits are configured and tested. |
 | P2-15 | No packaging, systemd unit, or restart policy for `hive-daemon`. | should | open | Install/service packaging ships with the daemon. |
