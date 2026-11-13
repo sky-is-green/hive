@@ -565,9 +565,28 @@ memory and evaluation. **Estimated:** 3–6 months. **Depends on:** G1.
 - Flip the default only when the group's conformance tests pass.
 - Keep the existing `harness/webui/` frontend; serve it as static assets.
 
+### Phase 2 status (2026-11-13)
+
+The first daemon slice is on `rust-migration`:
+
+- New `hive-daemon` crate/binary. Native routes: `GET /health`,
+  `GET /v1/setup/status` (410 on Linux, matching the Python Windows guard),
+  `GET /v1/version`, `GET /v1/config`.
+- Every other path is streamed to the Python sidecar at `--sidecar-url` /
+  `HIVE_SIDECAR_URL` (default `http://127.0.0.1:8766`). The proxy preserves
+  method, path/query, headers, and body, and marks responses with
+  `x-hive-owner: rust|python`.
+- `HARNESS_TOKEN`/`x-splinter-token` guards `/v1/*`; CORS is permissive for
+  this slice. The daemon expects an already-running sidecar; spawn/restart is
+  the next slice.
+- Tests: three daemon integration tests against a fake sidecar (native routes,
+  proxy method/body/header/status preservation, token guard, dead-sidecar
+  health), plus Rust route tests.
+
 ### Route groups, in order
 
-1. `health`, `setup/status`, `config`, `version`.
+1. [x] `health`, `setup/status`, `config`, `version` (daemon slice; fake sidecar
+   tested).
 2. `server/*` lifecycle and `stacks/*` (the supervisor already owns this).
 3. `models/*` library, hub, download.
 4. `runs/*`, `report/*`, static pages.

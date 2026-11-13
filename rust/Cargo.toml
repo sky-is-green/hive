@@ -6,6 +6,7 @@ members = [
     "crates/hive-models",
     "crates/hive-supervisor",
     "crates/hive-tui",
+    "crates/hive-daemon",
     "crates/hive-cli",
 ]
 
