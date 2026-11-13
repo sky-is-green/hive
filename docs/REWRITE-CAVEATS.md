@@ -31,7 +31,6 @@ Severity:
 - `P1-01` Rust is not the default `hive` yet.
 - `P1-03` Python-only verbs are not proxied.
 - `P1-05` No installable Rust release/package yet.
-- `P1-10` Real heavy Strata/DeepInfer engines have not been run through the Rust supervisor.
 - `P1-43` No frozen golden corpus; conformance depends on a live Python install.
 
 ---
@@ -64,7 +63,7 @@ Severity:
 | P1-03 | Python-only verbs (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`) are not proxied by Rust. | blocker | open | Phase 2 proxy covers them, or they are explicitly accepted as Python-only. |
 | P1-04 | Root `hive help --json` lists only ported commands. | intentional | open | P1-03 lands, or the subset is accepted. |
 | P1-05 | There is no installable Rust release artifact, signed binary, or package-manager story. | blocker | open | `cargo build --release` is wrapped in a documented install/release path. |
-| P1-06 | Rust Python discovery is heuristic (`HIVE_PYTHON`, `VIRTUAL_ENV`, checkout `.venv`, PATH) and may differ from the Python CLI's `sys.executable`. | should | open | `version`/`config`/`doctor` agree in wheel and checkout installs. |
+| P1-06 | Rust Python discovery is heuristic (`HIVE_PYTHON`, `VIRTUAL_ENV`, checkout `.venv`, PATH). Phase 2 should make the sidecar interpreter explicit (`HIVE_SIDECAR_PYTHON`/config), with discovery only as fallback. | should | open | `version`/`config`/`doctor` agree in wheel and checkout installs, and the daemon can name its sidecar interpreter. |
 | P1-07 | `hive version --json` takes ~21 ms because it spawns Python; plain `version`/`status` meet the 20 ms budget. | minor | open | Cache the Python version or accept the JSON-only cost. |
 | P1-08 | Human output and clap help text are not byte-identical to argparse; JSON is the compatibility contract. | minor | open | Accepted, or human output is snapshotted. |
 | P1-09 | No shell completions or man pages. | minor | open | Completions/man pages are generated. |
@@ -73,8 +72,8 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P1-10 | Managed Strata/DeepInfer launch tiers are tested with fake repos, not the real heavy engines. | blocker | open | At least one real Strata stack and the DeepInfer stack start, answer, and stop through Rust. |
-| P1-11 | A `kill -9` of the Rust supervisor may leave launch-tier grandchildren behind if the Python launcher ignores signals. | should | open | A real launch-tier kill -9 test leaves no engine processes. |
+| P1-10 | Managed Strata/DeepInfer launch tiers are fake-repo tested only. DeepInfer was a capability probe, not runtime support; Strata needs per-model support. | deferred | accepted — revisit when the real lanes return | A supported Strata model and the DeepInfer capability lane are run end-to-end; DeepInfer is not presented as supported runtime. |
+| P1-11 | A `kill -9` of the Rust supervisor may leave launch-tier grandchildren behind if the Python launcher ignores signals. | deferred | accepted — tied to P1-10 | Revisit with P1-10; a real launch-tier kill -9 test leaves no engine processes. |
 | P1-12 | No `drain_slots` wait before unload; a model killed mid-generation loses work. | should | open | Unload polls `/slots` with the Python timeout before SIGTERM. |
 | P1-13 | No log rotation or size cap for supervisor/engine logs. | minor | open | A size cap or rotation policy is implemented/accepted. |
 | P1-14 | Port allocation is check-then-spawn; a race can lose the port. | minor | open | A reservation/lock covers the spawn window, or the race is accepted. |
@@ -83,7 +82,7 @@ Severity:
 | P1-17 | `HARNESS_MEMORY_GUARD=0` bypass is not ported; Rust residency always runs when devices exist. | should | open | The env override is honored or explicitly rejected. |
 | P1-18 | Local engine health checks hardcode `127.0.0.1`; a non-loopback `--host` can fail. | minor | open | Health probes use the configured host/address. |
 | P1-19 | Serve records and error strings are not in the golden corpus; only selected fields are asserted. | minor | open | Serve records are snapshotted with volatile fields normalized. |
-| P1-20 | `stop --force` process-group behavior for launch tiers is not tested against a real engine tree. | should | open | A real launch-tier force-stop leaves no children. |
+| P1-20 | `stop --force` process-group behavior for launch tiers is not tested against a real engine tree. | deferred | accepted — tied to P1-10 | Revisit with P1-10; a real launch-tier force-stop leaves no children. |
 
 ### Hardware and residency
 
@@ -114,10 +113,10 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P1-36 | `parse_stack` does not fully validate `launch` blocks or the curated `engine_args` set. | should | open | Invalid launch/engine args are rejected like Python's schema. |
-| P1-37 | Endpoint URL validation is weaker (no host/netloc check). | minor | open | Endpoint URLs are parsed and validated like Python. |
+| P1-36 | `parse_stack` does not fully validate `launch` blocks or the curated `engine_args` set. | should | fixed 4c766dc | Invalid launch/engine args are rejected like Python's schema. |
+| P1-37 | Endpoint URL validation is weaker (no host/netloc check). | minor | fixed 4c766dc | Endpoint URLs are parsed and validated like Python. |
 | P1-38 | `stacks show` routing key order can differ; parsed JSON is equal. | minor | open | Ordered routing serialization or accepted as parsed-equal. |
-| P1-39 | `serve` passes `engine_args` through without the schema's allowed-flag check. | should | open | Same schema validation as P1-36 before spawn. |
+| P1-39 | `serve` passes `engine_args` through without the schema's allowed-flag check. | should | fixed 4c766dc | Same schema validation as P1-36 before spawn. |
 
 ### TUI
 

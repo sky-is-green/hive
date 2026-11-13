@@ -418,12 +418,11 @@ The first Rust slice is on `rust-migration`:
   desktop's share and a per-tier compute buffer. An over-budget stack is
   refused before any engine starts. A box with no visible GPU proceeds with a
   warning instead of refusing CPU serving.
-- Managed launch tiers are ported too: Strata config generation (`port`, ctx
-  flag, engine-arg span replacement, engine log, `options`) and the DeepInfer
-  facade path/PYTHONPATH, with the generated config under
-  `harness_state/<kind>/`. The fake-repo tests cover config generation, start,
-  health, detach/status/stop, and cleanup; the heavy real Strata/DeepInfer
-  engines still need a full load run on their own checkouts.
+- Managed launch tiers are ported as a capability path, not a support claim:
+  DeepInfer was a capability probe, and Strata needs per-model support. Config
+  generation, start, health, detach/status/stop, and cleanup are fake-repo
+  tested; the real engine lanes are deferred (see `P1-10` in the caveat
+  ledger).
 - Live engine test: llama.cpp b12329 CPU + SmolLM2-135M through `serve --once`,
   detached start, `/v1/models`, a chat completion, `status` probe, and stop.
   Run it with:
