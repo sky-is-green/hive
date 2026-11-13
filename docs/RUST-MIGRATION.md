@@ -648,7 +648,7 @@ The first daemon slice is on `rust-migration`:
   the Rust binary to these files without starting Python; fixture paths,
   interpreter versions, and the platform string are normalized. Regenerate with
   `tests/conformance/golden/generate.py` only for a reviewed contract change.
-- Tests: fifteen daemon integration tests. The fake sidecar covers native routes
+- Tests: twenty daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
   observes a restart, then checks shutdown leaves no sidecar process; a final
@@ -670,8 +670,10 @@ The first daemon slice is on `rust-migration`:
 4. [x] `runs/*`, `report/*`, static pages (runs index/report JSON native; rendered `/view` and `/runs` HTML still proxy).
 5. [x] `cascade/*` (thin proxy by design at first).
 6. [x] `splinter/*`, `openai/*`, `mcp` (sidecar until Phase 3).
-7. `tools/*`, `sandbox/*`, `web/*`, `browser/*` (gateway).
-8. `agent/*`, `activity/*`, `controller/*`, `training/*` (sidecar/proxy).
+7. [x] `tools/*`, `sandbox/*`, `web/*`, `browser/*` (proxied to the Python
+   gateway; the Rust policy engine is later work).
+8. [x] `agent/*`, `activity/*`, `controller/*`, `training/*` (proxied to the
+   Python runtime; agent/training stay sidecar until later phases).
 
 ### Daemon design
 
@@ -704,13 +706,17 @@ The first daemon slice is on `rust-migration`:
 - [ ] All route groups in Rust, with the sidecar used only for memory/eval.
   Groups 1–4 are native; 5–8 proxy by design because they are Python runtimes
   the staged plan keeps until Phase 3 (P2-37). The proxy boundary is smoke-
-  tested against the real sidecar (P2-38).
+  tested against the real sidecar, including cascade/tools/agent/sandbox
+  (P2-38). A revised G2 is the open decision.
 - [ ] OpenAPI/TS generation is part of CI; the frontend compiles against it.
   OpenAPI is native and merged (P2-09); TypeScript client generation is
   deferred because the console is vanilla JS (P2-35).
 - [ ] Studio end-to-end: load a model, chat, cascade run, stop, unload.
   Load/chat/stop/unload and provider/engine mirroring are tested live; cascade
   runs still depend on the Python sidecar's runtimes (P2-36).
+- [ ] Multi-model fleet and per-tier stop are covered live; the remaining
+  launch options (`auto_fit`, `embedding`, HF passthrough) are Python-only
+  (P2-20).
 - [x] Streaming cancellation closes the upstream connection.
 - [ ] Security/gateway conformance suite green.
 - [x] Sidecar absent: serve-only paths still work with a clear message
