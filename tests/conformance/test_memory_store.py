@@ -465,3 +465,93 @@ def test_hygiene_matches_python():
                 text,
                 sanitize,
             )
+
+
+def test_long_conversation_replay_matches_python(tmp_path):
+    """Replay real fixture turns through Python and native assembly."""
+    if str(SPLINTER) not in sys.path:
+        sys.path.insert(0, str(SPLINTER))
+    from cortex.routing import RoutingDecision
+    from focal.assembly import ContextAssembler
+    from focal.budget import AdaptiveBudget
+    from membrane.dedup import ContextDeduplicator
+    from membrane.drift import TopicDriftDetector
+    from retention.store import ContextStore
+    from sieve.ultra_small import UltraSmallDrone
+    from sieve.vocabulary import Vocabulary
+
+    fixture = REPO / "tests" / "fixtures" / "generated" / "long_001.json"
+    data = json.loads(fixture.read_text())
+    turns = data["turns"][:30]
+    drone = UltraSmallDrone(confidence_mode="off", vocab_boost=0.0)
+    vocab = Vocabulary.load("code", "general")
+    store = ContextStore(
+        embed_fn=drone.embed, sanitize=False, ingest_block_prefixes=[]
+    )
+
+    class StubRouter:
+        def route(self, _query, _history=None):
+            return RoutingDecision("ultra_small", 1.0, "replay")
+
+    assembler = ContextAssembler(collect_timings=False)
+    turn_number = 0
+    checked = 0
+    for item in turns:
+        content = str(item.get("content") or "")
+        if item.get("role") == "user":
+            turn_number += 1
+            if turn_number > 15:
+                break
+            expected = assembler.assemble(
+                query=content,
+                current_turn=turn_number,
+                store=store,
+                router=StubRouter(),
+                ultra_small=drone,
+                medium=None,
+                escalation=None,
+                dedup=ContextDeduplicator(vocab=vocab, threshold=0.92),
+                drift_detector=TopicDriftDetector(
+                    embed_fn=drone.embed, threshold=0.6
+                ),
+                budget=AdaptiveBudget(),
+                max_context=8192,
+                skip_remembrance=True,
+            )
+            rows = [
+                {
+                    "id": chunk.id,
+                    "content": chunk.content,
+                    "turn": chunk.turn,
+                    "decay_multiplier": chunk.decay_multiplier,
+                    "last_referenced_turn": chunk.last_referenced_turn,
+                }
+                for chunk in store.all_chunks()
+            ]
+            chunk_file = tmp_path / f"replay-{turn_number}.json"
+            chunk_file.write_text(json.dumps(rows))
+            result = subprocess.run(
+                [
+                    str(_binary("memory")),
+                    "assemble",
+                    "--chunks",
+                    str(chunk_file),
+                    "--query",
+                    content,
+                    "--current-turn",
+                    str(turn_number),
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                timeout=120,
+            )
+            assert result.returncode == 0, result.stderr
+            actual = json.loads(result.stdout)
+            assert actual["selected_ids"] == expected.selected_chunk_ids, turn_number
+            assert actual["content"] == expected.content, turn_number
+            assert actual["token_count"] == expected.token_count, turn_number
+            checked += 1
+        if content:
+            store.add_chunk(turn_number, content)
+    assert checked == 15

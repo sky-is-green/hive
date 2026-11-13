@@ -89,11 +89,13 @@ exported and added to the parity corpus.
   and assembly against Python.
 
 The daemon hosts the per-conversation memory API and the Python Splinter uses
-it with `HIVE_MEMORY_BACKEND=rust`; a five-turn conversation matches Python
-selection, content, and token counts.
+it by default whenever the managed native encoder is active
+(`HIVE_MEMORY_BACKEND=python` opts out). A five-turn conversation and a
+15-turn fixture replay match Python selection, content, and token counts.
 
-Still open: comb/remembrance integration in native assembly, the P1–P11
-replay, and making the native path the global default.
+Still open: comb/remembrance integration in native assembly (P3-11), the full
+P1–P11 / 28-task protocol replay (P3-12), and loopback assembly latency
+(P3-13, ~66 ms vs ~3 ms cached Python for 71 chunks).
 
 ## Torch-free install
 

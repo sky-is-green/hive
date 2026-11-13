@@ -366,15 +366,18 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
 
     let mut encoder = None;
-    let memory_backend = std::env::var("HIVE_MEMORY_BACKEND")
+    let embedding_rust = std::env::var("HARNESS_EMBEDDING_BACKEND")
         .map(|value| value.trim().eq_ignore_ascii_case("rust"))
         .unwrap_or(false);
+    let memory_setting = std::env::var("HIVE_MEMORY_BACKEND")
+        .map(|value| value.trim().to_ascii_lowercase())
+        .unwrap_or_default();
+    // The native runtime uses native memory by default whenever the managed
+    // encoder is active; `HIVE_MEMORY_BACKEND=python` opts back out.
+    let memory_backend = memory_setting != "python" && (memory_setting == "rust" || embedding_rust);
     if (config.spawn_sidecar || memory_backend)
         && config.sidecar_url.is_none()
-        && (memory_backend
-            || std::env::var("HARNESS_EMBEDDING_BACKEND")
-                .map(|value| value.trim().eq_ignore_ascii_case("rust"))
-                .unwrap_or(false))
+        && (memory_backend || embedding_rust)
         && std::env::var("HARNESS_EMBEDDING_URL")
             .map(|value| value.trim().is_empty())
             .unwrap_or(true)

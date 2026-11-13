@@ -23,6 +23,8 @@ pub struct MemoryManager {
     conversations: Mutex<HashMap<String, Conversation>>,
     vocab: Arc<Vocabulary>,
     encoder_url: Option<String>,
+    agent: ureq::Agent,
+    embeddings: Arc<Mutex<HashMap<String, Vec<f32>>>>,
 }
 
 impl MemoryManager {
@@ -35,6 +37,10 @@ impl MemoryManager {
             conversations: Mutex::new(HashMap::new()),
             vocab: Arc::new(vocab),
             encoder_url,
+            agent: ureq::AgentBuilder::new()
+                .timeout(std::time::Duration::from_secs(120))
+                .build(),
+            embeddings: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -157,7 +163,9 @@ impl MemoryManager {
             entry.store.clone()
         };
         let mut embedder = HttpEmbedder {
+            agent: self.agent.clone(),
             url: encoder_url.clone(),
+            cache: Arc::clone(&self.embeddings),
         };
         let options = AssembleOptions {
             route: route.to_owned(),
@@ -186,38 +194,59 @@ impl MemoryManager {
 }
 
 struct HttpEmbedder {
+    agent: ureq::Agent,
     url: String,
+    cache: Arc<Mutex<HashMap<String, Vec<f32>>>>,
 }
 
 impl Embedder for HttpEmbedder {
     fn encode(&mut self, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
-        let payload =
-            serde_json::to_string(&json!({"texts": texts})).map_err(|error| error.to_string())?;
-        let response = ureq::post(&format!("{}/encode", self.url.trim_end_matches('/')))
-            .set("content-type", "application/json")
-            .send_string(&payload)
-            .map_err(|error| format!("encoder request failed: {error}"))?;
-        let text = response
-            .into_string()
-            .map_err(|error| format!("cannot read encoder response: {error}"))?;
-        let payload: Value = serde_json::from_str(&text)
-            .map_err(|error| format!("invalid encoder response: {error}"))?;
-        let vectors = payload
-            .get("vectors")
-            .and_then(Value::as_array)
-            .ok_or_else(|| "encoder response has no vectors".to_owned())?;
-        vectors
+        let missing: Vec<String> = {
+            let cache = self.cache.lock().unwrap_or_else(|error| error.into_inner());
+            texts
+                .iter()
+                .filter(|text| !cache.contains_key(text.as_str()))
+                .cloned()
+                .collect()
+        };
+        if !missing.is_empty() {
+            let payload = serde_json::to_string(&json!({"texts": missing}))
+                .map_err(|error| error.to_string())?;
+            let response = self
+                .agent
+                .post(&format!("{}/encode", self.url.trim_end_matches('/')))
+                .set("content-type", "application/json")
+                .send_string(&payload)
+                .map_err(|error| format!("encoder request failed: {error}"))?;
+            let text = response
+                .into_string()
+                .map_err(|error| format!("cannot read encoder response: {error}"))?;
+            let payload: Value = serde_json::from_str(&text)
+                .map_err(|error| format!("invalid encoder response: {error}"))?;
+            let vectors = payload
+                .get("vectors")
+                .and_then(Value::as_array)
+                .ok_or_else(|| "encoder response has no vectors".to_owned())?;
+            let mut cache = self.cache.lock().unwrap_or_else(|error| error.into_inner());
+            for (text, row) in missing.iter().zip(vectors) {
+                let vector: Vec<f32> = row
+                    .as_array()
+                    .ok_or_else(|| "encoder vector is not an array".to_owned())?
+                    .iter()
+                    .filter_map(Value::as_f64)
+                    .map(|value| value as f32)
+                    .collect();
+                cache.insert(text.clone(), vector);
+            }
+        }
+        let cache = self.cache.lock().unwrap_or_else(|error| error.into_inner());
+        texts
             .iter()
-            .map(|row| {
-                row.as_array()
-                    .ok_or_else(|| "encoder vector is not an array".to_owned())
-                    .map(|items| {
-                        items
-                            .iter()
-                            .filter_map(Value::as_f64)
-                            .map(|value| value as f32)
-                            .collect()
-                    })
+            .map(|text| {
+                cache
+                    .get(text.as_str())
+                    .cloned()
+                    .ok_or_else(|| format!("encoder returned no vector for {text:?}"))
             })
             .collect()
     }

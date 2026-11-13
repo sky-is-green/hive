@@ -782,11 +782,12 @@ The encoder slice is in `rust/crates/hive-encoder`:
       default runtime: a 360 MB torch-free venv runs daemon + encoder + chat
       (P3-09).
 - [x] Encoder parity within tolerance on the corpus.
-- [ ] P1–P11 and the 28-task cascade match the reference; the native memory
-      core has component/fixture parity but is not the default path yet
-      (P3-02).
+- [ ] P1–P11 and the 28-task cascade match the reference. Native memory is the
+      default runtime path and has component + 15-turn fixture parity; the full
+      protocol replay is P3-12.
 - [ ] Assembly latency not worse; RSS/install materially lower. Encoder/install
-      pass; native assembly parity is tested, default-path benchmark pending.
+      pass; native memory assembly is ~66 ms vs ~3 ms cached Python for 71
+      chunks (P3-13).
 - [x] Python reference still reproducible from the same commit.
 
 ---
