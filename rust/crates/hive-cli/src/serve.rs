@@ -124,7 +124,13 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
     };
 
     if options.once {
-        print_status(&stack_name, &applied.tiers, options.as_json, &options.host);
+        print_status(
+            &stack_name,
+            &applied.tiers,
+            &applied.warnings,
+            options.as_json,
+            &options.host,
+        );
         applied.unload();
         if !options.as_json {
             println!("  unloaded");
@@ -472,17 +478,23 @@ fn detach(
     Ok(0)
 }
 
-fn print_status(stack: &str, tiers: &[Value], as_json: bool, host: &str) {
+fn print_status(stack: &str, tiers: &[Value], warnings: &[String], as_json: bool, host: &str) {
     if as_json {
         let mut payload = Map::new();
         payload.insert("ok".into(), Value::Bool(true));
         payload.insert("stack".into(), Value::String(stack.into()));
         payload.insert("tiers".into(), Value::Array(tiers.to_vec()));
-        payload.insert("warnings".into(), Value::Array(Vec::new()));
+        payload.insert(
+            "warnings".into(),
+            Value::Array(warnings.iter().cloned().map(Value::String).collect()),
+        );
         print!("{}", json::pretty(&Value::Object(payload)));
     } else {
         println!("stack {} applied", py_repr(stack));
         print_tiers(tiers, host);
+        for warning in warnings {
+            println!("  ! {warning}");
+        }
     }
 }
 

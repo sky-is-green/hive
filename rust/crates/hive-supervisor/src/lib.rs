@@ -8,6 +8,8 @@
 //! Engine children request `PR_SET_PDEATHSIG(SIGTERM)`, so `kill -9` of the
 //! supervisor does not leave a model process behind.
 
+pub mod residency;
+
 use std::collections::HashSet;
 use std::fs::OpenOptions;
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
@@ -32,6 +34,7 @@ pub struct Options {
 pub struct Applied {
     pub tiers: Vec<Value>,
     pub warnings: Vec<String>,
+    pub per_card: Vec<Value>,
     children: Vec<Engine>,
 }
 
@@ -162,9 +165,16 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
         .and_then(Value::as_str)
         .unwrap_or("stack")
         .to_owned();
+    let preflight = residency::preflight(stack, options)?;
+    let per_card: Vec<Value> = preflight
+        .per_card
+        .iter()
+        .map(residency::CardPlan::to_json)
+        .collect();
     let mut applied = Applied {
         tiers: Vec::new(),
-        warnings: Vec::new(),
+        warnings: preflight.warnings.clone(),
+        per_card: per_card.clone(),
         children: Vec::new(),
     };
     let mut busy: HashSet<u16> = HashSet::new();
@@ -196,7 +206,7 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
                     }
                     applied
                         .tiers
-                        .push(endpoint_tier_row(tier, &key, &endpoint, &health));
+                        .push(endpoint_tier_row(tier, &key, &endpoint, &health, &per_card));
                 }
                 Err(error) => {
                     if tier.get("launch").is_some() {
@@ -227,7 +237,9 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
             }
         };
         busy.insert(engine.port);
-        applied.tiers.push(local_tier_row(tier, &key, &engine));
+        applied
+            .tiers
+            .push(local_tier_row(tier, &key, &engine, &per_card));
         applied.children.push(engine);
     }
     Ok(applied)
@@ -323,7 +335,13 @@ fn probe_endpoint(endpoint: &str) -> Result<EngineHealth, String> {
     ))
 }
 
-fn endpoint_tier_row(tier: &Value, key: &str, endpoint: &str, health: &EngineHealth) -> Value {
+fn endpoint_tier_row(
+    tier: &Value,
+    key: &str,
+    endpoint: &str,
+    health: &EngineHealth,
+    per_card: &[Value],
+) -> Value {
     let role = tier.get("role").and_then(Value::as_str).unwrap_or("?");
     let ctx = health
         .max_context
@@ -371,11 +389,11 @@ fn endpoint_tier_row(tier: &Value, key: &str, endpoint: &str, health: &EngineHea
     );
     row.insert("managed".into(), Value::Bool(false));
     row.insert("pid".into(), Value::Null);
-    row.insert("per_card".into(), Value::Array(Vec::new()));
+    row.insert("per_card".into(), Value::Array(per_card.to_vec()));
     Value::Object(row)
 }
 
-fn local_tier_row(tier: &Value, key: &str, engine: &Engine) -> Value {
+fn local_tier_row(tier: &Value, key: &str, engine: &Engine, per_card: &[Value]) -> Value {
     let role = tier.get("role").and_then(Value::as_str).unwrap_or("?");
     let ctx = tier.get("ctx").and_then(Value::as_i64).unwrap_or(8192);
     let model = health_model(engine).unwrap_or_else(|| {
@@ -409,7 +427,7 @@ fn local_tier_row(tier: &Value, key: &str, engine: &Engine) -> Value {
     );
     row.insert("managed".into(), Value::Bool(false));
     row.insert("pid".into(), Value::from(engine.pid));
-    row.insert("per_card".into(), Value::Array(Vec::new()));
+    row.insert("per_card".into(), Value::Array(per_card.to_vec()));
     Value::Object(row)
 }
 

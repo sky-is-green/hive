@@ -6,9 +6,11 @@
 //! allocation. It mirrors `harness.models._read_gguf_metadata`.
 
 pub mod gguf;
+pub mod kv;
 pub mod library;
 pub mod ops;
 
 pub use gguf::read_metadata;
+pub use kv::KvEstimate;
 pub use library::Library;
 pub use ops::resolve_model;

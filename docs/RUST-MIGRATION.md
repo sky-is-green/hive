@@ -397,6 +397,15 @@ The first Rust slice is on `rust-migration`:
 - A fake-engine process test covers `serve --once`, `--detach`, a second-shell
   `status`, `logs`, `kill -9` of the supervisor (engine children die via
   `PR_SET_PDEATHSIG`), and stale-record pruning.
+- `serve` now runs the residency preflight before spawning: GGUF weights +
+  architecture-aware KV, split by `pin`/`ts`, against live VRAM after the
+  desktop's share and a per-tier compute buffer. An over-budget stack is
+  refused before any engine starts. A box with no visible GPU proceeds with a
+  warning instead of refusing CPU serving.
+- Live engine test: llama.cpp b12329 CPU + SmolLM2-135M through `serve --once`,
+  detached start, `/v1/models`, a chat completion, `status` probe, and stop.
+  Run it with:
+  `HIVE_LLAMA_SERVER=... HIVE_LIVE_MODEL=... python -m pytest tests/conformance/test_live_llama.py -q`.
 - Measurement on this box (release build): `hive version` 0.8 ms, `hive
   status` 0.9 ms, 14.5 MB max RSS, 1.1 MB stripped binary.
 - Conformance suite: `tests/conformance/` runs the same assertions against
@@ -497,10 +506,10 @@ The supervisor is the reason to do this in Rust. Requirements:
       `help --json`, `models list/dir/import/remove`,
       `stacks list/show/validate`, `status`, `stop`, `logs`,
       `serve --list/--backends`, `backends`/`backends list`; `tui` matches the
-      four-tab surface (no JSON form).- [x] `hive serve` starts/stops an engine; `status` finds it from a second
-      shell; `logs` tails both supervisor and tier logs. (Validated with a
-      fake OpenAI-compatible engine; a real `llama-server` run still needs a
-      box with the binary installed.)
+      four-tab surface (no JSON form).- [x] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
+      second shell; `logs` tails both supervisor and tier logs. (Live-tested
+      with llama.cpp b12329 CPU + SmolLM2-135M: detached start, `/v1/models`,
+      a chat completion, `status` probe, and a clean stop.)
 - [x] `kill -9` of the supervisor leaves zero engine processes; restart prunes
       the stale record.
 - [x] Startup < 20 ms and RSS < 20 MB for `hive version` and `hive status`
