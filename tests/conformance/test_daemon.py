@@ -87,6 +87,11 @@ class _Sidecar:
                     )
                 elif self.path == "/v1/status":
                     self._respond(418, {"detail": "teapot"})
+                elif self.path == "/v1/models":
+                    self._respond(
+                        200,
+                        {"base_url": "fake", "models": ["served"], "probe": None},
+                    )
                 elif self.path == "/v1/stream":
                     self.send_response(200)
                     self.send_header("content-type", "text/event-stream")
@@ -449,6 +454,10 @@ def test_group_one_routes_and_proxy_fallback():
         assert status == 418
         assert headers["x-hive-owner"] == "python"
         assert payload == {"detail": "teapot"}
+
+        status, _, payload = _request(port, "/v1/models")
+        assert status == 200
+        assert payload["models"] == ["served"]
 
         status, headers, _ = _request(port, "/v1/missing")
         assert status == 404
@@ -831,6 +840,8 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         assert engines["default"] == "local-smol"
         status, _, server = _request(port, "/v1/server/status")
         assert server["loaded_model"] == instance["model"]
+        status, _, served = _request(port, "/v1/models")
+        assert instance["model"] in served["models"]
 
         # A second model can coexist; stopping one leaves the other loaded.
         second = dict(launch, key="smol2")

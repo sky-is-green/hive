@@ -307,6 +307,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/server/stop", post(server_stop))
         .route("/v1/server/unload", post(server_unload))
         .route("/v1/server/unload-loaded", post(server_unload_loaded))
+        .route("/v1/models", get(served_models))
         .route(
             "/v1/models/local",
             get(local_models).delete(delete_local_model),
@@ -815,6 +816,20 @@ async fn server_unload_loaded(State(state): State<Arc<AppState>>) -> Response {
     state.mirror_provider_remove(&removed).await;
     state.mirror_engine_remove(&removed).await;
     runtime_json(Ok(result))
+}
+
+async fn served_models(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+    request: Request,
+) -> Response {
+    let probe = query
+        .get("probe")
+        .is_some_and(|value| value == "true" || value == "1");
+    if !probe && !state.runtime.keys().is_empty() {
+        return runtime_json(Ok(state.runtime.served_models()));
+    }
+    proxy(State(state), request).await
 }
 
 async fn local_models(State(state): State<Arc<AppState>>) -> Response {

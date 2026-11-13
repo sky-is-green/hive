@@ -597,6 +597,9 @@ The first daemon slice is on `rust-migration`:
   (matching Python); `/v1/server/start` adds one-tier fleets that coexist and
   stop individually. A keyed server stop also removes one tier from an applied
   stack without unloading the others.
+- **Served models.** `GET /v1/models` lists the native fleet when one is
+  loaded and falls back to the sidecar/provider listing when it is empty
+  (`probe=true` always proxies).
 - **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
   delete inside the model library; `POST /v1/models/local/path` switches and
   persists the library, `import-path` links an external folder (the library

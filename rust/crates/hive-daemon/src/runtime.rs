@@ -1000,6 +1000,27 @@ impl Runtime {
             .collect()
     }
 
+    pub fn served_models(&self) -> Value {
+        let loaded: Vec<Value> = self
+            .server_status()
+            .get("loaded")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let base_url = loaded
+            .first()
+            .and_then(|row| row.get("base_url"))
+            .and_then(Value::as_str)
+            .unwrap_or("http://localhost:1234")
+            .to_owned();
+        let models: Vec<Value> = loaded
+            .iter()
+            .filter_map(|row| row.get("model").and_then(Value::as_str))
+            .map(|model| Value::String(model.to_owned()))
+            .collect();
+        serde_json::json!({"base_url": base_url, "models": models, "probe": null})
+    }
+
     pub fn server_status(&self) -> Value {
         let (tiers, engines, started_at) = {
             let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
