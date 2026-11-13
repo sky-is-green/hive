@@ -148,7 +148,70 @@ impl AppState {
         .await;
     }
 
+    async fn mirror_engine_add(&self, instance: &Value) {
+        let Some(key) = instance.get("key").and_then(Value::as_str) else {
+            return;
+        };
+        let Some(port) = instance.get("port").and_then(Value::as_u64) else {
+            return;
+        };
+        self.mirror_engine(|engines, default| {
+            let name = format!("local-{key}");
+            engines
+                .retain(|engine| engine.get("name").and_then(Value::as_str) != Some(name.as_str()));
+            engines.push(serde_json::json!({
+                "name": name,
+                "kind": "llama_cpp",
+                "base_url": format!("http://127.0.0.1:{port}"),
+                "load_options": {"context": 8192, "gpu_layers": 999},
+                "capabilities": ["streaming", "prefix_caching"],
+            }));
+            *default = name;
+        })
+        .await;
+    }
+
+    async fn mirror_engine_remove(&self, keys: &[String]) {
+        if keys.is_empty() {
+            return;
+        }
+        let names: Vec<String> = keys.iter().map(|key| format!("local-{key}")).collect();
+        self.mirror_engine(move |engines, default| {
+            engines.retain(|engine| {
+                engine
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .is_none_or(|name| !names.iter().any(|remove| remove == name))
+            });
+            if names.iter().any(|name| name == default) {
+                *default = engines
+                    .first()
+                    .and_then(|engine| engine.get("name"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned();
+            }
+        })
+        .await;
+    }
+
     async fn mirror_provider<F>(&self, mutate: F)
+    where
+        F: FnOnce(&mut Vec<Value>, &mut String),
+    {
+        self.mirror_sidecar_config("/v1/provider/config", "providers", mutate)
+            .await;
+    }
+
+    async fn mirror_engine<F>(&self, mutate: F)
+    where
+        F: FnOnce(&mut Vec<Value>, &mut String),
+    {
+        self.mirror_sidecar_config("/v1/engines", "engines", mutate)
+            .await;
+    }
+
+    async fn mirror_sidecar_config<F>(&self, path: &str, field: &str, mutate: F)
     where
         F: FnOnce(&mut Vec<Value>, &mut String),
     {
@@ -156,7 +219,7 @@ impl AppState {
             return;
         };
         let token = self.config.token.as_deref().unwrap_or("");
-        let url = format!("{}/v1/provider/config", base.trim_end_matches('/'));
+        let url = format!("{}{}", base.trim_end_matches('/'), path);
         let mut request = self.client.get(&url);
         if !token.is_empty() {
             request = request.header("x-splinter-token", token);
@@ -170,8 +233,8 @@ impl AppState {
         let Ok(payload) = response.json::<Value>().await else {
             return;
         };
-        let mut providers = payload
-            .get("providers")
+        let mut items = payload
+            .get(field)
             .and_then(Value::as_array)
             .cloned()
             .unwrap_or_default();
@@ -180,13 +243,12 @@ impl AppState {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_owned();
-        mutate(&mut providers, &mut default);
-        let body = serde_json::json!({
-            "providers": providers,
-            "default": default,
-            "persist": false,
-        });
-        let mut request = self.client.post(&url).json(&body);
+        mutate(&mut items, &mut default);
+        let mut body = Map::new();
+        body.insert(field.into(), Value::Array(items));
+        body.insert("default".into(), Value::String(default));
+        body.insert("persist".into(), Value::Bool(false));
+        let mut request = self.client.post(&url).json(&Value::Object(body));
         if !token.is_empty() {
             request = request.header("x-splinter-token", token);
         }
@@ -194,11 +256,11 @@ impl AppState {
             Ok(response) if !response.status().is_success() => {
                 let status = response.status();
                 let body = response.text().await.unwrap_or_default();
-                tracing::warn!(%status, %body, "sidecar rejected the mirrored provider list");
+                tracing::warn!(%status, %body, path, "sidecar rejected the mirrored config");
             }
             Ok(_) => {}
             Err(error) => {
-                tracing::warn!("cannot mirror the provider list into the sidecar: {error}");
+                tracing::warn!(path, "cannot mirror config into the sidecar: {error}");
             }
         }
     }
@@ -686,6 +748,7 @@ async fn server_start(State(state): State<Arc<AppState>>, Json(body): Json<Value
     match state.runtime.start_server(&body).await {
         Ok(instance) => {
             state.mirror_provider_add(&instance).await;
+            state.mirror_engine_add(&instance).await;
             runtime_json(Ok(instance))
         }
         Err(error) => runtime_error(error),
@@ -704,6 +767,7 @@ async fn server_stop(
     let result = state.runtime.stop_server(key).await;
     if result.is_ok() {
         state.mirror_provider_remove(&removed).await;
+        state.mirror_engine_remove(&removed).await;
     }
     runtime_json(result)
 }
@@ -722,7 +786,9 @@ async fn server_unload(State(state): State<Arc<AppState>>, Json(body): Json<Valu
     };
     let result = state.runtime.unload_server(key).await;
     if result.is_ok() {
-        state.mirror_provider_remove(&[key.to_owned()]).await;
+        let removed = [key.to_owned()];
+        state.mirror_provider_remove(&removed).await;
+        state.mirror_engine_remove(&removed).await;
     }
     runtime_json(result)
 }
@@ -731,6 +797,7 @@ async fn server_unload_loaded(State(state): State<Arc<AppState>>) -> Response {
     let removed = state.runtime.keys();
     let result = state.runtime.unload_loaded().await;
     state.mirror_provider_remove(&removed).await;
+    state.mirror_engine_remove(&removed).await;
     runtime_json(Ok(result))
 }
 

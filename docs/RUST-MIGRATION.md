@@ -603,9 +603,10 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
-- **Provider mirror.** A native server start/stop updates the sidecar's
-  `local-<key>` provider list (and default) through `/v1/provider/config`, so
-  chat resolves the Rust-started engine. Engine profiles are not mirrored yet.
+- **Provider/engine mirror.** A native server start/stop updates the sidecar's
+  `local-<key>` provider and engine entries (and defaults) through
+  `/v1/provider/config` and `/v1/engines`, so chat and the engine picker both
+  resolve the Rust-started engine.
 - **Daemon golden contracts.** `tests/conformance/golden/daemon_version.json`
   and `daemon_config.json` freeze the native `/v1/version` and `/v1/config`
   payloads with paths/platform/python normalized.

@@ -785,6 +785,11 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         assert "local-smol" in mirrored
         assert mirrored["local-smol"]["base_url"] == f"http://127.0.0.1:{instance['port']}"
         assert providers["default"] == "local-smol"
+        status, _, engines = _request(port, "/v1/engines")
+        assert status == 200
+        engine_rows = {engine["name"]: engine for engine in engines["engines"]}
+        assert engine_rows["local-smol"]["kind"] == "llama_cpp"
+        assert engines["default"] == "local-smol"
         status, _, server = _request(port, "/v1/server/status")
         assert server["loaded_model"] == instance["model"]
 
@@ -807,6 +812,10 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         status, _, providers = _request(port, "/v1/provider/config")
         assert "local-smol" not in {
             provider["name"] for provider in providers["providers"]
+        }
+        status, _, engines = _request(port, "/v1/engines")
+        assert "local-smol" not in {
+            engine["name"] for engine in engines["engines"]
         }
         status, _, server = _request(port, "/v1/server/status")
         assert server["running"] is False
