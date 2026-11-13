@@ -154,9 +154,9 @@ Severity:
 | P2-02 | Sidecar lifecycle is not implemented: no spawn, restart/backoff, version handshake, or drain on daemon shutdown. | should | fixed — managed sidecar | Sidecar start/stop/restart and a `/health` version handshake are covered by tests. |
 | P2-03 | `/v1/config` and `/v1/version` are new Rust routes with no Python counterpart or frozen golden contract. | should | open | Their schemas are frozen in the golden corpus and documented. |
 | P2-04 | `/health` returns 200 with `ok:false` when the sidecar is down; Python `/health` only reports sidecar liveness. | intentional | open | Accepted as daemon readiness semantics, or aligned with Python. |
-| P2-05 | Auth is only the `HARNESS_TOKEN` env and a plain string compare; no config file, rotation, or constant-time compare. | should | open | Token source and comparison are hardened/documented. |
+| P2-05 | Auth is only the `HARNESS_TOKEN` env and a plain string compare; no config file, rotation, or constant-time compare. | should | fixed — constant-time compare, env-only source | Token source and comparison are hardened/documented. |
 | P2-06 | Proxy has no request IDs, body limits, or per-route timeout policy; blanket 300 s client timeout. | should | open | Middleware limits/timeouts/request IDs match the existing API contract. |
-| P2-07 | CORS is permissive; Python uses `_cors_origins()`. | should | open | CORS origins are read from the same config as Python. |
+| P2-07 | CORS is permissive; Python uses `_cors_origins()`. | should | fixed — HARNESS_CORS_ORIGINS parity | CORS origins are read from the same config as Python. |
 | P2-08 | The daemon serves `harness/webui/` now, but only the shell and `/api` → sidecar rewrite; the console's Python-only `/api` endpoints are still served by the Python console server. | should | open | All console `/api` endpoints are native or explicitly proxied, then Python's console thread can be retired. |
 | P2-09 | No OpenAPI/TypeScript generation or generated client. | should | open | OpenAPI/TS output is part of CI. |
 | P2-10 | Every response carries the new `x-hive-owner` header; clients do not expect it. | minor | open | Accepted as harmless, or gated behind a debug/version flag. |

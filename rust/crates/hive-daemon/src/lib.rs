@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use axum::body::Body;
@@ -27,7 +28,7 @@ use hive_core::paths::Paths;
 use hive_core::{platform_display, python, version};
 use percent_encoding::percent_decode_str;
 use serde_json::{Map, Value};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 pub mod runtime;
@@ -36,6 +37,8 @@ use runtime::{ApiError, Runtime};
 use sidecar::Sidecar;
 
 pub const OWNER_HEADER: &str = "x-hive-owner";
+pub const REQUEST_ID_HEADER: &str = "x-hive-request-id";
+static REQUEST_SEQ: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone)]
 pub struct DaemonConfig {
@@ -144,7 +147,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/models/hub/downloads", get(hub_downloads))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
-        .layer(CorsLayer::permissive())
+        .layer(middleware::from_fn(request_id))
+        .layer(cors_layer())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
@@ -209,6 +213,56 @@ async fn shutdown_signal() {
     }
 }
 
+fn cors_layer() -> CorsLayer {
+    let raw = std::env::var("HARNESS_CORS_ORIGINS").unwrap_or_default();
+    if raw.trim() == "*" {
+        return CorsLayer::permissive();
+    }
+    let values: Vec<HeaderValue> = if raw.trim().is_empty() {
+        [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8765",
+            "http://127.0.0.1:8765",
+        ]
+        .into_iter()
+        .filter_map(|origin| HeaderValue::from_str(origin).ok())
+        .collect()
+    } else {
+        raw.split(',')
+            .map(str::trim)
+            .filter(|origin| !origin.is_empty())
+            .filter_map(|origin| HeaderValue::from_str(origin).ok())
+            .collect()
+    };
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(values))
+        .allow_methods(Any)
+        .allow_headers(Any)
+}
+
+async fn request_id(request: Request, next: Next) -> Response {
+    let id = format!(
+        "{}-{}",
+        std::process::id(),
+        REQUEST_SEQ.fetch_add(1, Ordering::Relaxed)
+    );
+    let Ok(value) = HeaderValue::from_str(&id) else {
+        return next.run(request).await;
+    };
+    let mut request = request;
+    request
+        .headers_mut()
+        .insert(HeaderName::from_static(REQUEST_ID_HEADER), value.clone());
+    let mut response = next.run(request).await;
+    response
+        .headers_mut()
+        .insert(HeaderName::from_static(REQUEST_ID_HEADER), value);
+    response
+}
+
 async fn token_guard(State(state): State<Arc<AppState>>, request: Request, next: Next) -> Response {
     let required = state.config.token.as_deref();
     if let Some(required) = required
@@ -219,7 +273,7 @@ async fn token_guard(State(state): State<Arc<AppState>>, request: Request, next:
             .get("x-splinter-token")
             .and_then(|value| value.to_str().ok())
             .unwrap_or("");
-        if supplied != required {
+        if !token_matches(supplied, required) {
             return owned(
                 StatusCode::UNAUTHORIZED,
                 Json(serde_json::json!({"detail": "invalid or missing token"})).into_response(),
@@ -227,6 +281,19 @@ async fn token_guard(State(state): State<Arc<AppState>>, request: Request, next:
         }
     }
     next.run(request).await
+}
+
+fn token_matches(supplied: &str, required: &str) -> bool {
+    let supplied = supplied.as_bytes();
+    let required = required.as_bytes();
+    if supplied.len() != required.len() {
+        return false;
+    }
+    let mut difference = 0u8;
+    for (left, right) in supplied.iter().zip(required) {
+        difference |= left ^ right;
+    }
+    difference == 0
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

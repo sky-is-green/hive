@@ -57,6 +57,7 @@ class _Sidecar:
                         "path": self.path,
                         "body": "",
                         "token": self.headers.get("x-splinter-token", ""),
+                        "request_id": self.headers.get("x-hive-request-id", ""),
                     }
                 )
                 if self.path == "/health":
@@ -77,6 +78,7 @@ class _Sidecar:
                         "path": self.path,
                         "body": body,
                         "token": self.headers.get("x-splinter-token", ""),
+                        "request_id": self.headers.get("x-hive-request-id", ""),
                     }
                 )
                 self._respond(
@@ -86,6 +88,7 @@ class _Sidecar:
                         "path": self.path,
                         "body": body,
                         "token": self.headers.get("x-splinter-token", ""),
+                        "request_id": self.headers.get("x-hive-request-id", ""),
                     },
                 )
 
@@ -234,10 +237,12 @@ def _raw_request(
     *,
     method: str = "GET",
     body: bytes | None = None,
+    headers: dict[str, str] | None = None,
 ) -> tuple[int, dict, bytes]:
     request = urllib.request.Request(
         f"http://127.0.0.1:{port}{path}",
         data=body,
+        headers=headers or {},
         method=method,
     )
     try:
@@ -397,6 +402,7 @@ def test_group_one_routes_and_proxy_fallback():
         assert payload["path"] == "/v1/echo?x=1"
         assert payload["body"] == '{"hello": "world"}'
         assert payload["token"] == "s3cret"
+        assert headers["x-hive-request-id"] == payload["request_id"]
 
         status, headers, payload = _request(port, "/v1/status")
         assert status == 418
@@ -868,3 +874,38 @@ def test_local_library_and_hub_routes(tmp_path):
             process.terminate()
             process.wait(timeout=5)
         hub.close()
+
+
+def test_cors_defaults_are_not_wildcard():
+    sidecar = _Sidecar()
+    process = None
+    try:
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
+        status, headers, _ = _raw_request(
+            port,
+            "/v1/version",
+            method="OPTIONS",
+            headers={
+                "Origin": "http://evil.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert status in (200, 204)
+        assert "access-control-allow-origin" not in headers
+
+        status, headers, _ = _raw_request(
+            port,
+            "/v1/version",
+            method="OPTIONS",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert status in (200, 204)
+        assert headers["access-control-allow-origin"] == "http://localhost:5173"
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        sidecar.close()
