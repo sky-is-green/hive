@@ -1293,3 +1293,60 @@ def test_openapi_merges_native_and_sidecar_routes():
             process.terminate()
             process.wait(timeout=5)
         sidecar.close()
+
+
+def test_stop_one_tier_of_an_applied_stack(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the live stack test")
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+            }
+        )
+        tiers = [
+            {
+                "role": role,
+                "repo": "local",
+                "file": model,
+                "ctx": 512,
+                "ngl": 0,
+                "backend": "cpu",
+            }
+            for role in ("face", "worker")
+        ]
+        stack = {"name": "pair", "version": 1, "tiers": tiers, "routing": {}}
+        status, _, _ = _request(
+            port, "/v1/stacks/pair", method="PUT", body=json.dumps(stack).encode()
+        )
+        assert status == 200
+        status, _, payload = _request(
+            port, "/v1/stacks/pair/apply", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+        ports = {row["role"]: row["port"] for row in payload["tiers"]}
+        assert set(ports) == {"face", "worker"}
+        assert ports["face"] != ports["worker"]
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=pair-face", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+        status, _, stack_status = _request(port, "/v1/stacks/status")
+        assert stack_status["stack"] == "pair"
+        assert [row["role"] for row in stack_status["tiers"]] == ["worker"]
+
+        status, _, payload = _request(
+            port, "/v1/stacks/pair/unload", method="POST", body=b"{}"
+        )
+        assert status == 200
+        assert payload["unloaded"] == ["worker"]
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)

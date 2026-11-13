@@ -752,14 +752,42 @@ impl Runtime {
             let _guard = self.apply_lock.lock().await;
             let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
             if let Some(key) = key {
-                if let Some(index) = state
+                if state
                     .stack
                     .as_ref()
-                    .and_then(|stack| stack_matches(stack, key).then_some(0))
+                    .is_some_and(|stack| stack_matches(stack, key))
                 {
-                    let _ = index;
-                    StopAction::One(state.stack.take().expect("stack checked"))
-                } else if let Some(index) = state
+                    let mut stack = state.stack.take().expect("stack checked");
+                    drop(state);
+                    let key = key.to_owned();
+                    let (mut stack, stopped) = tokio::task::block_in_place(|| {
+                        let stopped = stack.applied.stop_role(&key);
+                        (stack, stopped)
+                    });
+                    if stopped {
+                        stack.tiers = stack.applied.tiers.clone();
+                        stack.engines = stack.applied.engines();
+                        self.state
+                            .lock()
+                            .unwrap_or_else(|error| error.into_inner())
+                            .stack = Some(stack);
+                        return Ok(serde_json::json!({
+                            "ok": true,
+                            "unloaded": key,
+                            "drained": false,
+                            "port_free": true,
+                        }));
+                    }
+                    self.state
+                        .lock()
+                        .unwrap_or_else(|error| error.into_inner())
+                        .stack = Some(stack);
+                    return Err(ApiError::new(
+                        404,
+                        format!("no such loaded instance: {key}"),
+                    ));
+                }
+                if let Some(index) = state
                     .fleet
                     .iter()
                     .position(|applied| stack_matches(applied, key))

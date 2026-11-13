@@ -97,6 +97,30 @@ impl Applied {
         terminate_all(&mut self.children);
     }
 
+    /// Stop one tier by its role or key, keeping the rest applied.
+    pub fn stop_role(&mut self, key: &str) -> bool {
+        let Some(index) = self.tiers.iter().position(|tier| {
+            tier.get("key").and_then(Value::as_str) == Some(key)
+                || tier.get("role").and_then(Value::as_str) == Some(key)
+        }) else {
+            return false;
+        };
+        let tier = self.tiers.remove(index);
+        let role = tier
+            .get("role")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        if let Some(index) = self.children.iter().position(|engine| engine.role == role) {
+            let engine = self.children.remove(index);
+            if engine.drain {
+                let _ = drain_engine(engine.port, Instant::now() + self.drain_timeout());
+            }
+            terminate_all(&mut vec![engine]);
+        }
+        true
+    }
+
     /// Stop every engine, returning whether each was seen idle before SIGTERM.
     pub fn unload_drained(mut self) -> bool {
         let drained = self.drain(self.drain_timeout());

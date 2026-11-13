@@ -595,7 +595,8 @@ The first daemon slice is on `rust-migration`:
   supervisor. `/v1/server/start|stop|unload|unload-loaded|status|log|memory|
   metrics|fit` share the same runtime. One saved stack is applied at a time
   (matching Python); `/v1/server/start` adds one-tier fleets that coexist and
-  stop individually.
+  stop individually. A keyed server stop also removes one tier from an applied
+  stack without unloading the others.
 - **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
   delete inside the model library; `POST /v1/models/local/path` switches and
   persists the library, and `import-path` links an external folder (the library
