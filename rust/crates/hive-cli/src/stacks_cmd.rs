@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use hive_core::backends::Manifest;
 use hive_core::json;
-use hive_core::paths::{Paths, expand};
+use hive_core::paths::{Paths, expand, expand_vars};
 use hive_core::py_repr;
 use hive_core::stacks::{check_stack_name, parse_stack, validate_shape};
 use hive_models::resolve_model;
@@ -280,54 +280,6 @@ fn row(role: &str, status: &str, detail: &str) -> Value {
     object.insert("status".into(), Value::String(status.into()));
     object.insert("detail".into(), Value::String(detail.into()));
     Value::Object(object)
-}
-
-/// Python's `os.path.expandvars` for the `$VAR`/`${VAR}` forms used in stacks.
-fn expand_vars(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    let mut chars = value.chars().peekable();
-    while let Some(ch) = chars.next() {
-        if ch != '$' {
-            out.push(ch);
-            continue;
-        }
-        if chars.peek() == Some(&'{') {
-            chars.next();
-            let mut name = String::new();
-            for next in chars.by_ref() {
-                if next == '}' {
-                    break;
-                }
-                name.push(next);
-            }
-            if let Some(value) = std::env::var_os(&name) {
-                out.push_str(&value.to_string_lossy());
-            } else {
-                out.push_str("${");
-                out.push_str(&name);
-                out.push('}');
-            }
-            continue;
-        }
-        let mut name = String::new();
-        while let Some(next) = chars.peek().copied() {
-            if next.is_ascii_alphanumeric() || next == '_' {
-                name.push(next);
-                chars.next();
-            } else {
-                break;
-            }
-        }
-        if name.is_empty() {
-            out.push('$');
-        } else if let Some(value) = std::env::var_os(&name) {
-            out.push_str(&value.to_string_lossy());
-        } else {
-            out.push('$');
-            out.push_str(&name);
-        }
-    }
-    out
 }
 
 fn load_stack(target: &str, stacks_dir: &Path) -> Result<Value, String> {

@@ -386,11 +386,11 @@ The first Rust slice is on `rust-migration`:
   backends, JSON), `hive-state` (serve records, PID checks, signals),
   `hive-models` (GGUF header parser + library), `hive-supervisor` (spawn,
   health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
-- Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers and
-  endpoint adoption), `tui` (four-tab ratatui dashboard), `version`, `config`,
-  `doctor`, `help --json`, `models list/dir/import/remove`,
-  `stacks list/show/validate`, `backends`/`backends list`, `status`, `stop`,
-  `logs`.
+- Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers,
+  endpoint adoption, and managed Strata/DeepInfer launch tiers), `tui` (four-tab
+  ratatui dashboard), `version`, `config`, `doctor`, `help --json`,
+  `models list/dir/import/remove`, `stacks list/show/validate`,
+  `backends`/`backends list`, `status`, `stop`, `logs`.
 - `help --json` is generated from the live clap tree; every ported command is
   byte-identical to Python's catalog (the root catalog lists only ported
   commands until the rest land).
@@ -402,6 +402,12 @@ The first Rust slice is on `rust-migration`:
   desktop's share and a per-tier compute buffer. An over-budget stack is
   refused before any engine starts. A box with no visible GPU proceeds with a
   warning instead of refusing CPU serving.
+- Managed launch tiers are ported too: Strata config generation (`port`, ctx
+  flag, engine-arg span replacement, engine log, `options`) and the DeepInfer
+  facade path/PYTHONPATH, with the generated config under
+  `harness_state/<kind>/`. The fake-repo tests cover config generation, start,
+  health, detach/status/stop, and cleanup; the heavy real Strata/DeepInfer
+  engines still need a full load run on their own checkouts.
 - Live engine test: llama.cpp b12329 CPU + SmolLM2-135M through `serve --once`,
   detached start, `/v1/models`, a chat completion, `status` probe, and stop.
   Run it with:
@@ -411,12 +417,12 @@ The first Rust slice is on `rust-migration`:
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
-Not ported yet: generated stacks (`serve --model`), `--fetch`, launch-backed
-endpoints (Strata/DeepInfer), `models search/files/download`, `backends fetch`,
-`setup`, and the Python-only surfaces (`cascade`, `tools`, `sandbox`, `web`,
-`browser`, `ui`, `profile`, `controller`, `encoder`). They stay on the Python
-side until their phase. The Rust TUI is read-only for now: the Python dashboard
-still owns interactive stop/log/approval actions.
+Not ported yet: generated stacks (`serve --model`), `--fetch`,
+`models search/files/download`, `backends fetch`, `setup`, and the Python-only
+surfaces (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`,
+`controller`, `encoder`). They stay on the Python side until their phase. The
+Rust TUI is read-only for now: the Python dashboard still owns interactive
+stop/log/approval actions.
 
 ### Scope
 

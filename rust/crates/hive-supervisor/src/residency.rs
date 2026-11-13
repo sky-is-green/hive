@@ -483,6 +483,7 @@ mod tests {
             llama_server: None,
             repo: PathBuf::from("/nonexistent"),
             models_dir: models_dir.to_path_buf(),
+            state_dir: PathBuf::from("/tmp"),
             log_dir: PathBuf::from("/tmp"),
             startup_timeout: 1.0,
         }

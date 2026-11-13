@@ -170,6 +170,54 @@ fn home_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("/"))
 }
 
+/// Python's `os.path.expandvars` for the `$VAR`/`${VAR}` forms used by stacks.
+pub fn expand_vars(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let mut chars = value.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch != '$' {
+            out.push(ch);
+            continue;
+        }
+        if chars.peek() == Some(&'{') {
+            chars.next();
+            let mut name = String::new();
+            for next in chars.by_ref() {
+                if next == '}' {
+                    break;
+                }
+                name.push(next);
+            }
+            if let Some(value) = env::var_os(&name) {
+                out.push_str(&value.to_string_lossy());
+            } else {
+                out.push_str("${");
+                out.push_str(&name);
+                out.push('}');
+            }
+            continue;
+        }
+        let mut name = String::new();
+        while let Some(next) = chars.peek().copied() {
+            if next.is_ascii_alphanumeric() || next == '_' {
+                name.push(next);
+                chars.next();
+            } else {
+                break;
+            }
+        }
+        if name.is_empty() {
+            out.push('$');
+        } else if let Some(value) = env::var_os(&name) {
+            out.push_str(&value.to_string_lossy());
+        } else {
+            out.push('$');
+            out.push_str(&name);
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

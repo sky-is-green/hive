@@ -10,6 +10,8 @@
 
 pub mod residency;
 
+mod launch;
+
 use std::collections::HashSet;
 use std::fs::OpenOptions;
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
@@ -26,6 +28,7 @@ pub struct Options {
     pub llama_server: Option<PathBuf>,
     pub repo: PathBuf,
     pub models_dir: PathBuf,
+    pub state_dir: PathBuf,
     pub log_dir: PathBuf,
     pub startup_timeout: f64,
 }
@@ -204,23 +207,61 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
                                          expected {expected:?} (stale route or wrong server)"
                         ));
                     }
-                    applied
-                        .tiers
-                        .push(endpoint_tier_row(tier, &key, &endpoint, &health, &per_card));
+                    applied.tiers.push(endpoint_tier_row(
+                        tier, &key, &endpoint, &health, false, None, &per_card,
+                    ));
                 }
                 Err(error) => {
-                    if tier.get("launch").is_some() {
+                    let Some(launch_block) = tier.get("launch").and_then(Value::as_object) else {
                         applied.unload();
                         return Err(format!(
-                            "stack '{stack_name}' failed on tier '{role}': {error} \
-                             (launch-backed endpoints are not ported to the Rust \
-                             supervisor yet)"
+                            "stack '{stack_name}' failed on tier '{role}': {error}"
                         ));
-                    }
-                    applied.unload();
-                    return Err(format!(
-                        "stack '{stack_name}' failed on tier '{role}': {error}"
+                    };
+                    let launched = match launch::start(
+                        launch_block,
+                        tier,
+                        &stack_name,
+                        &role,
+                        &endpoint,
+                        options,
+                    ) {
+                        Ok(launched) => launched,
+                        Err(error) => {
+                            applied.unload();
+                            return Err(format!(
+                                "stack '{stack_name}' failed on tier '{role}': {error}"
+                            ));
+                        }
+                    };
+                    let health = match probe_endpoint(&endpoint) {
+                        Ok(health) => health,
+                        Err(error) => {
+                            let mut child = launched.child;
+                            let _ = child.kill();
+                            let _ = child.wait();
+                            applied.unload();
+                            return Err(format!(
+                                "stack '{stack_name}' failed on tier '{role}': {error}"
+                            ));
+                        }
+                    };
+                    applied.tiers.push(endpoint_tier_row(
+                        tier,
+                        &key,
+                        &endpoint,
+                        &health,
+                        true,
+                        Some(launched.pid),
+                        &per_card,
                     ));
+                    applied.children.push(Engine {
+                        role,
+                        pid: launched.pid,
+                        port: launched.port,
+                        log: launched.log,
+                        child: launched.child,
+                    });
                 }
             }
             continue;
@@ -340,6 +381,8 @@ fn endpoint_tier_row(
     key: &str,
     endpoint: &str,
     health: &EngineHealth,
+    managed: bool,
+    pid: Option<u32>,
     per_card: &[Value],
 ) -> Value {
     let role = tier.get("role").and_then(Value::as_str).unwrap_or("?");
@@ -387,8 +430,8 @@ fn endpoint_tier_row(
         "caps".into(),
         tier.get("caps").cloned().unwrap_or(Value::Null),
     );
-    row.insert("managed".into(), Value::Bool(false));
-    row.insert("pid".into(), Value::Null);
+    row.insert("managed".into(), Value::Bool(managed));
+    row.insert("pid".into(), pid.map(Value::from).unwrap_or(Value::Null));
     row.insert("per_card".into(), Value::Array(per_card.to_vec()));
     Value::Object(row)
 }
@@ -687,9 +730,7 @@ fn next_port(base: u16, busy: &HashSet<u16>, offset: &mut u16) -> Result<u16, St
 
 fn terminate_all(children: &mut Vec<Engine>) {
     for engine in children.iter() {
-        unsafe {
-            libc::kill(engine.pid as i32, libc::SIGTERM);
-        }
+        signal(engine.pid, libc::SIGTERM);
     }
     let deadline = Instant::now() + Duration::from_secs(10);
     while Instant::now() < deadline {
@@ -708,14 +749,30 @@ fn terminate_all(children: &mut Vec<Engine>) {
     }
     for engine in children.iter_mut() {
         if matches!(engine.child.try_wait(), Ok(None)) {
-            let _ = engine.child.kill();
+            signal(engine.pid, libc::SIGKILL);
             let _ = engine.child.wait();
         }
     }
     children.clear();
 }
 
-fn log_tail(path: &Path, count: usize) -> String {
+/// Signal the child's process group when it is a session leader (managed
+/// launch tiers call `setsid`), otherwise just the child.
+fn signal(pid: u32, sig: libc::c_int) {
+    let pid = pid as libc::pid_t;
+    let pgid = unsafe { libc::getpgid(pid) };
+    if pgid == pid {
+        unsafe {
+            libc::killpg(pgid, sig);
+        }
+    } else {
+        unsafe {
+            libc::kill(pid, sig);
+        }
+    }
+}
+
+pub(crate) fn log_tail(path: &Path, count: usize) -> String {
     let Ok(text) = std::fs::read_to_string(path) else {
         return String::new();
     };

@@ -109,6 +109,7 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
         llama_server: options.llama_server.clone(),
         repo: paths.repo.clone(),
         models_dir: paths.models_dir.clone(),
+        state_dir: paths.state_dir.clone(),
         log_dir: options
             .log_dir
             .clone()
