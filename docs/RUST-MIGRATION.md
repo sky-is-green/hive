@@ -778,13 +778,16 @@ The encoder slice is in `rust/crates/hive-encoder`:
 
 ### Phase 3 gate (G3)
 
-- [ ] Install no longer needs torch/transformers/sentence-transformers for the
-      default runtime (encoder path integrated; torch-free install test P3-09).
+- [x] Install no longer needs torch/transformers/sentence-transformers for the
+      default runtime: a 360 MB torch-free venv runs daemon + encoder + chat
+      (P3-09).
 - [x] Encoder parity within tolerance on the corpus.
-- [ ] P1–P11 and the 28-task cascade match the reference.
-- [ ] Assembly latency not worse; RSS/install materially lower (encoder slice
-      passes; memory core pending).
-- [ ] Python reference still reproducible from the same commit.
+- [ ] P1–P11 and the 28-task cascade match the reference; the native memory
+      core has component/fixture parity but is not the default path yet
+      (P3-02).
+- [ ] Assembly latency not worse; RSS/install materially lower. Encoder/install
+      pass; native assembly parity is tested, default-path benchmark pending.
+- [x] Python reference still reproducible from the same commit.
 
 ---
 
