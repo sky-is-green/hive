@@ -654,6 +654,21 @@ impl Runtime {
         })
     }
 
+    pub fn keys(&self) -> Vec<String> {
+        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        state
+            .as_ref()
+            .map(|applied| {
+                applied
+                    .tiers
+                    .iter()
+                    .filter_map(|tier| tier.get("key").and_then(Value::as_str))
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub fn server_status(&self) -> Value {
         let (tiers, engines, started_at) = {
             let state = self.state.lock().unwrap_or_else(|error| error.into_inner());

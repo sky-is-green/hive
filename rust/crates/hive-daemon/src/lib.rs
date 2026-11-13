@@ -96,6 +96,113 @@ impl AppState {
         Self::with_sidecar(config, None)
     }
 
+    async fn mirror_provider_add(&self, instance: &Value) {
+        let Some(key) = instance.get("key").and_then(Value::as_str) else {
+            return;
+        };
+        let Some(port) = instance.get("port").and_then(Value::as_u64) else {
+            return;
+        };
+        let model = instance
+            .get("model")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
+        self.mirror_provider(|providers, default| {
+            let name = format!("local-{key}");
+            providers.retain(|provider| {
+                provider.get("name").and_then(Value::as_str) != Some(name.as_str())
+            });
+            providers.push(serde_json::json!({
+                "name": name,
+                "base_url": format!("http://127.0.0.1:{port}"),
+                "api_key": "lm-studio",
+                "model": model,
+            }));
+            *default = name;
+        })
+        .await;
+    }
+
+    async fn mirror_provider_remove(&self, keys: &[String]) {
+        if keys.is_empty() {
+            return;
+        }
+        let names: Vec<String> = keys.iter().map(|key| format!("local-{key}")).collect();
+        self.mirror_provider(move |providers, default| {
+            providers.retain(|provider| {
+                provider
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .is_none_or(|name| !names.iter().any(|remove| remove == name))
+            });
+            if names.iter().any(|name| name == default) {
+                *default = providers
+                    .first()
+                    .and_then(|provider| provider.get("name"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_owned();
+            }
+        })
+        .await;
+    }
+
+    async fn mirror_provider<F>(&self, mutate: F)
+    where
+        F: FnOnce(&mut Vec<Value>, &mut String),
+    {
+        let Some(base) = &self.config.sidecar_url else {
+            return;
+        };
+        let token = self.config.token.as_deref().unwrap_or("");
+        let url = format!("{}/v1/provider/config", base.trim_end_matches('/'));
+        let mut request = self.client.get(&url);
+        if !token.is_empty() {
+            request = request.header("x-splinter-token", token);
+        }
+        let Ok(response) = request.send().await else {
+            return;
+        };
+        if !response.status().is_success() {
+            return;
+        }
+        let Ok(payload) = response.json::<Value>().await else {
+            return;
+        };
+        let mut providers = payload
+            .get("providers")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let mut default = payload
+            .get("default")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
+        mutate(&mut providers, &mut default);
+        let body = serde_json::json!({
+            "providers": providers,
+            "default": default,
+            "persist": false,
+        });
+        let mut request = self.client.post(&url).json(&body);
+        if !token.is_empty() {
+            request = request.header("x-splinter-token", token);
+        }
+        match request.send().await {
+            Ok(response) if !response.status().is_success() => {
+                let status = response.status();
+                let body = response.text().await.unwrap_or_default();
+                tracing::warn!(%status, %body, "sidecar rejected the mirrored provider list");
+            }
+            Ok(_) => {}
+            Err(error) => {
+                tracing::warn!("cannot mirror the provider list into the sidecar: {error}");
+            }
+        }
+    }
+
     fn with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Self {
         let client = reqwest::Client::builder().build().unwrap_or_default();
         let runtime = Arc::new(Runtime::new(&config.paths));
@@ -576,19 +683,29 @@ async fn server_fit(
 }
 
 async fn server_start(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
-    runtime_json(state.runtime.start_server(&body).await)
+    match state.runtime.start_server(&body).await {
+        Ok(instance) => {
+            state.mirror_provider_add(&instance).await;
+            runtime_json(Ok(instance))
+        }
+        Err(error) => runtime_error(error),
+    }
 }
 
 async fn server_stop(
     State(state): State<Arc<AppState>>,
     Query(query): Query<HashMap<String, String>>,
 ) -> Response {
-    runtime_json(
-        state
-            .runtime
-            .stop_server(query.get("key").map(String::as_str))
-            .await,
-    )
+    let key = query.get("key").map(String::as_str);
+    let removed: Vec<String> = match key {
+        Some(key) => vec![key.to_owned()],
+        None => state.runtime.keys(),
+    };
+    let result = state.runtime.stop_server(key).await;
+    if result.is_ok() {
+        state.mirror_provider_remove(&removed).await;
+    }
+    runtime_json(result)
 }
 
 async fn server_unload(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
@@ -603,11 +720,18 @@ async fn server_unload(State(state): State<Arc<AppState>>, Json(body): Json<Valu
             detail: "key is required".into(),
         });
     };
-    runtime_json(state.runtime.unload_server(key).await)
+    let result = state.runtime.unload_server(key).await;
+    if result.is_ok() {
+        state.mirror_provider_remove(&[key.to_owned()]).await;
+    }
+    runtime_json(result)
 }
 
 async fn server_unload_loaded(State(state): State<Arc<AppState>>) -> Response {
-    runtime_json(Ok(state.runtime.unload_loaded().await))
+    let removed = state.runtime.keys();
+    let result = state.runtime.unload_loaded().await;
+    state.mirror_provider_remove(&removed).await;
+    runtime_json(Ok(result))
 }
 
 async fn local_models(State(state): State<Arc<AppState>>) -> Response {

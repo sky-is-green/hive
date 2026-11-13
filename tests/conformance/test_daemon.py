@@ -703,11 +703,13 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
     process = None
     try:
         process, port = _start_daemon(
+            sidecar_port=0,
             env_extra={
                 **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
                 "HIVE_LLAMA_SERVER": llama,
                 "HARNESS_LLAMA_SERVER": llama,
-            }
+            },
         )
         stack = {
             "name": "live",
@@ -775,6 +777,14 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         assert status == 200, instance
         assert instance["key"] == "smol"
         assert instance["pid"]
+        status, _, providers = _request(port, "/v1/provider/config")
+        assert status == 200
+        mirrored = {
+            provider["name"]: provider for provider in providers["providers"]
+        }
+        assert "local-smol" in mirrored
+        assert mirrored["local-smol"]["base_url"] == f"http://127.0.0.1:{instance['port']}"
+        assert providers["default"] == "local-smol"
         status, _, server = _request(port, "/v1/server/status")
         assert server["loaded_model"] == instance["model"]
         status, _, payload = _request(
@@ -782,6 +792,10 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         )
         assert status == 200
         assert payload["unloaded"] == "smol"
+        status, _, providers = _request(port, "/v1/provider/config")
+        assert "local-smol" not in {
+            provider["name"] for provider in providers["providers"]
+        }
         status, _, server = _request(port, "/v1/server/status")
         assert server["running"] is False
     finally:
