@@ -557,6 +557,9 @@ memory and evaluation. **Estimated:** 3–6 months. **Depends on:** G1.
 
 - Run the Rust daemon on the public port (8765) and a Python sidecar on a
   private port.
+- The sidecar interpreter is explicit: read `HIVE_PYTHON` first; only fall back
+  to venv/checkout discovery in development. A set-but-unusable path is a
+  startup error, not a silent fallback.
 - Implement route groups in Rust one at a time. Unimplemented paths proxy to
   the sidecar, with a header naming the owner.
 - Flip the default only when the group's conformance tests pass.
