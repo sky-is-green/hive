@@ -1,0 +1,12 @@
+{
+  "default_backend": null,
+  "hive": "0.2.0",
+  "installed_backends": [],
+  "log_dir": "<TMP>/home/logs",
+  "models_dir": "<TMP>/models",
+  "python": "<PYTHON>",
+  "repo": "<REPO>",
+  "serve_dir": "<TMP>/state/serve",
+  "stacks_dir": "<TMP>/stacks",
+  "state_dir": "<TMP>/state"
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "a-first",
+    "roles": [
+      "worker",
+      "face"
+    ],
+    "tiers": 2
+  },
+  {
+    "name": "b-second",
+    "roles": [
+      "face"
+    ],
+    "tiers": 1
+  }
+]

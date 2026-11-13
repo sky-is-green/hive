@@ -31,7 +31,6 @@ Severity:
 - `P1-01` Rust is not the default `hive` yet.
 - `P1-03` Python-only verbs are not proxied.
 - `P1-05` No installable Rust release/package yet.
-- `P1-43` No frozen golden corpus; conformance depends on a live Python install.
 
 ---
 
@@ -130,7 +129,7 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P1-43 | No frozen golden-file corpus; conformance compares against a live Python install. | blocker | open | `tests/conformance/golden/` snapshots exist, with volatile fields normalized. |
+| P1-43 | No frozen golden-file corpus; conformance compares against a live Python install. | blocker | fixed — frozen CLI corpus | `tests/conformance/golden/` snapshots exist, with volatile fields normalized. |
 | P1-44 | CI is Linux-only; Rust build/test/conformance run inside the Python job. | deferred | open | A dedicated Rust job or Windows matrix is added. |
 | P1-45 | No `cargo audit`, license audit, or fuzzing for the GGUF/tar parsers. | should | open | Audit/fuzz jobs run in CI. |
 | P1-46 | No performance regression CI; 20 ms/RSS numbers are manual measurements. | minor | open | A benchmark guard records/compares them. |

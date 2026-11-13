@@ -1,0 +1,1377 @@
+{
+  "arguments": [],
+  "commands": [
+    {
+      "arguments": [
+        {
+          "flags": [],
+          "help": "stack name under stacks/, or a path to a .json stack",
+          "kind": "argument",
+          "name": "stack",
+          "nargs": "?"
+        }
+      ],
+      "commands": [],
+      "description": "Apply a stack (one process per tier, any engine) and keep it serving.",
+      "name": "serve",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--list"
+          ],
+          "help": "list the saved stacks and exit",
+          "kind": "option",
+          "name": "list",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--backends"
+          ],
+          "help": "list the declared server builds and exit",
+          "kind": "option",
+          "name": "backends",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--model"
+          ],
+          "help": "HuggingFace repo (or repo:file), or a local .gguf path",
+          "kind": "option",
+          "name": "model"
+        },
+        {
+          "flags": [
+            "--file"
+          ],
+          "help": "GGUF file inside the repo (with --model repo)",
+          "kind": "option",
+          "name": "file"
+        },
+        {
+          "flags": [
+            "--cards"
+          ],
+          "help": "how many detected cards to use (default: all)",
+          "kind": "option",
+          "name": "cards",
+          "type": "int"
+        },
+        {
+          "flags": [
+            "--devices"
+          ],
+          "help": "explicit HIP indices, e.g. 0,1 (overrides --cards)",
+          "kind": "option",
+          "name": "devices"
+        },
+        {
+          "default": 8192,
+          "flags": [
+            "--ctx"
+          ],
+          "help": "context size for a generated stack (default 8192)",
+          "kind": "option",
+          "name": "ctx",
+          "type": "int"
+        },
+        {
+          "flags": [
+            "--backend"
+          ],
+          "help": "server backend (default: the first installed of rocm, vulkan)",
+          "kind": "option",
+          "name": "backend"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--fetch"
+          ],
+          "help": "fetch a missing engine backend from the manifest before applying",
+          "kind": "option",
+          "name": "fetch",
+          "nargs": 0
+        },
+        {
+          "default": "face",
+          "flags": [
+            "--role"
+          ],
+          "help": "role to give a generated tier (default: face)",
+          "kind": "option",
+          "name": "role"
+        },
+        {
+          "flags": [
+            "--save"
+          ],
+          "help": "write a generated stack to stacks/<name>.json",
+          "kind": "option",
+          "name": "save"
+        },
+        {
+          "flags": [
+            "--name"
+          ],
+          "help": "name this serve (default: the stack name)",
+          "kind": "option",
+          "name": "name"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--detach"
+          ],
+          "help": "run in the background; manage with status/stop/logs",
+          "kind": "option",
+          "name": "detach",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--replace"
+          ],
+          "help": "stop a running serve with the same name first",
+          "kind": "option",
+          "name": "replace",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--stacks-dir"
+          ],
+          "help": "directory of stack files (default: <repo>/stacks)",
+          "kind": "option",
+          "name": "stacks_dir"
+        },
+        {
+          "flags": [
+            "--models-dir"
+          ],
+          "help": "GGUF model directory",
+          "kind": "option",
+          "name": "models_dir"
+        },
+        {
+          "flags": [
+            "--llama-server"
+          ],
+          "help": "server binary",
+          "kind": "option",
+          "name": "llama_server"
+        },
+        {
+          "flags": [
+            "--log-dir"
+          ],
+          "help": "engine log directory",
+          "kind": "option",
+          "name": "log_dir"
+        },
+        {
+          "default": "127.0.0.1",
+          "flags": [
+            "--host"
+          ],
+          "help": "host the tiers bind/publish on (default 127.0.0.1)",
+          "kind": "option",
+          "name": "host"
+        },
+        {
+          "default": 300.0,
+          "flags": [
+            "--timeout"
+          ],
+          "help": "per-tier startup timeout in seconds (default 300)",
+          "kind": "option",
+          "name": "timeout",
+          "type": "float"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--once"
+          ],
+          "help": "apply, print the endpoints, unload, exit (smoke test)",
+          "kind": "option",
+          "name": "once",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "print status as JSON instead of a table",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive serve",
+      "prog": "hive serve"
+    },
+    {
+      "arguments": [],
+      "commands": [],
+      "description": "Open the interactive dashboard (Status, Models, Stacks, Runs).",
+      "name": "tui",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        }
+      ],
+      "path": "hive tui",
+      "prog": "hive tui"
+    },
+    {
+      "aliases": [
+        "ps"
+      ],
+      "arguments": [],
+      "commands": [],
+      "description": "List recorded serves, their tier endpoints, and live health. Records are advisory and checked against their process.",
+      "name": "status",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable output",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--no-probe"
+          ],
+          "help": "do not call the endpoints",
+          "kind": "option",
+          "name": "no_probe",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--prune"
+          ],
+          "help": "remove records whose process is gone",
+          "kind": "option",
+          "name": "prune",
+          "nargs": 0
+        }
+      ],
+      "path": "hive status",
+      "prog": "hive status"
+    },
+    {
+      "arguments": [
+        {
+          "flags": [],
+          "help": "serve name (the only one if omitted)",
+          "kind": "argument",
+          "name": "name",
+          "nargs": "?"
+        }
+      ],
+      "commands": [],
+      "description": "Stop one recorded serve, the only running serve, or every recorded serve with --all. Stale records are cleaned without signalling a reused PID.",
+      "name": "stop",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--all"
+          ],
+          "help": "stop every recorded serve",
+          "kind": "option",
+          "name": "all",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--force"
+          ],
+          "help": "SIGKILL after the timeout",
+          "kind": "option",
+          "name": "force",
+          "nargs": 0
+        },
+        {
+          "default": 15.0,
+          "flags": [
+            "--timeout"
+          ],
+          "help": "seconds to wait for a clean stop (default 15)",
+          "kind": "option",
+          "name": "timeout",
+          "type": "float"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive stop",
+      "prog": "hive stop"
+    },
+    {
+      "arguments": [
+        {
+          "flags": [],
+          "help": "serve name (the only one if omitted)",
+          "kind": "argument",
+          "name": "name",
+          "nargs": "?"
+        }
+      ],
+      "commands": [],
+      "description": "Show a serve's supervisor log, or one tier's engine log with --tier. Use --follow to stream new lines.",
+      "name": "logs",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--tier"
+          ],
+          "help": "a tier role's engine log",
+          "kind": "option",
+          "name": "tier"
+        },
+        {
+          "default": 80,
+          "flags": [
+            "-n",
+            "--lines"
+          ],
+          "help": "lines to show; 0 means all (default 80)",
+          "kind": "option",
+          "name": "lines",
+          "type": "int"
+        },
+        {
+          "default": false,
+          "flags": [
+            "-f",
+            "--follow"
+          ],
+          "help": "follow the file",
+          "kind": "option",
+          "name": "follow",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive logs",
+      "prog": "hive logs"
+    },
+    {
+      "arguments": [],
+      "commands": [
+        {
+          "arguments": [],
+          "commands": [],
+          "description": "List GGUF files in the configured local model library.",
+          "name": "list",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models list",
+          "prog": "hive models list"
+        },
+        {
+          "arguments": [
+            {
+              "default": "",
+              "flags": [],
+              "help": "words to search for (omit for popular repos)",
+              "kind": "argument",
+              "name": "query",
+              "nargs": "?"
+            }
+          ],
+          "commands": [],
+          "description": "Search the Hugging Face Hub for GGUF repositories. Omit the query to list popular repos.",
+          "name": "search",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "default": 12,
+              "flags": [
+                "--limit"
+              ],
+              "help": "number of repos (default 12)",
+              "kind": "option",
+              "name": "limit",
+              "type": "int"
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models search",
+          "prog": "hive models search"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "org/repo",
+              "kind": "argument",
+              "name": "repo",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "List the GGUF files and sizes in one Hugging Face repo.",
+          "name": "files",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models files",
+          "prog": "hive models files"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "a directory to use from now on",
+              "kind": "argument",
+              "name": "path",
+              "nargs": "?"
+            }
+          ],
+          "commands": [],
+          "description": "Print the resolved GGUF library path, or set a new one with PATH/--set. The setting persists.",
+          "name": "dir",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--set"
+              ],
+              "help": "set the models directory (same as the positional)",
+              "kind": "option",
+              "name": "set"
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models dir",
+          "prog": "hive models dir"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "org/repo, or org/repo:file.gguf",
+              "kind": "argument",
+              "name": "repo",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "Download one GGUF from a Hugging Face repo into the local library. Use --file or repo:file to select the file.",
+          "name": "download",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--file"
+              ],
+              "help": "GGUF file inside the repo",
+              "kind": "option",
+              "name": "file"
+            },
+            {
+              "default": "main",
+              "flags": [
+                "--revision"
+              ],
+              "help": "HF revision (default main)",
+              "kind": "option",
+              "name": "revision"
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models download",
+          "prog": "hive models download"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "a .gguf file or a folder containing GGUFs",
+              "kind": "argument",
+              "name": "path",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "Link one local .gguf file, or every .gguf in a folder, into the library. --copy copies instead of linking.",
+          "name": "import",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "default": false,
+              "flags": [
+                "--copy"
+              ],
+              "help": "copy the file instead of hardlink/symlink",
+              "kind": "option",
+              "name": "copy",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models import",
+          "prog": "hive models import"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "file name or relative path inside the library",
+              "kind": "argument",
+              "name": "file",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "Delete one GGUF from the library. --yes is required; the command never deletes outside the configured library.",
+          "name": "remove",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "default": false,
+              "flags": [
+                "--yes"
+              ],
+              "help": "confirm the deletion",
+              "kind": "option",
+              "name": "yes",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive models remove",
+          "prog": "hive models remove"
+        }
+      ],
+      "description": "Browse, search, download, import, or remove GGUF models in the configured local library.",
+      "name": "models",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        }
+      ],
+      "path": "hive models",
+      "prog": "hive models"
+    },
+    {
+      "arguments": [],
+      "commands": [
+        {
+          "arguments": [],
+          "commands": [],
+          "description": "List stack files in the stacks directory.",
+          "name": "list",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--stacks-dir"
+              ],
+              "help": "directory of stack files (default: <repo>/stacks)",
+              "kind": "option",
+              "name": "stacks_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive stacks list",
+          "prog": "hive stacks list"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "stack name or path",
+              "kind": "argument",
+              "name": "stack",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "Print one stack's resolved JSON. --json is accepted for symmetry; this command always prints JSON.",
+          "name": "show",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--stacks-dir"
+              ],
+              "help": "directory of stack files (default: <repo>/stacks)",
+              "kind": "option",
+              "name": "stacks_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "accepted for symmetry; show always prints JSON",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive stacks show",
+          "prog": "hive stacks show"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "stack name or path",
+              "kind": "argument",
+              "name": "stack",
+              "required": true
+            }
+          ],
+          "commands": [],
+          "description": "Validate a stack file without launching an engine. --strict treats warnings as failures.",
+          "name": "validate",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--stacks-dir"
+              ],
+              "help": "directory of stack files (default: <repo>/stacks)",
+              "kind": "option",
+              "name": "stacks_dir"
+            },
+            {
+              "flags": [
+                "--models-dir"
+              ],
+              "help": "GGUF model directory (default: the configured library)",
+              "kind": "option",
+              "name": "models_dir"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--strict"
+              ],
+              "help": "treat warnings as failures",
+              "kind": "option",
+              "name": "strict",
+              "nargs": 0
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive stacks validate",
+          "prog": "hive stacks validate"
+        }
+      ],
+      "description": "List, inspect, or validate saved stack files without starting an engine.",
+      "name": "stacks",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        }
+      ],
+      "path": "hive stacks",
+      "prog": "hive stacks"
+    },
+    {
+      "arguments": [],
+      "commands": [
+        {
+          "arguments": [],
+          "commands": [],
+          "description": "List declared backends and whether each is installed.",
+          "name": "list",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive backends list",
+          "prog": "hive backends list"
+        },
+        {
+          "arguments": [
+            {
+              "flags": [],
+              "help": "backend to install (default: vulkan)",
+              "kind": "argument",
+              "name": "name",
+              "nargs": "?"
+            }
+          ],
+          "commands": [],
+          "description": "Download and install a portable llama.cpp backend release. --force replaces an existing directory.",
+          "name": "fetch",
+          "options": [
+            {
+              "flags": [
+                "-h",
+                "--help"
+              ],
+              "help": "show this help message and exit",
+              "kind": "option",
+              "name": "help",
+              "nargs": 0
+            },
+            {
+              "flags": [
+                "--tag"
+              ],
+              "help": "GitHub release tag (default: newest build)",
+              "kind": "option",
+              "name": "tag"
+            },
+            {
+              "default": false,
+              "flags": [
+                "--force"
+              ],
+              "help": "replace an existing backend directory",
+              "kind": "option",
+              "name": "force",
+              "nargs": 0
+            },
+            {
+              "default": false,
+              "flags": [
+                "--json"
+              ],
+              "help": "machine-readable JSON on stdout",
+              "kind": "option",
+              "name": "as_json",
+              "nargs": 0
+            }
+          ],
+          "path": "hive backends fetch",
+          "prog": "hive backends fetch"
+        }
+      ],
+      "description": "Inspect the declared engine server builds, or fetch a portable llama.cpp release.",
+      "name": "backends",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable output",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive backends",
+      "prog": "hive backends"
+    },
+    {
+      "arguments": [],
+      "commands": [],
+      "description": "Create missing paths, fetch a portable engine when needed, and print the next commands. It does not download a model.",
+      "name": "setup",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--models-dir"
+          ],
+          "help": "GGUF model directory (default: the configured library)",
+          "kind": "option",
+          "name": "models_dir"
+        },
+        {
+          "flags": [
+            "--stacks-dir"
+          ],
+          "help": "directory of stack files (default: <repo>/stacks)",
+          "kind": "option",
+          "name": "stacks_dir"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--no-fetch"
+          ],
+          "help": "do not fetch a portable engine if none is installed",
+          "kind": "option",
+          "name": "no_fetch",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive setup",
+      "prog": "hive setup"
+    },
+    {
+      "arguments": [],
+      "commands": [],
+      "description": "Check Python, paths, engines, cards, host memory, ports, and the Hugging Face token before a serve. --strict treats warnings as failures.",
+      "name": "doctor",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--models-dir"
+          ],
+          "help": "GGUF model directory (default: the configured library)",
+          "kind": "option",
+          "name": "models_dir"
+        },
+        {
+          "flags": [
+            "--stacks-dir"
+          ],
+          "help": "directory of stack files (default: <repo>/stacks)",
+          "kind": "option",
+          "name": "stacks_dir"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--strict"
+          ],
+          "help": "treat warnings as failures",
+          "kind": "option",
+          "name": "strict",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive doctor",
+      "prog": "hive doctor"
+    },
+    {
+      "arguments": [],
+      "commands": [],
+      "description": "Print the resolved model, stack, state, log, and backend paths plus versions. Read-only.",
+      "name": "config",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "flags": [
+            "--models-dir"
+          ],
+          "help": "GGUF model directory (default: the configured library)",
+          "kind": "option",
+          "name": "models_dir"
+        },
+        {
+          "flags": [
+            "--stacks-dir"
+          ],
+          "help": "directory of stack files (default: <repo>/stacks)",
+          "kind": "option",
+          "name": "stacks_dir"
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive config",
+      "prog": "hive config"
+    },
+    {
+      "arguments": [],
+      "commands": [],
+      "description": "Print Hive, Python, and platform versions.",
+      "name": "version",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "machine-readable JSON on stdout",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive version",
+      "prog": "hive version"
+    },
+    {
+      "arguments": [
+        {
+          "flags": [],
+          "help": "command or subcommand, e.g. 'serve' or 'models list'",
+          "kind": "argument",
+          "name": "topic",
+          "nargs": "*"
+        }
+      ],
+      "commands": [],
+      "description": "Print human help for a command, or emit the complete command/option catalog as JSON for agents and scripts.",
+      "name": "help",
+      "options": [
+        {
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "help": "show this help message and exit",
+          "kind": "option",
+          "name": "help",
+          "nargs": 0
+        },
+        {
+          "default": false,
+          "flags": [
+            "--json"
+          ],
+          "help": "emit the command/option catalog as JSON",
+          "kind": "option",
+          "name": "as_json",
+          "nargs": 0
+        }
+      ],
+      "path": "hive help",
+      "prog": "hive help"
+    }
+  ],
+  "description": "Hive \u2014 serve and manage local GGUF stacks, engine-blind.",
+  "name": "hive",
+  "options": [
+    {
+      "flags": [
+        "-h",
+        "--help"
+      ],
+      "help": "show this help message and exit",
+      "kind": "option",
+      "name": "help",
+      "nargs": 0
+    },
+    {
+      "flags": [
+        "--version"
+      ],
+      "help": "show program's version number and exit",
+      "kind": "option",
+      "name": "version",
+      "nargs": 0
+    },
+    {
+      "default": false,
+      "flags": [
+        "--no-color"
+      ],
+      "help": "disable colour even on a TTY",
+      "kind": "option",
+      "name": "no_color",
+      "nargs": 0
+    }
+  ],
+  "path": "hive",
+  "prog": "hive"
+}

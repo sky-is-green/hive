@@ -603,6 +603,11 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
+- **Frozen CLI corpus.** `tests/conformance/golden/` snapshots `version`,
+  `config`, root `help`, `models list/dir`, and `stacks list/show`. Tests compare
+  the Rust binary to these files without starting Python; fixture paths,
+  interpreter versions, and the platform string are normalized. Regenerate with
+  `tests/conformance/golden/generate.py` only for a reviewed contract change.
 - Tests: nine daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
