@@ -822,6 +822,25 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         status, _, server = _request(port, "/v1/server/status")
         assert server["loaded_model"] == instance["model"]
 
+        # A second model can coexist; stopping one leaves the other loaded.
+        second = dict(launch, key="smol2")
+        status, _, second_instance = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(second).encode()
+        )
+        assert status == 200, second_instance
+        assert second_instance["key"] == "smol2"
+        assert second_instance["port"] != instance["port"]
+        status, _, server = _request(port, "/v1/server/status")
+        loaded_keys = {row["key"] for row in server["loaded"]}
+        assert loaded_keys == {"smol", "smol2"}, loaded_keys
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=smol2", method="POST", body=b"{}"
+        )
+        assert status == 200
+        status, _, server = _request(port, "/v1/server/status")
+        assert {row["key"] for row in server["loaded"]} == {"smol"}
+
         # A crashed engine must stop looking loaded on the next status poll.
         os.kill(instance["pid"], 9)
         deadline = time.time() + 10

@@ -39,6 +39,26 @@ struct AppliedStack {
     applied: Applied,
 }
 
+#[derive(Default)]
+struct State {
+    /// The stack applied through the saved-stack API. Python keeps one.
+    stack: Option<AppliedStack>,
+    /// Models started through `/v1/server/start`, keyed by their tier key.
+    fleet: Vec<AppliedStack>,
+}
+
+impl State {
+    fn all(&self) -> impl Iterator<Item = &AppliedStack> {
+        self.stack.iter().chain(self.fleet.iter())
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ApplyTarget {
+    Stack,
+    Fleet,
+}
+
 pub struct Runtime {
     paths: Paths,
     runs_dir: PathBuf,
@@ -47,7 +67,7 @@ pub struct Runtime {
     client: reqwest::Client,
     downloads: Arc<Downloads>,
     apply_lock: tokio::sync::Mutex<()>,
-    state: Mutex<Option<AppliedStack>>,
+    state: Mutex<State>,
 }
 
 impl Runtime {
@@ -87,7 +107,7 @@ impl Runtime {
             client: client.clone(),
             downloads: Arc::new(Downloads::new(client)),
             apply_lock: tokio::sync::Mutex::new(()),
-            state: Mutex::new(None),
+            state: Mutex::new(State::default()),
         }
     }
 
@@ -163,7 +183,7 @@ impl Runtime {
 
     pub fn status(&self) -> Value {
         let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        match state.as_ref() {
+        match state.stack.as_ref() {
             Some(applied) => serde_json::json!({
                 "ok": true,
                 "stack": applied.name,
@@ -190,17 +210,24 @@ impl Runtime {
             .and_then(Value::as_str)
             .unwrap_or(name)
             .to_owned();
-        self.apply_value(stack, name, base_port).await
+        self.apply_value(stack, name, base_port, ApplyTarget::Stack)
+            .await
     }
 
     pub async fn unload_stack(&self, name: &str) -> Result<Value, ApiError> {
         let _guard = self.apply_lock.lock().await;
-        let current = self.take_applied();
+        let current = {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            state.stack.take()
+        };
         let Some(current) = current else {
             return Ok(serde_json::json!({"ok": true, "unloaded": []}));
         };
         if current.name != name {
-            self.put_applied(current);
+            self.state
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .stack = Some(current);
             return Ok(serde_json::json!({"ok": true, "unloaded": []}));
         }
         let roles: Vec<Value> = current
@@ -702,9 +729,10 @@ impl Runtime {
             .and_then(Value::as_u64)
             .filter(|port| *port > 0 && *port <= u16::MAX as u64)
             .map(|port| port as u16);
-        self.apply_value(stack, key.clone(), base_port).await?;
-        self.rename_first_tier(&key);
-        let tier = self.first_tier().unwrap_or(Value::Null);
+        self.apply_value(stack, key.clone(), base_port, ApplyTarget::Fleet)
+            .await?;
+        self.rename_last_tier(&key);
+        let tier = self.last_fleet_tier().unwrap_or(Value::Null);
         let engines = self.engines_snapshot();
         let instance = self.instance_for_tier(&tier, &engines, &timestamp());
         let mut out = instance;
@@ -715,42 +743,59 @@ impl Runtime {
     }
 
     pub async fn stop_server(&self, key: Option<&str>) -> Result<Value, ApiError> {
-        let Some(key) = key else {
-            let _guard = self.apply_lock.lock().await;
-            let current = self.take_applied();
-            let Some(current) = current else {
-                return Ok(serde_json::json!({"ok": true, "stopped": 0}));
-            };
-            let stopped = current.engines.len();
-            unload(current).await;
-            return Ok(serde_json::json!({"ok": true, "stopped": stopped}));
-        };
-        let _guard = self.apply_lock.lock().await;
-        let current = self.take_applied();
-        let Some(current) = current else {
-            return Err(ApiError::new(
-                404,
-                format!("no such loaded instance: {key}"),
-            ));
-        };
-        let matches = current.tiers.iter().any(|tier| {
-            tier.get("key").and_then(Value::as_str) == Some(key)
-                || tier.get("role").and_then(Value::as_str) == Some(key)
-        });
-        if !matches {
-            self.put_applied(current);
-            return Err(ApiError::new(
-                404,
-                format!("no such loaded instance: {key}"),
-            ));
+        enum StopAction {
+            One(AppliedStack),
+            All(Vec<AppliedStack>),
+            Missing,
         }
-        let drained = unload(current).await;
-        Ok(serde_json::json!({
-            "ok": true,
-            "unloaded": key,
-            "drained": drained,
-            "port_free": true,
-        }))
+        let action = {
+            let _guard = self.apply_lock.lock().await;
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            if let Some(key) = key {
+                if let Some(index) = state
+                    .stack
+                    .as_ref()
+                    .and_then(|stack| stack_matches(stack, key).then_some(0))
+                {
+                    let _ = index;
+                    StopAction::One(state.stack.take().expect("stack checked"))
+                } else if let Some(index) = state
+                    .fleet
+                    .iter()
+                    .position(|applied| stack_matches(applied, key))
+                {
+                    StopAction::One(state.fleet.remove(index))
+                } else {
+                    StopAction::Missing
+                }
+            } else {
+                let mut all: Vec<AppliedStack> = state.stack.take().into_iter().collect();
+                all.append(&mut state.fleet);
+                StopAction::All(all)
+            }
+        };
+        match action {
+            StopAction::Missing => Err(ApiError::new(
+                404,
+                format!("no such loaded instance: {}", key.unwrap_or("")),
+            )),
+            StopAction::One(instance) => {
+                let drained = unload(instance).await;
+                Ok(serde_json::json!({
+                    "ok": true,
+                    "unloaded": key,
+                    "drained": drained,
+                    "port_free": true,
+                }))
+            }
+            StopAction::All(all) => {
+                let stopped: usize = all.iter().map(|applied| applied.engines.len()).sum();
+                for instance in all {
+                    unload(instance).await;
+                }
+                Ok(serde_json::json!({"ok": true, "stopped": stopped}))
+            }
+        }
     }
 
     pub async fn unload_server(&self, key: &str) -> Result<Value, ApiError> {
@@ -758,23 +803,23 @@ impl Runtime {
     }
 
     pub async fn unload_loaded(&self) -> Value {
-        let _guard = self.apply_lock.lock().await;
-        let current = self.take_applied();
-        let keys: Vec<Value> = current
-            .as_ref()
-            .map(|applied| {
-                applied
-                    .tiers
-                    .iter()
-                    .filter_map(|tier| tier.get("key").and_then(Value::as_str))
-                    .map(|key| Value::String(key.to_owned()))
-                    .collect()
-            })
-            .unwrap_or_default();
-        let drained = match current {
-            Some(current) => unload(current).await,
-            None => false,
+        let (all, keys) = {
+            let _guard = self.apply_lock.lock().await;
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            let mut all: Vec<AppliedStack> = state.stack.take().into_iter().collect();
+            all.append(&mut state.fleet);
+            let keys: Vec<Value> = all
+                .iter()
+                .flat_map(|applied| applied.tiers.iter())
+                .filter_map(|tier| tier.get("key").and_then(Value::as_str))
+                .map(|key| Value::String(key.to_owned()))
+                .collect();
+            (all, keys)
         };
+        let mut drained = false;
+        for instance in all {
+            drained |= unload(instance).await;
+        }
         serde_json::json!({
             "instances": keys,
             "retired": [],
@@ -786,29 +831,27 @@ impl Runtime {
     pub fn keys(&self) -> Vec<String> {
         let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         state
-            .as_ref()
-            .map(|applied| {
-                applied
-                    .tiers
-                    .iter()
-                    .filter_map(|tier| tier.get("key").and_then(Value::as_str))
-                    .map(str::to_owned)
-                    .collect()
-            })
-            .unwrap_or_default()
+            .all()
+            .flat_map(|applied| applied.tiers.iter())
+            .filter_map(|tier| tier.get("key").and_then(Value::as_str))
+            .map(str::to_owned)
+            .collect()
     }
 
     pub fn server_status(&self) -> Value {
         let (tiers, engines, started_at) = {
             let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-            match state.as_ref() {
-                Some(applied) => (
-                    applied.tiers.clone(),
-                    applied.engines.clone(),
-                    applied.started_at.clone(),
-                ),
-                None => (Vec::new(), Vec::new(), String::new()),
+            let mut tiers = Vec::new();
+            let mut engines = Vec::new();
+            let mut started_at = String::new();
+            for applied in state.all() {
+                tiers.extend(applied.tiers.iter().cloned());
+                engines.extend(applied.engines.iter().cloned());
+                if started_at.is_empty() {
+                    started_at = applied.started_at.clone();
+                }
             }
+            (tiers, engines, started_at)
         };
         let instances: Vec<Value> = tiers
             .iter()
@@ -918,14 +961,14 @@ impl Runtime {
 
     pub fn server_metrics(&self) -> Value {
         let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        let Some(applied) = state.as_ref() else {
-            return serde_json::json!({"available": false});
-        };
-        let port = applied.tiers.iter().find_map(|tier| {
-            tier.get("port")
-                .and_then(Value::as_u64)
-                .filter(|port| *port > 0)
-        });
+        let port = state
+            .all()
+            .flat_map(|applied| applied.tiers.iter())
+            .find_map(|tier| {
+                tier.get("port")
+                    .and_then(Value::as_u64)
+                    .filter(|port| *port > 0)
+            });
         drop(state);
         let Some(port) = port else {
             return serde_json::json!({"available": false});
@@ -983,9 +1026,20 @@ impl Runtime {
         stack: Value,
         name: String,
         base_port: Option<u16>,
+        target: ApplyTarget,
     ) -> Result<Value, ApiError> {
         let _guard = self.apply_lock.lock().await;
-        let previous = self.take_applied();
+        let previous = {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            match target {
+                ApplyTarget::Stack => state.stack.take(),
+                ApplyTarget::Fleet => state
+                    .fleet
+                    .iter()
+                    .position(|applied| applied.name == name)
+                    .map(|index| state.fleet.remove(index)),
+            }
+        };
         if let Some(previous) = previous {
             unload(previous).await;
         }
@@ -1004,31 +1058,61 @@ impl Runtime {
         let engines = applied.engines();
         let rows = apply_rows(&tiers);
         let started_at = timestamp();
-        *self.state.lock().unwrap_or_else(|error| error.into_inner()) = Some(AppliedStack {
+        let applied = AppliedStack {
             name,
             tiers,
             warnings,
             engines,
             started_at,
             applied,
-        });
+        };
+        {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            match target {
+                ApplyTarget::Stack => state.stack = Some(applied),
+                ApplyTarget::Fleet => state.fleet.push(applied),
+            }
+        }
         Ok(serde_json::json!({"ok": true, "tiers": rows}))
     }
 
     fn engines_snapshot(&self) -> Vec<EngineInfo> {
+        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        state
+            .all()
+            .flat_map(|applied| applied.engines.iter().cloned())
+            .collect()
+    }
+
+    fn last_fleet_tier(&self) -> Option<Value> {
         self.state
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .as_ref()
-            .map(|applied| applied.engines.clone())
-            .unwrap_or_default()
+            .fleet
+            .last()
+            .and_then(|applied| applied.tiers.first().cloned())
+    }
+
+    fn rename_last_tier(&self, key: &str) {
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(tier) = state
+            .fleet
+            .last_mut()
+            .and_then(|applied| applied.tiers.first_mut())
+            && let Some(object) = tier.as_object_mut()
+        {
+            object.insert("key".into(), Value::String(key.to_owned()));
+        }
     }
 
     fn instance_for_tier(&self, tier: &Value, engines: &[EngineInfo], started_at: &str) -> Value {
         let key = tier.get("key").and_then(Value::as_str).unwrap_or("");
         let port = tier.get("port").and_then(Value::as_u64).unwrap_or(0);
         let role = tier.get("role").and_then(Value::as_str).unwrap_or("");
-        let engine = engines.iter().find(|engine| engine.role == role);
+        let engine = engines
+            .iter()
+            .find(|engine| engine.port as u64 == port)
+            .or_else(|| engines.iter().find(|engine| engine.role == role));
         serde_json::json!({
             "key": key,
             "running": true,
@@ -1050,35 +1134,6 @@ impl Runtime {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .clone()
-    }
-
-    fn first_tier(&self) -> Option<Value> {
-        self.state
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .as_ref()
-            .and_then(|applied| applied.tiers.first().cloned())
-    }
-
-    fn rename_first_tier(&self, key: &str) {
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        if let Some(applied) = state.as_mut()
-            && let Some(tier) = applied.tiers.first_mut()
-            && let Some(object) = tier.as_object_mut()
-        {
-            object.insert("key".into(), Value::String(key.to_owned()));
-        }
-    }
-
-    fn take_applied(&self) -> Option<AppliedStack> {
-        self.state
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take()
-    }
-
-    fn put_applied(&self, applied: AppliedStack) {
-        *self.state.lock().unwrap_or_else(|error| error.into_inner()) = Some(applied);
     }
 }
 
@@ -1391,6 +1446,14 @@ async fn unload(applied: AppliedStack) -> bool {
     tokio::task::spawn_blocking(move || applied.applied.unload_drained())
         .await
         .unwrap_or(false)
+}
+
+fn stack_matches(applied: &AppliedStack, key: &str) -> bool {
+    applied.name == key
+        || applied.tiers.iter().any(|tier| {
+            tier.get("key").and_then(Value::as_str) == Some(key)
+                || tier.get("role").and_then(Value::as_str) == Some(key)
+        })
 }
 
 fn apply_rows(tiers: &[Value]) -> Vec<Value> {

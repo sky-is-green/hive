@@ -593,9 +593,9 @@ The first daemon slice is on `rust-migration`:
 - **Stacks and server lifecycle.** `GET/PUT/DELETE /v1/stacks*`, `validate`,
   `apply`, `unload`, and `GET /v1/stacks/status` run through the Rust
   supervisor. `/v1/server/start|stop|unload|unload-loaded|status|log|memory|
-  metrics|fit` share the same runtime. At most one stack is applied (the
-  Python manager has the same discipline for stacks); a server start becomes a
-  one-tier stack, replaces the current one, and reports the instance shape.
+  metrics|fit` share the same runtime. One saved stack is applied at a time
+  (matching Python); `/v1/server/start` adds one-tier fleets that coexist and
+  stop individually.
 - **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
   delete inside the model library; `POST /v1/models/local/path` switches and
   persists the library, and `import-path` links an external folder (the library
