@@ -1079,10 +1079,63 @@ impl Runtime {
             "local_models": local_models,
             "downloads": [],
             "hardware": hardware,
-            "strata": {"alive": false},
+            "strata": self.strata_status(),
             "loaded": loaded,
             "loaded_model": loaded.first().and_then(|row| row.get("model").cloned()).unwrap_or(Value::Null),
         })
+    }
+
+    fn strata_status(&self) -> Value {
+        let base = std::env::var("CASCADE_SCION_BASE")
+            .ok()
+            .map(|value| value.trim_end_matches('/').to_owned())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "http://127.0.0.1:8081/v1".into());
+        let root = base.strip_suffix("/v1").unwrap_or(&base);
+        let mut out = serde_json::json!({
+            "base_url": base,
+            "alive": false,
+            "loaded": false,
+            "model": null,
+            "models": [],
+        });
+        if let Ok(response) = http::get(&format!("{root}/v1/status"), Duration::from_secs(2))
+            && response.status == 200
+            && let Ok(data) = response.json()
+        {
+            let model = data.get("model").and_then(Value::as_str);
+            out["alive"] = Value::Bool(true);
+            out["loaded"] =
+                Value::Bool(data.get("loaded").and_then(Value::as_bool).unwrap_or(false));
+            out["model"] = model
+                .map(|model| Value::String(model.into()))
+                .unwrap_or(Value::Null);
+            out["models"] = model
+                .map(|model| serde_json::json!([model]))
+                .unwrap_or_else(|| serde_json::json!([]));
+            return out;
+        }
+        if let Ok(response) = http::get(&format!("{base}/models"), Duration::from_secs(2))
+            && response.status == 200
+            && let Ok(data) = response.json()
+        {
+            let models: Vec<Value> = data
+                .get("data")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|item| {
+                    item.get("id")
+                        .and_then(Value::as_str)
+                        .map(|id| Value::String(id.into()))
+                })
+                .collect();
+            out["alive"] = Value::Bool(true);
+            out["model"] = models.first().cloned().unwrap_or(Value::Null);
+            out["models"] = Value::Array(models);
+        }
+        out
     }
 
     pub fn server_log(&self, tail: usize) -> Value {
@@ -1291,7 +1344,7 @@ impl Runtime {
         })
     }
 
-    fn models_dir(&self) -> PathBuf {
+    pub fn models_dir(&self) -> PathBuf {
         self.models_dir
             .lock()
             .unwrap_or_else(|error| error.into_inner())

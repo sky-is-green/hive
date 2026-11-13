@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "per_card": [],
+  "warnings": [
+    "tier face: endpoint-backed (http://127.0.0.1:9/v1); residency is external, not planned"
+  ]
+}

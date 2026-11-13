@@ -377,6 +377,11 @@ def _wait_health(
     raise AssertionError(f"sidecar did not become healthy: {last}")
 
 
+def _assert_golden(name: str, actual: object, root: Path) -> None:
+    expected = json.loads((golden_support.GOLDEN / f"{name}.json").read_text())
+    assert golden_support.normalize(actual, root, sys.executable) == expected, name
+
+
 def _alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
@@ -691,16 +696,16 @@ def test_stack_crud_and_validate(tmp_path):
         assert headers["x-hive-owner"] == "rust"
         assert payload["name"] == "endpoint-only"
         assert payload["tiers"][0]["role"] == "face"
+        _assert_golden("daemon_stack_put", payload, tmp_path)
 
         status, _, payload = _request(port, "/v1/stacks")
         assert status == 200
-        assert payload == [
-            {"name": "endpoint-only", "tiers": 1, "roles": ["face"]}
-        ]
+        _assert_golden("daemon_stack_list", payload, tmp_path)
 
         status, _, payload = _request(port, "/v1/stacks/endpoint-only")
         assert status == 200
         assert payload["tiers"][0]["endpoint"] == "http://127.0.0.1:9/v1"
+        _assert_golden("daemon_stack_get", payload, tmp_path)
 
         status, _, payload = _request(
             port, "/v1/stacks/endpoint-only/validate", method="POST", body=b"{}"
@@ -709,10 +714,11 @@ def test_stack_crud_and_validate(tmp_path):
         assert payload["ok"] is True
         assert payload["per_card"] == []
         assert any("endpoint-backed" in warning for warning in payload["warnings"])
+        _assert_golden("daemon_stack_validate", payload, tmp_path)
 
         status, _, payload = _request(port, "/v1/stacks/endpoint-only", method="DELETE")
         assert status == 200
-        assert payload == {"ok": True, "deleted": "endpoint-only"}
+        _assert_golden("daemon_stack_delete", payload, tmp_path)
         status, _, payload = _request(port, "/v1/stacks/endpoint-only")
         assert status == 404
 
@@ -1198,6 +1204,28 @@ def test_local_library_path_and_import(tmp_path):
         status, _, payload = _request(port, "/v1/models/local")
         assert payload["models_dir"] == str(target)
         assert any(row["file"] == "external/ext.gguf" for row in payload["models"])
+
+        boundary = "----hive-boundary"
+        upload = b"GGUF\x03\x00\x00\x00"
+        multipart = (
+            f'--{boundary}\r\nContent-Disposition: form-data; name="files"; '
+            f'filename="sub/uploaded.gguf"\r\nContent-Type: application/octet-stream'
+            f"\r\n\r\n"
+        ).encode() + upload + f"\r\n--{boundary}--\r\n".encode()
+        status, _, body = _raw_request(
+            port,
+            "/v1/models/local/import",
+            method="POST",
+            body=multipart,
+            headers={
+                "content-type": f"multipart/form-data; boundary={boundary}"
+            },
+            timeout=30,
+        )
+        assert status == 200, body
+        payload = json.loads(body)
+        assert payload["imported"] == ["sub/uploaded.gguf"], payload
+        assert (target / "sub" / "uploaded.gguf").read_bytes() == upload
 
         status, _, payload = _request(
             port,

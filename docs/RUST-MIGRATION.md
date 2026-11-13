@@ -599,8 +599,8 @@ The first daemon slice is on `rust-migration`:
   stack without unloading the others.
 - **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
   delete inside the model library; `POST /v1/models/local/path` switches and
-  persists the library, and `import-path` links an external folder (the library
-  walk follows links); `GET /v1/models/hub`, `GET
+  persists the library, `import-path` links an external folder (the library
+  walk follows links), and multipart `import` streams uploads into the library; `GET /v1/models/hub`, `GET
   /v1/models/hub/files/{repo}`, `POST /v1/models/hub/download`, and `GET
   /v1/models/hub/downloads` use the same wire shapes as Python. Downloads run
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
@@ -619,7 +619,7 @@ The first daemon slice is on `rust-migration`:
   resolve the Rust-started engine.
 - **Daemon golden contracts.** `tests/conformance/golden/daemon_version.json`
   and `daemon_config.json` freeze the native `/v1/version` and `/v1/config`
-  payloads with paths/platform/python normalized.
+  payloads; `daemon_stack_*` freezes stack PUT/list/get/validate/delete.
 - **Service packaging.** `rust/packaging/systemd/hive-daemon.service` runs the
   daemon as a user service with restart-on-failure; `docs/DAEMON.md` covers the
   install layout, `HIVE_PYTHON`, and operations.

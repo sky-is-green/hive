@@ -1,0 +1,16 @@
+{
+  "name": "endpoint-only",
+  "routing": {},
+  "tiers": [
+    {
+      "backend": "cpu",
+      "ctx": 2048,
+      "endpoint": "http://127.0.0.1:9/v1",
+      "file": "remote.gguf",
+      "ngl": 0,
+      "repo": "local",
+      "role": "face"
+    }
+  ],
+  "version": 1
+}

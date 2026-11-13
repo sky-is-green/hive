@@ -1,0 +1,9 @@
+[
+  {
+    "name": "endpoint-only",
+    "roles": [
+      "face"
+    ],
+    "tiers": 1
+  }
+]

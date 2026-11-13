@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use axum::body::Body;
-use axum::extract::{Path as UrlPath, Query, Request, State};
+use axum::extract::{DefaultBodyLimit, Multipart, Path as UrlPath, Query, Request, State};
 use axum::http::header::{
     CACHE_CONTROL, CONNECTION, CONTENT_TYPE, HOST, HeaderMap, HeaderName, HeaderValue,
     TRANSFER_ENCODING, UPGRADE,
@@ -313,6 +313,10 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         )
         .route("/v1/models/local/path", post(set_local_path))
         .route("/v1/models/local/import-path", post(import_local_path))
+        .route(
+            "/v1/models/local/import",
+            post(import_local_models).layer(DefaultBodyLimit::max(32 * 1024 * 1024 * 1024)),
+        )
         .route("/v1/models/hub", get(hub_search))
         .route("/v1/models/hub/files/{*repo}", get(hub_files))
         .route("/v1/models/hub/download", post(hub_download))
@@ -852,6 +856,85 @@ async fn import_local_path(
 ) -> Response {
     let folder = body.get("folder").and_then(Value::as_str).unwrap_or("");
     runtime_json(state.runtime.import_local_path(folder))
+}
+
+async fn import_local_models(
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Response {
+    let root = state.runtime.models_dir();
+    let mut imported = Vec::new();
+    let mut errors = Vec::new();
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(error) => {
+                return runtime_error(ApiError {
+                    status: 400,
+                    detail: format!("invalid multipart upload: {error}"),
+                });
+            }
+        };
+        let Some(filename) = field.file_name().map(str::to_owned) else {
+            continue;
+        };
+        if !filename.to_ascii_lowercase().ends_with(".gguf") {
+            errors.push(format!("{filename}: not a .gguf file"));
+            continue;
+        }
+        let relative = Path::new(&filename);
+        if relative.is_absolute()
+            || relative
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir))
+        {
+            errors.push(format!("{filename}: invalid path"));
+            continue;
+        }
+        let destination = root.join(relative);
+        if let Some(parent) = destination.parent()
+            && let Err(error) = tokio::fs::create_dir_all(parent).await
+        {
+            errors.push(format!("{filename}: {error}"));
+            continue;
+        }
+        let mut file = match tokio::fs::File::create(&destination).await {
+            Ok(file) => file,
+            Err(error) => {
+                errors.push(format!("{filename}: {error}"));
+                continue;
+            }
+        };
+        let mut field = field;
+        let mut failed = None;
+        loop {
+            match field.chunk().await {
+                Ok(Some(chunk)) => {
+                    use tokio::io::AsyncWriteExt;
+                    if let Err(error) = file.write_all(&chunk).await {
+                        failed = Some(error.to_string());
+                        break;
+                    }
+                }
+                Ok(None) => break,
+                Err(error) => {
+                    failed = Some(error.to_string());
+                    break;
+                }
+            }
+        }
+        if let Some(error) = failed {
+            errors.push(format!("{filename}: {error}"));
+            continue;
+        }
+        imported.push(relative.to_string_lossy().into_owned());
+    }
+    runtime_json(Ok(serde_json::json!({
+        "imported": imported,
+        "errors": errors,
+        "models_dir": root.to_string_lossy(),
+    })))
 }
 
 async fn hub_search(
