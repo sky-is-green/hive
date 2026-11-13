@@ -21,7 +21,7 @@ impl Library {
     /// The rows the Python CLI prints for `models list --json`.
     pub fn rows(&self) -> Vec<Value> {
         let mut paths: Vec<PathBuf> = WalkDir::new(&self.dir)
-            .follow_links(false)
+            .follow_links(true)
             .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| entry.file_type().is_file())
@@ -92,7 +92,7 @@ impl Library {
 
     pub fn count(&self) -> usize {
         WalkDir::new(&self.dir)
-            .follow_links(false)
+            .follow_links(true)
             .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| entry.file_type().is_file())

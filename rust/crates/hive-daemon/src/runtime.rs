@@ -42,6 +42,7 @@ struct AppliedStack {
 pub struct Runtime {
     paths: Paths,
     runs_dir: PathBuf,
+    models_dir: Mutex<PathBuf>,
     options: Options,
     client: reqwest::Client,
     downloads: Arc<Downloads>,
@@ -81,6 +82,7 @@ impl Runtime {
         Self {
             paths: paths.clone(),
             runs_dir: paths.home.join("runs"),
+            models_dir: Mutex::new(paths.models_dir.clone()),
             options,
             client: client.clone(),
             downloads: Arc::new(Downloads::new(client)),
@@ -151,7 +153,7 @@ impl Runtime {
     pub fn validate_stack(&self, name: &str) -> Result<Value, ApiError> {
         let stack = self.load_stack(name)?;
         let devices = hive_supervisor::residency::visible_devices();
-        let plan = hive_supervisor::residency::plan(&stack, &self.paths.models_dir, &devices);
+        let plan = hive_supervisor::residency::plan(&stack, &self.models_dir(), &devices);
         Ok(serde_json::json!({
             "ok": plan.ok,
             "per_card": plan.per_card.iter().map(|card| card.to_json()).collect::<Vec<_>>(),
@@ -216,9 +218,137 @@ impl Runtime {
     // ------------------------------------------------------------------
     pub fn local_models(&self) -> Value {
         serde_json::json!({
-            "models_dir": self.paths.models_dir.to_string_lossy(),
-            "models": hive_models::Library::new(&self.paths.models_dir).rows(),
+            "models_dir": self.models_dir().to_string_lossy(),
+            "models": hive_models::Library::new(&self.models_dir()).rows(),
         })
+    }
+
+    pub fn set_models_dir(&self, folder: &str) -> Result<Value, ApiError> {
+        let folder = folder.trim();
+        if folder.is_empty() {
+            return Err(ApiError::new(422, "folder is required"));
+        }
+        let path = expand(Path::new(folder));
+        if !path.exists() {
+            std::fs::create_dir_all(&path).map_err(|error| {
+                ApiError::new(
+                    404,
+                    format!("cannot create folder {}: {error}", path.display()),
+                )
+            })?;
+        }
+        if !path.is_dir() {
+            return Err(ApiError::new(
+                400,
+                format!("not a directory: {}", path.display()),
+            ));
+        }
+        let canonical = path.canonicalize().map_err(|error| {
+            ApiError::new(400, format!("cannot use {}: {error}", path.display()))
+        })?;
+        *self
+            .models_dir
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = canonical.clone();
+        let config = self.paths.state_dir.join("models_dir.txt");
+        if let Some(parent) = config.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(&config, canonical.to_string_lossy().as_bytes());
+        Ok(serde_json::json!({
+            "models_dir": canonical.to_string_lossy(),
+            "models": hive_models::Library::new(&canonical).rows(),
+        }))
+    }
+
+    pub fn import_local_path(&self, folder: &str) -> Result<Value, ApiError> {
+        let folder = folder.trim();
+        if folder.is_empty() {
+            return Err(ApiError::new(422, "folder is required"));
+        }
+        let source = expand(Path::new(folder))
+            .canonicalize()
+            .map_err(|_| ApiError::new(404, format!("folder not found: {folder}")))?;
+        if !source.is_dir() {
+            return Err(ApiError::new(
+                404,
+                format!("folder not found: {}", source.display()),
+            ));
+        }
+        let root = self.models_dir();
+        let source_models: Vec<PathBuf> = hive_models::ops::walk_gguf(&source);
+        if source_models.is_empty() {
+            return Err(ApiError::new(
+                404,
+                format!("no .gguf files under {}", source.display()),
+            ));
+        }
+        if source.starts_with(&root) {
+            let imported: Vec<String> = source_models
+                .iter()
+                .filter_map(|path| path.strip_prefix(&root).ok())
+                .map(|path| path.to_string_lossy().into_owned())
+                .take(50)
+                .collect();
+            return Ok(serde_json::json!({
+                "imported": imported,
+                "linked": false,
+                "models_dir": root.to_string_lossy(),
+            }));
+        }
+        let link_name = source
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .filter(|name| !name.is_empty())
+            .unwrap_or_else(|| "imported".into());
+        let mut destination = root.join(&link_name);
+        let mut suffix = 2;
+        while destination.exists() {
+            if destination
+                .canonicalize()
+                .map(|existing| existing == source)
+                .unwrap_or(false)
+            {
+                let imported: Vec<String> = hive_models::ops::walk_gguf(&destination)
+                    .iter()
+                    .filter_map(|path| path.strip_prefix(&root).ok())
+                    .map(|path| path.to_string_lossy().into_owned())
+                    .collect();
+                return Ok(serde_json::json!({
+                    "imported": imported,
+                    "linked": false,
+                    "models_dir": root.to_string_lossy(),
+                }));
+            }
+            destination = root.join(format!("{link_name}-{suffix}"));
+            suffix += 1;
+        }
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&source, &destination).map_err(|error| {
+            ApiError::new(
+                500,
+                format!(
+                    "failed to link {} -> {}: {error}",
+                    source.display(),
+                    destination.display()
+                ),
+            )
+        })?;
+        #[cfg(not(unix))]
+        return Err(ApiError::new(
+            501,
+            "folder links are not implemented on this platform yet",
+        ));
+        let imported: Vec<String> = hive_models::ops::walk_gguf(&destination)
+            .iter()
+            .filter_map(|path| path.strip_prefix(&root).ok())
+            .map(|path| path.to_string_lossy().into_owned())
+            .collect();
+        Ok(serde_json::json!({
+            "imported": imported,
+            "linked": destination.to_string_lossy(),
+            "models_dir": root.to_string_lossy(),
+        }))
     }
 
     pub fn delete_local(&self, file: &str) -> Result<Value, ApiError> {
@@ -227,8 +357,7 @@ impl Runtime {
             return Err(ApiError::new(422, "file is required"));
         }
         let root = self
-            .paths
-            .models_dir
+            .models_dir()
             .canonicalize()
             .map_err(|error| ApiError::new(404, format!("no models directory: {error}")))?;
         let candidate = Path::new(file);
@@ -353,7 +482,7 @@ impl Runtime {
             ));
         }
         self.downloads
-            .start(&self.paths, repo, file)
+            .start(self.models_dir(), repo, file)
             .map_err(|error| ApiError::new(500, error))
     }
 
@@ -728,7 +857,7 @@ impl Runtime {
                 Value::String(format!("http://127.0.0.1:{}", self.options.base_port))
             });
         let binary = self.options.llama_server.clone();
-        let local_models = hive_models::Library::new(&self.paths.models_dir).rows();
+        let local_models = hive_models::Library::new(&self.models_dir()).rows();
         let mut hardware = hardware_summary(&self.paths);
         hardware["source"] = Value::String("rust-daemon".into());
         serde_json::json!({
@@ -916,6 +1045,13 @@ impl Runtime {
         })
     }
 
+    fn models_dir(&self) -> PathBuf {
+        self.models_dir
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
+    }
+
     fn first_tier(&self) -> Option<Value> {
         self.state
             .lock()
@@ -996,7 +1132,12 @@ impl Downloads {
         serde_json::json!({"downloads": rows})
     }
 
-    fn start(self: &Arc<Self>, paths: &Paths, repo: &str, filename: &str) -> Result<Value, String> {
+    fn start(
+        self: &Arc<Self>,
+        models_dir: PathBuf,
+        repo: &str,
+        filename: &str,
+    ) -> Result<Value, String> {
         let key = format!("{repo}:{filename}");
         let mut jobs = self.jobs.lock().unwrap_or_else(|error| error.into_inner());
         prune(&mut jobs);
@@ -1024,7 +1165,6 @@ impl Downloads {
         drop(jobs);
 
         let downloads = Arc::clone(self);
-        let models_dir = paths.models_dir.clone();
         let repo = repo.to_owned();
         let filename = filename.to_owned();
         tokio::spawn(async move {

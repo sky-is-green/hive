@@ -597,7 +597,9 @@ The first daemon slice is on `rust-migration`:
   Python manager has the same discipline for stacks); a server start becomes a
   one-tier stack, replaces the current one, and reports the instance shape.
 - **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
-  delete inside the model library; `GET /v1/models/hub`, `GET
+  delete inside the model library; `POST /v1/models/local/path` switches and
+  persists the library, and `import-path` links an external folder (the library
+  walk follows links); `GET /v1/models/hub`, `GET
   /v1/models/hub/files/{repo}`, `POST /v1/models/hub/download`, and `GET
   /v1/models/hub/downloads` use the same wire shapes as Python. Downloads run
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check

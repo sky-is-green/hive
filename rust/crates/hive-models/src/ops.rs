@@ -39,22 +39,37 @@ pub fn resolve_model(name: &str, models_dir: &Path) -> Option<PathBuf> {
 /// Every `.gguf` under `root`, recursively (symlinked directories are not
 /// followed, matching Python's `Path.rglob`).
 pub fn walk_gguf(root: &Path) -> Vec<PathBuf> {
+    let mut visited = std::collections::HashSet::new();
     let mut out = Vec::new();
+    walk_gguf_into(root, &mut visited, &mut out);
+    out
+}
+
+fn walk_gguf_into(
+    root: &Path,
+    visited: &mut std::collections::HashSet<PathBuf>,
+    out: &mut Vec<PathBuf>,
+) {
+    let Ok(canonical) = root.canonicalize() else {
+        return;
+    };
+    if !visited.insert(canonical) {
+        return;
+    }
     let Ok(entries) = std::fs::read_dir(root) else {
-        return out;
+        return;
     };
     for entry in entries.flatten() {
         let path = entry.path();
-        let Ok(file_type) = entry.file_type() else {
+        let Ok(metadata) = std::fs::metadata(&path) else {
             continue;
         };
-        if file_type.is_dir() {
-            out.extend(walk_gguf(&path));
-        } else if file_type.is_file() && path.extension().is_some_and(|ext| ext == "gguf") {
+        if metadata.is_dir() {
+            walk_gguf_into(&path, visited, out);
+        } else if metadata.is_file() && path.extension().is_some_and(|ext| ext == "gguf") {
             out.push(path);
         }
     }
-    out
 }
 
 #[cfg(test)]

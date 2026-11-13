@@ -1109,3 +1109,52 @@ def test_group_one_payloads_match_the_frozen_golden(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=5)
+
+
+def test_local_library_path_and_import(tmp_path):
+    external = tmp_path / "external"
+    external.mkdir()
+    (external / "ext.gguf").write_bytes(b"GGUF\x03\x00\x00\x00")
+    target = tmp_path / "new-library"
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/local/path",
+            method="POST",
+            body=json.dumps({"folder": str(target)}).encode(),
+        )
+        assert status == 200
+        assert payload["models_dir"] == str(target)
+        assert payload["models"] == []
+        assert (tmp_path / "home" / "harness_state" / "models_dir.txt").read_text() == str(target)
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/local/import-path",
+            method="POST",
+            body=json.dumps({"folder": str(external)}).encode(),
+        )
+        assert status == 200
+        linked = Path(payload["linked"])
+        assert linked.is_symlink()
+        assert linked.resolve() == external.resolve()
+        assert payload["imported"] == ["external/ext.gguf"]
+
+        status, _, payload = _request(port, "/v1/models/local")
+        assert payload["models_dir"] == str(target)
+        assert any(row["file"] == "external/ext.gguf" for row in payload["models"])
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/local/path",
+            method="POST",
+            body=json.dumps({"folder": str(external / "ext.gguf")}).encode(),
+        )
+        assert status == 400
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)

@@ -310,6 +310,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
             "/v1/models/local",
             get(local_models).delete(delete_local_model),
         )
+        .route("/v1/models/local/path", post(set_local_path))
+        .route("/v1/models/local/import-path", post(import_local_path))
         .route("/v1/models/hub", get(hub_search))
         .route("/v1/models/hub/files/{*repo}", get(hub_files))
         .route("/v1/models/hub/download", post(hub_download))
@@ -823,6 +825,23 @@ async fn delete_local_model(
         });
     };
     runtime_json(state.runtime.delete_local(file))
+}
+
+async fn set_local_path(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let folder = body
+        .get("folder")
+        .or_else(|| body.get("path"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    runtime_json(state.runtime.set_models_dir(folder))
+}
+
+async fn import_local_path(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Response {
+    let folder = body.get("folder").and_then(Value::as_str).unwrap_or("");
+    runtime_json(state.runtime.import_local_path(folder))
 }
 
 async fn hub_search(
