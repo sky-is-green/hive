@@ -219,7 +219,7 @@ impl Runtime {
     pub fn local_models(&self) -> Value {
         serde_json::json!({
             "models_dir": self.models_dir().to_string_lossy(),
-            "models": hive_models::Library::new(&self.models_dir()).rows(),
+            "models": hive_models::Library::new(self.models_dir()).rows(),
         })
     }
 
@@ -857,7 +857,7 @@ impl Runtime {
                 Value::String(format!("http://127.0.0.1:{}", self.options.base_port))
             });
         let binary = self.options.llama_server.clone();
-        let local_models = hive_models::Library::new(&self.models_dir()).rows();
+        let local_models = hive_models::Library::new(self.models_dir()).rows();
         let mut hardware = hardware_summary(&self.paths);
         hardware["source"] = Value::String("rust-daemon".into());
         serde_json::json!({
