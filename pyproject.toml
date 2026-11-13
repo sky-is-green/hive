@@ -63,6 +63,7 @@ all = [
 
 [project.scripts]
 hive = "harness.cli:main"
+hive-py = "harness.cli:main"
 hivebench = "experiments.generate_data:main"
 hivebench-protocol = "experiments.run_p1_p10:main"
 hivebench-probe = "experiments.model_probe:main"
