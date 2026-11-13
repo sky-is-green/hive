@@ -134,6 +134,14 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/server/stop", post(server_stop))
         .route("/v1/server/unload", post(server_unload))
         .route("/v1/server/unload-loaded", post(server_unload_loaded))
+        .route(
+            "/v1/models/local",
+            get(local_models).delete(delete_local_model),
+        )
+        .route("/v1/models/hub", get(hub_search))
+        .route("/v1/models/hub/files/{*repo}", get(hub_files))
+        .route("/v1/models/hub/download", post(hub_download))
+        .route("/v1/models/hub/downloads", get(hub_downloads))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(CorsLayer::permissive())
@@ -508,6 +516,56 @@ async fn server_unload(State(state): State<Arc<AppState>>, Json(body): Json<Valu
 
 async fn server_unload_loaded(State(state): State<Arc<AppState>>) -> Response {
     runtime_json(Ok(state.runtime.unload_loaded().await))
+}
+
+async fn local_models(State(state): State<Arc<AppState>>) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.local_models()).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("library worker failed: {error}"),
+        }),
+    }
+}
+
+async fn delete_local_model(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let Some(file) = query.get("file") else {
+        return runtime_error(ApiError {
+            status: 422,
+            detail: "file is required".into(),
+        });
+    };
+    runtime_json(state.runtime.delete_local(file))
+}
+
+async fn hub_search(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let q = query.get("q").cloned().unwrap_or_default();
+    let limit = query
+        .get("limit")
+        .and_then(|text| text.parse::<i64>().ok())
+        .unwrap_or(12);
+    runtime_json(state.runtime.hub_search(&q, limit).await)
+}
+
+async fn hub_files(State(state): State<Arc<AppState>>, UrlPath(repo): UrlPath<String>) -> Response {
+    runtime_json(state.runtime.hub_files(repo.trim_start_matches('/')).await)
+}
+
+async fn hub_download(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let repo = body.get("repo").and_then(Value::as_str).unwrap_or("");
+    let file = body.get("file").and_then(Value::as_str).unwrap_or("");
+    runtime_json(state.runtime.hub_download(repo, file))
+}
+
+async fn hub_downloads(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.runtime.hub_downloads()))
 }
 
 /// The console shell, its `/api` prefix, and the Python-only API all arrive

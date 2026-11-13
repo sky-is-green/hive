@@ -486,6 +486,7 @@ mod tests {
             state_dir: PathBuf::from("/tmp"),
             log_dir: PathBuf::from("/tmp"),
             startup_timeout: 1.0,
+            drain_timeout: 1.0,
         }
     }
 

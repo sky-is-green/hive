@@ -74,7 +74,7 @@ Severity:
 |---|---|---|---|---|
 | P1-10 | Managed Strata/DeepInfer launch tiers are fake-repo tested only. DeepInfer was a capability probe, not runtime support; Strata needs per-model support. | deferred | accepted — revisit when the real lanes return | A supported Strata model and the DeepInfer capability lane are run end-to-end; DeepInfer is not presented as supported runtime. |
 | P1-11 | A `kill -9` of the Rust supervisor may leave launch-tier grandchildren behind if the Python launcher ignores signals. | deferred | accepted — tied to P1-10 | Revisit with P1-10; a real launch-tier kill -9 test leaves no engine processes. |
-| P1-12 | No `drain_slots` wait before unload; a model killed mid-generation loses work. | should | open | Unload polls `/slots` with the Python timeout before SIGTERM. |
+| P1-12 | No `drain_slots` wait before unload; a model killed mid-generation loses work. | should | fixed — supervisor drain | Unload polls `/slots` with the Python timeout before SIGTERM. |
 | P1-13 | No log rotation or size cap for supervisor/engine logs. | minor | open | A size cap or rotation policy is implemented/accepted. |
 | P1-14 | Port allocation is check-then-spawn; a race can lose the port. | minor | open | A reservation/lock covers the spawn window, or the race is accepted. |
 | P1-15 | `hive logs -f` exits 130 on Ctrl-C; Python exits 0. | minor | open | The follow loop catches SIGINT and returns 0. |
@@ -100,7 +100,7 @@ Severity:
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
 | P1-27 | `models download` has no Hugging Face cache layout, ETag, or checksum verification. | should | open | Download integrity/cache behavior is verified or documented as a simpler path. |
-| P1-28 | Downloads do not compare the final byte count with `Content-Length`; a truncated stream can be renamed to the final file. | should | open | Final length is checked and `.part` is kept on mismatch. |
+| P1-28 | Downloads do not compare the final byte count with `Content-Length`; a truncated stream can be renamed to the final file. | should | fixed — CLI + daemon length check | Final length is checked and `.part` is kept on mismatch. |
 | P1-29 | `backends fetch` handles Linux `tar.gz` only; Windows `zip` is unsupported. | deferred | open | Windows backend install is implemented. |
 | P1-30 | Backend archives have no checksum/size verification beyond extraction and `--version`. | should | open | Archive length/hash is verified before install. |
 | P1-31 | `setup` always fetches the default Vulkan build; no `--tag` passthrough. | minor | open | `setup` accepts a tag or documents the fixed default. |
@@ -176,7 +176,10 @@ Severity:
 | P2-23 | Stack PUT uses the Rust shape parser and an atomic rename; Python's exact normalization/error text is not frozen in a golden corpus. | should | open | Stack CRUD responses match the frozen golden corpus field-for-field. |
 | P2-24 | Native server/start launches are not registered as providers/engines in the Python sidecar, so chat routing cannot see them yet. | should | open | Provider/engine registration moves native with the server group, or the daemon mirrors it into the sidecar. |
 | P2-25 | Native server status reports `healthy` from the last apply, not a fresh engine probe; a crashed engine still looks loaded. | should | open | Status probes each engine and prunes dead instances. |
-| P2-26 | Native unload does not drain an in-flight generation before stopping the engine (the Python manager waits). | should | open | Unload drains slots with a bounded timeout before terminating, closing P1-12 for the daemon too. |
+| P2-26 | Native unload does not drain an in-flight generation before stopping the engine (the Python manager waits). | should | fixed — supervisor drain | Unload drains slots with a bounded timeout before terminating, closing P1-12 for the daemon too. |
+| P2-27 | Native model routes cover local list/delete and hub search/files/download, but `POST /v1/models/local/path`, `import-path`, multipart import, `/v1/models/linux`, and move-to-linux/windows still proxy to Python. | should | open | Those routes are native or accepted as Python-only. |
+| P2-28 | `GET /v1/models` (served model IDs from a provider endpoint) still proxies; the native server status covers loaded engines only. | should | open | The served-model listing reads native instances and provider records. |
+| P2-29 | Daemon hub tests use `HIVE_HF_API`/`HIVE_HF_BASE` overrides; production defaults are the public Hugging Face endpoints. | minor | open | The overrides are documented as test hooks, or the hub client is injectable without env. |
 
 
 ## Phase 3 — memory and encoder

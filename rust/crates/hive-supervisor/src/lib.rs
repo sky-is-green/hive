@@ -32,6 +32,8 @@ pub struct Options {
     pub state_dir: PathBuf,
     pub log_dir: PathBuf,
     pub startup_timeout: f64,
+    /// Seconds to wait for `/slots` to report idle before SIGTERM.
+    pub drain_timeout: f64,
 }
 
 /// A successfully applied stack.
@@ -39,6 +41,7 @@ pub struct Applied {
     pub tiers: Vec<Value>,
     pub warnings: Vec<String>,
     pub per_card: Vec<Value>,
+    drain_timeout: f64,
     children: Vec<Engine>,
 }
 
@@ -48,6 +51,8 @@ struct Engine {
     port: u16,
     log: PathBuf,
     child: Child,
+    /// Local llama-server processes expose `/slots`; launch-tier engines do not.
+    drain: bool,
 }
 
 /// One engine this process started, without its child handle.
@@ -86,9 +91,35 @@ impl Applied {
             .collect()
     }
 
-    /// Stop every engine this process started: SIGTERM, then SIGKILL.
+    /// Stop every engine this process started: drain, SIGTERM, then SIGKILL.
     pub fn unload(mut self) {
+        let _ = self.drain(self.drain_timeout());
         terminate_all(&mut self.children);
+    }
+
+    /// Stop every engine, returning whether each was seen idle before SIGTERM.
+    pub fn unload_drained(mut self) -> bool {
+        let drained = self.drain(self.drain_timeout());
+        terminate_all(&mut self.children);
+        drained
+    }
+
+    fn drain_timeout(&self) -> Duration {
+        Duration::from_secs_f64(self.drain_timeout)
+    }
+
+    fn drain(&self, timeout: Duration) -> bool {
+        if self.children.is_empty() {
+            return false;
+        }
+        let deadline = Instant::now() + timeout;
+        let mut all_idle = true;
+        for engine in self.children.iter().filter(|engine| engine.drain) {
+            if !drain_engine(engine.port, deadline) {
+                all_idle = false;
+            }
+        }
+        all_idle
     }
 }
 
@@ -200,6 +231,7 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
         tiers: Vec::new(),
         warnings: preflight.warnings.clone(),
         per_card: per_card.clone(),
+        drain_timeout: options.drain_timeout,
         children: Vec::new(),
     };
     let mut busy: HashSet<u16> = HashSet::new();
@@ -283,6 +315,7 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
                         port: launched.port,
                         log: launched.log,
                         child: launched.child,
+                        drain: false,
                     });
                 }
             }
@@ -656,9 +689,36 @@ fn spawn_local(
         port,
         log: log_path.clone(),
         child,
+        drain: true,
     };
     wait_healthy(&mut engine, options.startup_timeout)?;
     Ok(engine)
+}
+
+/// Wait until the engine's slots report idle, bounded by `deadline`.
+fn drain_engine(port: u16, deadline: Instant) -> bool {
+    let url = format!("http://127.0.0.1:{port}/slots");
+    loop {
+        if let Ok(response) = http::get(&url, Duration::from_secs(2))
+            && response.status == 200
+            && let Ok(slots) = response.json()
+            && let Some(items) = slots.as_array()
+            && !items.is_empty()
+        {
+            let busy = items.iter().any(|slot| {
+                slot.get("is_processing")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false)
+            });
+            if !busy {
+                return true;
+            }
+        }
+        if Instant::now() >= deadline {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(500));
+    }
 }
 
 fn wait_healthy(engine: &mut Engine, timeout: f64) -> Result<(), String> {

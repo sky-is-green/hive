@@ -142,6 +142,92 @@ def _request(
         )
 
 
+class _Hub:
+    """A tiny Hugging Face-shaped API for the native hub routes."""
+
+    payload = b"GGUF-tiny-model"
+
+    def __init__(self) -> None:
+        self.requests: list[str] = []
+        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), self._handler())
+        self.port = self.httpd.server_address[1]
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    @property
+    def api(self) -> str:
+        return f"http://127.0.0.1:{self.port}/api"
+
+    @property
+    def base(self) -> str:
+        return f"http://127.0.0.1:{self.port}"
+
+    def _handler(self):
+        hub = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def _json(self, payload: object) -> None:
+                body = json.dumps(payload).encode()
+                self.send_response(200)
+                self.send_header("content-type", "application/json")
+                self.send_header("content-length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                hub.requests.append(self.path)
+                if self.path.startswith("/api/models?"):
+                    self._json(
+                        [
+                            {
+                                "id": "org/tiny",
+                                "downloads": 123,
+                                "likes": 4,
+                                "lastModified": "2026-01-02T03:04:05Z",
+                                "createdAt": "2025-12-01T00:00:00Z",
+                                "pipeline_tag": "text-generation",
+                                "tags": [
+                                    "gguf",
+                                    "license:mit",
+                                    "base_model:org/base",
+                                    "text-generation",
+                                ],
+                            }
+                        ]
+                    )
+                elif self.path == "/api/models/org/tiny/tree/main":
+                    self._json(
+                        [
+                            {"path": "tiny.gguf", "size": 16},
+                            {"path": "README.md", "size": 10},
+                        ]
+                    )
+                elif self.path == "/org/tiny/resolve/main/tiny.gguf":
+                    self.send_response(200)
+                    self.send_header("content-type", "application/octet-stream")
+                    self.send_header("content-length", str(len(hub.payload)))
+                    self.end_headers()
+                    self.wfile.write(hub.payload)
+                elif self.path == "/org/tiny/resolve/main/broken.gguf":
+                    self.send_response(200)
+                    self.send_header("content-length", "100")
+                    self.end_headers()
+                    self.wfile.write(b"short")
+                    self.close_connection = True
+                else:
+                    self.send_error(404)
+
+            def log_message(self, *_args):
+                pass
+
+        return Handler
+
+    def close(self) -> None:
+        self.httpd.shutdown()
+        self.httpd.server_close()
+        self.thread.join(timeout=2)
+
+
 def _raw_request(
     port: int,
     path: str,
@@ -677,3 +763,108 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=10)
+
+
+def test_local_library_and_hub_routes(tmp_path):
+    hub = _Hub()
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_HF_API": hub.api,
+                "HIVE_HF_BASE": hub.base,
+            }
+        )
+
+        status, headers, payload = _request(port, "/v1/models/hub?q=tiny&limit=5")
+        assert status == 200
+        assert headers["x-hive-owner"] == "rust"
+        assert payload["results"][0]["repo"] == "org/tiny"
+        assert payload["results"][0]["license"] == "mit"
+        assert payload["results"][0]["base_model"] == "org/base"
+        assert payload["results"][0]["last_modified"] == "2026-01-02"
+
+        status, _, payload = _request(port, "/v1/models/hub/files/org/tiny")
+        assert status == 200
+        assert payload == {
+            "repo": "org/tiny",
+            "files": [{"file": "tiny.gguf", "size_gb": 0.0}],
+        }
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/hub/download",
+            method="POST",
+            body=json.dumps({"repo": "org/tiny", "file": "tiny.gguf"}).encode(),
+        )
+        assert status == 200
+        assert payload["state"] in ("queued", "downloading")
+
+        deadline = time.time() + 15
+        job = {}
+        while time.time() < deadline:
+            status, _, payload = _request(port, "/v1/models/hub/downloads")
+            assert status == 200
+            job = next(
+                (row for row in payload["downloads"] if row["filename"] == "tiny.gguf"),
+                {},
+            )
+            if job.get("state") in ("done", "error"):
+                break
+            time.sleep(0.1)
+        assert job["state"] == "done", job
+        saved = Path(job["path"])
+        assert saved.read_bytes() == _Hub.payload
+        assert saved.parent == tmp_path / "home" / "models" / "gguf"
+
+        status, _, library = _request(port, "/v1/models/local")
+        assert status == 200
+        assert library["models_dir"] == str(tmp_path / "home" / "models" / "gguf")
+        assert any(row["file"] == "tiny.gguf" for row in library["models"])
+
+        status, _, payload = _request(
+            port, "/v1/models/local?file=tiny.gguf", method="DELETE"
+        )
+        assert status == 200
+        assert payload["ok"] is True
+        assert not saved.exists()
+        status, _, payload = _request(
+            port, "/v1/models/local?file=../outside.gguf", method="DELETE"
+        )
+        assert status == 400
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/hub/download",
+            method="POST",
+            body=json.dumps({"repo": "org/tiny", "file": "../escape.gguf"}).encode(),
+        )
+        assert status == 400
+
+        status, _, payload = _request(
+            port,
+            "/v1/models/hub/download",
+            method="POST",
+            body=json.dumps({"repo": "org/tiny", "file": "broken.gguf"}).encode(),
+        )
+        assert status == 200
+        deadline = time.time() + 15
+        job = {}
+        while time.time() < deadline:
+            status, _, payload = _request(port, "/v1/models/hub/downloads")
+            job = next(
+                (row for row in payload["downloads"] if row["filename"] == "broken.gguf"),
+                {},
+            )
+            if job.get("state") in ("done", "error"):
+                break
+            time.sleep(0.1)
+        assert job["state"] == "error", job
+        assert not (tmp_path / "home" / "models" / "gguf" / "broken.gguf").exists()
+        assert (tmp_path / "home" / "models" / "gguf" / "broken.gguf.part").exists()
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        hub.close()

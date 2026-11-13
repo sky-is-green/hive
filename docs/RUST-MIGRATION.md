@@ -596,7 +596,14 @@ The first daemon slice is on `rust-migration`:
   metrics|fit` share the same runtime. At most one stack is applied (the
   Python manager has the same discipline for stacks); a server start becomes a
   one-tier stack, replaces the current one, and reports the instance shape.
-- Tests: eight daemon integration tests. The fake sidecar covers native routes
+- **Model library and hub.** `GET/DELETE /v1/models/local` scan and safely
+  delete inside the model library; `GET /v1/models/hub`, `GET
+  /v1/models/hub/files/{repo}`, `POST /v1/models/hub/download`, and `GET
+  /v1/models/hub/downloads` use the same wire shapes as Python. Downloads run
+  as daemon jobs (queued/downloading/done/error), resume `.part` files, check
+  the final byte count against `Content-Length`, and keep the `.part` on
+  mismatch.
+- Tests: nine daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
   observes a restart, then checks shutdown leaves no sidecar process; a final
@@ -605,14 +612,16 @@ The first daemon slice is on `rust-migration`:
   traversal, and native-route precedence. Stack CRUD/validate runs everywhere;
   the live test applies a real CPU stack, checks status/log/unload, then starts
   and stops a one-tier server (skipped without `HIVE_LLAMA_SERVER` and
-  `HIVE_LIVE_MODEL`).
+  `HIVE_LIVE_MODEL`). The hub test runs against a local fake HF API and checks
+  search, files, a completed download, local listing/deletion, traversal
+  rejection, and a truncated-download error with the `.part` retained.
 
 ### Route groups, in order
 
 1. [x] `health`, `setup/status`, `config`, `version` (daemon slice; fake sidecar
    tested).
 2. [x] `server/*` lifecycle and `stacks/*` (the supervisor already owns this; one applied stack at a time).
-3. `models/*` library, hub, download.
+3. [x] `models/*` library, hub, download (local path/import and WSL routes remain proxied).
 4. `runs/*`, `report/*`, static pages.
 5. `cascade/*` (thin proxy at first).
 6. `splinter/*`, `openai/*`, `mcp` (sidecar until Phase 3).

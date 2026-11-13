@@ -5,9 +5,10 @@
 //! same discipline as Python's `StackManager`) and turns supervisor rows into
 //! the `/v1/stacks` and `/v1/server` payloads the console expects.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use hive_core::paths::{Paths, expand};
 use hive_core::{hardware, http, stacks};
@@ -41,6 +42,8 @@ struct AppliedStack {
 pub struct Runtime {
     paths: Paths,
     options: Options,
+    client: reqwest::Client,
+    downloads: Arc<Downloads>,
     apply_lock: tokio::sync::Mutex<()>,
     state: Mutex<Option<AppliedStack>>,
 }
@@ -65,10 +68,20 @@ impl Runtime {
             state_dir: paths.state_dir.clone(),
             log_dir: paths.log_dir.clone(),
             startup_timeout,
+            drain_timeout: std::env::var("HIVE_DRAIN_TIMEOUT")
+                .ok()
+                .and_then(|text| text.parse::<f64>().ok())
+                .unwrap_or(120.0),
         };
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(20))
+            .build()
+            .unwrap_or_default();
         Self {
             paths: paths.clone(),
             options,
+            client: client.clone(),
+            downloads: Arc::new(Downloads::new(client)),
             apply_lock: tokio::sync::Mutex::new(()),
             state: Mutex::new(None),
         }
@@ -194,6 +207,156 @@ impl Runtime {
             .collect();
         unload(current).await;
         Ok(serde_json::json!({"ok": true, "unloaded": roles}))
+    }
+
+    // ------------------------------------------------------------------
+    // Local library and Hugging Face
+    // ------------------------------------------------------------------
+    pub fn local_models(&self) -> Value {
+        serde_json::json!({
+            "models_dir": self.paths.models_dir.to_string_lossy(),
+            "models": hive_models::Library::new(&self.paths.models_dir).rows(),
+        })
+    }
+
+    pub fn delete_local(&self, file: &str) -> Result<Value, ApiError> {
+        let file = file.trim();
+        if file.is_empty() {
+            return Err(ApiError::new(422, "file is required"));
+        }
+        let root = self
+            .paths
+            .models_dir
+            .canonicalize()
+            .map_err(|error| ApiError::new(404, format!("no models directory: {error}")))?;
+        let candidate = Path::new(file);
+        if candidate.is_absolute()
+            || candidate
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir))
+        {
+            return Err(ApiError::new(
+                400,
+                "file must stay inside the models directory",
+            ));
+        }
+        let target = root.join(candidate);
+        let canonical = target
+            .canonicalize()
+            .map_err(|_| ApiError::new(404, format!("no such model file: {file}")))?;
+        if !canonical.starts_with(&root) {
+            return Err(ApiError::new(
+                400,
+                "file must stay inside the models directory",
+            ));
+        }
+        if !canonical.is_file() {
+            return Err(ApiError::new(404, format!("no such model file: {file}")));
+        }
+        std::fs::remove_file(&canonical)
+            .map_err(|error| ApiError::new(500, format!("cannot delete {file}: {error}")))?;
+        Ok(serde_json::json!({"ok": true, "deleted": canonical.to_string_lossy()}))
+    }
+
+    pub async fn hub_search(&self, query: &str, limit: i64) -> Result<Value, ApiError> {
+        let mut request = self.client.get(format!("{}/models", hf_api())).query(&[
+            ("filter", "gguf".to_owned()),
+            ("sort", "downloads".to_owned()),
+            ("limit", limit.max(1).to_string()),
+        ]);
+        if !query.trim().is_empty() {
+            request = request.query(&[("search", query.trim().to_owned())]);
+        }
+        let response = request
+            .send()
+            .await
+            .map_err(|error| ApiError::new(502, format!("hugging face search failed: {error}")))?;
+        if !response.status().is_success() {
+            return Err(ApiError::new(
+                502,
+                format!("hugging face search failed: HTTP {}", response.status()),
+            ));
+        }
+        let items: Value = response
+            .json()
+            .await
+            .map_err(|error| ApiError::new(502, format!("hugging face search failed: {error}")))?;
+        let rows: Vec<Value> = items
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .iter()
+            .map(search_row)
+            .collect();
+        Ok(serde_json::json!({"results": rows}))
+    }
+
+    pub async fn hub_files(&self, repo: &str) -> Result<Value, ApiError> {
+        let repo = repo.trim();
+        if repo.is_empty() {
+            return Err(ApiError::new(422, "repo must not be empty"));
+        }
+        let url = format!("{}/models/{}/tree/main", hf_api(), encode_path(repo));
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(|error| ApiError::new(502, format!("cannot list {repo:?}: {error}")))?;
+        if !response.status().is_success() {
+            return Err(ApiError::new(
+                502,
+                format!("cannot list {repo:?}: HTTP {}", response.status()),
+            ));
+        }
+        let items: Value = response
+            .json()
+            .await
+            .map_err(|error| ApiError::new(502, format!("cannot list {repo:?}: {error}")))?;
+        let files: Vec<Value> = items
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|entry| {
+                entry
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .is_some_and(|path| path.ends_with(".gguf"))
+            })
+            .map(|entry| {
+                let size = entry.get("size").and_then(Value::as_f64).unwrap_or(0.0)
+                    / (1024.0 * 1024.0 * 1024.0);
+                serde_json::json!({
+                    "file": entry.get("path").and_then(Value::as_str).unwrap_or(""),
+                    "size_gb": round2(size),
+                })
+            })
+            .collect();
+        Ok(serde_json::json!({"repo": repo, "files": files}))
+    }
+
+    pub fn hub_download(&self, repo: &str, file: &str) -> Result<Value, ApiError> {
+        let repo = repo.trim();
+        let file = file.trim();
+        if repo.is_empty() || file.is_empty() {
+            return Err(ApiError::new(422, "repo and file are required"));
+        }
+        if Path::new(file).is_absolute()
+            || file.split('/').any(|part| part == ".." || part.is_empty())
+        {
+            return Err(ApiError::new(
+                400,
+                "file must stay inside the models directory",
+            ));
+        }
+        self.downloads
+            .start(&self.paths, repo, file)
+            .map_err(|error| ApiError::new(500, error))
+    }
+
+    pub fn hub_downloads(&self) -> Value {
+        self.downloads.status()
     }
 
     // ------------------------------------------------------------------
@@ -377,11 +540,11 @@ impl Runtime {
                 format!("no such loaded instance: {key}"),
             ));
         }
-        unload(current).await;
+        let drained = unload(current).await;
         Ok(serde_json::json!({
             "ok": true,
             "unloaded": key,
-            "drained": false,
+            "drained": drained,
             "port_free": true,
         }))
     }
@@ -404,14 +567,15 @@ impl Runtime {
                     .collect()
             })
             .unwrap_or_default();
-        if let Some(current) = current {
-            unload(current).await;
-        }
+        let drained = match current {
+            Some(current) => unload(current).await,
+            None => false,
+        };
         serde_json::json!({
             "instances": keys,
             "retired": [],
             "strata": null,
-            "drained": false,
+            "drained": drained,
         })
     }
 
@@ -673,8 +837,311 @@ impl Runtime {
     }
 }
 
-async fn unload(applied: AppliedStack) {
-    let _ = tokio::task::spawn_blocking(move || applied.applied.unload()).await;
+struct DownloadJob {
+    repo: String,
+    filename: String,
+    state: &'static str,
+    error: String,
+    path: Option<String>,
+    started: Instant,
+    finished: Option<Instant>,
+}
+
+impl DownloadJob {
+    fn to_json(&self) -> Value {
+        let end = self.finished.unwrap_or_else(Instant::now);
+        serde_json::json!({
+            "key": format!("{}:{}", self.repo, self.filename),
+            "repo": self.repo,
+            "filename": self.filename,
+            "state": self.state,
+            "error": self.error,
+            "path": self.path,
+            "elapsed_s": round2(end.duration_since(self.started).as_secs_f64()),
+        })
+    }
+}
+
+pub struct Downloads {
+    client: reqwest::Client,
+    jobs: Mutex<HashMap<String, DownloadJob>>,
+}
+
+impl Downloads {
+    fn new(client: reqwest::Client) -> Self {
+        Self {
+            client,
+            jobs: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn status(&self) -> Value {
+        let mut jobs = self.jobs.lock().unwrap_or_else(|error| error.into_inner());
+        prune(&mut jobs);
+        let mut rows: Vec<Value> = jobs.values().map(DownloadJob::to_json).collect();
+        rows.sort_by(|left, right| {
+            left.get("key")
+                .and_then(Value::as_str)
+                .cmp(&right.get("key").and_then(Value::as_str))
+        });
+        serde_json::json!({"downloads": rows})
+    }
+
+    fn start(self: &Arc<Self>, paths: &Paths, repo: &str, filename: &str) -> Result<Value, String> {
+        let key = format!("{repo}:{filename}");
+        let mut jobs = self.jobs.lock().unwrap_or_else(|error| error.into_inner());
+        prune(&mut jobs);
+        if let Some(existing) = jobs.get(&key)
+            && matches!(existing.state, "queued" | "downloading")
+        {
+            return Ok(existing.to_json());
+        }
+        jobs.insert(
+            key.clone(),
+            DownloadJob {
+                repo: repo.to_owned(),
+                filename: filename.to_owned(),
+                state: "queued",
+                error: String::new(),
+                path: None,
+                started: Instant::now(),
+                finished: None,
+            },
+        );
+        let payload = jobs
+            .get(&key)
+            .map(DownloadJob::to_json)
+            .unwrap_or(Value::Null);
+        drop(jobs);
+
+        let downloads = Arc::clone(self);
+        let models_dir = paths.models_dir.clone();
+        let repo = repo.to_owned();
+        let filename = filename.to_owned();
+        tokio::spawn(async move {
+            run_download(downloads, key, models_dir, repo, filename).await;
+        });
+        Ok(payload)
+    }
+
+    fn update(&self, key: &str, state: &'static str, error: String, path: Option<String>) {
+        let mut jobs = self.jobs.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(job) = jobs.get_mut(key) {
+            job.state = state;
+            job.error = error;
+            if path.is_some() {
+                job.path = path;
+            }
+            if state == "done" || state == "error" {
+                job.finished = Some(Instant::now());
+            }
+        }
+    }
+}
+
+fn prune(jobs: &mut HashMap<String, DownloadJob>) {
+    let mut finished: Vec<(String, Instant)> = jobs
+        .iter()
+        .filter(|(_, job)| job.finished.is_some())
+        .map(|(key, job)| (key.clone(), job.finished.unwrap_or_else(Instant::now)))
+        .collect();
+    finished.sort_by_key(|(_, at)| *at);
+    let excess = finished.len().saturating_sub(20);
+    for (key, _) in finished.into_iter().take(excess) {
+        jobs.remove(&key);
+    }
+}
+
+async fn run_download(
+    downloads: Arc<Downloads>,
+    key: String,
+    models_dir: PathBuf,
+    repo: String,
+    filename: String,
+) {
+    downloads.update(&key, "downloading", String::new(), None);
+    match download_file(&downloads.client, &models_dir, &repo, &filename).await {
+        Ok(path) => downloads.update(&key, "done", String::new(), Some(path)),
+        Err(error) => downloads.update(&key, "error", error, None),
+    }
+}
+
+async fn download_file(
+    client: &reqwest::Client,
+    models_dir: &Path,
+    repo: &str,
+    filename: &str,
+) -> Result<String, String> {
+    let dest = models_dir.join(filename);
+    if dest.is_file() && std::fs::metadata(&dest).map(|meta| meta.len()).unwrap_or(0) > 0 {
+        return Ok(dest.to_string_lossy().into_owned());
+    }
+    if let Some(parent) = dest.parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|error| format!("cannot create {}: {error}", parent.display()))?;
+    }
+    let part = PathBuf::from(format!("{}.part", dest.to_string_lossy()));
+    let mut resume = tokio::fs::metadata(&part)
+        .await
+        .map(|meta| meta.len())
+        .unwrap_or(0);
+    let url = format!(
+        "{}/{}/resolve/main/{}",
+        hf_base(),
+        encode_path(repo),
+        encode_path(filename)
+    );
+    let mut request = client.get(&url);
+    if let Ok(token) =
+        std::env::var("HF_TOKEN").or_else(|_| std::env::var("HUGGING_FACE_HUB_TOKEN"))
+        && !token.trim().is_empty()
+    {
+        request = request.header("Authorization", format!("Bearer {}", token.trim()));
+    }
+    if resume > 0 {
+        request = request.header("Range", format!("bytes={resume}-"));
+    }
+    let mut response = request
+        .send()
+        .await
+        .map_err(|error| format!("{repo}:{filename}: {error}"))?;
+    let status = response.status();
+    if status != reqwest::StatusCode::OK && status != reqwest::StatusCode::PARTIAL_CONTENT {
+        return Err(format!("{repo}:{filename}: HTTP {status}"));
+    }
+    if status == reqwest::StatusCode::OK {
+        resume = 0;
+    }
+    let expected = response
+        .content_length()
+        .map(|length| length + resume)
+        .filter(|length| *length > 0);
+    let mut file = tokio::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(resume > 0)
+        .truncate(resume == 0)
+        .open(&part)
+        .await
+        .map_err(|error| format!("{repo}:{filename}: {error}"))?;
+    let mut done = resume;
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|error| format!("{repo}:{filename}: {error}"))?
+    {
+        use tokio::io::AsyncWriteExt;
+        file.write_all(&chunk)
+            .await
+            .map_err(|error| format!("{repo}:{filename}: {error}"))?;
+        done += chunk.len() as u64;
+    }
+    use tokio::io::AsyncWriteExt;
+    file.flush()
+        .await
+        .map_err(|error| format!("{repo}:{filename}: {error}"))?;
+    drop(file);
+    if let Some(expected) = expected
+        && done != expected
+    {
+        return Err(format!(
+            "{repo}:{filename}: expected {expected} bytes, received {done}; kept {} for resume",
+            part.display()
+        ));
+    }
+    tokio::fs::rename(&part, &dest)
+        .await
+        .map_err(|error| format!("{repo}:{filename}: cannot save {}: {error}", dest.display()))?;
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+fn hf_api() -> String {
+    std::env::var("HIVE_HF_API")
+        .ok()
+        .map(|value| value.trim_end_matches('/').to_owned())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "https://huggingface.co/api".into())
+}
+
+fn hf_base() -> String {
+    std::env::var("HIVE_HF_BASE")
+        .ok()
+        .map(|value| value.trim_end_matches('/').to_owned())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "https://huggingface.co".into())
+}
+
+fn encode_path(path: &str) -> String {
+    path.split('/')
+        .map(|part| {
+            let mut out = String::with_capacity(part.len());
+            for byte in part.bytes() {
+                if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
+                    out.push(byte as char);
+                } else {
+                    out.push_str(&format!("%{byte:02X}"));
+                }
+            }
+            out
+        })
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+fn search_row(entry: &Value) -> Value {
+    let tags: Vec<String> = entry
+        .get("tags")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect();
+    let base_model = tags
+        .iter()
+        .find_map(|tag| tag.strip_prefix("base_model:"))
+        .unwrap_or("");
+    let license = tags
+        .iter()
+        .find_map(|tag| tag.strip_prefix("license:"))
+        .unwrap_or("");
+    let short_tags: Vec<Value> = tags
+        .iter()
+        .filter(|tag| {
+            !tag.starts_with("base_model:")
+                && !tag.starts_with("license:")
+                && !tag.starts_with("gguf:")
+        })
+        .take(8)
+        .map(|tag| Value::String(tag.clone()))
+        .collect();
+    serde_json::json!({
+        "repo": entry.get("id").and_then(Value::as_str).unwrap_or(""),
+        "downloads": entry.get("downloads").and_then(Value::as_i64).unwrap_or(0),
+        "likes": entry.get("likes").and_then(Value::as_i64).unwrap_or(0),
+        "last_modified": short_date(entry.get("lastModified")),
+        "created_at": short_date(entry.get("createdAt")),
+        "pipeline_tag": entry.get("pipeline_tag").and_then(Value::as_str).unwrap_or(""),
+        "base_model": base_model,
+        "license": license,
+        "tags": short_tags,
+    })
+}
+
+fn short_date(value: Option<&Value>) -> String {
+    value
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .chars()
+        .take(10)
+        .collect()
+}
+
+async fn unload(applied: AppliedStack) -> bool {
+    tokio::task::spawn_blocking(move || applied.applied.unload_drained())
+        .await
+        .unwrap_or(false)
 }
 
 fn apply_rows(tiers: &[Value]) -> Vec<Value> {

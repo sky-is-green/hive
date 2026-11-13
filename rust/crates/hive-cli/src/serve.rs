@@ -141,6 +141,7 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
             .clone()
             .unwrap_or_else(|| paths.log_dir.clone()),
         startup_timeout: options.timeout,
+        drain_timeout: 120.0,
     };
     let mut applied = match hive_supervisor::apply(&stack, &run_options) {
         Ok(applied) => applied,

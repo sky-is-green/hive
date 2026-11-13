@@ -387,6 +387,14 @@ pub fn download_capture(
     if !as_json && total > 0 {
         eprintln!();
     }
+    if total > 0 && done != total {
+        eprintln!(
+            "hive models download: {repo}:{file}: expected {total} bytes, received {done}; \
+             kept {} for resume",
+            part.display()
+        );
+        return Ok(1);
+    }
     if let Err(error) = handle.sync_all() {
         eprintln!("hive models download: {repo}:{file}: {error}");
         return Ok(1);
