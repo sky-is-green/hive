@@ -630,7 +630,7 @@ The first daemon slice is on `rust-migration`:
   the Rust binary to these files without starting Python; fixture paths,
   interpreter versions, and the platform string are normalized. Regenerate with
   `tests/conformance/golden/generate.py` only for a reviewed contract change.
-- Tests: nine daemon integration tests. The fake sidecar covers native routes
+- Tests: fourteen daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
   observes a restart, then checks shutdown leaves no sidecar process; a final
@@ -684,11 +684,21 @@ The first daemon slice is on `rust-migration`:
 ### Phase 2 gate (G2)
 
 - [ ] All route groups in Rust, with the sidecar used only for memory/eval.
+  Groups 1–4 are native; 5–8 still proxy (cascade, splinter/openai/mcp,
+  gateway, agent/activity/controller/training).
 - [ ] OpenAPI/TS generation is part of CI; the frontend compiles against it.
+  The current console is vanilla JS; no typed client exists yet.
 - [ ] Studio end-to-end: load a model, chat, cascade run, stop, unload.
-- [ ] Streaming cancellation closes the upstream connection.
+  Load/status/stop/unload and provider/engine mirroring are tested live; chat
+  and cascade still depend on the Python sidecar's runtimes.
+- [x] Streaming cancellation closes the upstream connection.
 - [ ] Security/gateway conformance suite green.
-- [ ] Sidecar absent: serve-only paths still work with a clear message.
+- [x] Sidecar absent: serve-only paths still work with a clear message
+  (`--no-sidecar`, 503 on proxied routes, native stacks/server still work).
+
+Remaining Phase 2 work is tracked in `docs/REWRITE-CAVEATS.md` (P2-19…P2-33):
+console-only `/api` endpoints, multi-instance server start, per-tier unload,
+local-library path/import routes, rendered report pages, and OpenAPI/TS.
 
 ---
 
