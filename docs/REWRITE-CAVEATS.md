@@ -156,7 +156,7 @@ Severity:
 | P2-05 | Auth is only the `HARNESS_TOKEN` env and a plain string compare; no config file, rotation, or constant-time compare. | should | fixed — constant-time compare, env-only source | Token source and comparison are hardened/documented. |
 | P2-06 | Proxy has no request IDs, body limits, or per-route timeout policy; blanket 300 s client timeout. | should | fixed — request IDs + per-route timeouts | Middleware limits/timeouts/request IDs match the existing API contract. |
 | P2-07 | CORS is permissive; Python uses `_cors_origins()`. | should | fixed — HARNESS_CORS_ORIGINS parity | CORS origins are read from the same config as Python. |
-| P2-08 | The daemon serves `harness/webui/` now, but only the shell and `/api` → sidecar rewrite; the console's Python-only `/api` endpoints are still served by the Python console server. | should | open | All console `/api` endpoints are native or explicitly proxied, then Python's console thread can be retired. |
+| P2-08 | The daemon serves the `harness/webui/` shell, assets, and `/api` rewrite; the console's Python-only `/api` endpoints are tracked separately in P2-19. | should | fixed — static shell + `/api` rewrite | All console `/api` endpoints are native or explicitly proxied, then Python's console thread can be retired. |
 | P2-09 | No OpenAPI/TypeScript generation or generated client. | should | open | OpenAPI/TS output is part of CI. |
 | P2-10 | Every response carries the new `x-hive-owner` header; clients do not expect it. | minor | open | Accepted as harmless, or gated behind a debug/version flag. |
 | P2-11 | `/v1/setup/status` is 410 on Linux (matching Python's guard); the Windows proxy branch is untested. | deferred | open | Windows review resumes; the Linux 410 remains intentional. |
