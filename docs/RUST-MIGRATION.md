@@ -770,7 +770,10 @@ The encoder slice is in `rust/crates/hive-encoder`:
   `hive-encoder serve`, points the sidecar at it, and the sidecar uses
   `RustEncoderDrone` without loading sentence-transformers. Memory selection is
   identical on the parity fixture.
-- The memory core itself is still Python.
+- New `hive-memory` crate: `ContextStore` add/dedup/eviction, turn indexing,
+  decay, and cosine retrieval. Store and decay-retrieval parity tests pass
+  against Python. Hygiene/codec, comb, drift, dedup, assembly and budget
+  selection are still Python.
 
 ### Phase 3 gate (G3)
 

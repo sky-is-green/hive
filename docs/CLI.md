@@ -35,7 +35,7 @@ python3 -m venv .venv
 The Studio and evaluation suite are extras:
 
 ```bash
-.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e "splinter[encoders]"
 .venv/bin/python -m pip install -e ".[studio,eval,test]"
 ```
 

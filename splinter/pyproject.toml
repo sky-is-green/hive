@@ -17,9 +17,6 @@ dependencies = [
     "huggingface_hub>=0.23",
     "zstandard>=0.22",
     "tiktoken>=0.7.0",
-    "sentence-transformers>=2.2.0",
-    "transformers>=4.36.0",
-    "torch>=2.1.0",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +25,14 @@ dependencies = [
 serve = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
+]
+
+# The Python encoder reference. The runtime can use the native Rust encoder
+# (`hive-encoder`) instead, so torch is no longer a base dependency.
+encoders = [
+    "sentence-transformers>=2.2.0",
+    "transformers>=4.36.0",
+    "torch>=2.1.0",
 ]
 
 # Package layout: single root, flat import names preserved —

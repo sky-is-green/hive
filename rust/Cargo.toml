@@ -8,6 +8,7 @@ members = [
     "crates/hive-tui",
     "crates/hive-daemon",
     "crates/hive-encoder",
+    "crates/hive-memory",
     "crates/hive-cli",
 ]
 

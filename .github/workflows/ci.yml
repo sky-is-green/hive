@@ -158,7 +158,7 @@ jobs:
         run: |
           # env.SPLINTER_HOME context expression, not a shell var: pwsh wraps
           # run blocks in single quotes, so $VAR expansion never happens there.
-          pip install -e splinter
+          pip install -e "splinter[encoders]"
           pip install -e ".[studio,eval,test]"
 
       - name: Install Rust toolchain (Linux)

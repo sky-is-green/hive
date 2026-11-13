@@ -156,7 +156,7 @@ The Studio and the evaluation suite are optional extras (the memory system is
 a separate editable package from this checkout):
 
 ```bash
-.venv/bin/python -m pip install -e splinter
+.venv/bin/python -m pip install -e "splinter[encoders]"
 .venv/bin/python -m pip install -e ".[studio,eval,test]"
 ```
 

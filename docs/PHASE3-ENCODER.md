@@ -75,10 +75,32 @@ Use the native encoder for the runtime. Keep Python sentence-transformers as
 the bulk/offline reference and for other `ultra_model` choices until each is
 exported and added to the parity corpus.
 
+## Native memory slice
+
+`rust/crates/hive-memory` ports the first retention layer:
+
+- chunk storage, MD5 fingerprint dedup, turn indexing, LRU eviction;
+- `DecayMatrix` and cosine retrieval over native embeddings;
+- parity tests for store operations and decay/retrieval against Python.
+
+Still Python: codec/hygiene, comb, drift, semantic dedup, remembrance,
+assembly, and budget selection.
+
+## Torch-free install
+
+A fresh venv with only `.[studio]` and `splinter` (no torch/transformers/
+sentence-transformers) runs the daemon + native encoder + chat end-to-end;
+`test_live_torchfree_sidecar_chat` formalizes it when
+`HIVE_TORCHFREE_PYTHON` is set. The venv is **360 MB** versus **1.6 GB** for
+the full torch environment; the encoder adds a 27 MB binary plus a 66 MB model.
+
+`hive-encoder fetch --dir models/encoder` downloads the ONNX model and
+tokenizer and verifies the model's SHA256 against the Hugging Face LFS oid.
+
 ## Still missing for G3
 
-- `ContextStore`, decay, dedup, drift, comb, assembly, and budget selection are
-  still Python. The encoder swap alone does not remove the memory code.
+- The remaining memory stages (hygiene/codec, comb, drift, dedup, assembly,
+  budget) are still Python.
 - A torch-free runtime venv has not been tested (P3-09).
 - P1–P11 / 28-task cascade replay has not been run against a native memory core.
 - Only MiniLM-L3-v2 is validated.

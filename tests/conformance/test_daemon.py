@@ -1604,3 +1604,168 @@ def test_live_chat_with_the_daemon_managed_native_encoder(tmp_path):
             process.wait(timeout=15)
     with socket.socket() as sock:
         assert sock.connect_ex(("127.0.0.1", encoder_port)) != 0
+
+
+def test_live_chat_works_with_torch_imports_blocked(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the torch-free test")
+    if not encoder.is_file():
+        pytest.skip("hive-encoder is not built")
+
+    blockers = tmp_path / "blockers"
+    blockers.mkdir()
+    (blockers / "sitecustomize.py").write_text(
+        "import sys\n"
+        "class _Block:\n"
+        "    def find_spec(self, name, path=None, target=None):\n"
+        "        if name.split('.')[0] in "
+        "('torch','transformers','sentence_transformers','datasets'):\n"
+        "            raise ImportError('blocked for the torch-free test: ' + name)\n"
+        "        return None\n"
+        "sys.meta_path.insert(0, _Block())\n"
+    )
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+                "HARNESS_EMBEDDING_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+                "PYTHONPATH": str(blockers),
+            },
+        )
+        status, _, instance = _request(
+            port,
+            "/v1/server/start",
+            method="POST",
+            body=json.dumps(
+                {
+                    "model": model,
+                    "backend": "cpu",
+                    "ngl": 0,
+                    "ctx_size": 1024,
+                    "key": "torch-free",
+                }
+            ).encode(),
+        )
+        assert status == 200, instance
+        status, _, body = _raw_request(
+            port,
+            "/v1/splinter/stream",
+            method="POST",
+            body=json.dumps(
+                {
+                    "query": "Say hello in one short sentence.",
+                    "conversation_id": "torch-free",
+                }
+            ).encode(),
+            headers={"content-type": "application/json"},
+            timeout=120,
+        )
+        assert status == 200, body
+        events = [
+            json.loads(line[6:])
+            for line in body.decode().splitlines()
+            if line.startswith("data: ")
+        ]
+        assert events[-1]["type"] == "done", events[-1]
+        assert events[0]["harness"]["backend"] == "rust"
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=torch-free", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)
+
+
+def test_live_torchfree_sidecar_chat(tmp_path):
+    """Run the sidecar from a Python environment with no torch/transformers."""
+    python = os.environ.get("HIVE_TORCHFREE_PYTHON")
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not python or not llama or not model:
+        pytest.skip(
+            "set HIVE_TORCHFREE_PYTHON, HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL"
+        )
+    if not Path(python).is_file() or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("torch-free interpreter, llama-server or model is missing")
+    check = subprocess.run(
+        [python, "-c", "import importlib.util; print(importlib.util.find_spec('torch'))"],
+        text=True,
+        capture_output=True,
+    )
+    if check.stdout.strip() != "None":
+        pytest.skip("HIVE_TORCHFREE_PYTHON still has torch installed")
+
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": python,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+                "HARNESS_EMBEDDING_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+            },
+        )
+        status, _, instance = _request(
+            port,
+            "/v1/server/start",
+            method="POST",
+            body=json.dumps(
+                {
+                    "model": model,
+                    "backend": "cpu",
+                    "ngl": 0,
+                    "ctx_size": 1024,
+                    "key": "torchfree-install",
+                }
+            ).encode(),
+        )
+        assert status == 200, instance
+        status, _, body = _raw_request(
+            port,
+            "/v1/splinter/stream",
+            method="POST",
+            body=json.dumps(
+                {
+                    "query": "Say hello in one short sentence.",
+                    "conversation_id": "torchfree-install",
+                }
+            ).encode(),
+            headers={"content-type": "application/json"},
+            timeout=120,
+        )
+        assert status == 200, body
+        events = [
+            json.loads(line[6:])
+            for line in body.decode().splitlines()
+            if line.startswith("data: ")
+        ]
+        assert events[-1]["type"] == "done", events[-1]
+        assert events[0]["harness"]["backend"] == "rust"
+        status, _, payload = _request(
+            port,
+            "/v1/server/stop?key=torchfree-install",
+            method="POST",
+            body=b"{}",
+        )
+        assert status == 200, payload
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)

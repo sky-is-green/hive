@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 use std::net::TcpListener;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -46,6 +46,11 @@ enum Command {
         batch: usize,
         #[arg(long)]
         json: bool,
+    },
+    /// Download the ONNX model and tokenizer into a Hive-owned folder
+    Fetch {
+        #[arg(long, default_value = "models/encoder")]
+        dir: PathBuf,
     },
     /// Run a loopback JSON encoder service for the Python sidecar
     Serve {
@@ -111,6 +116,7 @@ fn run(args: Args) -> Result<(), String> {
             }
             Ok(())
         }
+        Command::Fetch { dir } => fetch(&dir),
         Command::Serve { host, port } => serve(&host, port),
         Command::Bench {
             file,
@@ -154,6 +160,121 @@ fn run(args: Args) -> Result<(), String> {
             Ok(())
         }
     }
+}
+
+fn fetch(dir: &Path) -> Result<(), String> {
+    use sha2::{Digest, Sha256};
+    let repo = hive_encoder::default_model_name();
+    let api = format!("https://huggingface.co/api/models/{repo}/tree/main");
+    let tree = |url: &str| -> Result<Vec<serde_json::Value>, String> {
+        let response = ureq::get(url)
+            .call()
+            .map_err(|error| format!("cannot list {url}: {error}"))?;
+        let mut response = response;
+        let text = response
+            .body_mut()
+            .read_to_string()
+            .map_err(|error| format!("cannot read {url}: {error}"))?;
+        serde_json::from_str(&text).map_err(|error| format!("invalid tree JSON: {error}"))
+    };
+    let onnx_tree = tree(&format!("{api}/onnx"))?;
+    let root_tree = tree(&api)?;
+    let onnx = onnx_tree
+        .iter()
+        .find(|entry| entry.get("path").and_then(|value| value.as_str()) == Some("onnx/model.onnx"))
+        .ok_or_else(|| "the repo has no onnx/model.onnx".to_owned())?;
+    let tokenizer = root_tree
+        .iter()
+        .find(|entry| entry.get("path").and_then(|value| value.as_str()) == Some("tokenizer.json"))
+        .ok_or_else(|| "the repo has no tokenizer.json".to_owned())?;
+    let onnx_size = onnx
+        .get("size")
+        .and_then(|value| value.as_u64())
+        .unwrap_or(0);
+    let onnx_sha = onnx
+        .get("lfs")
+        .and_then(|value| value.get("oid"))
+        .and_then(|value| value.as_str())
+        .map(str::to_owned);
+    let tokenizer_size = tokenizer
+        .get("size")
+        .and_then(|value| value.as_u64())
+        .unwrap_or(0);
+
+    let onnx_dest = dir.join("onnx/model.onnx");
+    let tokenizer_dest = dir.join("tokenizer.json");
+    if let Some(parent) = onnx_dest.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+
+    let download = |url: &str,
+                    dest: &std::path::Path,
+                    expected_size: u64,
+                    expected_sha: Option<&str>|
+     -> Result<(), String> {
+        let part = PathBuf::from(format!("{}.part", dest.to_string_lossy()));
+        let response = ureq::get(url)
+            .call()
+            .map_err(|error| format!("cannot download {url}: {error}"))?;
+        let mut response = response;
+        let mut reader = response.body_mut().as_reader();
+        let mut file = std::fs::File::create(&part)
+            .map_err(|error| format!("cannot create {}: {error}", part.display()))?;
+        let mut hasher = Sha256::new();
+        let mut buffer = vec![0u8; 1024 * 1024];
+        let mut written = 0u64;
+        loop {
+            use std::io::{Read, Write};
+            let read = reader
+                .read(&mut buffer)
+                .map_err(|error| error.to_string())?;
+            if read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..read]);
+            file.write_all(&buffer[..read])
+                .map_err(|error| format!("cannot write {}: {error}", part.display()))?;
+            written += read as u64;
+        }
+        file.sync_all().map_err(|error| error.to_string())?;
+        if expected_size > 0 && written != expected_size {
+            return Err(format!(
+                "{url}: expected {expected_size} bytes, received {written}"
+            ));
+        }
+        if let Some(expected) = expected_sha {
+            let actual = format!("{:x}", hasher.finalize());
+            if !actual.eq_ignore_ascii_case(expected) {
+                return Err(format!("{url}: sha256 mismatch ({actual} != {expected})"));
+            }
+        }
+        std::fs::rename(&part, dest).map_err(|error| error.to_string())?;
+        Ok(())
+    };
+    download(
+        &format!("https://huggingface.co/{repo}/resolve/main/onnx/model.onnx"),
+        &onnx_dest,
+        onnx_size,
+        onnx_sha.as_deref(),
+    )?;
+    download(
+        &format!("https://huggingface.co/{repo}/resolve/main/tokenizer.json"),
+        &tokenizer_dest,
+        tokenizer_size,
+        None,
+    )?;
+    println!(
+        "{}",
+        hive_core::json::pretty(&json!({
+            "repo": repo,
+            "model": onnx_dest.to_string_lossy(),
+            "tokenizer": tokenizer_dest.to_string_lossy(),
+            "model_bytes": onnx_size,
+            "tokenizer_bytes": tokenizer_size,
+            "sha256": onnx_sha,
+        }))
+    );
+    Ok(())
 }
 
 fn serve(host: &str, port: u16) -> Result<(), String> {

@@ -30,6 +30,11 @@ HIVE_ENCODER_DIR=/srv/hive/models/encoder   # onnx/model.onnx + tokenizer.json
 # HIVE_ENCODER_BIN=/srv/hive/bin/hive-encoder
 ```
 
+With an external `--sidecar-url`, the daemon does not spawn an encoder. Start
+`hive-encoder serve --port 8172` yourself and set
+`HARNESS_EMBEDDING_BACKEND=rust` plus `HARNESS_EMBEDDING_URL=http://127.0.0.1:8172`
+in the sidecar's environment.
+
 `HIVE_PYTHON` is authoritative. If it is set but missing or not executable,
 the daemon exits at startup instead of silently choosing another interpreter.
 
