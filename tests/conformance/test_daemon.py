@@ -1452,3 +1452,75 @@ def test_console_routing_state_is_native(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=5)
+
+
+def test_live_cascade_run_against_the_native_model(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the live cascade test")
+    cli = Path(os.environ.get("HIVE_RUST_BIN", REPO / "rust" / "target" / "debug" / "hive"))
+    process = None
+    try:
+        env = {
+            **os.environ,
+            **_home(tmp_path),
+            "HIVE_PYTHON": sys.executable,
+            "HIVE_LLAMA_SERVER": llama,
+            "HARNESS_LLAMA_SERVER": llama,
+            "TZ": "UTC",
+        }
+        process, port = _start_daemon(sidecar_port=0, env_extra=env)
+        status, _, instance = _request(
+            port,
+            "/v1/server/start",
+            method="POST",
+            body=json.dumps(
+                {
+                    "model": model,
+                    "backend": "cpu",
+                    "ngl": 0,
+                    "ctx_size": 1024,
+                    "key": "cascade",
+                }
+            ).encode(),
+        )
+        assert status == 200, instance
+        runs = tmp_path / "runs"
+        result = subprocess.run(
+            [
+                str(cli),
+                "cascade",
+                "run",
+                "--limit",
+                "1",
+                "--judge",
+                "deterministic",
+                "--repair",
+                "off",
+                "--scion-base",
+                f"http://127.0.0.1:{instance['port']}/v1",
+                "--out",
+                str(runs),
+                "--run-name",
+                "g2",
+            ],
+            cwd=REPO,
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=120,
+        )
+        assert result.returncode == 0, result.stderr[-2000:]
+        report = json.loads((runs / "g2" / "report.json").read_text())
+        assert report["summary"]["tasks"] == 1
+        assert report["scion_base"] == f"http://127.0.0.1:{instance['port']}/v1"
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=cascade", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)

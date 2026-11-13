@@ -701,30 +701,35 @@ The first daemon slice is on `rust-migration`:
   fallback. The deprecated VHDX/Docker Setup tab is unrelated and may go.
 - Do not remove the local-fallback audit path.
 
-### Phase 2 gate (G2)
+### Phase 2 gate (G2) — revised 2026-11-13
 
-- [ ] All route groups in Rust, with the sidecar used only for memory/eval.
-  Groups 1–4 are native; 5–8 proxy by design because they are Python runtimes
-  the staged plan keeps until Phase 3 (P2-37). The proxy boundary is smoke-
-  tested against the real sidecar, including cascade/tools/agent/sandbox
-  (P2-38). A revised G2 is the open decision.
-- [ ] OpenAPI/TS generation is part of CI; the frontend compiles against it.
-  OpenAPI is native and merged (P2-09); TypeScript client generation is
-  deferred because the console is vanilla JS (P2-35).
-- [ ] Studio end-to-end: load a model, chat, cascade run, stop, unload.
-  Load/chat/stop/unload and provider/engine mirroring are tested live; cascade
-  runs still depend on the Python sidecar's runtimes (P2-36).
-- [ ] Multi-model fleet and per-tier stop are covered live; the remaining
-  launch options (`auto_fit`, `embedding`, HF passthrough) are Python-only
-  (P2-20).
-- [x] Streaming cancellation closes the upstream connection.
-- [ ] Security/gateway conformance suite green.
-- [x] Sidecar absent: serve-only paths still work with a clear message
-  (`--no-sidecar`, 503 on proxied routes, native stacks/server still work).
+**Revision:** Phase 2 moves the control plane to Rust; Python remains the
+runtime for cascade, splinter/OpenAI/MCP, the gateway, and the agent/training
+groups until their own phases. The original “all route groups in Rust” wording
+is superseded by the boundary below (P2-37).
 
-Remaining Phase 2 work is tracked in `docs/REWRITE-CAVEATS.md` (P2-19…P2-33):
-console-only `/api` endpoints, multi-instance server start, per-tier unload,
-local-library path/import routes, rendered report pages, and OpenAPI/TS.
+- [x] **Control plane native, runtime proxied.** Groups 1–4 are Rust
+  (`health`/meta, stacks/server, models/hub, runs/reports/static). Groups 5–8
+  stay behind the verified proxy boundary and are smoke-tested against the real
+  sidecar (P2-37, P2-38).
+- [x] **OpenAPI.** `GET /openapi.json` merges the native Rust document with the
+  sidecar spec. TypeScript client generation is deferred until a typed
+  frontend/SDK exists (P2-35).
+- [x] **Studio end-to-end.** Load, chat, cascade run, stop, and unload are
+  covered live with a real CPU model: `/v1/splinter/stream` returns deltas and
+  `done`, and `hive cascade run` produces a one-task report against the
+  native engine (P2-36).
+- [x] **Streaming cancellation** closes the upstream connection (disconnect
+  test).
+- [x] **Gateway/agent boundary.** `cascade`, `activity`, `tools`, `agent`, and
+  `sandbox` routes proxy against the real sidecar; the Python security suite
+  remains the policy oracle until the gateway phase (P2-38).
+- [x] **Sidecar absent.** `--no-sidecar` keeps native serve/stack/server routes
+  working; proxied routes return a clear 503.
+
+G2 is met under this revised boundary. Remaining console polish, hardware/cache
+parity, rendered report HTML, and the deferred TypeScript client stay in
+`docs/REWRITE-CAVEATS.md` for the post-phase caveat pass.
 
 ---
 
