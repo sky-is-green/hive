@@ -157,7 +157,9 @@ Severity:
 | P2-06 | Proxy has no request IDs, body limits, or per-route timeout policy; blanket 300 s client timeout. | should | fixed — request IDs + per-route timeouts | Middleware limits/timeouts/request IDs match the existing API contract. |
 | P2-07 | CORS is permissive; Python uses `_cors_origins()`. | should | fixed — HARNESS_CORS_ORIGINS parity | CORS origins are read from the same config as Python. |
 | P2-08 | The daemon serves the `harness/webui/` shell, assets, and `/api` rewrite; the console's Python-only `/api` endpoints are tracked separately in P2-19. | should | fixed — static shell + `/api` rewrite | All console `/api` endpoints are native or explicitly proxied, then Python's console thread can be retired. |
-| P2-09 | No OpenAPI/TypeScript generation or generated client. | should | open | OpenAPI/TS output is part of CI. |
+| P2-09 | No OpenAPI/TypeScript generation or generated client. | should | fixed — merged OpenAPI document | OpenAPI/TS output is part of CI. |
+| P2-35 | No TypeScript client generation; the console is vanilla JS, so nothing compiles against the OpenAPI document yet. | should | deferred — no typed frontend | A typed client or SDK exists and is generated in CI. |
+| P2-36 | The live Studio chat test exercises `/v1/splinter/stream` only; it needs the Python encoder/torch and a live model, and cascade runs are not covered end-to-end. | should | open | A live cascade run and a chat turn run in the release gate without skips, or the remaining Python dependency is accepted. |
 | P2-10 | Every response carries the new `x-hive-owner` header; clients do not expect it. | minor | open | Accepted as harmless, or gated behind a debug/version flag. |
 | P2-11 | `/v1/setup/status` is 410 on Linux (matching Python's guard); the Windows proxy branch is untested. | deferred | open | Windows review resumes; the Linux 410 remains intentional. |
 | P2-12 | Proxy tests use a fake Python HTTP server, not the real FastAPI sidecar. | should | fixed — managed-sidecar conformance | A conformance test starts the real `harness` sidecar and proxies a route. |

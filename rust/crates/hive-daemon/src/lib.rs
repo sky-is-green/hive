@@ -31,6 +31,7 @@ use serde_json::{Map, Value};
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+pub mod openapi;
 pub mod runtime;
 pub mod sidecar;
 use runtime::{ApiError, Runtime};
@@ -318,6 +319,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/models/hub/downloads", get(hub_downloads))
         .route("/v1/runs", get(runs_index))
         .route("/v1/report/{*run_dir}", get(run_report))
+        .route("/openapi.json", get(openapi_spec))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(middleware::from_fn(request_id))
@@ -870,6 +872,25 @@ async fn hub_downloads(State(state): State<Arc<AppState>>) -> Response {
     runtime_json(Ok(state.runtime.hub_downloads()))
 }
 
+async fn openapi_spec(State(state): State<Arc<AppState>>) -> Response {
+    let mut document = openapi::document();
+    if let Some(base) = &state.config.sidecar_url {
+        let url = format!("{}/openapi.json", base.trim_end_matches('/'));
+        if let Ok(response) = state
+            .client
+            .get(url)
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+            && response.status().is_success()
+            && let Ok(sidecar) = response.json::<Value>().await
+        {
+            openapi::merge(&mut document, sidecar);
+        }
+    }
+    owned(StatusCode::OK, Json(document).into_response())
+}
+
 async fn runs_index(State(state): State<Arc<AppState>>) -> Response {
     let runtime = Arc::clone(&state.runtime);
     match tokio::task::spawn_blocking(move || runtime.runs_index()).await {
@@ -934,7 +955,6 @@ fn is_sidecar_passthrough(path: &str) -> bool {
         || path == "/cascade"
         || path.starts_with("/cascade/")
         || path == "/docs"
-        || path == "/openapi.json"
         || path == "/redoc"
 }
 

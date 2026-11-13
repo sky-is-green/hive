@@ -605,6 +605,13 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
+- **OpenAPI.** `GET /openapi.json` serves the native Rust document merged with
+  the sidecar's spec, so proxied routes stay documented while native operations
+  win on overlap. The conformance test checks native paths, proxied paths, and
+  component merging.
+- **Live Studio chat.** With a managed sidecar and a native CPU model,
+  `/v1/splinter/stream` returns SSE deltas and a `done` event through the
+  daemon; the test loads, chats, and stops the model.
 - **Provider/engine mirror.** A native server start/stop updates the sidecar's
   `local-<key>` provider and engine entries (and defaults) through
   `/v1/provider/config` and `/v1/engines`, so chat and the engine picker both
@@ -689,10 +696,11 @@ The first daemon slice is on `rust-migration`:
   Groups 1–4 are native; 5–8 still proxy (cascade, splinter/openai/mcp,
   gateway, agent/activity/controller/training).
 - [ ] OpenAPI/TS generation is part of CI; the frontend compiles against it.
-  The current console is vanilla JS; no typed client exists yet.
+  OpenAPI is native and merged (P2-09); TypeScript client generation is
+  deferred because the console is vanilla JS (P2-35).
 - [ ] Studio end-to-end: load a model, chat, cascade run, stop, unload.
-  Load/status/stop/unload and provider/engine mirroring are tested live; chat
-  and cascade still depend on the Python sidecar's runtimes.
+  Load/chat/stop/unload and provider/engine mirroring are tested live; cascade
+  runs still depend on the Python sidecar's runtimes (P2-36).
 - [x] Streaming cancellation closes the upstream connection.
 - [ ] Security/gateway conformance suite green.
 - [x] Sidecar absent: serve-only paths still work with a clear message

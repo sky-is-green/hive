@@ -69,6 +69,22 @@ class _Sidecar:
                     self._respond(200, {"ok": True, "conversations": 7})
                 elif self.path == "/v1/roles":
                     self._respond(200, {"roles": {"face": "fake"}, "from": "sidecar"})
+                elif self.path == "/openapi.json":
+                    self._respond(
+                        200,
+                        {
+                            "openapi": "3.1.0",
+                            "paths": {
+                                "/v1/echo": {"post": {"summary": "sidecar echo"}},
+                                "/v1/version": {
+                                    "get": {"summary": "sidecar version"}
+                                },
+                            },
+                            "components": {
+                                "schemas": {"SidecarOnly": {"type": "object"}}
+                            },
+                        },
+                    )
                 elif self.path == "/v1/status":
                     self._respond(418, {"detail": "teapot"})
                 elif self.path == "/v1/stream":
@@ -257,6 +273,7 @@ def _raw_request(
     method: str = "GET",
     body: bytes | None = None,
     headers: dict[str, str] | None = None,
+    timeout: float = 5,
 ) -> tuple[int, dict, bytes]:
     request = urllib.request.Request(
         f"http://127.0.0.1:{port}{path}",
@@ -265,7 +282,7 @@ def _raw_request(
         method=method,
     )
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             return (
                 response.status,
                 {key.lower(): value for key, value in response.headers.items()},
@@ -1158,3 +1175,90 @@ def test_local_library_path_and_import(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=5)
+
+
+def test_live_studio_chat_through_the_daemon(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the live Studio test")
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+            },
+        )
+        launch = {
+            "model": model,
+            "backend": "cpu",
+            "ngl": 0,
+            "ctx_size": 1024,
+            "key": "studio",
+        }
+        status, _, instance = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+        )
+        assert status == 200, instance
+
+        status, headers, body = _raw_request(
+            port,
+            "/v1/splinter/stream",
+            method="POST",
+            body=json.dumps(
+                {
+                    "query": "Say hello in one short sentence.",
+                    "conversation_id": "g2-chat",
+                }
+            ).encode(),
+            headers={"content-type": "application/json"},
+            timeout=120,
+        )
+        assert status == 200, body
+        assert headers["content-type"].startswith("text/event-stream")
+        events = [
+            json.loads(line[6:])
+            for line in body.decode().splitlines()
+            if line.startswith("data: ")
+        ]
+        assert any(event.get("type") == "delta" for event in events), events
+        assert not any(event.get("type") == "error" for event in events), events
+        assert events[-1]["type"] == "done", events[-1]
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=studio", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)
+
+
+def test_openapi_merges_native_and_sidecar_routes():
+    sidecar = _Sidecar()
+    process = None
+    try:
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
+        status, headers, spec = _request(port, "/openapi.json")
+        assert status == 200
+        assert headers["x-hive-owner"] == "rust"
+        assert spec["openapi"] == "3.1.0"
+        paths = spec["paths"]
+        assert "/v1/stacks" in paths
+        assert "/v1/server/start" in paths
+        assert "/v1/echo" in paths
+        assert (
+            paths["/v1/version"]["get"]["summary"]
+            == "Hive, Python, and platform versions"
+        )
+        assert "SidecarOnly" in spec["components"]["schemas"]
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        sidecar.close()
