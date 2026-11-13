@@ -151,7 +151,7 @@ fn web(paths: &Paths, options: &Options) -> Cmd {
         .map_err(|error| format!("cannot start {}: {error}", daemon.display()))?;
     std::fs::write(&pid_path, format!("{}\n", child.id()))
         .map_err(|error| format!("cannot write {}: {error}", pid_path.display()))?;
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + Duration::from_secs(60);
     while Instant::now() < deadline {
         if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
             let tail = std::fs::read_to_string(&log_path)
@@ -213,6 +213,17 @@ fn daemon_binary() -> Result<PathBuf, String> {
         .ok_or_else(|| "hive-daemon is not installed next to hive or on PATH".to_owned())
 }
 
+fn health_ready(base: &str) -> bool {
+    http::get(
+        &format!("{}/health", base.trim_end_matches('/')),
+        Duration::from_millis(800),
+    )
+    .ok()
+    .and_then(|response| response.json().ok())
+    .and_then(|payload| payload.get("ok").and_then(serde_json::Value::as_bool))
+    .unwrap_or(false)
+}
+
 fn alive(base: &str, path: &str) -> bool {
     http::get(
         &format!("{}{}", base.trim_end_matches('/'), path),
@@ -226,7 +237,7 @@ fn open_when_ready(url: String) {
     std::thread::spawn(move || {
         let deadline = Instant::now() + Duration::from_secs(30);
         while Instant::now() < deadline {
-            if alive(url.trim_end_matches('/'), "/health") {
+            if health_ready(&url) {
                 open_browser(&url);
                 return;
             }
