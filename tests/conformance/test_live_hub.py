@@ -7,6 +7,7 @@ Set ``HIVE_LIVE_HUB=1`` to run:
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -37,6 +38,43 @@ def test_files_match_python(rust_bin, cli_env):
     rs = run_rust(rust_bin, ["models", "files", REPO, "--json"], env)
     assert py.returncode == rs.returncode == 0, (py.stderr, rs.stderr)
     assert parse_json(py) == parse_json(rs)
+
+
+def test_serve_model_remote_matches_python(rust_bin, cli_env, serve_fixture, tmp_path):
+    env, _ = cli_env
+    python_models = tmp_path / "python-serve-models"
+    rust_models = tmp_path / "rust-serve-models"
+    python_stacks = tmp_path / "python-stacks"
+    rust_stacks = tmp_path / "rust-stacks"
+    python_stacks.mkdir()
+    rust_stacks.mkdir()
+    common = [
+        "serve",
+        "--model",
+        f"{REPO}:{FILE}",
+        "--once",
+        "--json",
+        "--save",
+        "remote",
+        "--llama-server",
+        str(serve_fixture["engine"]),
+    ]
+    py = run_python(
+        [*common, "--models-dir", str(python_models), "--stacks-dir", str(python_stacks)],
+        env,
+    )
+    rs = run_rust(
+        rust_bin,
+        [*common, "--models-dir", str(rust_models), "--stacks-dir", str(rust_stacks)],
+        env,
+    )
+    assert py.returncode == rs.returncode == 0, (py.stderr, rs.stderr)
+    python_saved = json.loads((python_stacks / "remote.json").read_text())
+    rust_saved = json.loads((rust_stacks / "remote.json").read_text())
+    assert python_saved["tiers"][0]["file"].endswith(FILE)
+    assert rust_saved["tiers"][0]["file"].endswith(FILE)
+    assert python_saved["tiers"][0]["pin"] == rust_saved["tiers"][0]["pin"]
+    assert python_saved["tiers"][0].get("ts") == rust_saved["tiers"][0].get("ts")
 
 
 def test_download_matches_python(rust_bin, cli_env, tmp_path):

@@ -387,9 +387,10 @@ The first Rust slice is on `rust-migration`:
   `hive-models` (GGUF header parser + library), `hive-supervisor` (spawn,
   health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
 - Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers,
-  endpoint adoption, managed Strata/DeepInfer launch tiers, and generated
-  single-tier stacks from a local GGUF), `tui` (four-tab ratatui dashboard),
-  `version`, `config`, `doctor`, `help --json`, `setup`,
+  endpoint adoption, managed Strata/DeepInfer launch tiers, generated
+  single-tier stacks from a local GGUF or Hugging Face repo, and pre-apply
+  `--fetch`), `tui` (four-tab ratatui dashboard), `version`, `config`,
+  `doctor`, `help --json`, `setup`,
   `models list/search/files/dir/download/import/remove`,
   `stacks list/show/validate`, `backends`/`backends list`/`backends fetch`,
   `status`, `stop`, `logs`.
@@ -419,14 +420,12 @@ The first Rust slice is on `rust-migration`:
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
-Not ported yet: remote `serve --model` (the Hugging Face auto-download path;
-download the file first with `hive models download`), `serve --fetch` (the
-pre-apply backend fetch), and the Python-only surfaces (`cascade`, `tools`,
-`sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`). They
-stay on the Python side until their phase. A generated stack can be detached
-only with `--save` (the child reloads the saved file); the Python CLI can detach
-without saving. The Rust TUI is read-only for now: the Python dashboard still
-owns interactive stop/log/approval actions.
+Not ported yet: the Python-only surfaces (`cascade`, `tools`, `sandbox`, `web`,
+`browser`, `ui`, `profile`, `controller`, `encoder`). They stay on the Python
+side until their phase. A generated stack can be detached only with `--save`
+(the child reloads the saved file); the Python CLI can detach without saving.
+The Rust TUI is read-only for now: the Python dashboard still owns interactive
+stop/log/approval actions.
 
 ### Scope
 

@@ -220,6 +220,27 @@ pub fn download(
     revision: &str,
     as_json: bool,
 ) -> Cmd {
+    let mut captured = None;
+    download_capture(
+        paths,
+        repo_arg,
+        file_arg,
+        revision,
+        as_json,
+        true,
+        &mut captured,
+    )
+}
+
+pub fn download_capture(
+    paths: &Paths,
+    repo_arg: &str,
+    file_arg: Option<&str>,
+    revision: &str,
+    as_json: bool,
+    print_output: bool,
+    captured: &mut Option<Value>,
+) -> Cmd {
     let (repo, mut file) = match file_arg {
         Some(file) => (repo_arg.to_owned(), Some(file.to_owned())),
         None => match repo_arg.split_once(':') {
@@ -271,7 +292,12 @@ pub fn download(
         .map_err(|error| format!("hive models download: {error}"))?;
     let dest = paths.models_dir.join(&file);
     if dest.is_file() && dest.metadata().map(|meta| meta.len() > 0).unwrap_or(false) {
-        return finish_download(&repo, &file, &dest, as_json);
+        let payload = download_payload(&repo, &file, &dest);
+        *captured = Some(payload.clone());
+        if print_output {
+            print_download(&payload, &repo, &file, &dest, as_json);
+        }
+        return Ok(0);
     }
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent).map_err(|error| format!("hive models download: {error}"))?;
@@ -370,40 +396,51 @@ pub fn download(
         eprintln!("hive models download: {repo}:{file}: {error}");
         return Ok(1);
     }
-    finish_download(&repo, &file, &dest, as_json)
-}
-
-fn finish_download(repo: &str, file: &str, dest: &Path, as_json: bool) -> Cmd {
-    let size =
-        dest.metadata().map(|meta| meta.len()).unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
-    let size_gb = (size * 100.0).round() / 100.0;
-    let payload = {
-        let mut object = Map::new();
-        object.insert("repo".into(), Value::String(repo.into()));
-        object.insert("file".into(), Value::String(file.into()));
-        object.insert(
-            "path".into(),
-            Value::String(dest.to_string_lossy().into_owned()),
-        );
-        object.insert(
-            "size_gb".into(),
-            serde_json::Number::from_f64(size_gb)
-                .map(Value::Number)
-                .unwrap_or(Value::Null),
-        );
-        Value::Object(object)
-    };
-    if as_json {
-        print!("{}", json::pretty(&payload));
-    } else {
-        println!("downloaded {repo}:{file}");
-        println!("  path  {}", dest.display());
-        println!("  size  {size_gb:.2} GiB");
+    let payload = download_payload(&repo, &file, &dest);
+    *captured = Some(payload.clone());
+    if print_output {
+        print_download(&payload, &repo, &file, &dest, as_json);
     }
     Ok(0)
 }
 
-fn hub_files(repo: &str) -> Result<Vec<Value>, String> {
+fn download_payload(repo: &str, file: &str, dest: &Path) -> Value {
+    let size =
+        dest.metadata().map(|meta| meta.len()).unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
+    let size_gb = (size * 100.0).round() / 100.0;
+    let mut object = Map::new();
+    object.insert("repo".into(), Value::String(repo.into()));
+    object.insert("file".into(), Value::String(file.into()));
+    object.insert(
+        "path".into(),
+        Value::String(dest.to_string_lossy().into_owned()),
+    );
+    object.insert(
+        "size_gb".into(),
+        serde_json::Number::from_f64(size_gb)
+            .map(Value::Number)
+            .unwrap_or(Value::Null),
+    );
+    Value::Object(object)
+}
+
+fn print_download(payload: &Value, repo: &str, file: &str, dest: &Path, as_json: bool) {
+    if as_json {
+        print!("{}", json::pretty(payload));
+        return;
+    }
+    println!("downloaded {repo}:{file}");
+    println!("  path  {}", dest.display());
+    println!(
+        "  size  {:.2} GiB",
+        payload
+            .get("size_gb")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0)
+    );
+}
+
+pub(crate) fn hub_files(repo: &str) -> Result<Vec<Value>, String> {
     let response = ureq::get(&format!("{HF_API}/models/{}/tree/main", encode_path(repo)))
         .timeout(Duration::from_secs(20))
         .call()

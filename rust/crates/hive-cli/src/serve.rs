@@ -61,10 +61,6 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
         eprintln!("hive serve: --detach and --once are mutually exclusive");
         return Ok(2);
     }
-    if options.fetch {
-        eprintln!("hive serve: --fetch is not ported yet");
-        return Ok(2);
-    }
     if options.model.is_some() && options.stack.is_some() {
         eprintln!("hive serve: give either a stack name or --model, not both");
         return Ok(2);
@@ -106,6 +102,12 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
         .and_then(Value::as_str)
         .unwrap_or("stack")
         .to_owned();
+    if options.fetch
+        && let Err(error) = ensure_fetch(paths, &options, &stack)
+    {
+        eprintln!("hive serve: {error}");
+        return Ok(1);
+    }
     let name = options.name.clone().unwrap_or_else(|| stack_name.clone());
     if let Err(error) = hive_state::validate_name(&name) {
         eprintln!("hive serve: {error}");
@@ -557,12 +559,83 @@ fn print_tiers(tiers: &[Value], host: &str) {
     }
 }
 
+fn ensure_fetch(paths: &Paths, options: &Options, stack: &Value) -> Result<(), String> {
+    let manifest = Manifest::load(paths.manifest.as_deref(), &paths.home)
+        .map_err(|error| format!("backend manifest: {error}"))?;
+    let tiers = stack
+        .get("tiers")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut missing = Vec::new();
+    for tier in tiers {
+        if tier
+            .get("endpoint")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+            .is_some()
+        {
+            continue;
+        }
+        let name = tier
+            .get("backend")
+            .and_then(Value::as_str)
+            .unwrap_or("vulkan")
+            .to_owned();
+        if missing.contains(&name) {
+            continue;
+        }
+        let backend = manifest.resolve(&name).map_err(|error| error.to_string())?;
+        if !backend.installed {
+            missing.push(name);
+        }
+    }
+    for name in missing {
+        if !options.as_json {
+            eprintln!("fetching {name} ...");
+        }
+        let mut payload = None;
+        match crate::backends_cmd::fetch_capture(
+            paths,
+            Some(&name),
+            None,
+            false,
+            options.as_json,
+            false,
+            &mut payload,
+        ) {
+            Ok(0) => {
+                if !options.as_json {
+                    eprintln!("installed {name}");
+                }
+            }
+            Err(error) => {
+                let detail = error
+                    .strip_prefix("hive backends fetch: ")
+                    .unwrap_or(&error);
+                return Err(format!("cannot fetch backend {name:?}: {detail}"));
+            }
+            Ok(code) => return Err(format!("cannot fetch backend {name:?} (exit {code})")),
+        }
+    }
+    Ok(())
+}
+
 fn generate_stack(
     paths: &Paths,
     options: &Options,
     model: &str,
 ) -> Result<(Value, Option<PathBuf>, Vec<String>), String> {
     let candidate = hive_core::paths::expand(Path::new(model));
+    let remote_ref = !candidate
+        .extension()
+        .map(|suffix| suffix.eq_ignore_ascii_case("gguf"))
+        .unwrap_or(false)
+        || model
+            .split_once(':')
+            .map(|(repo, file)| !file.is_empty() && repo.contains('/'))
+            .unwrap_or(false);
     let model_path = if candidate.is_file() {
         if options.file.is_some() {
             return Err("--file is only for a HuggingFace repo, not a local path".into());
@@ -570,18 +643,66 @@ fn generate_stack(
         candidate
             .canonicalize()
             .map_err(|error| format!("cannot resolve {}: {error}", candidate.display()))?
-    } else if candidate
-        .extension()
-        .map(|suffix| suffix.eq_ignore_ascii_case("gguf"))
-        .unwrap_or(false)
-    {
+    } else if !remote_ref {
         return Err(format!("no such GGUF file: {}", candidate.display()));
     } else {
-        return Err(
-            "remote --model needs `hive models download` first (the Rust download \
-             path is not ported yet); pass a local .gguf file"
-                .into(),
-        );
+        let (repo, file) = match options.file.as_deref() {
+            Some(file) => (model.to_owned(), file.to_owned()),
+            None => match model.split_once(':') {
+                Some((repo, file)) if !file.is_empty() && repo.contains('/') => {
+                    (repo.to_owned(), file.to_owned())
+                }
+                _ => {
+                    let rows = crate::models_cmd::hub_files(model)
+                        .map_err(|error| format!("cannot list {model}: {error}"))?;
+                    if rows.is_empty() {
+                        return Err(format!("{model} has no .gguf files"));
+                    }
+                    if rows.len() > 1 {
+                        let names = rows
+                            .iter()
+                            .filter_map(|row| row.get("file").and_then(Value::as_str))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        return Err(format!(
+                            "{model} has several GGUFs; choose one with --file: {names}"
+                        ));
+                    }
+                    let file = rows[0]
+                        .get("file")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_owned();
+                    (model.to_owned(), file)
+                }
+            },
+        };
+        let mut payload = None;
+        match crate::models_cmd::download_capture(
+            paths,
+            &repo,
+            Some(&file),
+            "main",
+            options.as_json,
+            false,
+            &mut payload,
+        ) {
+            Ok(0) => {}
+            Ok(_) => return Err(format!("cannot download {repo}:{file}")),
+            Err(error) => return Err(error),
+        }
+        let Some(path) = payload
+            .as_ref()
+            .and_then(|payload| payload.get("path"))
+            .and_then(Value::as_str)
+        else {
+            return Err(format!(
+                "cannot resolve the downloaded path for {repo}:{file}"
+            ));
+        };
+        let path = PathBuf::from(path);
+        path.canonicalize()
+            .map_err(|error| format!("cannot resolve {}: {error}", path.display()))?
     };
     if options.ctx == 0 {
         return Err("--ctx must be positive".into());
