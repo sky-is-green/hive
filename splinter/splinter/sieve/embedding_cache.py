@@ -40,6 +40,24 @@ class EmbeddingCache:
         safe = re.sub(r"[^A-Za-z0-9_.\-]", "_", model or "default")
         return Path(directory) / f"emb_cache_{safe}.npz"
 
+    def get(self, text: str) -> Optional[np.ndarray]:
+        """Return a cached vector, refreshing LRU order, or None."""
+        h = self.key(text)
+        if h in self._cache:
+            self._cache.move_to_end(h)
+            self.hits += 1
+            return self._cache[h]
+        return None
+
+    def put(self, text: str, embedding: np.ndarray) -> np.ndarray:
+        """Store one vector, evicting the oldest entry when full."""
+        h = self.key(text)
+        if len(self._cache) >= self._max_size and h not in self._cache:
+            self._cache.popitem(last=False)
+        self._cache[h] = embedding
+        self.misses += 1
+        return embedding
+
     def get_or_compute(
         self, text: str, compute_fn: Callable[[str], np.ndarray]
     ) -> np.ndarray:

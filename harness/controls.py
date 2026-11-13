@@ -21,6 +21,8 @@ caller hands over the settings dict and gets the resolved baseline back.
 
 from __future__ import annotations
 
+import os
+
 from typing import Any, Iterable, Mapping
 
 #: the curation knobs the harness understands.  They are the
@@ -88,18 +90,25 @@ def encoder_of(settings: Mapping[str, Any] | None) -> dict:
     """The encoder the retrieval and the memory management run on.
 
     ``model``       the sentence-transformers id the drone embeds with
-    ``backend``     ``local`` (here, on the CPU) or ``served``
-    ``url``         the embedding endpoint, when the backend is served
+    ``backend``     ``local`` (here, on the CPU), ``served`` (OpenAI-compatible),
+                    or ``rust`` (the native `hive-encoder serve` loopback API)
+    ``url``         the embedding endpoint, when the backend is served/rust
     ``medium_model`` the second, larger scorer
     """
     block = _block(settings, "encoder")
-    backend = str(block.get("embedding_backend") or "local").strip().lower()
-    if backend not in ("local", "served"):
+    backend = (
+        os.environ.get("HARNESS_EMBEDDING_BACKEND", "").strip().lower()
+        or str(block.get("embedding_backend") or "local").strip().lower()
+    )
+    if backend not in ("local", "served", "rust"):
         backend = "local"
     return {
         "model": str(block.get("embedding_model") or "").strip(),
         "backend": backend,
-        "url": str(block.get("embedding_url") or "").strip(),
+        "url": (
+            os.environ.get("HARNESS_EMBEDDING_URL", "").strip()
+            or str(block.get("embedding_url") or "").strip()
+        ),
         "medium_model": str(block.get("medium_model") or "").strip(),
     }
 

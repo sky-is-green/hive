@@ -31,6 +31,7 @@ use serde_json::{Map, Value};
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+pub mod encoder;
 pub mod openapi;
 pub mod runtime;
 pub mod sidecar;
@@ -52,6 +53,8 @@ pub struct DaemonConfig {
     pub sidecar_port: u16,
     /// Extra arguments passed to the managed `python -m harness` sidecar.
     pub sidecar_args: Vec<String>,
+    /// Extra environment for the managed sidecar.
+    pub sidecar_env: Vec<(String, String)>,
     /// `harness/webui` root; `None` disables static console serving.
     pub webui: Option<PathBuf>,
     pub token: Option<String>,
@@ -73,6 +76,7 @@ impl DaemonConfig {
             spawn_sidecar: false,
             sidecar_port: 8766,
             sidecar_args: Vec::new(),
+            sidecar_env: Vec::new(),
             webui,
             token,
             paths,
@@ -348,6 +352,32 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
         .await
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
 
+    let mut encoder = None;
+    if config.spawn_sidecar
+        && config.sidecar_url.is_none()
+        && std::env::var("HARNESS_EMBEDDING_BACKEND")
+            .map(|value| value.trim().eq_ignore_ascii_case("rust"))
+            .unwrap_or(false)
+        && std::env::var("HARNESS_EMBEDDING_URL")
+            .map(|value| value.trim().is_empty())
+            .unwrap_or(true)
+    {
+        let port = std::env::var("HIVE_ENCODER_PORT")
+            .ok()
+            .and_then(|text| text.parse::<u16>().ok())
+            .filter(|port| *port > 0)
+            .unwrap_or(8172);
+        let service = encoder::EncoderService::start(&config.paths.log_dir, port).await?;
+        config
+            .sidecar_env
+            .push(("HARNESS_EMBEDDING_BACKEND".into(), "rust".into()));
+        config.sidecar_env.push((
+            "HARNESS_EMBEDDING_URL".into(),
+            format!("http://127.0.0.1:{port}"),
+        ));
+        encoder = Some(service);
+    }
+
     let managed = if config.spawn_sidecar && config.sidecar_url.is_none() {
         let python = python::resolve(&config.paths)?;
         let spec = sidecar::SidecarSpec {
@@ -358,6 +388,7 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
             log_dir: config.paths.log_dir.clone(),
             port: config.sidecar_port,
             extra_args: config.sidecar_args.clone(),
+            env: config.sidecar_env.clone(),
         };
         let sidecar = Arc::new(Sidecar::start(spec)?);
         config.sidecar_url = Some(sidecar.url().to_owned());
@@ -379,6 +410,9 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
     // Always take the sidecar down, including after a serve error.
     if let Some(sidecar) = managed {
         sidecar.shutdown().await;
+    }
+    if let Some(encoder) = &mut encoder {
+        encoder.stop().await;
     }
     result
 }

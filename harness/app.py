@@ -1579,10 +1579,12 @@ def create_app(
         scoring knobs); the env still wins when it is set, because a
         deployment may pin the model.
         """
-        backend = (choice.get("backend")
-                   or os.environ.get("HARNESS_EMBEDDING_BACKEND", "local"))
-        url = (choice.get("url")
-               or os.environ.get("HARNESS_EMBEDDING_URL", ""))
+        # The deployment env is authoritative: it is how the daemon points
+        # the sidecar at the managed native encoder.
+        backend = (os.environ.get("HARNESS_EMBEDDING_BACKEND", "").strip()
+                   or choice.get("backend") or "local")
+        url = (os.environ.get("HARNESS_EMBEDDING_URL", "").strip()
+               or choice.get("url") or "")
         model = (choice.get("model")
                  or os.environ.get("HARNESS_EMBEDDING_MODEL", "default"))
         if backend == "served" and url:
@@ -1590,6 +1592,14 @@ def create_app(
 
             return ServedEmbeddingDrone(base_url=url,
                                         model=model)
+        if backend == "rust":
+            from sieve.rust_encoder import RustEncoderDrone
+
+            return RustEncoderDrone(
+                base_url=url or "http://127.0.0.1:8172",
+                vocab_boost=float(choice.get("vocab_boost") or 0.15),
+                confidence_mode=str(choice.get("confidence_mode") or "off"),
+            )
         # CPU by design: the encoder must never contend with llama-server
         # for VRAM. MiniLM-L3 is 12M params; CPU embedding costs ~5ms/turn.
         # Single-threaded on purpose: llama.cpp already holds a large

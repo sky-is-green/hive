@@ -1,7 +1,7 @@
 # Phase 3 encoder — native ONNX vs Python sentence-transformers
 
-**Status:** encoder slice built and measured (2026-11-13). Memory core and
-runtime integration are not ported yet.
+**Status:** encoder built, parity-tested, benchmarked, and integrated into the
+daemon/sidecar path (2026-11-13). The memory core is still Python.
 
 ## What is built
 
@@ -14,11 +14,19 @@ hive-encoder info --json
 hive-encoder encode --text "..." --json
 hive-encoder encode --file texts.txt --json
 hive-encoder bench --file texts.txt --repeat 3 --batch 32 --json
+hive-encoder serve --host 127.0.0.1 --port 8172
 ```
 
 Model discovery order: `HIVE_ENCODER_DIR`, `<repo>/models/encoder`, then the
 Hugging Face cache snapshot. No Python, torch, transformers, or
 sentence-transformers process is involved.
+
+With `HARNESS_EMBEDDING_BACKEND=rust`, the Rust daemon spawns `hive-encoder
+serve`, waits for `/health`, and passes `HARNESS_EMBEDDING_URL` to the Python
+sidecar. `sieve.rust_encoder.RustEncoderDrone` batches query+chunks into one
+`/encode` call. `tests/conformance/test_memory_parity.py` swaps only the drone
+and verifies the assembled context and selected chunk ids are identical to
+sentence-transformers.
 
 ## Parity
 
@@ -70,7 +78,8 @@ exported and added to the parity corpus.
 ## Still missing for G3
 
 - `ContextStore`, decay, dedup, drift, comb, assembly, and budget selection are
-  still Python.
-- The sidecar still imports torch; install size is not reduced yet.
+  still Python. The encoder swap alone does not remove the memory code.
+- A torch-free runtime venv has not been tested (P3-09).
 - P1–P11 / 28-task cascade replay has not been run against a native memory core.
 - Only MiniLM-L3-v2 is validated.
+- The native scorer fixes confidence at 1.0 (no MC-dropout) (P3-05).

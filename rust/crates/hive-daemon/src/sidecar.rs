@@ -39,6 +39,7 @@ pub struct SidecarSpec {
     pub log_dir: PathBuf,
     pub port: u16,
     pub extra_args: Vec<String>,
+    pub env: Vec<(String, String)>,
 }
 
 /// A running (or restarting) sidecar supervisor.
@@ -206,6 +207,11 @@ fn spawn_child(spec: &SidecarSpec) -> Result<Child, String> {
         .arg("--models-dir")
         .arg(&spec.models_dir)
         .args(&spec.extra_args)
+        .envs(
+            spec.env
+                .iter()
+                .map(|(key, value)| (key.as_str(), value.as_str())),
+        )
         .current_dir(&spec.repo)
         .stdin(Stdio::null())
         .env("PYTHONUNBUFFERED", "1")
