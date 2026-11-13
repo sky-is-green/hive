@@ -603,6 +603,12 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
+- **Daemon golden contracts.** `tests/conformance/golden/daemon_version.json`
+  and `daemon_config.json` freeze the native `/v1/version` and `/v1/config`
+  payloads with paths/platform/python normalized.
+- **Service packaging.** `rust/packaging/systemd/hive-daemon.service` runs the
+  daemon as a user service with restart-on-failure; `docs/DAEMON.md` covers the
+  install layout, `HIVE_PYTHON`, and operations.
 - **Python-only verbs proxy.** `hive cascade|profile|controller|encoder|tools|
   activity|sandbox|web|browser` and `hive help <verb>` forward to
   `python -m harness.cli` with stdio inherited. This keeps the root CLI usable

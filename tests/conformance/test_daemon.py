@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+import golden_support
+
 REPO = Path(__file__).resolve().parents[2]
 
 
@@ -1047,3 +1049,28 @@ def test_hive_ui_detach_starts_the_daemon_and_console(tmp_path):
         time.sleep(0.2)
     assert not _alive(daemon_pid)
     assert not _alive(sidecar_pid)
+
+
+def test_group_one_payloads_match_the_frozen_golden(tmp_path):
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_STATE_DIR": str(tmp_path / "state"),
+                "HIVE_PYTHON": sys.executable,
+            }
+        )
+        for name, path in (
+            ("daemon_version", "/v1/version"),
+            ("daemon_config", "/v1/config"),
+        ):
+            status, _, payload = _request(port, path)
+            assert status == 200
+            actual = golden_support.normalize(payload, tmp_path, sys.executable)
+            expected = json.loads((golden_support.GOLDEN / f"{name}.json").read_text())
+            assert actual == expected, name
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)

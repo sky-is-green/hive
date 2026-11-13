@@ -151,7 +151,7 @@ Severity:
 |---|---|---|---|---|
 | P2-01 | The daemon now spawns and owns the Python sidecar, but it is still a standalone binary: `hive ui`/the console entry point does not start it. | should | fixed — `hive ui web` | The normal console entry point starts the daemon instead of Python uvicorn. |
 | P2-02 | Sidecar lifecycle is not implemented: no spawn, restart/backoff, version handshake, or drain on daemon shutdown. | should | fixed — managed sidecar | Sidecar start/stop/restart and a `/health` version handshake are covered by tests. |
-| P2-03 | `/v1/config` and `/v1/version` are new Rust routes with no Python counterpart or frozen golden contract. | should | open | Their schemas are frozen in the golden corpus and documented. |
+| P2-03 | `/v1/config` and `/v1/version` are new Rust routes with no Python counterpart or frozen golden contract. | should | fixed — daemon golden snapshots | Their schemas are frozen in the golden corpus and documented. |
 | P2-04 | `/health` returns 200 with `ok:false` when the sidecar is down; Python `/health` only reports sidecar liveness. | intentional | open | Accepted as daemon readiness semantics, or aligned with Python. |
 | P2-05 | Auth is only the `HARNESS_TOKEN` env and a plain string compare; no config file, rotation, or constant-time compare. | should | fixed — constant-time compare, env-only source | Token source and comparison are hardened/documented. |
 | P2-06 | Proxy has no request IDs, body limits, or per-route timeout policy; blanket 300 s client timeout. | should | fixed — request IDs + per-route timeouts | Middleware limits/timeouts/request IDs match the existing API contract. |
@@ -163,7 +163,7 @@ Severity:
 | P2-12 | Proxy tests use a fake Python HTTP server, not the real FastAPI sidecar. | should | fixed — managed-sidecar conformance | A conformance test starts the real `harness` sidecar and proxies a route. |
 | P2-13 | Daemon is loopback/HTTP only; no TLS or remote-bind hardening. | intentional | open | Remote/TLS deployment becomes a supported mode. |
 | P2-14 | No rate limits or request-size limits at the public port. | should | accepted — loopback-only | Limits are configured and tested. |
-| P2-15 | No packaging, systemd unit, or restart policy for `hive-daemon`. | should | open | Install/service packaging ships with the daemon. |
+| P2-15 | No packaging, systemd unit, or restart policy for `hive-daemon`. | should | fixed — systemd unit + daemon docs; release tarball tracked by P1-05 | Install/service packaging ships with the daemon. |
 | P2-16 | SSE/streaming cancellation is not explicitly tested; body streams rely on drop propagation. | should | fixed — disconnect test | A disconnect test proves the upstream request is cancelled. |
 | P2-17 | Proxy strips response `Content-Length` and re-chunks; request `Content-Length` is preserved. | minor | accepted — required for streaming | Accepted after real-sidecar tests, or preserved end-to-end. |
 | P2-18 | No audit/structured request logs beyond basic `tracing` spans. | should | fixed — access log + request IDs | Audit fields and request IDs are added. |

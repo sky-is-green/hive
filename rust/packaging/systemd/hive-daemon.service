@@ -1,0 +1,22 @@
+[Unit]
+Description=Hive daemon (Rust API + Python Studio sidecar)
+Documentation=https://github.com/sky-is-green/hive/blob/rust-migration/docs/DAEMON.md
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+# The default install layout; override paths in ~/.config/hive/daemon.env.
+EnvironmentFile=-%h/.config/hive/daemon.env
+Environment=HIVE_PYTHON=%h/.hive/.venv/bin/python
+Environment=RUST_LOG=hive_daemon=info,tower_http=warn
+ExecStart=%h/.local/bin/hive-daemon --host 127.0.0.1 --port 8765 --sidecar-port 8766 --webui %h/.local/share/hive/webui
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=20
+# The daemon stops the sidecar's process group itself; keep signals flowing.
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=default.target
