@@ -367,10 +367,11 @@ def test_stacks_show_and_validate_match(
     assert py.returncode == rs.returncode
     assert parse_json(py) == parse_json(rs)
 
-    args = ["stacks", "show", "e-bad-role", "--stacks-dir", str(fixture_stacks)]
-    py, rs = run_both(rust_bin, args, env)
-    assert py.returncode == rs.returncode == 1
-    assert py.stderr == rs.stderr
+    for name in ("e-bad-role", "f-bad-engine-arg", "g-bad-launch"):
+        args = ["stacks", "show", name, "--stacks-dir", str(fixture_stacks)]
+        py, rs = run_both(rust_bin, args, env)
+        assert py.returncode == rs.returncode == 1, name
+        assert py.stderr == rs.stderr, name
 
 
 def test_tui_requires_a_terminal(rust_bin, cli_env):

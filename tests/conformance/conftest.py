@@ -230,6 +230,41 @@ def fixture_stacks(tmp_path: Path) -> Path:
             "tiers": [{"role": "boss", "repo": "local", "file": "a.gguf"}],
         },
     )
+    write(
+        "f-bad-engine-arg",
+        {
+            "name": "f-bad-engine-arg",
+            "version": 1,
+            "tiers": [
+                {
+                    "role": "face",
+                    "repo": "local",
+                    "file": "a.gguf",
+                    "engine_args": ["--host", "0.0.0.0"],
+                }
+            ],
+        },
+    )
+    write(
+        "g-bad-launch",
+        {
+            "name": "g-bad-launch",
+            "version": 1,
+            "tiers": [
+                {
+                    "role": "face",
+                    "repo": "local",
+                    "file": "a.gguf",
+                    "endpoint": "http://127.0.0.1:8080/v1",
+                    "launch": {
+                        "kind": "boss",
+                        "repo": "repo",
+                        "config": "cfg.json",
+                    },
+                }
+            ],
+        },
+    )
     return stacks
 
 
