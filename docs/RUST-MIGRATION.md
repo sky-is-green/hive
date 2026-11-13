@@ -603,6 +603,10 @@ The first daemon slice is on `rust-migration`:
   as daemon jobs (queued/downloading/done/error), resume `.part` files, check
   the final byte count against `Content-Length`, and keep the `.part` on
   mismatch.
+- **Run bundles.** `GET /v1/runs` lists `runs/` newest-first with kind,
+  `has_report`, and mtime; `GET /v1/report/{run}` returns `run_report.json`
+  after path-traversal checks. The rendered `/view/*` and `/runs` HTML pages
+  still proxy to Python's report renderer.
 - **Frozen CLI corpus.** `tests/conformance/golden/` snapshots `version`,
   `config`, root `help`, `models list/dir`, and `stacks list/show`. Tests compare
   the Rust binary to these files without starting Python; fixture paths,
@@ -627,9 +631,9 @@ The first daemon slice is on `rust-migration`:
    tested).
 2. [x] `server/*` lifecycle and `stacks/*` (the supervisor already owns this; one applied stack at a time).
 3. [x] `models/*` library, hub, download (local path/import and WSL routes remain proxied).
-4. `runs/*`, `report/*`, static pages.
-5. `cascade/*` (thin proxy at first).
-6. `splinter/*`, `openai/*`, `mcp` (sidecar until Phase 3).
+4. [x] `runs/*`, `report/*`, static pages (runs index/report JSON native; rendered `/view` and `/runs` HTML still proxy).
+5. [x] `cascade/*` (thin proxy by design at first).
+6. [x] `splinter/*`, `openai/*`, `mcp` (sidecar until Phase 3).
 7. `tools/*`, `sandbox/*`, `web/*`, `browser/*` (gateway).
 8. `agent/*`, `activity/*`, `controller/*`, `training/*` (sidecar/proxy).
 

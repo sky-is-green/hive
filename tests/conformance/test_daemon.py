@@ -945,3 +945,45 @@ def test_streaming_client_disconnect_cancels_the_upstream():
             process.terminate()
             process.wait(timeout=5)
         sidecar.close()
+
+
+def test_runs_index_and_report_json(tmp_path):
+    runs = tmp_path / "home" / "runs"
+    (runs / "old-run").mkdir(parents=True)
+    (runs / "new-run").mkdir()
+    (runs / "old-run" / "run_report.json").write_text(
+        json.dumps({"kind": "benchmark", "score": 1})
+    )
+    (runs / "new-run" / "run_report.json").write_text(
+        json.dumps({"kind": "cascade", "score": 2})
+    )
+    (runs / "plain").mkdir()
+    os.utime(runs / "old-run", (1_700_000_000, 1_700_000_000))
+    os.utime(runs / "new-run", (1_700_100_000, 1_700_100_000))
+    os.utime(runs / "plain", (1_700_200_000, 1_700_200_000))
+
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        status, headers, payload = _request(port, "/v1/runs")
+        assert status == 200
+        assert headers["x-hive-owner"] == "rust"
+        names = [row["name"] for row in payload["runs"]]
+        assert names == ["plain", "new-run", "old-run"]
+        by_name = {row["name"]: row for row in payload["runs"]}
+        assert by_name["new-run"]["kind"] == "cascade"
+        assert by_name["plain"]["has_report"] is False
+
+        status, _, payload = _request(port, "/v1/report/new-run")
+        assert status == 200
+        assert payload == {"kind": "cascade", "score": 2}
+
+        status, _, payload = _request(port, "/v1/report/missing")
+        assert status == 404
+
+        status, _, payload = _request(port, "/v1/report/%2e%2e/%2e%2e/etc")
+        assert status in (400, 404)
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)

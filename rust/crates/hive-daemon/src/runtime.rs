@@ -41,6 +41,7 @@ struct AppliedStack {
 
 pub struct Runtime {
     paths: Paths,
+    runs_dir: PathBuf,
     options: Options,
     client: reqwest::Client,
     downloads: Arc<Downloads>,
@@ -79,6 +80,7 @@ impl Runtime {
             .unwrap_or_default();
         Self {
             paths: paths.clone(),
+            runs_dir: paths.home.join("runs"),
             options,
             client: client.clone(),
             downloads: Arc::new(Downloads::new(client)),
@@ -357,6 +359,79 @@ impl Runtime {
 
     pub fn hub_downloads(&self) -> Value {
         self.downloads.status()
+    }
+
+    // ------------------------------------------------------------------
+    // Run bundles
+    // ------------------------------------------------------------------
+    pub fn runs_index(&self) -> Value {
+        let mut rows: Vec<(std::time::SystemTime, Value)> = Vec::new();
+        let Ok(entries) = std::fs::read_dir(&self.runs_dir) else {
+            return serde_json::json!({"runs": []});
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let modified = std::fs::metadata(&path)
+                .and_then(|meta| meta.modified())
+                .unwrap_or(std::time::UNIX_EPOCH);
+            let report_path = path.join("run_report.json");
+            let has_report = report_path.is_file();
+            let kind = if has_report {
+                std::fs::read_to_string(&report_path)
+                    .ok()
+                    .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+                    .and_then(|report| {
+                        report
+                            .get("kind")
+                            .and_then(Value::as_str)
+                            .map(str::to_owned)
+                    })
+                    .filter(|kind| !kind.is_empty())
+                    .unwrap_or_else(|| "benchmark".into())
+            } else {
+                "benchmark".into()
+            };
+            let name = path
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            rows.push((
+                modified,
+                serde_json::json!({
+                    "name": name,
+                    "has_report": has_report,
+                    "kind": kind,
+                    "modified": chrono::DateTime::<chrono::Local>::from(modified)
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string(),
+                }),
+            ));
+        }
+        rows.sort_by(|left, right| right.0.cmp(&left.0));
+        serde_json::json!({
+            "runs": rows.into_iter().map(|(_, row)| row).collect::<Vec<_>>()
+        })
+    }
+
+    pub fn run_report(&self, run_dir: &str) -> Result<Value, ApiError> {
+        let target = safe_join(&self.runs_dir, run_dir)
+            .ok_or_else(|| ApiError::new(400, "run directory must stay under runs/"))?;
+        let path = target.join("run_report.json");
+        let text = std::fs::read_to_string(&path).map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                ApiError::new(
+                    404,
+                    format!("no run_report.json under {}", target.display()),
+                )
+            } else {
+                ApiError::new(500, format!("cannot read {}: {error}", path.display()))
+            }
+        })?;
+        serde_json::from_str(&text)
+            .map_err(|error| ApiError::new(500, format!("run report is not JSON: {error}")))
     }
 
     // ------------------------------------------------------------------
@@ -1201,6 +1276,18 @@ fn write_stack(directory: &Path, name: &str, stack: &Value) -> Result<(), ApiErr
     })?;
     std::fs::rename(&temporary, &path)
         .map_err(|error| ApiError::new(500, format!("cannot save {}: {error}", path.display())))
+}
+
+fn safe_join(root: &Path, relative: &str) -> Option<PathBuf> {
+    let mut path = root.to_path_buf();
+    for part in relative.trim_start_matches('/').split('/') {
+        match part {
+            "" | "." => {}
+            ".." => return None,
+            part => path.push(part),
+        }
+    }
+    Some(path)
 }
 
 fn flag(body: &Value, key: &str) -> bool {

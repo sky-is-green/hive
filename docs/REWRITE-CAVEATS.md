@@ -179,6 +179,7 @@ Severity:
 | P2-27 | Native model routes cover local list/delete and hub search/files/download, but `POST /v1/models/local/path`, `import-path`, multipart import, `/v1/models/linux`, and move-to-linux/windows still proxy to Python. | should | open | Those routes are native or accepted as Python-only. |
 | P2-28 | `GET /v1/models` (served model IDs from a provider endpoint) still proxies; the native server status covers loaded engines only. | should | open | The served-model listing reads native instances and provider records. |
 | P2-29 | Daemon hub tests use `HIVE_HF_API`/`HIVE_HF_BASE` overrides; production defaults are the public Hugging Face endpoints. | minor | open | The overrides are documented as test hooks, or the hub client is injectable without env. |
+| P2-30 | `/v1/runs` and `/v1/report/*` are native, but the rendered `/view/*` and `/runs` HTML pages still proxy to Python's report renderer. | should | open | The report renderer is native, or those pages are accepted as Python-only until the report group moves. |
 
 
 ## Phase 3 — memory and encoder

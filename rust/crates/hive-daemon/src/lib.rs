@@ -142,6 +142,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/models/hub/files/{*repo}", get(hub_files))
         .route("/v1/models/hub/download", post(hub_download))
         .route("/v1/models/hub/downloads", get(hub_downloads))
+        .route("/v1/runs", get(runs_index))
+        .route("/v1/report/{*run_dir}", get(run_report))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(middleware::from_fn(request_id))
@@ -652,6 +654,24 @@ async fn hub_download(State(state): State<Arc<AppState>>, Json(body): Json<Value
 
 async fn hub_downloads(State(state): State<Arc<AppState>>) -> Response {
     runtime_json(Ok(state.runtime.hub_downloads()))
+}
+
+async fn runs_index(State(state): State<Arc<AppState>>) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.runs_index()).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("runs worker failed: {error}"),
+        }),
+    }
+}
+
+async fn run_report(
+    State(state): State<Arc<AppState>>,
+    UrlPath(run_dir): UrlPath<String>,
+) -> Response {
+    runtime_json(state.runtime.run_report(run_dir.trim_start_matches('/')))
 }
 
 /// The console shell, its `/api` prefix, and the Python-only API all arrive
