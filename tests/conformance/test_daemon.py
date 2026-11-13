@@ -525,6 +525,18 @@ def test_managed_sidecar_starts_proxies_restarts_and_stops():
         assert headers["x-hive-owner"] == "python"
         assert payload["commands"]
 
+        # Runtime/gateway groups still proxy, but through the real sidecar.
+        for path in (
+            "/v1/activity?limit=1",
+            "/v1/tools/pending",
+            "/v1/agent/status",
+            "/v1/sandbox/status",
+        ):
+            status, headers, payload = _request(port, path)
+            assert status == 200, (path, payload)
+            assert headers["x-hive-owner"] == "python", path
+            assert isinstance(payload, dict), path
+
         # Kill the sidecar; the supervisor must bring up a replacement.
         os.kill(first_pid, 9)
         health = _wait_health(port, managed=True, pid_not=first_pid)

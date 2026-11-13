@@ -693,8 +693,9 @@ The first daemon slice is on `rust-migration`:
 ### Phase 2 gate (G2)
 
 - [ ] All route groups in Rust, with the sidecar used only for memory/eval.
-  Groups 1–4 are native; 5–8 still proxy (cascade, splinter/openai/mcp,
-  gateway, agent/activity/controller/training).
+  Groups 1–4 are native; 5–8 proxy by design because they are Python runtimes
+  the staged plan keeps until Phase 3 (P2-37). The proxy boundary is smoke-
+  tested against the real sidecar (P2-38).
 - [ ] OpenAPI/TS generation is part of CI; the frontend compiles against it.
   OpenAPI is native and merged (P2-09); TypeScript client generation is
   deferred because the console is vanilla JS (P2-35).
