@@ -380,6 +380,10 @@ Studio and experiments untouched. **Spike:** 2–4 weeks. **Parity:** 8–12 wee
 
 ### Phase 1 status (2026-11-12)
 
+Phase 1's CLI/supervisor scope is complete (G1, 2026-11-13). The command
+surface below is ported and conformance-tested; only the Python Studio/eval
+surfaces and a few interactive TUI actions stay on the Python side by design.
+
 The first Rust slice is on `rust-migration`:
 
 - Cargo workspace under `rust/` with `hive-core` (paths, config, hardware,
@@ -415,8 +419,8 @@ The first Rust slice is on `rust-migration`:
   detached start, `/v1/models`, a chat completion, `status` probe, and stop.
   Run it with:
   `HIVE_LLAMA_SERVER=... HIVE_LIVE_MODEL=... python -m pytest tests/conformance/test_live_llama.py -q`.
-- Measurement on this box (release build): `hive version` 0.8 ms, `hive
-  status` 0.9 ms, 14.5 MB max RSS, 1.1 MB stripped binary.
+- Measurement on this box (release build): `hive version` 0.9 ms, `hive
+  status` 1.0 ms, 14.5 MB max RSS, 2.8 MB stripped binary.
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
@@ -515,15 +519,16 @@ The supervisor is the reason to do this in Rust. Requirements:
       `help --json`, `models list/search/files/dir/download/import/remove`,
       `stacks list/show/validate`, `status`, `stop`, `logs`,
       `serve --list/--backends`, `backends`/`backends list`/`backends fetch`,
-      `setup`; `tui` matches the four-tab surface (no JSON form).- [x] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
+      `setup`; `tui` matches the four-tab surface (no JSON form).
+- [x] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
       second shell; `logs` tails both supervisor and tier logs. (Live-tested
       with llama.cpp b12329 CPU + SmolLM2-135M: detached start, `/v1/models`,
       a chat completion, `status` probe, and a clean stop.)
 - [x] `kill -9` of the supervisor leaves zero engine processes; restart prunes
       the stale record.
 - [x] Startup < 20 ms and RSS < 20 MB for `hive version` and `hive status`
-      (0.8/0.9 ms, 14.5 MB measured).
-- [x] Binary < 25 MB stripped (1.1 MB, without the ONNX encoder).
+      (0.9/1.0 ms, 14.5 MB measured).
+- [x] Binary < 25 MB stripped (2.8 MB, without the ONNX encoder).
 - [x] TUI parity on Status/Models/Stacks/Runs (four tabs, same data and
       navigation; interactive stop/log/approvals still live on the Python
       dashboard).
