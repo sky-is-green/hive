@@ -255,6 +255,8 @@ class Handler(BaseHTTPRequestHandler):
             payload = {{"data": [{{"id": "fake-model"}}]}}
         elif self.path == "/health":
             payload = {{"status": "ok", "loaded": True, "model": "fake-model"}}
+        elif self.path == "/slots":
+            payload = [{{"id": 0, "is_processing": False}}]
         else:
             self.send_error(404)
             return

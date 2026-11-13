@@ -59,6 +59,62 @@ def test_models_list_matches_the_python_gguf_parser(rust_bin, cli_env, fixture_l
     assert parse_json(py) == parse_json(rs)
 
 
+def test_serve_model_local_generates_the_same_stack(
+    rust_bin, cli_env, serve_fixture, tmp_path
+):
+    if not any(Path("/sys/class/drm").glob("card*/device/mem_info_vram_total")):
+        pytest.skip("Python's residency preflight needs a visible GPU")
+    env, _ = cli_env
+    python_stacks = tmp_path / "python-stacks"
+    rust_stacks = tmp_path / "rust-stacks"
+    python_stacks.mkdir()
+    rust_stacks.mkdir()
+    model = serve_fixture["models"] / "tiny.gguf"
+    common = [
+        "serve",
+        "--model",
+        str(model),
+        "--once",
+        "--json",
+        "--save",
+        "generated",
+        "--models-dir",
+        str(serve_fixture["models"]),
+        "--llama-server",
+        str(serve_fixture["engine"]),
+    ]
+    py = run_python([*common, "--stacks-dir", str(python_stacks)], env)
+    rs = run_rust(rust_bin, [*common, "--stacks-dir", str(rust_stacks)], env)
+    assert py.returncode == rs.returncode == 0, (py.stderr, rs.stderr)
+    python_saved = json.loads((python_stacks / "generated.json").read_text())
+    rust_saved = json.loads((rust_stacks / "generated.json").read_text())
+    assert python_saved == rust_saved
+    assert python_saved["tiers"][0]["file"] == str(model.resolve())
+    assert "routing" not in python_saved
+
+    python_status = parse_json(py)
+    rust_status = parse_json(rs)
+    assert python_status["stack"] == rust_status["stack"] == "generated"
+    for field in (
+        "role",
+        "key",
+        "ctx",
+        "model",
+        "backend",
+        "resident",
+        "base_url",
+        "caps",
+        "managed",
+        "pid",
+        "tok_s",
+        "vram_gb",
+    ):
+        assert python_status["tiers"][0][field] == rust_status["tiers"][0][field], field
+    assert len(python_status["tiers"][0]["per_card"]) == len(
+        rust_status["tiers"][0]["per_card"]
+    )
+
+
 def test_models_dir_read_matches(rust_bin, cli_env, fixture_library):
     env, _ = cli_env
     args = ["models", "dir", "--models-dir", str(fixture_library), "--json"]
@@ -491,14 +547,22 @@ def test_detached_serve_survives_status_and_kill_9_cleans_the_engine(
     assert result.returncode == 0, result.stderr
     record = parse_json(result)
     supervisor = record["pid"]
-    engine = record["tiers"][0]["pid"]
+    deadline = time.time() + 2
+    engine = None
+    while time.time() < deadline:
+        children = Path(f"/proc/{supervisor}/task/{supervisor}/children").read_text().split()
+        if children:
+            engine = int(children[0])
+            break
+        time.sleep(0.05)
+    assert engine is not None, "supervisor has no engine child"
     try:
         status = run_rust(rust_bin, ["status", "--json", "--no-probe"], env)
         assert status.returncode == 0
         view = parse_json(status)["serves"][0]
         assert view["name"] == "detached"
         assert view["state"] == "running"
-        assert view["tiers"][0]["pid"] == engine
+        assert view["tiers"][0]["pid"] is None
 
         logs = run_rust(rust_bin, ["logs", "detached", "--json", "-n", "20"], env)
         assert logs.returncode == 0

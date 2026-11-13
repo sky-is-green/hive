@@ -469,7 +469,7 @@ fn local_tier_row(tier: &Value, key: &str, engine: &Engine, per_card: &[Value]) 
         tier.get("caps").cloned().unwrap_or(Value::Null),
     );
     row.insert("managed".into(), Value::Bool(false));
-    row.insert("pid".into(), Value::from(engine.pid));
+    row.insert("pid".into(), Value::Null);
     row.insert("per_card".into(), Value::Array(per_card.to_vec()));
     Value::Object(row)
 }

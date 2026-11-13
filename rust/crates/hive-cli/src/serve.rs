@@ -1,7 +1,7 @@
 //! `hive serve`: apply a stack, keep it up, unload it on exit.
 
 use std::fs::OpenOptions;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -61,29 +61,46 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
         eprintln!("hive serve: --detach and --once are mutually exclusive");
         return Ok(2);
     }
-    if options.model.is_some() || options.file.is_some() || options.save.is_some() {
-        eprintln!(
-            "hive serve: generated stacks (--model/--file/--save) are not ported \
-             yet; write a stack file and pass its name"
-        );
-        return Ok(2);
-    }
     if options.fetch {
         eprintln!("hive serve: --fetch is not ported yet");
         return Ok(2);
     }
-    let Some(target) = options.stack.as_deref() else {
-        eprintln!("hive serve: a stack name, a path, or --model is required (or --list)");
+    if options.model.is_some() && options.stack.is_some() {
+        eprintln!("hive serve: give either a stack name or --model, not both");
         return Ok(2);
-    };
+    }
+    if options.model.is_none() && (options.file.is_some() || options.save.is_some()) {
+        eprintln!("hive serve: --file/--save require --model");
+        return Ok(2);
+    }
 
-    let (stack, stack_file) = match hive_supervisor::load_stack(target, &paths.stacks_dir) {
-        Ok(pair) => pair,
-        Err(error) => {
-            eprintln!("hive serve: {error}");
-            return Ok(2);
-        }
-    };
+    let (stack, stack_file, target, generated_warnings) =
+        if let Some(model) = options.model.as_deref() {
+            match generate_stack(paths, &options, model) {
+                Ok((stack, saved, warnings)) => {
+                    let target = saved
+                        .as_ref()
+                        .map(|path| path.to_string_lossy().into_owned());
+                    (stack, None, target, warnings)
+                }
+                Err(error) => {
+                    eprintln!("hive serve: {error}");
+                    return Ok(2);
+                }
+            }
+        } else {
+            let Some(target) = options.stack.as_deref() else {
+                eprintln!("hive serve: a stack name, a path, or --model is required (or --list)");
+                return Ok(2);
+            };
+            match hive_supervisor::load_stack(target, &paths.stacks_dir) {
+                Ok((stack, stack_file)) => (stack, stack_file, Some(target.to_owned()), Vec::new()),
+                Err(error) => {
+                    eprintln!("hive serve: {error}");
+                    return Ok(2);
+                }
+            }
+        };
     let stack_name = stack
         .get("name")
         .and_then(Value::as_str)
@@ -100,6 +117,13 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
     }
 
     if options.detach && !options.child {
+        let Some(target) = target.as_deref() else {
+            eprintln!(
+                "hive serve: --model --detach needs --save so the background \
+                 process can reload the generated stack"
+            );
+            return Ok(2);
+        };
         return detach(paths, &options, target, &name, &stack);
     }
 
@@ -116,13 +140,14 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
             .unwrap_or_else(|| paths.log_dir.clone()),
         startup_timeout: options.timeout,
     };
-    let applied = match hive_supervisor::apply(&stack, &run_options) {
+    let mut applied = match hive_supervisor::apply(&stack, &run_options) {
         Ok(applied) => applied,
         Err(error) => {
             eprintln!("hive serve: {error}");
             return Ok(1);
         }
     };
+    applied.warnings.extend(generated_warnings);
 
     if options.once {
         print_status(
@@ -529,6 +554,217 @@ fn print_tiers(tiers: &[Value], host: &str) {
         if !extra.is_empty() {
             println!("  {:width$}  {extra}", "");
         }
+    }
+}
+
+fn generate_stack(
+    paths: &Paths,
+    options: &Options,
+    model: &str,
+) -> Result<(Value, Option<PathBuf>, Vec<String>), String> {
+    let candidate = hive_core::paths::expand(Path::new(model));
+    let model_path = if candidate.is_file() {
+        if options.file.is_some() {
+            return Err("--file is only for a HuggingFace repo, not a local path".into());
+        }
+        candidate
+            .canonicalize()
+            .map_err(|error| format!("cannot resolve {}: {error}", candidate.display()))?
+    } else if candidate
+        .extension()
+        .map(|suffix| suffix.eq_ignore_ascii_case("gguf"))
+        .unwrap_or(false)
+    {
+        return Err(format!("no such GGUF file: {}", candidate.display()));
+    } else {
+        return Err(
+            "remote --model needs `hive models download` first (the Rust download \
+             path is not ported yet); pass a local .gguf file"
+                .into(),
+        );
+    };
+    if options.ctx == 0 {
+        return Err("--ctx must be positive".into());
+    }
+
+    let all_devices = hive_supervisor::residency::visible_devices();
+    let devices = select_devices(&all_devices, options.cards, options.devices.as_deref())?;
+    let manifest = Manifest::load(paths.manifest.as_deref(), &paths.home).ok();
+    let backend = if let Some(name) = &options.backend {
+        if let Some(manifest) = &manifest {
+            let resolved = manifest.resolve(name).map_err(|error| error.to_string())?;
+            if !resolved.installed {
+                return Err(format!(
+                    "backend {name:?} is not installed ({}); run `hive backends \
+                     fetch {name}` or add --fetch",
+                    resolved.binary.display()
+                ));
+            }
+        }
+        Some(name.clone())
+    } else {
+        manifest.as_ref().and_then(|manifest| {
+            manifest
+                .for_accelerator(if devices.is_empty() { "cpu" } else { "amd" })
+                .map(str::to_owned)
+        })
+    };
+
+    let mut tier = Map::new();
+    tier.insert("role".into(), Value::String(options.role.clone()));
+    tier.insert("repo".into(), Value::String("local".into()));
+    tier.insert(
+        "file".into(),
+        Value::String(model_path.to_string_lossy().into_owned()),
+    );
+    tier.insert("ctx".into(), Value::from(options.ctx));
+    tier.insert("ngl".into(), Value::from(99));
+    if let Some(backend) = backend {
+        tier.insert("backend".into(), Value::String(backend));
+    }
+    tier.insert("cache_k".into(), Value::String("q8_0".into()));
+    tier.insert("cache_v".into(), Value::String("q8_0".into()));
+
+    let mut warnings = Vec::new();
+    if !devices.is_empty() {
+        let pin = devices
+            .iter()
+            .map(|device| device.index.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        tier.insert("pin".into(), Value::String(pin));
+        for device in &devices {
+            if device.display {
+                warnings.push(format!(
+                    "card {} drives a display; expect desktop stutter",
+                    device.index
+                ));
+            }
+        }
+        if devices.len() > 1 {
+            let memory: Vec<f64> = devices
+                .iter()
+                .map(|device| device.memory_gb.unwrap_or(1.0))
+                .collect();
+            let min = memory.iter().copied().fold(f64::INFINITY, f64::min);
+            let max = memory.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+            let ts = if max - min < 0.5 {
+                vec!["1"; memory.len()].join(",")
+            } else {
+                memory
+                    .iter()
+                    .map(|value| format!("{value:.0}"))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            tier.insert("ts".into(), Value::String(ts));
+        }
+    }
+
+    let stem = model_path
+        .file_stem()
+        .map(|stem| stem.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "model".into());
+    let cards = if devices.is_empty() {
+        "cpu".to_owned()
+    } else {
+        format!("{}card", devices.len())
+    };
+    let name = options
+        .save
+        .clone()
+        .or_else(|| options.name.clone())
+        .unwrap_or_else(|| slug(&format!("{stem}-{cards}")));
+    let mut data = Map::new();
+    data.insert("name".into(), Value::String(name.clone()));
+    data.insert("version".into(), Value::from(1));
+    data.insert("tiers".into(), Value::Array(vec![Value::Object(tier)]));
+    let stack = hive_core::stacks::parse_stack(&Value::Object(data.clone()))
+        .map_err(|error| error.to_string())?;
+
+    let mut saved = None;
+    if let Some(target) = options.save.as_deref() {
+        let name =
+            hive_core::stacks::check_stack_name(if target.is_empty() { &name } else { target })?;
+        let path = paths.stacks_dir.join(format!("{name}.json"));
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| format!("cannot create {}: {error}", parent.display()))?;
+        }
+        std::fs::write(&path, json::pretty(&Value::Object(data)))
+            .map_err(|error| format!("cannot write {}: {error}", path.display()))?;
+        if !options.as_json {
+            println!("wrote {}", path.display());
+        }
+        saved = Some(path);
+    }
+    Ok((stack, saved, warnings))
+}
+
+fn select_devices(
+    devices: &[hive_core::hardware::Device],
+    count: Option<u32>,
+    requested: Option<&str>,
+) -> Result<Vec<hive_core::hardware::Device>, String> {
+    if let Some(requested) = requested {
+        let wanted: Vec<usize> = requested
+            .replace(' ', "")
+            .split(',')
+            .filter(|part| !part.is_empty())
+            .map(|part| {
+                part.parse::<usize>()
+                    .map_err(|_| "--devices must be comma-separated HIP indices, e.g. 0,1")
+            })
+            .collect::<Result<_, _>>()?;
+        let by_index: std::collections::BTreeMap<usize, &hive_core::hardware::Device> = devices
+            .iter()
+            .map(|device| (device.index, device))
+            .collect();
+        let missing: Vec<usize> = wanted
+            .iter()
+            .copied()
+            .filter(|index| !by_index.contains_key(index))
+            .collect();
+        if !missing.is_empty() {
+            return Err(format!(
+                "--devices {missing:?} not among the detected cards {:?}",
+                by_index.keys().collect::<Vec<_>>()
+            ));
+        }
+        return Ok(wanted
+            .into_iter()
+            .filter_map(|index| by_index.get(&index).map(|device| (**device).clone()))
+            .collect());
+    }
+    if let Some(count) = count
+        && count as usize > devices.len()
+    {
+        return Err(format!(
+            "--cards {count} but only {} GPU(s) detected",
+            devices.len()
+        ));
+    }
+    let take = count.map(|count| count as usize).unwrap_or(devices.len());
+    Ok(devices.iter().take(take).cloned().collect())
+}
+
+fn slug(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut dash = false;
+    for ch in text.chars() {
+        if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-') {
+            out.push(ch);
+            dash = false;
+        } else if !dash {
+            out.push('-');
+            dash = true;
+        }
+    }
+    let trimmed = out.trim_matches(|ch| ch == '-' || ch == '.').to_owned();
+    if trimmed.is_empty() {
+        "stack".into()
+    } else {
+        trimmed.chars().take(64).collect()
     }
 }
 

@@ -387,10 +387,11 @@ The first Rust slice is on `rust-migration`:
   `hive-models` (GGUF header parser + library), `hive-supervisor` (spawn,
   health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
 - Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers,
-  endpoint adoption, and managed Strata/DeepInfer launch tiers), `tui` (four-tab
-  ratatui dashboard), `version`, `config`, `doctor`, `help --json`,
-  `models list/dir/import/remove`, `stacks list/show/validate`,
-  `backends`/`backends list`, `status`, `stop`, `logs`.
+  endpoint adoption, managed Strata/DeepInfer launch tiers, and generated
+  single-tier stacks from a local GGUF), `tui` (four-tab ratatui dashboard),
+  `version`, `config`, `doctor`, `help --json`, `models list/dir/import/remove`,
+  `stacks list/show/validate`, `backends`/`backends list`, `status`, `stop`,
+  `logs`.
 - `help --json` is generated from the live clap tree; every ported command is
   byte-identical to Python's catalog (the root catalog lists only ported
   commands until the rest land).
@@ -417,11 +418,13 @@ The first Rust slice is on `rust-migration`:
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
-Not ported yet: generated stacks (`serve --model`), `--fetch`,
-`models search/files/download`, `backends fetch`, `setup`, and the Python-only
-surfaces (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`,
-`controller`, `encoder`). They stay on the Python side until their phase. The
-Rust TUI is read-only for now: the Python dashboard still owns interactive
+Not ported yet: remote `serve --model` (the Hugging Face download path),
+`--fetch`, `models search/files/download`, `backends fetch`, `setup`, and the
+Python-only surfaces (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`,
+`profile`, `controller`, `encoder`). They stay on the Python side until their
+phase. A generated stack can be detached only with `--save` (the child reloads
+the saved file); the Python CLI can detach without saving. The Rust TUI is
+read-only for now: the Python dashboard still owns interactive
 stop/log/approval actions.
 
 ### Scope
