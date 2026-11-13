@@ -527,6 +527,10 @@ def test_managed_sidecar_starts_proxies_restarts_and_stops():
 
         # Runtime/gateway groups still proxy, but through the real sidecar.
         for path in (
+            "/v1/cascade/roles",
+            "/v1/cascade/paths",
+            "/v1/cascade/registry",
+            "/v1/cascade/runs",
             "/v1/activity?limit=1",
             "/v1/tools/pending",
             "/v1/agent/status",
@@ -1350,3 +1354,62 @@ def test_stop_one_tier_of_an_applied_stack(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=10)
+
+
+def test_probe_prefix_targets_the_requested_port():
+    sidecar = _Sidecar()
+    process = None
+    try:
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
+        status, headers, payload = _request(port, f"/probe/{sidecar.port}/health")
+        assert status == 200
+        assert headers["x-hive-owner"] == "python"
+        assert payload["conversations"] == 7
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        sidecar.close()
+
+
+def test_console_routing_state_is_native(tmp_path):
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        status, _, payload = _request(
+            port,
+            "/api/routing/traces",
+            method="POST",
+            body=json.dumps(
+                {"suggested_tier": "simple", "actual_tier": "complex", "ok": True}
+            ).encode(),
+        )
+        assert status == 200
+        assert payload["ok"] is True
+        trace_id = payload["id"]
+
+        status, _, payload = _request(port, "/api/routing/traces?limit=10")
+        assert status == 200
+        assert payload["traces"][0]["id"] == trace_id
+        assert payload["summary"]["n"] == 1
+        assert payload["summary"]["over"] == 1
+        assert payload["summary"]["by_suggested"] == {"simple": 1}
+
+        status, _, payload = _request(port, "/api/route-targets")
+        assert status == 200
+        assert payload["targets"]["simple"]["model"] == "lfm3"
+
+        status, _, payload = _request(
+            port,
+            "/api/route-targets",
+            method="POST",
+            body=json.dumps({"targets": {"simple": {"model": "smol"}}}).encode(),
+        )
+        assert status == 200
+        status, _, payload = _request(port, "/api/route-targets")
+        assert payload["targets"]["simple"]["model"] == "smol"
+        assert payload["targets"]["medium"]["model"] == "scion35"
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)

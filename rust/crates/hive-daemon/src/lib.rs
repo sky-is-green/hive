@@ -319,6 +319,14 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/models/hub/downloads", get(hub_downloads))
         .route("/v1/runs", get(runs_index))
         .route("/v1/report/{*run_dir}", get(run_report))
+        .route(
+            "/api/routing/traces",
+            get(routing_traces).post(routing_trace_post),
+        )
+        .route(
+            "/api/route-targets",
+            get(route_targets).post(route_targets_post),
+        )
         .route("/openapi.json", get(openapi_spec))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
@@ -872,6 +880,35 @@ async fn hub_downloads(State(state): State<Arc<AppState>>) -> Response {
     runtime_json(Ok(state.runtime.hub_downloads()))
 }
 
+async fn routing_traces(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let limit = query
+        .get("limit")
+        .and_then(|text| text.parse::<usize>().ok())
+        .unwrap_or(50);
+    runtime_json(Ok(state.runtime.routing_traces(limit)))
+}
+
+async fn routing_trace_post(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.runtime.routing_trace_post(body))
+}
+
+async fn route_targets(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.runtime.route_targets()))
+}
+
+async fn route_targets_post(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.runtime.route_targets_post(&body))
+}
+
 async fn openapi_spec(State(state): State<Arc<AppState>>) -> Response {
     let mut document = openapi::document();
     if let Some(base) = &state.config.sidecar_url {
@@ -916,6 +953,15 @@ async fn dispatch(State(state): State<Arc<AppState>>, request: Request) -> Respo
     if path == "/" || path == "/index.html" {
         return static_response(&state, Path::new("index.html"), request.method(), true).await;
     }
+    if path == "/api/decision" {
+        return proxy_to_base(
+            state,
+            request,
+            "http://127.0.0.1:8161",
+            "/v1/systemone".to_owned(),
+        )
+        .await;
+    }
     if path == "/api" || path.starts_with("/api/") {
         let raw = request
             .uri()
@@ -925,6 +971,20 @@ async fn dispatch(State(state): State<Arc<AppState>>, request: Request) -> Respo
             .to_owned();
         let target = api_target(&raw);
         return proxy_to(state, request, target).await;
+    }
+    if let Some((port, mut target)) = probe_target(&path) {
+        if let Some(query) = request.uri().query() {
+            target.push('?');
+            target.push_str(query);
+        }
+        return proxy_to_base(state, request, &format!("http://127.0.0.1:{port}"), target).await;
+    }
+    if let Some((base, mut target)) = model_target(&path) {
+        if let Some(query) = request.uri().query() {
+            target.push('?');
+            target.push_str(query);
+        }
+        return proxy_to_base(state, request, base, target).await;
     }
     if is_sidecar_passthrough(&path) {
         return proxy(State(state), request).await;
@@ -947,6 +1007,32 @@ async fn dispatch(State(state): State<Arc<AppState>>, request: Request) -> Respo
         }
     }
     proxy(State(state), request).await
+}
+
+fn probe_target(path: &str) -> Option<(u16, String)> {
+    let rest = path.strip_prefix("/probe/")?;
+    let (port, tail) = rest.split_once('/').unwrap_or((rest, ""));
+    let port = port.parse::<u16>().ok().filter(|port| *port > 0)?;
+    Some((port, format!("/{tail}")))
+}
+
+fn model_target(path: &str) -> Option<(&'static str, String)> {
+    let rest = path.strip_prefix("/model/")?;
+    let (name, tail) = rest.split_once('/').unwrap_or((rest, ""));
+    let base = match name {
+        "lfm3" => "http://127.0.0.1:8155",
+        "ds41" => "http://127.0.0.1:8150",
+        "scion35" => "http://127.0.0.1:8082",
+        "scion176" => "http://127.0.0.1:8081",
+        "lfm3vl" => "http://127.0.0.1:8160",
+        "controller17" => "http://127.0.0.1:8156",
+        "reader17" => "http://127.0.0.1:8159",
+        "auditor17" => "http://127.0.0.1:8162",
+        "dispatcher17" => "http://127.0.0.1:8163",
+        "toolmanager17" => "http://127.0.0.1:8164",
+        _ => return None,
+    };
+    Some((base, format!("/{tail}")))
 }
 
 fn is_sidecar_passthrough(path: &str) -> bool {
@@ -1066,6 +1152,16 @@ async fn proxy_to(state: Arc<AppState>, request: Request, path: String) -> Respo
             Json(serde_json::json!({"detail": "no Python sidecar configured"})).into_response(),
         );
     };
+    let base = base.clone();
+    proxy_to_base(state, request, &base, path).await
+}
+
+async fn proxy_to_base(
+    state: Arc<AppState>,
+    request: Request,
+    base: &str,
+    path: String,
+) -> Response {
     let url = format!("{}{}", base.trim_end_matches('/'), path);
     let method = match Method::from_bytes(request.method().as_str().as_bytes()) {
         Ok(method) => method,

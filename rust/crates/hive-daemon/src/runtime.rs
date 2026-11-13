@@ -518,6 +518,140 @@ impl Runtime {
     }
 
     // ------------------------------------------------------------------
+    // Console-local routing state
+    // ------------------------------------------------------------------
+    pub fn routing_traces(&self, limit: usize) -> Value {
+        let path = self.paths.state_dir.join("console-routing.jsonl");
+        let mut rows: Vec<Value> = std::fs::read_to_string(&path)
+            .ok()
+            .map(|text| {
+                text.lines()
+                    .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let limit = limit.clamp(1, 500);
+        let start = rows.len().saturating_sub(limit);
+        rows = rows[start..].to_vec();
+        let mut by_suggested = Map::new();
+        let mut by_actual = Map::new();
+        let mut over = 0;
+        let mut under = 0;
+        let mut matched = 0;
+        for row in &rows {
+            let suggested = row
+                .get("suggested_tier")
+                .and_then(Value::as_str)
+                .unwrap_or("?");
+            let actual = row
+                .get("actual_tier")
+                .and_then(Value::as_str)
+                .unwrap_or("?");
+            bump(&mut by_suggested, suggested);
+            bump(&mut by_actual, actual);
+            let order = |tier: &str| match tier {
+                "simple" => Some(0),
+                "medium" => Some(1),
+                "complex" => Some(2),
+                _ => None,
+            };
+            if let (Some(suggested), Some(actual)) = (order(suggested), order(actual)) {
+                if actual > suggested {
+                    over += 1;
+                } else if actual < suggested {
+                    under += 1;
+                } else {
+                    matched += 1;
+                }
+            }
+        }
+        serde_json::json!({
+            "traces": rows,
+            "summary": {
+                "n": rows.len(),
+                "over": over,
+                "under": under,
+                "match": matched,
+                "by_suggested": by_suggested,
+                "by_actual": by_actual,
+            },
+        })
+    }
+
+    pub fn routing_trace_post(&self, mut payload: Value) -> Result<Value, ApiError> {
+        let Some(object) = payload.as_object_mut() else {
+            return Err(ApiError::new(400, "trace must be an object"));
+        };
+        let id = object
+            .get("id")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("tr-{:x}", chrono::Local::now().timestamp_micros() as u64));
+        object.insert("id".into(), Value::String(id.clone()));
+        object.insert(
+            "ts".into(),
+            Value::String(
+                chrono::Local::now()
+                    .format("%Y-%m-%dT%H:%M:%SZ")
+                    .to_string(),
+            ),
+        );
+        let path = self.paths.state_dir.join("console-routing.jsonl");
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        use std::io::Write;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .map_err(|error| ApiError::new(500, format!("cannot append trace: {error}")))?;
+        writeln!(file, "{}", payload)
+            .map_err(|error| ApiError::new(500, format!("cannot append trace: {error}")))?;
+        Ok(serde_json::json!({"ok": true, "id": id}))
+    }
+
+    pub fn route_targets(&self) -> Value {
+        let defaults = serde_json::json!({
+            "simple": {"model": "lfm3", "engine": "lfm3-1.7b"},
+            "medium": {"model": "scion35", "engine": "scion-35b"},
+            "complex": {"model": "ds41", "engine": ""},
+        });
+        let path = self.paths.state_dir.join("console-route-targets.json");
+        let saved = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .and_then(|value| value.get("targets").cloned());
+        let mut targets = defaults.as_object().cloned().unwrap_or_default();
+        if let Some(saved) = saved.and_then(|value| value.as_object().cloned()) {
+            for (key, value) in saved {
+                targets.insert(key, value);
+            }
+        }
+        serde_json::json!({"targets": Value::Object(targets)})
+    }
+
+    pub fn route_targets_post(&self, payload: &Value) -> Result<Value, ApiError> {
+        let targets = payload
+            .get("targets")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        let path = self.paths.state_dir.join("console-route-targets.json");
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        std::fs::write(
+            &path,
+            serde_json::to_string_pretty(&serde_json::json!({"targets": targets}))
+                .unwrap_or_default()
+                + "\n",
+        )
+        .map_err(|error| ApiError::new(400, format!("cannot save targets: {error}")))?;
+        Ok(serde_json::json!({"ok": true, "targets": targets}))
+    }
+
+    // ------------------------------------------------------------------
     // Run bundles
     // ------------------------------------------------------------------
     pub fn runs_index(&self) -> Value {
@@ -1541,6 +1675,11 @@ fn write_stack(directory: &Path, name: &str, stack: &Value) -> Result<(), ApiErr
     })?;
     std::fs::rename(&temporary, &path)
         .map_err(|error| ApiError::new(500, format!("cannot save {}: {error}", path.display())))
+}
+
+fn bump(map: &mut Map<String, Value>, key: &str) {
+    let next = map.get(key).and_then(Value::as_u64).unwrap_or(0) + 1;
+    map.insert(key.to_owned(), Value::from(next));
 }
 
 fn safe_join(root: &Path, relative: &str) -> Option<PathBuf> {
