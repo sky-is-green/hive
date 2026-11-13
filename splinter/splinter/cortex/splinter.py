@@ -13,6 +13,7 @@ mirrors the plan's ``Splinter`` used by shadow mode / A-B / rollback. It:
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 import uuid
@@ -29,8 +30,8 @@ from cortex.degradation import GracefulDegradation
 from cortex.efficiency import EfficiencyScorer
 from cortex.health import PipelineHealthMonitor
 from cortex.hedges import is_hedge_reply
-from cortex.routing import DroneRouter, EscalationHandler
-from focal.assembly import ContextAssembler
+from cortex.routing import DroneRouter, EscalationHandler, RoutingDecision
+from focal.assembly import AssembledContext, ContextAssembler
 from focal.budget import AdaptiveBudget
 from membrane.dedup import ContextDeduplicator
 from membrane.drift import TopicDriftDetector
@@ -109,6 +110,14 @@ class Splinter:
         self.scorer = EfficiencyScorer()
         self.run_id = uuid.uuid4().hex[:8]
         self.turn = 0
+        self.native_memory = None
+        self._native_conversation: Optional[str] = None
+        if os.environ.get("HIVE_MEMORY_BACKEND", "").strip().lower() == "rust":
+            from memory_client import NativeMemoryClient
+
+            self.native_memory = NativeMemoryClient(
+                os.environ.get("HIVE_MEMORY_URL", "http://127.0.0.1:8765")
+            )
         self._warned_reasoning_starve = False
         # S6 confirmation gate (opt-in; disabled == rule-based hedge filter,
         # the mechanism-attribution condition). The imprint provider is
@@ -171,6 +180,12 @@ class Splinter:
             self.comb_stats = {
                 "archived": 0, "resurrected": 0, "comb_hits": 0, "gate_fired": 0,
             }
+        if self.native_memory is not None and self._native_conversation:
+            try:
+                self.native_memory.reset(self._native_conversation)
+            except Exception:  # noqa: BLE001 - a dead daemon is reported on the next turn
+                pass
+            self._native_conversation = None
         self.store = self._build_store()
         self.turn = 0
 
@@ -201,8 +216,11 @@ class Splinter:
                 mode = "fifo_fallback"
             else:
                 t0 = time.perf_counter()
-                assembled = self.assembler.assemble(
-                    query=query, current_turn=self.turn, store=self.store,
+                if self.native_memory is not None:
+                    assembled = self._native_assemble(query, conversation_id)
+                else:
+                    assembled = self.assembler.assemble(
+                        query=query, current_turn=self.turn, store=self.store,
                     router=self.router, ultra_small=self.ultra, medium=self.medium,
                     escalation=self.escalation, dedup=self.dedup,
                     drift_detector=self.drift, budget=self.budget,
@@ -279,7 +297,8 @@ class Splinter:
                 )
 
         if record_exchange:
-            self.store.add_chunk(self.turn, query)
+            chunk_id = self.store.add_chunk(self.turn, query)
+            self._native_add(chunk_id, self.turn, query, conversation_id)
             if reply:
                 if self.gate is not None:
                     decision = self.gate.decide(
@@ -308,9 +327,11 @@ class Splinter:
                             turn_id=self.turn,
                         )
                     if decision.decision in ("accept", "flag"):
-                        self.store.add_chunk(self.turn, reply)
+                        chunk_id = self.store.add_chunk(self.turn, reply)
+                        self._native_add(chunk_id, self.turn, reply, conversation_id)
                 elif not (self.config.filter_hedge_replies and self._is_hedge_reply(reply)):
-                    self.store.add_chunk(self.turn, reply)
+                    chunk_id = self.store.add_chunk(self.turn, reply)
+                    self._native_add(chunk_id, self.turn, reply, conversation_id)
 
         # Comb maintenance: stale-out archiving (surplus tier) + archive-side
         # decay. Runs every turn; both are no-ops when the comb is disabled.
@@ -417,6 +438,58 @@ class Splinter:
             "timings": {k: round(v, 1) for k, v in (result.timings or {}).items()
                         if isinstance(v, (int, float))},
         }
+
+    def _native_add(
+        self, chunk_id: Optional[str], turn: int, content: str,
+        conversation_id: Optional[str],
+    ) -> None:
+        if self.native_memory is None or chunk_id is None:
+            return
+        conversation = conversation_id or "default"
+        try:
+            if self._native_conversation != conversation:
+                return  # the next assemble loads the full persisted store
+            self.native_memory.add(conversation, turn, content, chunk_id)
+        except Exception:  # noqa: BLE001 - assembly will fail loudly if it matters
+            pass
+
+    def _native_assemble(self, query: str, conversation_id: Optional[str]):
+        conversation = conversation_id or "default"
+        if self._native_conversation != conversation:
+            self.native_memory.load(
+                conversation,
+                [chunk.to_dict() for chunk in self.store.all_chunks()],
+                max_chunks=self.config.max_chunks,
+                sanitize=self.config.strip_secrets,
+                ingest_block_prefixes=self.store.ingest_block_prefixes,
+            )
+            self._native_conversation = conversation
+        routing = self.router.route(query, self.store.get_turns())
+        payload = self.native_memory.assemble(
+            conversation,
+            query,
+            current_turn=self.turn,
+            route=routing.route_to,
+            max_context=self.config.max_context,
+        )
+        raw_scores = {
+            key: float(value) for key, value in (payload.get("raw_scores") or {}).items()
+        }
+        top_chunk_id = max(raw_scores, key=raw_scores.get) if raw_scores else None
+        return AssembledContext(
+            content=str(payload.get("content") or ""),
+            token_count=int(payload.get("token_count") or 0),
+            budget=int(payload.get("budget") or 0),
+            chunks_used=len(payload.get("selected_ids") or []),
+            routing_decision=RoutingDecision(
+                routing.route_to, routing.confidence, routing.reason
+            ),
+            drift_detected=bool(payload.get("drift_detected")),
+            selected_chunk_ids=list(payload.get("selected_ids") or []),
+            top_raw_score=max(raw_scores.values()) if raw_scores else 0.0,
+            top_chunk_id=top_chunk_id,
+            raw_scores=raw_scores,
+        )
 
     def _fifo_context(self, query: str) -> str:
         history = [{"role": "user", "content": c.content} for c in self.store.all_chunks()]

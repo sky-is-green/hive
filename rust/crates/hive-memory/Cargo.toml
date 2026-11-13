@@ -8,12 +8,16 @@ license.workspace = true
 name = "hive-memory"
 path = "src/main.rs"
 
+[features]
+default = ["native-encoder"]
+native-encoder = ["dep:hive-encoder"]
+
 [dependencies]
 chrono.workspace = true
 encoding_rs = "0.8"
 clap.workspace = true
 hive-core = { path = "../hive-core" }
-hive-encoder = { path = "../hive-encoder" }
+hive-encoder = { path = "../hive-encoder", optional = true }
 md5 = "0.7"
 regex = "1"
 serde.workspace = true

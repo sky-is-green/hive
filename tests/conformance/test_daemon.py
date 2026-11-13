@@ -1545,6 +1545,7 @@ def test_live_chat_with_the_daemon_managed_native_encoder(tmp_path):
                 "HIVE_LLAMA_SERVER": llama,
                 "HARNESS_LLAMA_SERVER": llama,
                 "HARNESS_EMBEDDING_BACKEND": "rust",
+                "HIVE_MEMORY_BACKEND": "rust",
                 "HIVE_ENCODER_BIN": str(encoder),
                 "HIVE_ENCODER_PORT": str(encoder_port),
             },
@@ -1590,7 +1591,11 @@ def test_live_chat_with_the_daemon_managed_native_encoder(tmp_path):
 
         sidecar_log = (tmp_path / "home" / "logs" / "daemon-sidecar.log").read_text()
         assert "[encoder] native hive-encoder" in sidecar_log
+        assert "[memory] native daemon" in sidecar_log
         assert "Loading weights" not in sidecar_log
+        status, _, memory = _request(port, "/v1/memory/native-encoder/status")
+        assert status == 200
+        assert memory["chunks"] >= 1
         encoder_log = (tmp_path / "home" / "logs" / "encoder.log").read_text()
         assert "hive-encoder listening" in encoder_log
 
@@ -1769,3 +1774,175 @@ def test_live_torchfree_sidecar_chat(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=15)
+
+
+def test_daemon_memory_api(tmp_path):
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not encoder.is_file():
+        pytest.skip("hive-encoder is not built")
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_MEMORY_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+            }
+        )
+        chunks = [
+            {
+                "id": "c1",
+                "content": "the retention store keeps chunks with decay metadata",
+                "turn": 1,
+                "last_referenced_turn": 1,
+            },
+            {
+                "id": "c2",
+                "content": "quantization trades precision for memory bandwidth",
+                "turn": 2,
+                "last_referenced_turn": 2,
+            },
+            {
+                "id": "c3",
+                "content": "the sandbox confines subprocesses with Landlock",
+                "turn": 3,
+                "last_referenced_turn": 3,
+            },
+            {
+                "id": "c4",
+                "content": "cosine similarity compares normalized vectors",
+                "turn": 4,
+                "last_referenced_turn": 4,
+            },
+            {
+                "id": "c5",
+                "content": "the router escalates below the confidence threshold",
+                "turn": 5,
+                "last_referenced_turn": 5,
+            },
+        ]
+        status, _, payload = _request(
+            port,
+            "/v1/memory/demo/load",
+            method="POST",
+            body=json.dumps({"chunks": chunks}).encode(),
+        )
+        assert status == 200, payload
+        assert payload["chunks"] == 5
+
+        status, _, payload = _request(
+            port,
+            "/v1/memory/demo/assemble",
+            method="POST",
+            body=json.dumps(
+                {
+                    "query": "how does the retention store decay chunks?",
+                    "current_turn": 6,
+                    "route": "ultra_small",
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["selected_ids"] == ["c1"]
+        assert payload["content"] == chunks[0]["content"]
+        assert payload["budget"] == 1000
+
+        status, _, payload = _request(
+            port,
+            "/v1/memory/demo/add",
+            method="POST",
+            body=json.dumps(
+                {"turn": 6, "content": "a new sandbox fact", "chunk_id": "c6"}
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["count"] == 6
+        status, _, payload = _request(port, "/v1/memory/demo/status")
+        assert payload == {"conversation": "demo", "loaded": True, "chunks": 6}
+
+        status, _, payload = _request(
+            port, "/v1/memory/demo/reset", method="POST", body=b"{}"
+        )
+        assert status == 200
+        status, _, payload = _request(port, "/v1/memory/demo/status")
+        assert payload["loaded"] is False
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
+def test_live_native_memory_matches_a_python_conversation(tmp_path):
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not encoder.is_file():
+        pytest.skip("hive-encoder is not built")
+    if str(REPO / "splinter" / "splinter") not in sys.path:
+        sys.path.insert(0, str(REPO / "splinter" / "splinter"))
+    try:
+        from cortex.config import SplinterConfig
+        from cortex.splinter import Splinter
+        from sieve.ultra_small import UltraSmallDrone
+    except Exception as error:  # noqa: BLE001
+        pytest.skip(f"memory modules unavailable: {error}")
+
+    queries = [
+        "the retention store keeps chunks with decay metadata",
+        "how does the sandbox confine subprocesses?",
+        "quantization trades precision for memory bandwidth",
+        "how does the retention store decay old chunks?",
+        "what does the router do below the confidence threshold?",
+    ]
+
+    def run(native: bool, base_url: str = "") -> list[dict]:
+        if native:
+            os.environ["HIVE_MEMORY_BACKEND"] = "rust"
+            os.environ["HIVE_MEMORY_URL"] = base_url
+        else:
+            os.environ.pop("HIVE_MEMORY_BACKEND", None)
+            os.environ.pop("HIVE_MEMORY_URL", None)
+        config = SplinterConfig(
+            confidence_mode="off",
+            comb_enabled=False,
+            enable_medium=False,
+            gate_enabled=False,
+        )
+        splinter = Splinter(
+            config=config,
+            ultra=UltraSmallDrone(confidence_mode="off", vocab_boost=0.0),
+            backend=None,
+        )
+        rows = []
+        for query in queries:
+            result = splinter.process_turn(
+                query, conversation_id="parity", record_exchange=True
+            )
+            assembled = result.assembled
+            rows.append(
+                {
+                    "ids": assembled.selected_chunk_ids if assembled else [],
+                    "content": assembled.content if assembled else "",
+                    "tokens": assembled.token_count if assembled else 0,
+                }
+            )
+        return rows
+
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_MEMORY_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+            }
+        )
+        baseline = run(False)
+        native = run(True, f"http://127.0.0.1:{port}")
+        assert native == baseline
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+        os.environ.pop("HIVE_MEMORY_BACKEND", None)
+        os.environ.pop("HIVE_MEMORY_URL", None)

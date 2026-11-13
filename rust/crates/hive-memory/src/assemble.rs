@@ -2,8 +2,6 @@
 
 use std::collections::BTreeMap;
 
-use hive_encoder::Encoder;
-
 use crate::budget::AdaptiveBudget;
 use crate::dedup::ContextDeduplicator;
 use crate::drift::TopicDriftDetector;
@@ -49,10 +47,21 @@ pub struct Assembled {
     pub drift_score: f64,
 }
 
+pub trait Embedder {
+    fn encode(&mut self, texts: &[String]) -> Result<Vec<Vec<f32>>, String>;
+}
+
+#[cfg(feature = "native-encoder")]
+impl Embedder for hive_encoder::Encoder {
+    fn encode(&mut self, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
+        hive_encoder::Encoder::encode(self, texts)
+    }
+}
+
 pub fn assemble(
     store: &ContextStore,
     query: &str,
-    encoder: &mut Encoder,
+    encoder: &mut dyn Embedder,
     vocab: &Vocabulary,
     options: &AssembleOptions,
 ) -> Result<Assembled, String> {

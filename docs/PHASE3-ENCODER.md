@@ -88,8 +88,12 @@ exported and added to the parity corpus.
 - parity tests for store operations, hygiene/codec, dedup, drift, remembrance,
   and assembly against Python.
 
-Still Python: comb/remembrance integration in the assembler, the P1–P11
-replay, and making the native path the default.
+The daemon hosts the per-conversation memory API and the Python Splinter uses
+it with `HIVE_MEMORY_BACKEND=rust`; a five-turn conversation matches Python
+selection, content, and token counts.
+
+Still open: comb/remembrance integration in native assembly, the P1–P11
+replay, and making the native path the global default.
 
 ## Torch-free install
 

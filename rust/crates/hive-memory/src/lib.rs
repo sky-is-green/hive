@@ -59,6 +59,7 @@ impl Chunk {
     }
 }
 
+#[derive(Clone)]
 pub struct ContextStore {
     pub chunks: Vec<Chunk>,
     pub turn_index: BTreeMap<u32, Vec<String>>,

@@ -32,9 +32,11 @@ use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 pub mod encoder;
+pub mod memory;
 pub mod openapi;
 pub mod runtime;
 pub mod sidecar;
+use memory::MemoryManager;
 use runtime::{ApiError, Runtime};
 use sidecar::Sidecar;
 
@@ -55,6 +57,8 @@ pub struct DaemonConfig {
     pub sidecar_args: Vec<String>,
     /// Extra environment for the managed sidecar.
     pub sidecar_env: Vec<(String, String)>,
+    /// Loopback URL of the native encoder used by the memory API.
+    pub encoder_url: Option<String>,
     /// `harness/webui` root; `None` disables static console serving.
     pub webui: Option<PathBuf>,
     pub token: Option<String>,
@@ -77,6 +81,7 @@ impl DaemonConfig {
             sidecar_port: 8766,
             sidecar_args: Vec::new(),
             sidecar_env: Vec::new(),
+            encoder_url: None,
             webui,
             token,
             paths,
@@ -94,6 +99,7 @@ pub struct AppState {
     client: reqwest::Client,
     managed: Option<Arc<Sidecar>>,
     runtime: Arc<Runtime>,
+    memory: Arc<MemoryManager>,
 }
 
 impl AppState {
@@ -273,11 +279,13 @@ impl AppState {
     fn with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Self {
         let client = reqwest::Client::builder().build().unwrap_or_default();
         let runtime = Arc::new(Runtime::new(&config.paths));
+        let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
         Self {
             config,
             client,
             managed,
             runtime,
+            memory,
         }
     }
 }
@@ -311,6 +319,11 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/server/stop", post(server_stop))
         .route("/v1/server/unload", post(server_unload))
         .route("/v1/server/unload-loaded", post(server_unload_loaded))
+        .route("/v1/memory/{conversation}/load", post(memory_load))
+        .route("/v1/memory/{conversation}/add", post(memory_add))
+        .route("/v1/memory/{conversation}/assemble", post(memory_assemble))
+        .route("/v1/memory/{conversation}/reset", post(memory_reset))
+        .route("/v1/memory/{conversation}/status", get(memory_status))
         .route("/v1/models", get(served_models))
         .route(
             "/v1/models/local",
@@ -353,11 +366,15 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
 
     let mut encoder = None;
-    if config.spawn_sidecar
+    let memory_backend = std::env::var("HIVE_MEMORY_BACKEND")
+        .map(|value| value.trim().eq_ignore_ascii_case("rust"))
+        .unwrap_or(false);
+    if (config.spawn_sidecar || memory_backend)
         && config.sidecar_url.is_none()
-        && std::env::var("HARNESS_EMBEDDING_BACKEND")
-            .map(|value| value.trim().eq_ignore_ascii_case("rust"))
-            .unwrap_or(false)
+        && (memory_backend
+            || std::env::var("HARNESS_EMBEDDING_BACKEND")
+                .map(|value| value.trim().eq_ignore_ascii_case("rust"))
+                .unwrap_or(false))
         && std::env::var("HARNESS_EMBEDDING_URL")
             .map(|value| value.trim().is_empty())
             .unwrap_or(true)
@@ -375,7 +392,18 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
             "HARNESS_EMBEDDING_URL".into(),
             format!("http://127.0.0.1:{port}"),
         ));
+        config.encoder_url = Some(format!("http://127.0.0.1:{port}"));
         encoder = Some(service);
+    }
+
+    if memory_backend && config.spawn_sidecar && config.sidecar_url.is_none() {
+        config
+            .sidecar_env
+            .push(("HIVE_MEMORY_BACKEND".into(), "rust".into()));
+        config.sidecar_env.push((
+            "HIVE_MEMORY_URL".into(),
+            format!("http://{}:{}", config.host, config.port),
+        ));
     }
 
     let managed = if config.spawn_sidecar && config.sidecar_url.is_none() {
@@ -1039,6 +1067,51 @@ async fn route_targets_post(
     Json(body): Json<Value>,
 ) -> Response {
     runtime_json(state.runtime.route_targets_post(&body))
+}
+
+async fn memory_load(
+    State(state): State<Arc<AppState>>,
+    UrlPath(conversation): UrlPath<String>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.memory.load(&conversation, &body))
+}
+
+async fn memory_add(
+    State(state): State<Arc<AppState>>,
+    UrlPath(conversation): UrlPath<String>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.memory.add(&conversation, &body))
+}
+
+async fn memory_assemble(
+    State(state): State<Arc<AppState>>,
+    UrlPath(conversation): UrlPath<String>,
+    Json(body): Json<Value>,
+) -> Response {
+    let memory = Arc::clone(&state.memory);
+    match tokio::task::spawn_blocking(move || memory.assemble(&conversation, &body)).await {
+        Ok(result) => runtime_json(result),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("memory worker failed: {error}"),
+        }),
+    }
+}
+
+async fn memory_reset(
+    State(state): State<Arc<AppState>>,
+    UrlPath(conversation): UrlPath<String>,
+) -> Response {
+    runtime_json(Ok(state.memory.reset(&conversation)))
+}
+
+async fn memory_status(
+    State(state): State<Arc<AppState>>,
+    UrlPath(conversation): UrlPath<String>,
+) -> Response {
+    runtime_json(Ok(state.memory.status(&conversation)))
 }
 
 async fn openapi_spec(State(state): State<Arc<AppState>>) -> Response {

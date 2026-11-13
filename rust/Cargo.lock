@@ -899,6 +899,7 @@ dependencies = [
  "chrono",
  "clap",
  "hive-core",
+ "hive-memory",
  "hive-models",
  "hive-supervisor",
  "http",
@@ -913,6 +914,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "ureq 2.12.1",
 ]
 
 [[package]]
