@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 use hive_core::http;
 use serde_json::{Map, Value};
 
+#[derive(Clone)]
 pub struct Options {
     pub host: String,
     pub base_port: u16,
@@ -49,11 +50,32 @@ struct Engine {
     child: Child,
 }
 
+/// One engine this process started, without its child handle.
+#[derive(Debug, Clone)]
+pub struct EngineInfo {
+    pub role: String,
+    pub pid: u32,
+    pub port: u16,
+    pub log: PathBuf,
+}
+
 impl Applied {
     pub fn pids(&self) -> Vec<i32> {
         self.children
             .iter()
             .map(|engine| engine.pid as i32)
+            .collect()
+    }
+
+    pub fn engines(&self) -> Vec<EngineInfo> {
+        self.children
+            .iter()
+            .map(|engine| EngineInfo {
+                role: engine.role.clone(),
+                pid: engine.pid,
+                port: engine.port,
+                log: engine.log.clone(),
+            })
             .collect()
     }
 

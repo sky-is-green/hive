@@ -170,6 +170,13 @@ Severity:
 | P2-17 | Proxy strips response `Content-Length` and re-chunks; request `Content-Length` is preserved. | minor | open | Accepted after real-sidecar tests, or preserved end-to-end. |
 | P2-18 | No audit/structured request logs beyond basic `tracing` spans. | should | open | Audit fields and request IDs are added. |
 | P2-19 | Console-local endpoints are not ported: `/api/routing/traces`, `/api/preferences*`, `/api/judge/*`, `/api/benchmark`, `/api/route-targets`, `/api/route`, `/api/decision`, plus `/model/*` and `/probe/*`. | should | open | A conformance test covers each console endpoint against the Rust daemon, or they are accepted as Python-console-only. |
+| P2-20 | `POST /v1/server/start` is one applied stack at a time and ignores provider/engine registration, `auto_fit`, `embedding`, and HF-repo passthrough. | should | open | Multi-instance start, provider/engine records, and the remaining launch options are native or explicitly accepted. |
+| P2-21 | `GET /v1/server/status` approximates Python's hardware/strata/cache shape; Strata is reported as down and cache share is absent. | should | open | Strata probing and cache-share readout are ported, and status parity is tested. |
+| P2-22 | `POST /v1/server/stop?key=` unloads the whole applied stack; per-tier unload is not implemented. | should | open | The supervisor can stop one engine while keeping the rest applied. |
+| P2-23 | Stack PUT uses the Rust shape parser and an atomic rename; Python's exact normalization/error text is not frozen in a golden corpus. | should | open | Stack CRUD responses match the frozen golden corpus field-for-field. |
+| P2-24 | Native server/start launches are not registered as providers/engines in the Python sidecar, so chat routing cannot see them yet. | should | open | Provider/engine registration moves native with the server group, or the daemon mirrors it into the sidecar. |
+| P2-25 | Native server status reports `healthy` from the last apply, not a fresh engine probe; a crashed engine still looks loaded. | should | open | Status probes each engine and prunes dead instances. |
+| P2-26 | Native unload does not drain an in-flight generation before stopping the engine (the Python manager waits). | should | open | Unload drains slots with a bounded timeout before terminating, closing P1-12 for the daemon too. |
 
 
 ## Phase 3 — memory and encoder

@@ -514,3 +514,166 @@ def test_static_console_and_api_prefix(tmp_path):
             process.terminate()
             process.wait(timeout=5)
         sidecar.close()
+
+
+def _home(tmp_path) -> dict[str, str]:
+    return {"HIVE_HOME": str(tmp_path / "home")}
+
+
+def test_stack_crud_and_validate(tmp_path):
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        stack = {
+            "name": "endpoint-only",
+            "version": 1,
+            "tiers": [
+                {
+                    "role": "face",
+                    "repo": "local",
+                    "file": "remote.gguf",
+                    "endpoint": "http://127.0.0.1:9/v1",
+                    "ctx": 2048,
+                    "ngl": 0,
+                    "backend": "cpu",
+                }
+            ],
+            "routing": {},
+        }
+        status, headers, payload = _request(
+            port, "/v1/stacks/endpoint-only", method="PUT", body=json.dumps(stack).encode()
+        )
+        assert status == 200
+        assert headers["x-hive-owner"] == "rust"
+        assert payload["name"] == "endpoint-only"
+        assert payload["tiers"][0]["role"] == "face"
+
+        status, _, payload = _request(port, "/v1/stacks")
+        assert status == 200
+        assert payload == [
+            {"name": "endpoint-only", "tiers": 1, "roles": ["face"]}
+        ]
+
+        status, _, payload = _request(port, "/v1/stacks/endpoint-only")
+        assert status == 200
+        assert payload["tiers"][0]["endpoint"] == "http://127.0.0.1:9/v1"
+
+        status, _, payload = _request(
+            port, "/v1/stacks/endpoint-only/validate", method="POST", body=b"{}"
+        )
+        assert status == 200
+        assert payload["ok"] is True
+        assert payload["per_card"] == []
+        assert any("endpoint-backed" in warning for warning in payload["warnings"])
+
+        status, _, payload = _request(port, "/v1/stacks/endpoint-only", method="DELETE")
+        assert status == 200
+        assert payload == {"ok": True, "deleted": "endpoint-only"}
+        status, _, payload = _request(port, "/v1/stacks/endpoint-only")
+        assert status == 404
+
+        bad = dict(stack, name="other")
+        status, _, payload = _request(
+            port, "/v1/stacks/endpoint-only", method="PUT", body=json.dumps(bad).encode()
+        )
+        assert status == 400
+        assert "does not match" in payload["detail"]
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+
+
+def test_apply_stack_and_server_lifecycle(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the live engine test")
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+            }
+        )
+        stack = {
+            "name": "live",
+            "version": 1,
+            "tiers": [
+                {
+                    "role": "face",
+                    "repo": "local",
+                    "file": model,
+                    "ctx": 512,
+                    "ngl": 0,
+                    "backend": "cpu",
+                }
+            ],
+            "routing": {},
+        }
+        status, _, _ = _request(
+            port, "/v1/stacks/live", method="PUT", body=json.dumps(stack).encode()
+        )
+        assert status == 200
+
+        status, _, payload = _request(
+            port, "/v1/stacks/live/apply", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+        assert payload["ok"] is True
+        assert payload["tiers"][0]["key"] == "live-face"
+        engine_port = payload["tiers"][0]["port"]
+        assert engine_port > 0
+
+        status, _, status_payload = _request(port, "/v1/stacks/status")
+        assert status == 200
+        assert status_payload["stack"] == "live"
+        assert status_payload["tiers"][0]["port"] == engine_port
+
+        status, _, server = _request(port, "/v1/server/status")
+        assert status == 200
+        assert server["running"] is True
+        assert server["instances"][0]["port"] == engine_port
+        assert server["instances"][0]["pid"]
+
+        status, _, log = _request(port, "/v1/server/log?tail=20")
+        assert status == 200
+        assert isinstance(log["lines"], list)
+
+        status, _, payload = _request(
+            port, "/v1/stacks/live/unload", method="POST", body=b"{}"
+        )
+        assert status == 200
+        assert payload["unloaded"] == ["face"]
+        status, _, status_payload = _request(port, "/v1/stacks/status")
+        assert status_payload["stack"] is None
+
+        # The single-model server route shares the same runtime.
+        launch = {
+            "model": model,
+            "backend": "cpu",
+            "ngl": 0,
+            "ctx_size": 512,
+            "key": "smol",
+        }
+        status, _, instance = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+        )
+        assert status == 200, instance
+        assert instance["key"] == "smol"
+        assert instance["pid"]
+        status, _, server = _request(port, "/v1/server/status")
+        assert server["loaded_model"] == instance["model"]
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=smol", method="POST", body=b"{}"
+        )
+        assert status == 200
+        assert payload["unloaded"] == "smol"
+        status, _, server = _request(port, "/v1/server/status")
+        assert server["running"] is False
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)

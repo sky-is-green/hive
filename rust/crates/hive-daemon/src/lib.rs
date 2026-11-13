@@ -6,12 +6,13 @@
 //! streamed to the sidecar unchanged. Route groups move into Rust one at a
 //! time.
 
+use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::Body;
-use axum::extract::{Request, State};
+use axum::extract::{Path as UrlPath, Query, Request, State};
 use axum::http::header::{
     CACHE_CONTROL, CONNECTION, CONTENT_TYPE, HOST, HeaderMap, HeaderName, HeaderValue,
     TRANSFER_ENCODING, UPGRADE,
@@ -19,7 +20,7 @@ use axum::http::header::{
 use axum::http::{Method, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use hive_core::backends::Manifest;
 use hive_core::paths::Paths;
@@ -29,7 +30,9 @@ use serde_json::{Map, Value};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
+pub mod runtime;
 pub mod sidecar;
+use runtime::{ApiError, Runtime};
 use sidecar::Sidecar;
 
 pub const OWNER_HEADER: &str = "x-hive-owner";
@@ -79,6 +82,7 @@ pub struct AppState {
     pub config: DaemonConfig,
     client: reqwest::Client,
     managed: Option<Arc<Sidecar>>,
+    runtime: Arc<Runtime>,
 }
 
 impl AppState {
@@ -91,10 +95,12 @@ impl AppState {
             .timeout(Duration::from_secs(300))
             .build()
             .unwrap_or_default();
+        let runtime = Arc::new(Runtime::new(&config.paths));
         Self {
             config,
             client,
             managed,
+            runtime,
         }
     }
 }
@@ -110,6 +116,24 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/setup/status", get(setup_status))
         .route("/v1/version", get(version_route))
         .route("/v1/config", get(config_route))
+        .route("/v1/stacks", get(list_stacks))
+        .route("/v1/stacks/status", get(stack_status))
+        .route(
+            "/v1/stacks/{name}",
+            get(get_stack).put(put_stack).delete(delete_stack),
+        )
+        .route("/v1/stacks/{name}/validate", post(validate_stack))
+        .route("/v1/stacks/{name}/apply", post(apply_stack))
+        .route("/v1/stacks/{name}/unload", post(unload_stack))
+        .route("/v1/server/status", get(server_status))
+        .route("/v1/server/log", get(server_log))
+        .route("/v1/server/memory", get(server_memory))
+        .route("/v1/server/metrics", get(server_metrics))
+        .route("/v1/server/fit", get(server_fit))
+        .route("/v1/server/start", post(server_start))
+        .route("/v1/server/stop", post(server_stop))
+        .route("/v1/server/unload", post(server_unload))
+        .route("/v1/server/unload-loaded", post(server_unload_loaded))
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(CorsLayer::permissive())
@@ -304,6 +328,186 @@ async fn config_route(State(state): State<Arc<AppState>>) -> Response {
         "installed_backends": installed,
     });
     owned(StatusCode::OK, Json(payload).into_response())
+}
+
+fn runtime_json(result: Result<Value, ApiError>) -> Response {
+    match result {
+        Ok(value) => owned(StatusCode::OK, Json(value).into_response()),
+        Err(error) => runtime_error(error),
+    }
+}
+
+fn runtime_error(error: ApiError) -> Response {
+    let status = StatusCode::from_u16(error.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    owned(
+        status,
+        Json(serde_json::json!({"detail": error.detail})).into_response(),
+    )
+}
+
+async fn list_stacks(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.runtime.list_stacks()))
+}
+
+async fn stack_status(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.runtime.status()))
+}
+
+async fn get_stack(State(state): State<Arc<AppState>>, UrlPath(name): UrlPath<String>) -> Response {
+    runtime_json(state.runtime.load_stack(&name))
+}
+
+async fn put_stack(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.runtime.save_stack(&name, &body))
+}
+
+async fn delete_stack(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+) -> Response {
+    runtime_json(state.runtime.delete_stack(&name))
+}
+
+async fn validate_stack(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.validate_stack(&name)).await {
+        Ok(result) => runtime_json(result),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("validate worker failed: {error}"),
+        }),
+    }
+}
+
+async fn apply_stack(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+) -> Response {
+    runtime_json(state.runtime.apply_stack(&name, None).await)
+}
+
+async fn unload_stack(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+) -> Response {
+    runtime_json(state.runtime.unload_stack(&name).await)
+}
+
+async fn server_status(State(state): State<Arc<AppState>>) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.server_status()).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("status worker failed: {error}"),
+        }),
+    }
+}
+
+async fn server_log(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let tail = query
+        .get("tail")
+        .and_then(|text| text.parse::<usize>().ok())
+        .unwrap_or(120);
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.server_log(tail)).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("log worker failed: {error}"),
+        }),
+    }
+}
+
+async fn server_memory(State(state): State<Arc<AppState>>) -> Response {
+    let conversations = sidecar_health(&state).await.unwrap_or(0);
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.server_memory(conversations)).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("memory worker failed: {error}"),
+        }),
+    }
+}
+
+async fn server_metrics(State(state): State<Arc<AppState>>) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.server_metrics()).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("metrics worker failed: {error}"),
+        }),
+    }
+}
+
+async fn server_fit(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let model_gb = query
+        .get("model_gb")
+        .and_then(|text| text.parse::<f64>().ok())
+        .unwrap_or(0.0);
+    let ctx = query
+        .get("ctx")
+        .and_then(|text| text.parse::<i64>().ok())
+        .unwrap_or(8192);
+    let kv = query.get("kv").cloned().unwrap_or_else(|| "q8_0".into());
+    let runtime = Arc::clone(&state.runtime);
+    match tokio::task::spawn_blocking(move || runtime.server_fit(model_gb, ctx, &kv)).await {
+        Ok(value) => runtime_json(Ok(value)),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("fit worker failed: {error}"),
+        }),
+    }
+}
+
+async fn server_start(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    runtime_json(state.runtime.start_server(&body).await)
+}
+
+async fn server_stop(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    runtime_json(
+        state
+            .runtime
+            .stop_server(query.get("key").map(String::as_str))
+            .await,
+    )
+}
+
+async fn server_unload(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let Some(key) = body
+        .get("key")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|key| !key.is_empty())
+    else {
+        return runtime_error(ApiError {
+            status: 422,
+            detail: "key is required".into(),
+        });
+    };
+    runtime_json(state.runtime.unload_server(key).await)
+}
+
+async fn server_unload_loaded(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.runtime.unload_loaded().await))
 }
 
 /// The console shell, its `/api` prefix, and the Python-only API all arrive

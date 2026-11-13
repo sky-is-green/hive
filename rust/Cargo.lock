@@ -606,8 +606,11 @@ name = "hive-daemon"
 version = "0.2.0"
 dependencies = [
  "axum",
+ "chrono",
  "clap",
  "hive-core",
+ "hive-models",
+ "hive-supervisor",
  "http",
  "libc",
  "mime_guess",

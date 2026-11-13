@@ -590,19 +590,28 @@ The first daemon slice is on `rust-migration`:
   versioned assets. `/api/*` is rewritten to the sidecar root (`/api/v1/x` →
   `/v1/x`; `/api/roles` → `/v1/roles`); `/view/*`, `/cascade`, `/docs`,
   `/openapi.json`, and `/redoc` pass through. `--no-webui` disables it.
-- Tests: six daemon integration tests. The fake sidecar covers native routes
+- **Stacks and server lifecycle.** `GET/PUT/DELETE /v1/stacks*`, `validate`,
+  `apply`, `unload`, and `GET /v1/stacks/status` run through the Rust
+  supervisor. `/v1/server/start|stop|unload|unload-loaded|status|log|memory|
+  metrics|fit` share the same runtime. At most one stack is applied (the
+  Python manager has the same discipline for stacks); a server start becomes a
+  one-tier stack, replaces the current one, and reports the instance shape.
+- Tests: eight daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
   observes a restart, then checks shutdown leaves no sidecar process; a final
   test proves an unusable `HIVE_PYTHON` exits non-zero with a clear error. The
   static test covers HTML/JS/CSS types, cache policy, `/api` rewriting, path
-  traversal, and native-route precedence.
+  traversal, and native-route precedence. Stack CRUD/validate runs everywhere;
+  the live test applies a real CPU stack, checks status/log/unload, then starts
+  and stops a one-tier server (skipped without `HIVE_LLAMA_SERVER` and
+  `HIVE_LIVE_MODEL`).
 
 ### Route groups, in order
 
 1. [x] `health`, `setup/status`, `config`, `version` (daemon slice; fake sidecar
    tested).
-2. `server/*` lifecycle and `stacks/*` (the supervisor already owns this).
+2. [x] `server/*` lifecycle and `stacks/*` (the supervisor already owns this; one applied stack at a time).
 3. `models/*` library, hub, download.
 4. `runs/*`, `report/*`, static pages.
 5. `cascade/*` (thin proxy at first).
