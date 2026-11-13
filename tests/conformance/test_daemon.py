@@ -787,6 +787,18 @@ def test_apply_stack_and_server_lifecycle(tmp_path):
         assert providers["default"] == "local-smol"
         status, _, server = _request(port, "/v1/server/status")
         assert server["loaded_model"] == instance["model"]
+
+        # A crashed engine must stop looking loaded on the next status poll.
+        os.kill(instance["pid"], 9)
+        deadline = time.time() + 10
+        server = {}
+        while time.time() < deadline:
+            status, _, server = _request(port, "/v1/server/status")
+            if server.get("running") is False:
+                break
+            time.sleep(0.1)
+        assert server.get("running") is False, server
+
         status, _, payload = _request(
             port, "/v1/server/stop?key=smol", method="POST", body=b"{}"
         )

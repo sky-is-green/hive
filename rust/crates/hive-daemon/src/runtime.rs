@@ -683,11 +683,30 @@ impl Runtime {
         };
         let instances: Vec<Value> = tiers
             .iter()
-            .map(|tier| self.instance_for_tier(tier, &engines, &started_at))
+            .map(|tier| {
+                let mut instance = self.instance_for_tier(tier, &engines, &started_at);
+                let healthy = instance
+                    .get("pid")
+                    .and_then(Value::as_u64)
+                    .is_some_and(|pid| pid_alive(pid as u32))
+                    && instance
+                        .get("port")
+                        .and_then(Value::as_u64)
+                        .is_some_and(|port| port > 0 && engine_alive(port as u16));
+                if let Some(object) = instance.as_object_mut() {
+                    object.insert("healthy".into(), Value::Bool(healthy));
+                    object.insert("running".into(), Value::Bool(healthy));
+                }
+                instance
+            })
+            .collect();
+        let healthy_instances: Vec<&Value> = instances
+            .iter()
+            .filter(|instance| instance.get("healthy").and_then(Value::as_bool) == Some(true))
             .collect();
 
-        let primary = instances.first();
-        let loaded: Vec<Value> = instances
+        let primary = healthy_instances.first().copied();
+        let loaded: Vec<Value> = healthy_instances
             .iter()
             .map(|instance| {
                 serde_json::json!({
@@ -713,8 +732,8 @@ impl Runtime {
         let mut hardware = hardware_summary(&self.paths);
         hardware["source"] = Value::String("rust-daemon".into());
         serde_json::json!({
-            "running": !instances.is_empty(),
-            "healthy": !instances.is_empty(),
+            "running": !healthy_instances.is_empty(),
+            "healthy": !healthy_instances.is_empty(),
             "binary": binary.as_ref().map(|path| path.to_string_lossy().into_owned()).unwrap_or_default(),
             "binary_found": binary.as_ref().is_some_and(|path| path.is_file()),
             "port": port,
@@ -1307,6 +1326,27 @@ fn safe_join(root: &Path, relative: &str) -> Option<PathBuf> {
 
 fn flag(body: &Value, key: &str) -> bool {
     body.get(key).and_then(Value::as_bool).unwrap_or(false)
+}
+
+fn pid_alive(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        unsafe { libc::kill(pid as i32, 0) == 0 }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = pid;
+        true
+    }
+}
+
+fn engine_alive(port: u16) -> bool {
+    http::get(
+        &format!("http://127.0.0.1:{port}/v1/models"),
+        Duration::from_millis(800),
+    )
+    .map(|response| response.status == 200)
+    .unwrap_or(false)
 }
 
 fn timestamp() -> String {

@@ -699,20 +699,25 @@ fn spawn_local(
 fn drain_engine(port: u16, deadline: Instant) -> bool {
     let url = format!("http://127.0.0.1:{port}/slots");
     loop {
-        if let Ok(response) = http::get(&url, Duration::from_secs(2))
-            && response.status == 200
-            && let Ok(slots) = response.json()
-            && let Some(items) = slots.as_array()
-            && !items.is_empty()
-        {
-            let busy = items.iter().any(|slot| {
-                slot.get("is_processing")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false)
-            });
-            if !busy {
-                return true;
+        match http::get(&url, Duration::from_secs(2)) {
+            Ok(response) if response.status == 200 => {
+                if let Ok(slots) = response.json()
+                    && let Some(items) = slots.as_array()
+                    && !items.is_empty()
+                {
+                    let busy = items.iter().any(|slot| {
+                        slot.get("is_processing")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(false)
+                    });
+                    if !busy {
+                        return true;
+                    }
+                }
             }
+            // A dead/refusing engine is not going to drain.
+            Err(_) => return false,
+            Ok(_) => {}
         }
         if Instant::now() >= deadline {
             return false;
