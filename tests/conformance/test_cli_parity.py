@@ -317,6 +317,13 @@ def test_stacks_show_and_validate_match(
     assert py.stderr == rs.stderr
 
 
+def test_tui_requires_a_terminal(rust_bin, cli_env):
+    env, _ = cli_env
+    py, rs = run_both(rust_bin, ["tui"], env)
+    assert py.returncode == rs.returncode == 1
+    assert py.stderr == rs.stderr
+
+
 def test_backends_json_matches(rust_bin, cli_env):
     env, _ = cli_env
     for args in (["backends", "--json"], ["backends", "list", "--json"]):
@@ -339,6 +346,7 @@ def test_help_catalog_is_identical(rust_bin, cli_env):
     env, _ = cli_env
     for topic in (
         "serve",
+        "tui",
         "status",
         "stop",
         "logs",

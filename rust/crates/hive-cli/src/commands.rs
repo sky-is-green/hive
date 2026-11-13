@@ -21,7 +21,14 @@ pub fn run(cli: Cli) -> ExitCode {
     let paths = Paths::discover(models_dir.as_deref(), stacks_dir.as_deref());
     let command = cli.command;
     let result = match command {
-        None => home(&paths),
+        None => {
+            if hive_tui::available() {
+                run_tui(&paths)
+            } else {
+                home(&paths)
+            }
+        }
+        Some(Command::Tui) => run_tui(&paths),
         Some(Command::Serve {
             stack,
             list,
@@ -237,6 +244,16 @@ fn home(paths: &Paths) -> Cmd {
     println!("  hive status");
     println!("  hive models list");
     Ok(0)
+}
+
+fn run_tui(paths: &Paths) -> Cmd {
+    match hive_tui::run(paths) {
+        Ok(()) => Ok(0),
+        Err(error) => {
+            eprintln!("hive tui: {error}");
+            Ok(1)
+        }
+    }
 }
 
 fn cmd_version(paths: &Paths, as_json: bool) -> Cmd {

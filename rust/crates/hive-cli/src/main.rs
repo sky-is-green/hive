@@ -108,6 +108,10 @@ pub enum Command {
         child: bool,
     },
 
+    /// interactive terminal dashboard
+    #[command(long_about = "Open the interactive dashboard (Status, Models, Stacks, Runs).")]
+    Tui,
+
     /// show running serves and their endpoints
     #[command(
         visible_alias = "ps",

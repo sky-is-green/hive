@@ -387,9 +387,10 @@ The first Rust slice is on `rust-migration`:
   `hive-models` (GGUF header parser + library), `hive-supervisor` (spawn,
   health, unload, PDEATHSIG cleanup), and `hive-cli` (clap surface).
 - Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers and
-  endpoint adoption), `version`, `config`, `doctor`, `help --json`,
-  `models list/dir/import/remove`, `stacks list/show/validate`, `backends`/
-  `backends list`, `status`, `stop`, `logs`.
+  endpoint adoption), `tui` (four-tab ratatui dashboard), `version`, `config`,
+  `doctor`, `help --json`, `models list/dir/import/remove`,
+  `stacks list/show/validate`, `backends`/`backends list`, `status`, `stop`,
+  `logs`.
 - `help --json` is generated from the live clap tree; every ported command is
   byte-identical to Python's catalog (the root catalog lists only ported
   commands until the rest land).
@@ -401,11 +402,12 @@ The first Rust slice is on `rust-migration`:
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
-Not ported yet: `hive tui`, generated stacks (`serve --model`), `--fetch`,
-launch-backed endpoints (Strata/DeepInfer), `models search/files/download`,
-`backends fetch`, `setup`, and the Python-only surfaces (`cascade`, `tools`,
-`sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`). They
-stay on the Python side until their phase.
+Not ported yet: generated stacks (`serve --model`), `--fetch`, launch-backed
+endpoints (Strata/DeepInfer), `models search/files/download`, `backends fetch`,
+`setup`, and the Python-only surfaces (`cascade`, `tools`, `sandbox`, `web`,
+`browser`, `ui`, `profile`, `controller`, `encoder`). They stay on the Python
+side until their phase. The Rust TUI is read-only for now: the Python dashboard
+still owns interactive stop/log/approval actions.
 
 ### Scope
 
@@ -494,8 +496,8 @@ The supervisor is the reason to do this in Rust. Requirements:
       (volatile fields normalized): `version`, `config`, `doctor`,
       `help --json`, `models list/dir/import/remove`,
       `stacks list/show/validate`, `status`, `stop`, `logs`,
-      `serve --list/--backends`, `backends`/`backends list`.
-- [x] `hive serve` starts/stops an engine; `status` finds it from a second
+      `serve --list/--backends`, `backends`/`backends list`; `tui` matches the
+      four-tab surface (no JSON form).- [x] `hive serve` starts/stops an engine; `status` finds it from a second
       shell; `logs` tails both supervisor and tier logs. (Validated with a
       fake OpenAI-compatible engine; a real `llama-server` run still needs a
       box with the binary installed.)
@@ -504,8 +506,11 @@ The supervisor is the reason to do this in Rust. Requirements:
 - [x] Startup < 20 ms and RSS < 20 MB for `hive version` and `hive status`
       (0.8/0.9 ms, 14.5 MB measured).
 - [x] Binary < 25 MB stripped (1.1 MB, without the ONNX encoder).
-- [ ] TUI parity on Status/Models/Stacks/Runs.
-- [ ] The Python CLI remains installed as `hive-py` for one release.
+- [x] TUI parity on Status/Models/Stacks/Runs (four tabs, same data and
+      navigation; interactive stop/log/approvals still live on the Python
+      dashboard).
+- [x] The Python CLI is available as `hive-py`; `hive` still points at Python
+      until the final switch.
 
 **If G1 fails:** keep the Rust binary as an optional tool and do not proceed to
 Phase 2. The Python cleanup still stands.

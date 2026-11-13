@@ -15,6 +15,7 @@ hive-core = { path = "../hive-core" }
 hive-models = { path = "../hive-models" }
 hive-state = { path = "../hive-state" }
 hive-supervisor = { path = "../hive-supervisor" }
+hive-tui = { path = "../hive-tui" }
 libc.workspace = true
 serde.workspace = true
 serde_json.workspace = true
