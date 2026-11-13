@@ -586,15 +586,11 @@ impl Runtime {
             .get("id")
             .and_then(Value::as_str)
             .map(str::to_owned)
-            .unwrap_or_else(|| format!("tr-{:x}", chrono::Local::now().timestamp_micros() as u64));
+            .unwrap_or_else(|| format!("tr-{:x}", chrono::Utc::now().timestamp_micros() as u64));
         object.insert("id".into(), Value::String(id.clone()));
         object.insert(
             "ts".into(),
-            Value::String(
-                chrono::Local::now()
-                    .format("%Y-%m-%dT%H:%M:%SZ")
-                    .to_string(),
-            ),
+            Value::String(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()),
         );
         let path = self.paths.state_dir.join("console-routing.jsonl");
         if let Some(parent) = path.parent() {
