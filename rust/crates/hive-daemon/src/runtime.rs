@@ -410,7 +410,7 @@ impl Runtime {
                 }),
             ));
         }
-        rows.sort_by(|left, right| right.0.cmp(&left.0));
+        rows.sort_by_key(|row| std::cmp::Reverse(row.0));
         serde_json::json!({
             "runs": rows.into_iter().map(|(_, row)| row).collect::<Vec<_>>()
         })
