@@ -33,6 +33,15 @@ The decision rule:
 
 ---
 
+## Caveat ledger
+
+Known gaps and deliberate trade-offs are tracked in
+[REWRITE-CAVEATS.md](REWRITE-CAVEATS.md), grouped by the phase that generated
+them. A caveat does not block the next phase unless it invalidates that phase's
+assumptions; the ledger is triaged before `main` is updated.
+
+---
+
 ## 1. Baseline
 
 Measured on the local checkout at `008d758`, 2026-11-11:
