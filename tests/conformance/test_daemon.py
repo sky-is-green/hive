@@ -61,6 +61,8 @@ class _Sidecar:
                 )
                 if self.path == "/health":
                     self._respond(200, {"ok": True, "conversations": 7})
+                elif self.path == "/v1/roles":
+                    self._respond(200, {"roles": {"face": "fake"}, "from": "sidecar"})
                 elif self.path == "/v1/status":
                     self._respond(418, {"detail": "teapot"})
                 else:
@@ -140,12 +142,40 @@ def _request(
         )
 
 
+def _raw_request(
+    port: int,
+    path: str,
+    *,
+    method: str = "GET",
+    body: bytes | None = None,
+) -> tuple[int, dict, bytes]:
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{port}{path}",
+        data=body,
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return (
+                response.status,
+                {key.lower(): value for key, value in response.headers.items()},
+                response.read(),
+            )
+    except urllib.error.HTTPError as error:
+        return (
+            error.code,
+            {key.lower(): value for key, value in error.headers.items()},
+            error.read(),
+        )
+
+
 def _start_daemon(
     *,
     sidecar_url: str | None = None,
     sidecar_port: int | None = None,
     token: str | None = None,
     env_extra: dict[str, str] | None = None,
+    webui: str | None = None,
 ) -> tuple[subprocess.Popen, int]:
     """Start the daemon against an external sidecar, a managed one, or none."""
     port = _free_port()
@@ -169,6 +199,8 @@ def _start_daemon(
         args += ["--sidecar-port", str(sidecar_port)]
     else:
         args += ["--no-sidecar"]
+    if webui:
+        args += ["--webui", webui]
     process = subprocess.Popen(
         args,
         env=env,
@@ -424,3 +456,61 @@ def test_managed_sidecar_rejects_an_unusable_HIVE_PYTHON():
     assert code != 0
     assert "HIVE_PYTHON" in error
     assert "not an executable file" in error
+
+
+def test_static_console_and_api_prefix(tmp_path):
+    sidecar = _Sidecar()
+    process = None
+    try:
+        (tmp_path / "index.html").write_text("<html><body>hive console</body></html>")
+        (tmp_path / "app.js").write_text("console.log('hive');")
+        (tmp_path / "styles.css").write_text("body { color: black; }")
+        (tmp_path / "secret.txt").write_text("outside")
+
+        process, port = _start_daemon(
+            sidecar_url=f"http://127.0.0.1:{sidecar.port}", webui=str(tmp_path)
+        )
+
+        status, headers, body = _raw_request(port, "/")
+        assert status == 200
+        assert headers["content-type"].startswith("text/html")
+        assert headers["cache-control"] == "no-store"
+        assert b"hive console" in body
+        assert headers["x-hive-owner"] == "rust"
+
+        status, headers, body = _raw_request(port, "/app.js?v=94")
+        assert status == 200
+        assert "javascript" in headers["content-type"]
+        assert b"console.log" in body
+        assert headers["cache-control"] == "public, max-age=300"
+
+        status, headers, body = _raw_request(port, "/styles.css")
+        assert status == 200
+        assert headers["content-type"].startswith("text/css")
+
+        # The console calls /api/v1/*; the daemon strips the console prefix.
+        status, headers, payload = _request(
+            port, "/api/v1/echo?x=1", method="POST", body=b"{}"
+        )
+        assert status == 201
+        assert headers["x-hive-owner"] == "python"
+        assert payload["path"] == "/v1/echo?x=1"
+
+        # The console's local role editor maps onto the sidecar's /v1/roles.
+        status, _, payload = _request(port, "/api/roles")
+        assert status == 200
+        assert payload == {"roles": {"face": "fake"}, "from": "sidecar"}
+
+        status, _, payload = _request(port, "/v1/version")
+        assert status == 200
+        assert payload["hive"] == "0.2.0"
+
+        # Encoded traversal must not escape the asset root.
+        status, _, body = _raw_request(port, "/%2e%2e/secret.txt")
+        assert status in (404, 502)
+        assert b"outside" not in body
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        sidecar.close()

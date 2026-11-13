@@ -585,11 +585,18 @@ The first daemon slice is on `rust-migration`:
   plus the `service`/`version` handshake, restarts it with 1s→30s backoff, and
   stops its process group on daemon shutdown. `--no-sidecar` runs native routes
   only; an explicit URL never spawns.
-- Tests: five daemon integration tests. The fake sidecar covers native routes
+- **Static console.** `--webui DIR` (default `harness/webui` when present)
+  serves the shell and assets with `no-store` for HTML and a short cache for
+  versioned assets. `/api/*` is rewritten to the sidecar root (`/api/v1/x` →
+  `/v1/x`; `/api/roles` → `/v1/roles`); `/view/*`, `/cascade`, `/docs`,
+  `/openapi.json`, and `/redoc` pass through. `--no-webui` disables it.
+- Tests: six daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
-  observes a restart, then checks shutdown leaves no sidecar process. A final
-  test proves an unusable `HIVE_PYTHON` exits non-zero with a clear error.
+  observes a restart, then checks shutdown leaves no sidecar process; a final
+  test proves an unusable `HIVE_PYTHON` exits non-zero with a clear error. The
+  static test covers HTML/JS/CSS types, cache policy, `/api` rewriting, path
+  traversal, and native-route precedence.
 
 ### Route groups, in order
 

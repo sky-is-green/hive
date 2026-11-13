@@ -6,13 +6,15 @@
 //! streamed to the sidecar unchanged. Route groups move into Rust one at a
 //! time.
 
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::Body;
 use axum::extract::{Request, State};
 use axum::http::header::{
-    CONNECTION, HOST, HeaderMap, HeaderName, HeaderValue, TRANSFER_ENCODING, UPGRADE,
+    CACHE_CONTROL, CONNECTION, CONTENT_TYPE, HOST, HeaderMap, HeaderName, HeaderValue,
+    TRANSFER_ENCODING, UPGRADE,
 };
 use axum::http::{Method, StatusCode};
 use axum::middleware::{self, Next};
@@ -22,6 +24,7 @@ use axum::{Json, Router};
 use hive_core::backends::Manifest;
 use hive_core::paths::Paths;
 use hive_core::{platform_display, python, version};
+use percent_encoding::percent_decode_str;
 use serde_json::{Map, Value};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
@@ -40,6 +43,8 @@ pub struct DaemonConfig {
     /// Spawn `python -m harness` on `sidecar_port` when no URL is configured.
     pub spawn_sidecar: bool,
     pub sidecar_port: u16,
+    /// `harness/webui` root; `None` disables static console serving.
+    pub webui: Option<PathBuf>,
     pub token: Option<String>,
     pub paths: Paths,
 }
@@ -50,16 +55,24 @@ impl DaemonConfig {
             .ok()
             .map(|token| token.trim().to_owned())
             .filter(|token| !token.is_empty());
+        let paths = Paths::discover(None, None);
+        let webui = default_webui(&paths);
         Self {
             host: host.into(),
             port,
             sidecar_url: sidecar_url.filter(|url| !url.trim().is_empty()),
             spawn_sidecar: false,
             sidecar_port: 8766,
+            webui,
             token,
-            paths: Paths::discover(None, None),
+            paths,
         }
     }
+}
+
+fn default_webui(paths: &Paths) -> Option<PathBuf> {
+    let candidate = paths.repo.join("harness/webui");
+    candidate.is_dir().then_some(candidate)
 }
 
 pub struct AppState {
@@ -97,7 +110,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/setup/status", get(setup_status))
         .route("/v1/version", get(version_route))
         .route("/v1/config", get(config_route))
-        .fallback(proxy)
+        .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
@@ -293,18 +306,164 @@ async fn config_route(State(state): State<Arc<AppState>>) -> Response {
     owned(StatusCode::OK, Json(payload).into_response())
 }
 
+/// The console shell, its `/api` prefix, and the Python-only API all arrive
+/// here. Static assets win; everything else falls through to the sidecar.
+async fn dispatch(State(state): State<Arc<AppState>>, request: Request) -> Response {
+    let path = request.uri().path().to_owned();
+    if path == "/" || path == "/index.html" {
+        return static_response(&state, Path::new("index.html"), request.method(), true).await;
+    }
+    if path == "/api" || path.starts_with("/api/") {
+        let raw = request
+            .uri()
+            .path_and_query()
+            .map(|value| value.as_str())
+            .unwrap_or("/api")
+            .to_owned();
+        let target = api_target(&raw);
+        return proxy_to(state, request, target).await;
+    }
+    if is_sidecar_passthrough(&path) {
+        return proxy(State(state), request).await;
+    }
+    if matches!(*request.method(), Method::GET | Method::HEAD)
+        && let Some(relative) = safe_relative(&path)
+        && let Some(root) = &state.config.webui
+    {
+        let candidate = root.join(&relative);
+        if tokio::fs::metadata(&candidate)
+            .await
+            .map(|meta| meta.is_file())
+            .unwrap_or(false)
+        {
+            let no_store = relative
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_none_or(|ext| ext.eq_ignore_ascii_case("html"));
+            return static_response(&state, &relative, request.method(), no_store).await;
+        }
+    }
+    proxy(State(state), request).await
+}
+
+fn is_sidecar_passthrough(path: &str) -> bool {
+    path.starts_with("/v1/")
+        || path.starts_with("/view/")
+        || path == "/cascade"
+        || path.starts_with("/cascade/")
+        || path == "/docs"
+        || path == "/openapi.json"
+        || path == "/redoc"
+}
+
+/// `/api/v1/models` → `/v1/models`; the console's local role editor keeps its
+/// own name and maps onto the sidecar's `/v1/roles`.
+fn api_target(raw: &str) -> String {
+    let (path, query) = match raw.split_once('?') {
+        Some((path, query)) => (path, Some(query)),
+        None => (raw, None),
+    };
+    let mapped = if path == "/api/roles" {
+        "/v1/roles".to_owned()
+    } else if let Some(rest) = path.strip_prefix("/api") {
+        if rest.is_empty() {
+            "/".to_owned()
+        } else {
+            rest.to_owned()
+        }
+    } else {
+        path.to_owned()
+    };
+    match query {
+        Some(query) => format!("{mapped}?{query}"),
+        None => mapped,
+    }
+}
+
+fn safe_relative(path: &str) -> Option<PathBuf> {
+    let decoded = percent_decode_str(path).decode_utf8().ok()?;
+    let mut relative = PathBuf::new();
+    for component in Path::new(decoded.trim_start_matches('/')).components() {
+        match component {
+            Component::Normal(part) => relative.push(part),
+            Component::CurDir => {}
+            Component::ParentDir | Component::RootDir | Component::Prefix(_) => return None,
+        }
+    }
+    (!relative.as_os_str().is_empty()).then_some(relative)
+}
+
+async fn static_response(
+    state: &AppState,
+    relative: &Path,
+    method: &Method,
+    no_store: bool,
+) -> Response {
+    let Some(root) = &state.config.webui else {
+        return not_found("console assets are disabled");
+    };
+    let path = root.join(relative);
+    let bytes = match tokio::fs::read(&path).await {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            return owned(
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({
+                    "detail": format!("no console asset at /{}: {error}", relative.display())
+                }))
+                .into_response(),
+            );
+        }
+    };
+    let content_type = mime_guess::from_path(relative)
+        .first_or_octet_stream()
+        .to_string();
+    let cache = if no_store {
+        "no-store"
+    } else {
+        "public, max-age=300"
+    };
+    let builder = Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, content_type)
+        .header(CACHE_CONTROL, cache);
+    let response = if *method == Method::HEAD {
+        builder
+            .header(axum::http::header::CONTENT_LENGTH, bytes.len())
+            .body(Body::empty())
+    } else {
+        builder.body(Body::from(bytes))
+    };
+    match response {
+        Ok(response) => owned(StatusCode::OK, response),
+        Err(_) => not_found("cannot read console asset"),
+    }
+}
+
+fn not_found(detail: &str) -> Response {
+    owned(
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({ "detail": detail })).into_response(),
+    )
+}
+
 async fn proxy(State(state): State<Arc<AppState>>, request: Request) -> Response {
+    let path = request
+        .uri()
+        .path_and_query()
+        .map(|value| value.as_str())
+        .unwrap_or("/")
+        .to_owned();
+    proxy_to(state, request, path).await
+}
+
+async fn proxy_to(state: Arc<AppState>, request: Request, path: String) -> Response {
     let Some(base) = &state.config.sidecar_url else {
         return owned(
             StatusCode::SERVICE_UNAVAILABLE,
             Json(serde_json::json!({"detail": "no Python sidecar configured"})).into_response(),
         );
     };
-    let path = request
-        .uri()
-        .path_and_query()
-        .map(|value| value.as_str())
-        .unwrap_or("/");
     let url = format!("{}{}", base.trim_end_matches('/'), path);
     let method = match Method::from_bytes(request.method().as_str().as_bytes()) {
         Ok(method) => method,

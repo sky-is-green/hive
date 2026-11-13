@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Parser;
@@ -26,6 +27,12 @@ struct Args {
     /// do not spawn or proxy a sidecar (native routes only)
     #[arg(long)]
     no_sidecar: bool,
+    /// serve the console shell from this directory (default harness/webui)
+    #[arg(long, value_name = "DIR")]
+    webui: Option<PathBuf>,
+    /// do not serve the console shell
+    #[arg(long)]
+    no_webui: bool,
 }
 
 #[tokio::main]
@@ -40,6 +47,12 @@ async fn main() -> ExitCode {
     let mut config = DaemonConfig::new(args.host, args.port, args.sidecar_url);
     config.spawn_sidecar = config.sidecar_url.is_none() && !args.no_sidecar;
     config.sidecar_port = args.sidecar_port;
+    if let Some(webui) = args.webui {
+        config.webui = Some(webui);
+    }
+    if args.no_webui {
+        config.webui = None;
+    }
     match run(config).await {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
