@@ -94,10 +94,7 @@ impl AppState {
     }
 
     fn with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Self {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(300))
-            .build()
-            .unwrap_or_default();
+        let client = reqwest::Client::builder().build().unwrap_or_default();
         let runtime = Arc::new(Runtime::new(&config.paths));
         Self {
             config,
@@ -148,6 +145,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(middleware::from_fn(request_id))
+        .layer(middleware::from_fn(access_log))
         .layer(cors_layer())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -241,6 +239,27 @@ fn cors_layer() -> CorsLayer {
         .allow_origin(AllowOrigin::list(values))
         .allow_methods(Any)
         .allow_headers(Any)
+}
+
+async fn access_log(request: Request, next: Next) -> Response {
+    let method = request.method().clone();
+    let path = request.uri().path().to_owned();
+    let started = std::time::Instant::now();
+    let response = next.run(request).await;
+    let request_id = response
+        .headers()
+        .get(REQUEST_ID_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("-");
+    tracing::info!(
+        %method,
+        %path,
+        status = response.status().as_u16(),
+        elapsed_ms = started.elapsed().as_millis() as u64,
+        request_id,
+        "http request"
+    );
+    response
 }
 
 async fn request_id(request: Request, next: Next) -> Response {
@@ -808,6 +827,7 @@ async fn proxy_to(state: Arc<AppState>, request: Request, path: String) -> Respo
     let upstream = match state
         .client
         .request(method, &url)
+        .timeout(proxy_timeout(&path))
         .headers(headers)
         .body(body)
         .send()
@@ -851,6 +871,22 @@ async fn proxy_to(state: Arc<AppState>, request: Request, path: String) -> Respo
                 Json(serde_json::json!({"detail": "cannot build proxy response"})).into_response(),
             )
         })
+}
+
+/// Long-running generation/benchmark routes get an hour; everything else is
+/// bounded like Python's console proxy. Streaming responses are not capped by a
+/// client-wide timeout.
+fn proxy_timeout(path: &str) -> Duration {
+    if path.contains("/stream")
+        || path.contains("/chat/completions")
+        || path.contains("/bench")
+        || path.starts_with("/v1/engines/")
+        || path.starts_with("/v1/ab/")
+    {
+        Duration::from_secs(3600)
+    } else {
+        Duration::from_secs(300)
+    }
 }
 
 fn forward_headers(headers: &HeaderMap) -> HeaderMap {

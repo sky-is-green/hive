@@ -6,6 +6,7 @@ proxy contract is tested without starting the real Python Studio.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import socket
@@ -32,6 +33,7 @@ def _free_port() -> int:
 class _Sidecar:
     def __init__(self) -> None:
         self.requests: list[dict] = []
+        self.stream_closed = threading.Event()
         self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), self._handler())
         self.port = self.httpd.server_address[1]
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
@@ -39,6 +41,7 @@ class _Sidecar:
 
     def _handler(self):
         requests = self.requests
+        stream_closed = self.stream_closed
 
         class Handler(BaseHTTPRequestHandler):
             def _respond(self, status: int, payload: object) -> None:
@@ -66,6 +69,20 @@ class _Sidecar:
                     self._respond(200, {"roles": {"face": "fake"}, "from": "sidecar"})
                 elif self.path == "/v1/status":
                     self._respond(418, {"detail": "teapot"})
+                elif self.path == "/v1/stream":
+                    self.send_response(200)
+                    self.send_header("content-type", "text/event-stream")
+                    self.send_header("cache-control", "no-cache")
+                    self.end_headers()
+                    for index in range(100):
+                        try:
+                            self.wfile.write(f"data: {index}\n\n".encode())
+                            self.wfile.flush()
+                        except (BrokenPipeError, ConnectionResetError):
+                            stream_closed.set()
+                            return
+                        time.sleep(0.05)
+                    stream_closed.set()
                 else:
                     self._respond(404, {"detail": "not found"})
 
@@ -904,6 +921,25 @@ def test_cors_defaults_are_not_wildcard():
         )
         assert status in (200, 204)
         assert headers["access-control-allow-origin"] == "http://localhost:5173"
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+        sidecar.close()
+
+
+def test_streaming_client_disconnect_cancels_the_upstream():
+    sidecar = _Sidecar()
+    process = None
+    try:
+        process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        connection.request("GET", "/v1/stream")
+        response = connection.getresponse()
+        assert response.status == 200
+        assert response.read(12)
+        connection.close()
+        assert sidecar.stream_closed.wait(5), "upstream stream was not cancelled"
     finally:
         if process is not None:
             process.terminate()
