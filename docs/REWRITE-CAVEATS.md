@@ -29,7 +29,6 @@ Severity:
 ## Merge-blocker shortlist
 
 - `P1-01` Rust is not the default `hive` yet.
-- `P1-03` Python-only verbs are not proxied.
 - `P1-05` No installable Rust release/package yet.
 
 ---
@@ -59,7 +58,7 @@ Severity:
 |---|---|---|---|---|
 | P1-01 | `hive` still points at the Python CLI; the Rust binary is opt-in on `rust-migration`. | blocker | open | The final rewrite gate switches the `hive` entry point and keeps `hive-py`. |
 | P1-02 | `hive-py` exists in `pyproject.toml`, but existing venvs need `pip install -e .` before the command appears. | minor | open | Install/upgrade docs and a packaging test cover the new script. |
-| P1-03 | Python-only verbs (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`) are not proxied by Rust. | blocker | open | Phase 2 proxy covers them, or they are explicitly accepted as Python-only. |
+| P1-03 | Python-only verbs (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`) are not proxied by Rust. | blocker | fixed — CLI proxy for Python-only verbs | Phase 2 proxy covers them, or they are explicitly accepted as Python-only. |
 | P1-04 | Root `hive help --json` lists only ported commands. | intentional | open | P1-03 lands, or the subset is accepted. |
 | P1-05 | There is no installable Rust release artifact, signed binary, or package-manager story. | blocker | open | `cargo build --release` is wrapped in a documented install/release path. |
 | P1-06 | Rust Python discovery is heuristic (`HIVE_PYTHON`, `VIRTUAL_ENV`, checkout `.venv`, PATH). Decision: reuse `HIVE_PYTHON` as the explicit sidecar contract; discovery is only a development fallback. | should | fixed — strict sidecar resolve | Phase 2 daemon reads `HIVE_PYTHON` first and fails clearly when it names a missing/unusable interpreter. |
@@ -181,6 +180,7 @@ Severity:
 | P2-29 | Daemon hub tests use `HIVE_HF_API`/`HIVE_HF_BASE` overrides; production defaults are the public Hugging Face endpoints. | minor | open | The overrides are documented as test hooks, or the hub client is injectable without env. |
 | P2-30 | `/v1/runs` and `/v1/report/*` are native, but the rendered `/view/*` and `/runs` HTML pages still proxy to Python's report renderer. | should | open | The report renderer is native, or those pages are accepted as Python-only until the report group moves. |
 | P2-31 | `hive ui web` serves the console on the API port; `--console-port` is accepted for Python CLI parity but ignored. `--detach` writes `logs/daemon.pid`; there is no `hive ui stop` verb. | minor | open | The console can bind its historical port, or the divergence is documented and accepted. |
+| P2-32 | Python-only verbs are proxied through `python -m harness.cli`; they still need the Python reference install and do not appear in `hive help --json` native topics. | intentional | open | The verbs move native in their phases; until then the proxy is the supported path. |
 
 
 ## Phase 3 — memory and encoder

@@ -686,3 +686,30 @@ def _write_stale(state: Path) -> None:
             "tiers": [],
         },
     )
+
+
+@pytest.mark.parametrize(
+    "verb",
+    [
+        "cascade",
+        "profile",
+        "controller",
+        "encoder",
+        "tools",
+        "activity",
+        "sandbox",
+        "web",
+        "browser",
+    ],
+)
+def test_python_only_verbs_are_proxied(rust_bin, cli_env, verb):
+    env, _ = cli_env
+    py = run_python([verb, "--help"], env)
+    rs = run_rust(rust_bin, [verb, "--help"], env)
+    assert py.returncode == rs.returncode == 0, (verb, py.stderr, rs.stderr)
+    assert py.stdout == rs.stdout, verb
+
+    py = run_python(["help", verb, "--json"], env)
+    rs = run_rust(rust_bin, ["help", verb, "--json"], env)
+    assert py.returncode == rs.returncode == 0, (verb, py.stderr, rs.stderr)
+    assert parse_json(py) == parse_json(rs), verb

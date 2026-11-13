@@ -531,7 +531,67 @@ pub enum BackendsCommand {
     },
 }
 
+/// Verbs that still live in the Python reference. They are proxied rather
+/// than reimplemented until their phase lands, so `hive <verb>` keeps working.
+const PYTHON_ONLY_VERBS: &[&str] = &[
+    "cascade",
+    "profile",
+    "controller",
+    "encoder",
+    "tools",
+    "activity",
+    "sandbox",
+    "web",
+    "browser",
+];
+
 fn main() -> ExitCode {
+    if let Some(code) = proxy_python_only() {
+        return code;
+    }
     let cli = Cli::parse();
     commands::run(cli)
+}
+
+fn proxy_python_only() -> Option<ExitCode> {
+    let mut argv: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
+    while argv.first().and_then(|arg| arg.to_str()) == Some("--no-color") {
+        argv.remove(0);
+    }
+    let verb = argv.first()?.to_string_lossy().into_owned();
+    let proxied = if verb == "help" {
+        argv.get(1)
+            .map(|topic| topic.to_string_lossy().into_owned())
+            .is_some_and(|topic| PYTHON_ONLY_VERBS.contains(&topic.as_str()))
+    } else {
+        PYTHON_ONLY_VERBS.contains(&verb.as_str())
+    };
+    if !proxied {
+        return None;
+    }
+    let paths = hive_core::paths::Paths::discover(None, None);
+    let python = match hive_core::python::resolve(&paths) {
+        Ok(python) => python,
+        Err(error) => {
+            eprintln!("hive {verb}: {error}");
+            return Some(ExitCode::FAILURE);
+        }
+    };
+    let status = std::process::Command::new(python)
+        .arg("-m")
+        .arg("harness.cli")
+        .args(&argv)
+        .current_dir(&paths.repo)
+        .stdin(std::process::Stdio::inherit())
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status();
+    match status {
+        Ok(status) if status.success() => Some(ExitCode::SUCCESS),
+        Ok(_) => Some(ExitCode::FAILURE),
+        Err(error) => {
+            eprintln!("hive {verb}: cannot start the Python reference: {error}");
+            Some(ExitCode::FAILURE)
+        }
+    }
 }
