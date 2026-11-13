@@ -1,7 +1,9 @@
 //! `hive models dir/import/remove`.
 
 use std::fs;
+use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
+use std::time::Duration;
 
 use hive_core::json;
 use hive_core::paths::{Paths, expand};
@@ -9,6 +11,460 @@ use hive_models::Library;
 use serde_json::{Map, Value};
 
 type Cmd = Result<u8, String>;
+
+const HF_API: &str = "https://huggingface.co/api";
+
+pub fn search(query: &str, limit: i64, as_json: bool) -> Cmd {
+    let mut request = ureq::get(&format!("{HF_API}/models"))
+        .query("filter", "gguf")
+        .query("sort", "downloads")
+        .query("limit", &limit.max(1).to_string())
+        .timeout(Duration::from_secs(20));
+    if !query.trim().is_empty() {
+        request = request.query("search", query);
+    }
+    let response = request
+        .call()
+        .map_err(|error| format!("hive models search: {error}"))?;
+    let text = response
+        .into_string()
+        .map_err(|error| format!("hive models search: {error}"))?;
+    let data: Value =
+        serde_json::from_str(&text).map_err(|error| format!("hive models search: {error}"))?;
+    let items = data.as_array().cloned().unwrap_or_default();
+    let rows: Vec<Value> = items
+        .into_iter()
+        .map(|entry| {
+            let tags: Vec<String> = entry
+                .get("tags")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect();
+            let base_model = tags
+                .iter()
+                .find_map(|tag| tag.strip_prefix("base_model:"))
+                .unwrap_or("")
+                .to_owned();
+            let license = tags
+                .iter()
+                .find_map(|tag| tag.strip_prefix("license:"))
+                .unwrap_or("")
+                .to_owned();
+            let short_tags: Vec<Value> = tags
+                .iter()
+                .filter(|tag| {
+                    !tag.starts_with("base_model:")
+                        && !tag.starts_with("license:")
+                        && !tag.starts_with("gguf:")
+                })
+                .take(8)
+                .map(|tag| Value::String(tag.clone()))
+                .collect();
+            let mut row = Map::new();
+            row.insert(
+                "repo".into(),
+                Value::String(
+                    entry
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+            );
+            row.insert(
+                "downloads".into(),
+                Value::from(entry.get("downloads").and_then(Value::as_i64).unwrap_or(0)),
+            );
+            row.insert(
+                "likes".into(),
+                Value::from(entry.get("likes").and_then(Value::as_i64).unwrap_or(0)),
+            );
+            row.insert(
+                "last_modified".into(),
+                Value::String(short_date(entry.get("lastModified"))),
+            );
+            row.insert(
+                "created_at".into(),
+                Value::String(short_date(entry.get("createdAt"))),
+            );
+            row.insert(
+                "pipeline_tag".into(),
+                Value::String(
+                    entry
+                        .get("pipeline_tag")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+            );
+            row.insert("base_model".into(), Value::String(base_model));
+            row.insert("license".into(), Value::String(license));
+            row.insert("tags".into(), Value::Array(short_tags));
+            Value::Object(row)
+        })
+        .collect();
+    if as_json {
+        print!("{}", json::pretty(&Value::Array(rows)));
+        return Ok(0);
+    }
+    println!(
+        "models · search  {}",
+        if query.trim().is_empty() {
+            "popular"
+        } else {
+            query
+        }
+    );
+    if rows.is_empty() {
+        println!("  no GGUF repos matched");
+        return Ok(0);
+    }
+    for row in &rows {
+        println!(
+            "  {:<48} {:>10} {:>7} {:<12} {}",
+            row.get("repo").and_then(Value::as_str).unwrap_or(""),
+            row.get("downloads").and_then(Value::as_i64).unwrap_or(0),
+            row.get("likes").and_then(Value::as_i64).unwrap_or(0),
+            row.get("last_modified")
+                .and_then(Value::as_str)
+                .unwrap_or(""),
+            row.get("license").and_then(Value::as_str).unwrap_or("-"),
+        );
+    }
+    Ok(0)
+}
+
+pub fn files(repo: &str, as_json: bool) -> Cmd {
+    let response = ureq::get(&format!("{HF_API}/models/{repo}/tree/main"))
+        .timeout(Duration::from_secs(20))
+        .call()
+        .map_err(|error| format!("hive models files: {error}"))?;
+    let text = response
+        .into_string()
+        .map_err(|error| format!("hive models files: {error}"))?;
+    let data: Value =
+        serde_json::from_str(&text).map_err(|error| format!("hive models files: {error}"))?;
+    let rows: Vec<Value> = data
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|entry| {
+            entry
+                .get("path")
+                .and_then(Value::as_str)
+                .map(|path| path.ends_with(".gguf"))
+                .unwrap_or(false)
+        })
+        .map(|entry| {
+            let size = entry.get("size").and_then(Value::as_f64).unwrap_or(0.0)
+                / (1024.0 * 1024.0 * 1024.0);
+            let mut row = Map::new();
+            row.insert(
+                "file".into(),
+                Value::String(
+                    entry
+                        .get("path")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+            );
+            row.insert(
+                "size_gb".into(),
+                serde_json::Number::from_f64((size * 100.0).round() / 100.0)
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null),
+            );
+            Value::Object(row)
+        })
+        .collect();
+    if as_json {
+        print!("{}", json::pretty(&Value::Array(rows)));
+        return Ok(0);
+    }
+    println!("models · files  {repo}");
+    if rows.is_empty() {
+        println!("  {repo} has no .gguf files");
+        return Ok(0);
+    }
+    for row in &rows {
+        println!(
+            "  {:<60} {:>8}",
+            row.get("file").and_then(Value::as_str).unwrap_or(""),
+            format!(
+                "{:.2} GiB",
+                row.get("size_gb").and_then(Value::as_f64).unwrap_or(0.0)
+            )
+        );
+    }
+    Ok(0)
+}
+
+fn short_date(value: Option<&Value>) -> String {
+    value
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .chars()
+        .take(10)
+        .collect()
+}
+
+pub fn download(
+    paths: &Paths,
+    repo_arg: &str,
+    file_arg: Option<&str>,
+    revision: &str,
+    as_json: bool,
+) -> Cmd {
+    let (repo, mut file) = match file_arg {
+        Some(file) => (repo_arg.to_owned(), Some(file.to_owned())),
+        None => match repo_arg.split_once(':') {
+            Some((repo, file)) if !file.is_empty() => (repo.to_owned(), Some(file.to_owned())),
+            _ => (repo_arg.to_owned(), None),
+        },
+    };
+    if file.is_none() {
+        match hub_files(&repo) {
+            Ok(rows) => {
+                if rows.is_empty() {
+                    eprintln!("hive models download: {repo} has no .gguf files");
+                    return Ok(1);
+                }
+                if rows.len() > 1 {
+                    eprintln!(
+                        "hive models download: {repo} has several GGUFs; choose one with --file:"
+                    );
+                    for row in rows {
+                        eprintln!(
+                            "  {}  ({} GiB)",
+                            row.get("file").and_then(Value::as_str).unwrap_or(""),
+                            row.get("size_gb").and_then(Value::as_f64).unwrap_or(0.0)
+                        );
+                    }
+                    return Ok(2);
+                }
+                file = rows[0]
+                    .get("file")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned);
+            }
+            Err(error) => {
+                eprintln!("hive models download: cannot list {repo}: {error}");
+                return Ok(1);
+            }
+        }
+    }
+    let Some(file) = file else {
+        eprintln!("hive models download: {repo} has no .gguf files");
+        return Ok(1);
+    };
+    if file.split('/').any(|part| part == "..") || Path::new(&file).is_absolute() {
+        eprintln!("hive models download: file must stay inside the models directory");
+        return Ok(1);
+    }
+    paths
+        .ensure_models_dir()
+        .map_err(|error| format!("hive models download: {error}"))?;
+    let dest = paths.models_dir.join(&file);
+    if dest.is_file() && dest.metadata().map(|meta| meta.len() > 0).unwrap_or(false) {
+        return finish_download(&repo, &file, &dest, as_json);
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("hive models download: {error}"))?;
+    }
+    let part = PathBuf::from(format!("{}.part", dest.to_string_lossy()));
+    let mut resume = fs::metadata(&part).map(|meta| meta.len()).unwrap_or(0);
+    let url = format!(
+        "https://huggingface.co/{}/resolve/{}/{}",
+        encode_path(&repo),
+        encode_component(revision),
+        encode_path(&file)
+    );
+    let token = std::env::var("HF_TOKEN")
+        .ok()
+        .or_else(|| std::env::var("HUGGING_FACE_HUB_TOKEN").ok());
+    let mut request = ureq::get(&url).timeout(Duration::from_secs(3600));
+    if let Some(token) = &token {
+        request = request.set("Authorization", &format!("Bearer {token}"));
+    }
+    if resume > 0 {
+        request = request.set("Range", &format!("bytes={resume}-"));
+    }
+    let response = match request.call() {
+        Ok(response) => response,
+        Err(error) => {
+            eprintln!("hive models download: {repo}:{file}: {error}");
+            return Ok(1);
+        }
+    };
+    let status = response.status();
+    if status != 200 && status != 206 {
+        eprintln!("hive models download: {repo}:{file}: HTTP {status}");
+        return Ok(1);
+    }
+    if status == 200 {
+        resume = 0;
+    }
+    let total = response
+        .header("content-length")
+        .and_then(|value| value.parse::<u64>().ok())
+        .map(|length| length + resume)
+        .unwrap_or(0);
+    let mut handle = match fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(resume > 0)
+        .truncate(resume == 0)
+        .open(&part)
+    {
+        Ok(handle) => handle,
+        Err(error) => {
+            eprintln!("hive models download: {repo}:{file}: {error}");
+            return Ok(1);
+        }
+    };
+    let mut reader = response.into_reader();
+    let mut buffer = vec![0u8; 1024 * 1024];
+    let mut done = resume;
+    let mut last_pct = -1i64;
+    loop {
+        let read = match reader.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(read) => read,
+            Err(error) => {
+                eprintln!("hive models download: {repo}:{file}: {error}");
+                return Ok(1);
+            }
+        };
+        if let Err(error) = handle.write_all(&buffer[..read]) {
+            eprintln!("hive models download: {repo}:{file}: {error}");
+            return Ok(1);
+        }
+        done += read as u64;
+        if !as_json && total > 0 {
+            let pct = (done.saturating_mul(100) / total) as i64;
+            if pct != last_pct {
+                last_pct = pct;
+                eprint!(
+                    "\r  {pct:3}%  {:.1} / {:.1} MiB",
+                    done as f64 / 1_048_576.0,
+                    total as f64 / 1_048_576.0
+                );
+                let _ = std::io::stderr().flush();
+            }
+        }
+    }
+    if !as_json && total > 0 {
+        eprintln!();
+    }
+    if let Err(error) = handle.sync_all() {
+        eprintln!("hive models download: {repo}:{file}: {error}");
+        return Ok(1);
+    }
+    drop(handle);
+    if let Err(error) = fs::rename(&part, &dest) {
+        eprintln!("hive models download: {repo}:{file}: {error}");
+        return Ok(1);
+    }
+    finish_download(&repo, &file, &dest, as_json)
+}
+
+fn finish_download(repo: &str, file: &str, dest: &Path, as_json: bool) -> Cmd {
+    let size =
+        dest.metadata().map(|meta| meta.len()).unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
+    let size_gb = (size * 100.0).round() / 100.0;
+    let payload = {
+        let mut object = Map::new();
+        object.insert("repo".into(), Value::String(repo.into()));
+        object.insert("file".into(), Value::String(file.into()));
+        object.insert(
+            "path".into(),
+            Value::String(dest.to_string_lossy().into_owned()),
+        );
+        object.insert(
+            "size_gb".into(),
+            serde_json::Number::from_f64(size_gb)
+                .map(Value::Number)
+                .unwrap_or(Value::Null),
+        );
+        Value::Object(object)
+    };
+    if as_json {
+        print!("{}", json::pretty(&payload));
+    } else {
+        println!("downloaded {repo}:{file}");
+        println!("  path  {}", dest.display());
+        println!("  size  {size_gb:.2} GiB");
+    }
+    Ok(0)
+}
+
+fn hub_files(repo: &str) -> Result<Vec<Value>, String> {
+    let response = ureq::get(&format!("{HF_API}/models/{}/tree/main", encode_path(repo)))
+        .timeout(Duration::from_secs(20))
+        .call()
+        .map_err(|error| error.to_string())?;
+    let text = response.into_string().map_err(|error| error.to_string())?;
+    let data: Value = serde_json::from_str(&text).map_err(|error| error.to_string())?;
+    Ok(data
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|entry| {
+            entry
+                .get("path")
+                .and_then(Value::as_str)
+                .map(|path| path.ends_with(".gguf"))
+                .unwrap_or(false)
+        })
+        .map(|entry| {
+            let size = entry.get("size").and_then(Value::as_f64).unwrap_or(0.0)
+                / (1024.0 * 1024.0 * 1024.0);
+            let mut row = Map::new();
+            row.insert(
+                "file".into(),
+                Value::String(
+                    entry
+                        .get("path")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+            );
+            row.insert(
+                "size_gb".into(),
+                serde_json::Number::from_f64((size * 100.0).round() / 100.0)
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null),
+            );
+            Value::Object(row)
+        })
+        .collect())
+}
+
+fn encode_path(path: &str) -> String {
+    path.split('/')
+        .map(encode_component)
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+fn encode_component(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for byte in text.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
+            out.push(byte as char);
+        } else {
+            out.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    out
+}
 
 pub fn dir(paths: &Paths, path: Option<&str>, set: Option<&str>, as_json: bool) -> Cmd {
     let target = set.or(path);

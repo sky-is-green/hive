@@ -269,7 +269,7 @@ fn default_value(arg: &clap::Arg, name: &str) -> Option<Value> {
 fn python_type(name: &str) -> Option<&'static str> {
     match name {
         "timeout" => Some("float"),
-        "lines" | "cards" | "ctx" => Some("int"),
+        "lines" | "cards" | "ctx" | "limit" => Some("int"),
         _ => None,
     }
 }

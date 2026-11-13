@@ -380,6 +380,29 @@ def test_tui_requires_a_terminal(rust_bin, cli_env):
     assert py.stderr == rs.stderr
 
 
+def test_setup_no_fetch_error_matches(rust_bin, cli_env, tmp_path):
+    env, _ = cli_env
+    empty_home = tmp_path / "empty-home"
+    empty_home.mkdir()
+    fresh = {
+        **env,
+        "HIVE_HOME": str(empty_home),
+        "HIVE_STATE_DIR": str(empty_home / "state"),
+    }
+    args = [
+        "setup",
+        "--no-fetch",
+        "--json",
+        "--models-dir",
+        str(tmp_path / "models"),
+        "--stacks-dir",
+        str(tmp_path / "stacks"),
+    ]
+    py, rs = run_both(rust_bin, args, fresh)
+    assert py.returncode == rs.returncode == 1
+    assert py.stderr == rs.stderr
+
+
 def test_backends_json_matches(rust_bin, cli_env):
     env, _ = cli_env
     for args in (["backends", "--json"], ["backends", "list", "--json"]):
@@ -407,13 +430,19 @@ def test_help_catalog_is_identical(rust_bin, cli_env):
         "stop",
         "logs",
         "models list",
+        "models search",
+        "models files",
         "models dir",
+        "models download",
         "models import",
         "models remove",
         "stacks list",
         "stacks show",
         "stacks validate",
+        "backends",
         "backends list",
+        "backends fetch",
+        "setup",
         "doctor",
         "config",
         "version",

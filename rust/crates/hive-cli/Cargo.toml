@@ -19,3 +19,7 @@ hive-tui = { path = "../hive-tui" }
 libc.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tempfile.workspace = true
+flate2 = "1"
+tar = "0.4"
+ureq = "2"

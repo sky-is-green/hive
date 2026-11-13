@@ -389,9 +389,10 @@ The first Rust slice is on `rust-migration`:
 - Ported: `serve` (foreground/`--once`/`--detach`, local llama-server tiers,
   endpoint adoption, managed Strata/DeepInfer launch tiers, and generated
   single-tier stacks from a local GGUF), `tui` (four-tab ratatui dashboard),
-  `version`, `config`, `doctor`, `help --json`, `models list/dir/import/remove`,
-  `stacks list/show/validate`, `backends`/`backends list`, `status`, `stop`,
-  `logs`.
+  `version`, `config`, `doctor`, `help --json`, `setup`,
+  `models list/search/files/dir/download/import/remove`,
+  `stacks list/show/validate`, `backends`/`backends list`/`backends fetch`,
+  `status`, `stop`, `logs`.
 - `help --json` is generated from the live clap tree; every ported command is
   byte-identical to Python's catalog (the root catalog lists only ported
   commands until the rest land).
@@ -418,14 +419,14 @@ The first Rust slice is on `rust-migration`:
 - Conformance suite: `tests/conformance/` runs the same assertions against
   `harness.cli` and `rust/target/debug/hive`.
 
-Not ported yet: remote `serve --model` (the Hugging Face download path),
-`--fetch`, `models search/files/download`, `backends fetch`, `setup`, and the
-Python-only surfaces (`cascade`, `tools`, `sandbox`, `web`, `browser`, `ui`,
-`profile`, `controller`, `encoder`). They stay on the Python side until their
-phase. A generated stack can be detached only with `--save` (the child reloads
-the saved file); the Python CLI can detach without saving. The Rust TUI is
-read-only for now: the Python dashboard still owns interactive
-stop/log/approval actions.
+Not ported yet: remote `serve --model` (the Hugging Face auto-download path;
+download the file first with `hive models download`), `serve --fetch` (the
+pre-apply backend fetch), and the Python-only surfaces (`cascade`, `tools`,
+`sandbox`, `web`, `browser`, `ui`, `profile`, `controller`, `encoder`). They
+stay on the Python side until their phase. A generated stack can be detached
+only with `--save` (the child reloads the saved file); the Python CLI can detach
+without saving. The Rust TUI is read-only for now: the Python dashboard still
+owns interactive stop/log/approval actions.
 
 ### Scope
 
@@ -512,10 +513,10 @@ The supervisor is the reason to do this in Rust. Requirements:
 
 - [x] Ported commands produce byte-compatible JSON for the golden corpus
       (volatile fields normalized): `version`, `config`, `doctor`,
-      `help --json`, `models list/dir/import/remove`,
+      `help --json`, `models list/search/files/dir/download/import/remove`,
       `stacks list/show/validate`, `status`, `stop`, `logs`,
-      `serve --list/--backends`, `backends`/`backends list`; `tui` matches the
-      four-tab surface (no JSON form).- [x] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
+      `serve --list/--backends`, `backends`/`backends list`/`backends fetch`,
+      `setup`; `tui` matches the four-tab surface (no JSON form).- [x] `hive serve` starts/stops a real `llama-server`; `status` finds it from a
       second shell; `logs` tails both supervisor and tier logs. (Live-tested
       with llama.cpp b12329 CPU + SmolLM2-135M: detached start, `/v1/models`,
       a chat completion, `status` probe, and a clean stop.)

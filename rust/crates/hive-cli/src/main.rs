@@ -206,6 +206,26 @@ pub enum Command {
         command: Option<BackendsCommand>,
     },
 
+    /// onboard this box: engine, model/stacks/state paths
+    #[command(
+        long_about = "Create missing paths, fetch a portable engine when needed, \
+                      and print the next commands. It does not download a model."
+    )]
+    Setup {
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// directory of stack files (default: <repo>/stacks)
+        #[arg(long)]
+        stacks_dir: Option<PathBuf>,
+        /// do not fetch a portable engine if none is installed
+        #[arg(long)]
+        no_fetch: bool,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
     /// check the box before serving
     #[command(
         long_about = "Check Python, paths, engines, cards, host memory, ports, and \
@@ -277,6 +297,39 @@ pub enum ModelsCommand {
         json: bool,
     },
 
+    /// search Hugging Face for GGUF repos
+    #[command(
+        long_about = "Search the Hugging Face Hub for GGUF repositories. Omit \
+                      the query to list popular repos."
+    )]
+    Search {
+        /// words to search for (omit for popular repos)
+        #[arg(default_value = "")]
+        query: String,
+        /// number of repos (default 12)
+        #[arg(long, default_value_t = 12)]
+        limit: i64,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// list the GGUFs in a Hugging Face repo
+    #[command(long_about = "List the GGUF files and sizes in one Hugging Face repo.")]
+    Files {
+        /// org/repo
+        repo: String,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
     /// show or set the models directory
     #[command(
         long_about = "Print the resolved GGUF library path, or set a new one with \
@@ -288,6 +341,28 @@ pub enum ModelsCommand {
         /// set the models directory (same as the positional)
         #[arg(long)]
         set: Option<String>,
+        /// GGUF model directory (default: the configured library)
+        #[arg(long)]
+        models_dir: Option<PathBuf>,
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// download one GGUF from Hugging Face
+    #[command(
+        long_about = "Download one GGUF from a Hugging Face repo into the local \
+                      library. Use --file or repo:file to select the file."
+    )]
+    Download {
+        /// org/repo, or org/repo:file.gguf
+        repo: String,
+        /// GGUF file inside the repo
+        #[arg(long)]
+        file: Option<String>,
+        /// HF revision (default main)
+        #[arg(long, default_value = "main")]
+        revision: String,
         /// GGUF model directory (default: the configured library)
         #[arg(long)]
         models_dir: Option<PathBuf>,
@@ -392,6 +467,25 @@ pub enum BackendsCommand {
     /// list declared backends
     #[command(long_about = "List declared backends and whether each is installed.")]
     List {
+        /// machine-readable JSON on stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// download a portable llama.cpp release
+    #[command(
+        long_about = "Download and install a portable llama.cpp backend release. \
+                      --force replaces an existing directory."
+    )]
+    Fetch {
+        /// backend to install (default: vulkan)
+        name: Option<String>,
+        /// GitHub release tag (default: newest build)
+        #[arg(long)]
+        tag: Option<String>,
+        /// replace an existing backend directory
+        #[arg(long)]
+        force: bool,
         /// machine-readable JSON on stdout
         #[arg(long)]
         json: bool,

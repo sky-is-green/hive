@@ -83,6 +83,11 @@ pub fn run(cli: Cli) -> ExitCode {
         ),
         Some(Command::Version { json: as_json }) => cmd_version(&paths, as_json),
         Some(Command::Config { json: as_json, .. }) => cmd_config(&paths, as_json),
+        Some(Command::Setup {
+            no_fetch,
+            json: as_json,
+            ..
+        }) => crate::backends_cmd::setup(&paths, no_fetch, as_json),
         Some(Command::Doctor {
             strict,
             json: as_json,
@@ -90,12 +95,30 @@ pub fn run(cli: Cli) -> ExitCode {
         }) => cmd_doctor(&paths, strict, as_json),
         Some(Command::Models { command }) => match command {
             ModelsCommand::List { json: as_json, .. } => cmd_models_list(&paths, as_json),
+            ModelsCommand::Search {
+                query,
+                limit,
+                json: as_json,
+                ..
+            } => crate::models_cmd::search(&query, limit, as_json),
+            ModelsCommand::Files {
+                repo,
+                json: as_json,
+                ..
+            } => crate::models_cmd::files(&repo, as_json),
             ModelsCommand::Dir {
                 path,
                 set,
                 json: as_json,
                 ..
             } => crate::models_cmd::dir(&paths, path.as_deref(), set.as_deref(), as_json),
+            ModelsCommand::Download {
+                repo,
+                file,
+                revision,
+                json: as_json,
+                ..
+            } => crate::models_cmd::download(&paths, &repo, file.as_deref(), &revision, as_json),
             ModelsCommand::Import {
                 path,
                 copy,
@@ -127,6 +150,18 @@ pub fn run(cli: Cli) -> ExitCode {
             Some(BackendsCommand::List { json: sub_json }) => {
                 crate::backends_cmd::list(&paths, sub_json || as_json)
             }
+            Some(BackendsCommand::Fetch {
+                name,
+                tag,
+                force,
+                json: sub_json,
+            }) => crate::backends_cmd::fetch(
+                &paths,
+                name.as_deref(),
+                tag.as_deref(),
+                force,
+                sub_json || as_json,
+            ),
         },
         Some(Command::Status {
             json: as_json,
@@ -179,7 +214,10 @@ fn overrides(command: &Option<Command>) -> (Option<PathBuf>, Option<PathBuf>) {
         Some(Command::Models {
             command:
                 ModelsCommand::List { models_dir, .. }
+                | ModelsCommand::Search { models_dir, .. }
+                | ModelsCommand::Files { models_dir, .. }
                 | ModelsCommand::Dir { models_dir, .. }
+                | ModelsCommand::Download { models_dir, .. }
                 | ModelsCommand::Import { models_dir, .. }
                 | ModelsCommand::Remove { models_dir, .. },
         }) => (models_dir.clone(), None),
@@ -200,6 +238,11 @@ fn overrides(command: &Option<Command>) -> (Option<PathBuf>, Option<PathBuf>) {
             ..
         })
         | Some(Command::Config {
+            models_dir,
+            stacks_dir,
+            ..
+        })
+        | Some(Command::Setup {
             models_dir,
             stacks_dir,
             ..
