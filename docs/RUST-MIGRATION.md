@@ -632,7 +632,7 @@ The first daemon slice is on `rust-migration`:
   the Rust binary to these files without starting Python; fixture paths,
   interpreter versions, and the platform string are normalized. Regenerate with
   `tests/conformance/golden/generate.py` only for a reviewed contract change.
-- Tests: fourteen daemon integration tests. The fake sidecar covers native routes
+- Tests: fifteen daemon integration tests. The fake sidecar covers native routes
   and proxy method/body/header/status/token preservation; the managed test
   starts the real FastAPI sidecar, proxies `/v1/commands`, kills the sidecar and
   observes a restart, then checks shutdown leaves no sidecar process; a final
