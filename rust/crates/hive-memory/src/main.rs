@@ -27,6 +27,50 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Deduplicate chunks with supplied embeddings
+    Dedup {
+        #[arg(long)]
+        chunks: PathBuf,
+        #[arg(long)]
+        embeddings: PathBuf,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Assemble context for one query
+    Assemble {
+        #[arg(long)]
+        chunks: PathBuf,
+        #[arg(long)]
+        query: String,
+        #[arg(long, default_value_t = 0)]
+        current_turn: u32,
+        #[arg(long, default_value = "ultra_small")]
+        route: String,
+        #[arg(long, default_value_t = 8192)]
+        max_context: u32,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Run the remembrance pass over chunks
+    Remembrance {
+        #[arg(long)]
+        chunks: PathBuf,
+        #[arg(long)]
+        topic: String,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Measure topic drift between recent and historical chunks
+    Drift {
+        #[arg(long)]
+        chunks: PathBuf,
+        #[arg(long, default_value_t = 3)]
+        recent: usize,
+        #[arg(long, default_value_t = 0.6)]
+        threshold: f64,
+        #[arg(long)]
+        json: bool,
+    },
     /// Score and decay chunks for one query
     Retrieve {
         #[arg(long)]
@@ -96,6 +140,178 @@ fn run(args: Args) -> Result<(), String> {
                 print!("{}", hive_core::json::pretty(&payload));
             } else {
                 println!("{} chunks", store.count());
+            }
+            Ok(())
+        }
+        Command::Dedup {
+            chunks,
+            embeddings,
+            json: as_json,
+        } => {
+            let rows = read_chunks(&chunks)?;
+            let embedding_rows: Vec<serde_json::Value> = serde_json::from_str(
+                &std::fs::read_to_string(&embeddings)
+                    .map_err(|error| format!("cannot read {}: {error}", embeddings.display()))?,
+            )
+            .map_err(|error| format!("invalid embeddings: {error}"))?;
+            let mut by_id = BTreeMap::new();
+            for row in embedding_rows {
+                if let (Some(id), Some(vector)) = (
+                    row.get("id").and_then(|value| value.as_str()),
+                    row.get("vector").and_then(|value| value.as_array()),
+                ) {
+                    by_id.insert(
+                        id.to_owned(),
+                        vector
+                            .iter()
+                            .filter_map(|value| value.as_f64().map(|v| v as f32))
+                            .collect::<Vec<_>>(),
+                    );
+                }
+            }
+            let refs: Vec<&hive_memory::Chunk> = rows.iter().collect();
+            let embeddings: Vec<Vec<f32>> = refs
+                .iter()
+                .map(|chunk| by_id.get(&chunk.id).cloned().unwrap_or_default())
+                .collect();
+            let vocab = vocab()?;
+            let dedup = hive_memory::dedup::ContextDeduplicator::new(&vocab, 0.92);
+            let (survivors, refresh) = dedup.deduplicate(&refs, &embeddings);
+            let payload = serde_json::json!({
+                "survivors": survivors.iter().map(|index| refs[*index].id.clone()).collect::<Vec<_>>(),
+                "refresh": refresh,
+            });
+            if as_json {
+                print!("{}", hive_core::json::pretty(&payload));
+            } else {
+                println!("{} survivors", survivors.len());
+            }
+            Ok(())
+        }
+        Command::Assemble {
+            chunks,
+            query,
+            current_turn,
+            route,
+            max_context,
+            json: as_json,
+        } => {
+            let rows = read_chunks(&chunks)?;
+            let store = hive_memory::ContextStore::from_chunks(rows);
+            let mut encoder = Encoder::load()?;
+            let vocab = vocab()?;
+            let options = hive_memory::assemble::AssembleOptions {
+                route,
+                current_turn,
+                max_context,
+                ..Default::default()
+            };
+            let assembled =
+                hive_memory::assemble::assemble(&store, &query, &mut encoder, &vocab, &options)?;
+            let payload = serde_json::json!({
+                "content": assembled.content,
+                "token_count": assembled.token_count,
+                "budget": assembled.budget,
+                "selected_ids": assembled.selected_ids,
+                "drift_detected": assembled.drift_detected,
+                "drift_score": assembled.drift_score,
+                "raw_scores": assembled.raw_scores,
+                "effective_scores": assembled.effective_scores,
+            });
+            if as_json {
+                print!("{}", hive_core::json::pretty(&payload));
+            } else {
+                println!(
+                    "{} tokens · {} chunks",
+                    assembled.token_count,
+                    assembled.selected_ids.len()
+                );
+            }
+            Ok(())
+        }
+        Command::Remembrance {
+            chunks,
+            topic,
+            json: as_json,
+        } => {
+            let mut rows = read_chunks(&chunks)?;
+            let mut encoder = Encoder::load()?;
+            let texts: Vec<String> = rows.iter().map(|chunk| chunk.content.clone()).collect();
+            let mut all = vec![topic.clone()];
+            all.extend(texts);
+            let vectors = encoder.encode(&all)?;
+            let scores = hive_memory::cosine_scores(&vectors[0], &vectors[1..]);
+            let by_content: BTreeMap<String, f64> = rows
+                .iter()
+                .zip(scores)
+                .map(|(chunk, score)| (chunk.content.clone(), score))
+                .collect();
+            let vocab = vocab()?;
+            let pass = hive_memory::remembrance::RemembrancePass::new(&vocab);
+            let results = pass.process(&mut rows, &topic, |text| {
+                by_content.get(text).copied().unwrap_or(0.0)
+            });
+            let payload = serde_json::json!({
+                "results": results.iter().map(|result| serde_json::json!({
+                    "chunk_id": result.chunk_id,
+                    "saved": result.saved,
+                    "relevance_score": result.relevance_score,
+                    "compressed_content": result.compressed_content,
+                    "new_decay": result.new_decay,
+                })).collect::<Vec<_>>(),
+            });
+            if as_json {
+                print!("{}", hive_core::json::pretty(&payload));
+            } else {
+                println!("{} reminders", results.iter().filter(|r| r.saved).count());
+            }
+            Ok(())
+        }
+        Command::Drift {
+            chunks,
+            recent,
+            threshold,
+            json: as_json,
+        } => {
+            let rows = read_chunks(&chunks)?;
+            let refs: Vec<&hive_memory::Chunk> = rows.iter().collect();
+            let recent_refs: Vec<&hive_memory::Chunk> = refs
+                .iter()
+                .rev()
+                .take(recent)
+                .copied()
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect();
+            let mut encoder = Encoder::load()?;
+            let texts: Vec<String> = rows.iter().map(|chunk| chunk.content.clone()).collect();
+            let mut recent_text = recent_refs
+                .iter()
+                .map(|chunk| chunk.content.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            let historical_text = rows[..rows.len() / 2]
+                .iter()
+                .map(|chunk| chunk.content.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            let mut all_texts = vec![recent_text.clone(), historical_text.clone()];
+            all_texts.extend(texts);
+            let vectors = encoder.encode(&all_texts)?;
+            recent_text.clear();
+            let detector = hive_memory::drift::TopicDriftDetector { threshold };
+            let fixed = [vectors[0].clone()];
+            let historical = &vectors[1];
+            let _ = fixed;
+            let similarity = hive_memory::cosine(&vectors[0], historical);
+            let score = 1.0 - similarity;
+            let (score, reset) = (score, score > detector.threshold);
+            let payload = serde_json::json!({"drift_score": score, "should_reset": reset});
+            if as_json {
+                print!("{}", hive_core::json::pretty(&payload));
+            } else {
+                println!("drift {score:.4} reset={reset}");
             }
             Ok(())
         }
@@ -203,4 +419,16 @@ fn run(args: Args) -> Result<(), String> {
             Ok(())
         }
     }
+}
+
+fn read_chunks(path: &std::path::Path) -> Result<Vec<hive_memory::Chunk>, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("cannot read {}: {error}", path.display()))?;
+    serde_json::from_str(&text).map_err(|error| format!("invalid chunks: {error}"))
+}
+
+fn vocab() -> Result<hive_memory::vocab::Vocabulary, String> {
+    let paths = hive_core::paths::Paths::discover(None, None);
+    let dir = paths.repo.join("splinter/splinter/vocab");
+    hive_memory::vocab::Vocabulary::load(&dir, &["code", "general"])
 }

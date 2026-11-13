@@ -14,5 +14,9 @@ clap.workspace = true
 hive-core = { path = "../hive-core" }
 hive-encoder = { path = "../hive-encoder" }
 md5 = "0.7"
+regex = "1"
 serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

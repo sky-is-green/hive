@@ -771,9 +771,10 @@ The encoder slice is in `rust/crates/hive-encoder`:
   `RustEncoderDrone` without loading sentence-transformers. Memory selection is
   identical on the parity fixture.
 - New `hive-memory` crate: `ContextStore` add/dedup/eviction, turn indexing,
-  decay, and cosine retrieval. Store and decay-retrieval parity tests pass
-  against Python. Hygiene/codec, comb, drift, dedup, assembly and budget
-  selection are still Python.
+  decay, cosine retrieval, semantic dedup, drift, budget, remembrance, comb,
+  and assembly. Parity tests pass against Python for store, dedup, drift,
+  remembrance, and assembly (without comb/remembrance wiring). Hygiene/codec,
+  the P1–P11 replay, and the default-path switch remain.
 
 ### Phase 3 gate (G3)
 

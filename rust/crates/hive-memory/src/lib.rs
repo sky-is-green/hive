@@ -5,6 +5,14 @@
 //! normalization, comb, drift, dedup and full assembly remain in the Python
 //! reference until their parity tests land.
 
+pub mod assemble;
+pub mod budget;
+pub mod comb;
+pub mod dedup;
+pub mod drift;
+pub mod remembrance;
+pub mod vocab;
+
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
@@ -199,6 +207,21 @@ impl ContextStore {
         ordered.into_iter().take(self.chunks.len() - max).collect()
     }
 
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
+        let mut turn_index: BTreeMap<u32, Vec<String>> = BTreeMap::new();
+        for chunk in &chunks {
+            turn_index
+                .entry(chunk.turn)
+                .or_default()
+                .push(chunk.id.clone());
+        }
+        Self {
+            chunks,
+            turn_index,
+            ..Self::default()
+        }
+    }
+
     pub fn count(&self) -> usize {
         self.chunks.len()
     }
@@ -272,7 +295,19 @@ pub fn cosine_scores(query: &[f32], vectors: &[Vec<f32>]) -> Vec<f64> {
         .collect()
 }
 
-fn norm(vector: &[f32]) -> f64 {
+pub fn cosine(left: &[f32], right: &[f32]) -> f64 {
+    let denom = norm(left) * norm(right);
+    if denom == 0.0 {
+        return 0.0;
+    }
+    left.iter()
+        .zip(right)
+        .map(|(a, b)| *a as f64 * *b as f64)
+        .sum::<f64>()
+        / denom
+}
+
+pub(crate) fn norm(vector: &[f32]) -> f64 {
     vector
         .iter()
         .map(|value| (*value as f64) * (*value as f64))

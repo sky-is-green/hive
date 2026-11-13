@@ -938,8 +938,10 @@ dependencies = [
  "hive-core",
  "hive-encoder",
  "md5",
+ "regex",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
