@@ -1840,6 +1840,7 @@ def test_daemon_memory_api(tmp_path):
                     "query": "how does the retention store decay chunks?",
                     "current_turn": 6,
                     "route": "ultra_small",
+                    "vocab_boost": 0.0,
                 }
             ).encode(),
         )
@@ -1939,6 +1940,252 @@ def test_live_native_memory_matches_a_python_conversation(tmp_path):
         )
         baseline = run(False)
         native = run(True, f"http://127.0.0.1:{port}")
+        assert native == baseline
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+        os.environ.pop("HIVE_MEMORY_BACKEND", None)
+        os.environ.pop("HIVE_MEMORY_URL", None)
+
+
+def test_daemon_memory_comb_and_remembrance_match_python(tmp_path):
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not encoder.is_file():
+        pytest.skip("hive-encoder is not built")
+    splinter = REPO / "splinter" / "splinter"
+    if str(splinter) not in sys.path:
+        sys.path.insert(0, str(splinter))
+    from cortex.routing import RoutingDecision
+    from focal.assembly import ContextAssembler
+    from focal.budget import AdaptiveBudget
+    from membrane.dedup import ContextDeduplicator
+    from membrane.drift import TopicDriftDetector
+    from retention.comb import CombRecord
+    from retention.store import ContextStore
+    from sieve.ultra_small import UltraSmallDrone
+    from sieve.vocabulary import Vocabulary
+
+    drone = UltraSmallDrone(confidence_mode="off", vocab_boost=0.15)
+    vocab = Vocabulary.load("code", "general")
+    texts = [
+        "the retention store keeps chunks with decay metadata",
+        "quantization trades precision for memory bandwidth",
+        "the sandbox confines subprocesses with Landlock",
+        "cosine similarity compares normalized vectors",
+        "the router escalates below the confidence threshold",
+        "the order schema uses Alembic forward-only migrations",
+        "the retention store evicts least recently referenced chunks",
+        "the sandbox denies network access by default",
+    ]
+    store = ContextStore(
+        embed_fn=drone.embed, max_chunks=5, sanitize=False, ingest_block_prefixes=[]
+    )
+    for turn, text in enumerate(texts, 1):
+        store.add_chunk(turn, text)
+    # Re-create the pre-eviction state so remembrance has deletion candidates
+    # exactly the way a checkpoint load can.
+    from retention.store import ContextChunk
+
+    store.chunks = {}
+    store.turn_index = {}
+    for turn, text in enumerate(texts, 1):
+        chunk_id = f"c{turn}"
+        store.chunks[chunk_id] = ContextChunk(
+            id=chunk_id,
+            content=text,
+            turn=turn,
+            fingerprint=f"fp{turn}",
+            last_referenced_turn=turn,
+        )
+        store.turn_index.setdefault(turn, []).append(chunk_id)
+    store.max_chunks = 5
+    comb_records = []
+    for index, text in enumerate(
+        [
+            "the old retention policy kept chunks forever",
+            "quantization reduced the model to four bits",
+            "the sandbox used Docker instead of Landlock",
+        ],
+        start=20,
+    ):
+        record = CombRecord(
+            id=f"comb{index}",
+            content=text,
+            turn=index,
+            fingerprint=f"comb-fp{index}",
+            last_referenced_turn=index,
+        )
+        record.embedding = [float(value) for value in drone.embed(text)]
+        comb_records.append(record)
+
+    query = "how does the retention store decay chunks?"
+
+    class Router:
+        def route(self, _query, _history=None):
+            return RoutingDecision("ultra_small", 1.0, "parity")
+
+    reference = ContextStore.from_dict(store.to_dict(), embed_fn=drone.embed)
+    expected = ContextAssembler().assemble(
+        query=query,
+        current_turn=10,
+        store=reference,
+        router=Router(),
+        ultra_small=drone,
+        medium=None,
+        escalation=None,
+        dedup=ContextDeduplicator(vocab=vocab, threshold=0.92),
+        drift_detector=TopicDriftDetector(embed_fn=drone.embed, threshold=0.6),
+        budget=AdaptiveBudget(),
+        max_context=8192,
+        comb_candidates=comb_records,
+    )
+
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_MEMORY_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+            }
+        )
+        status, _, payload = _request(
+            port,
+            "/v1/memory/parity/load",
+            method="POST",
+            body=json.dumps(
+                {
+                    "chunks": store.to_dict()["chunks"],
+                    "max_chunks": 5,
+                    "sanitize": False,
+                    "ingest_block_prefixes": [],
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        status, _, payload = _request(
+            port,
+            "/v1/memory/parity/assemble",
+            method="POST",
+            body=json.dumps(
+                {
+                    "query": query,
+                    "current_turn": 10,
+                    "route": "ultra_small",
+                    "max_context": 8192,
+                    "vocab_boost": 0.15,
+                    "dedup_threshold": 0.92,
+                    "drift_threshold": 0.6,
+                    "comb_candidates": [record.to_json() for record in comb_records],
+                    "payload_fingerprints": [],
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["selected_ids"] == expected.selected_chunk_ids
+        assert payload["content"] == expected.content
+        assert payload["token_count"] == expected.token_count
+        assert payload["budget"] == expected.budget
+        for chunk_id, score in expected.raw_scores.items():
+            assert payload["raw_scores"][chunk_id] == pytest.approx(score, abs=1e-4)
+        assert len(payload["remembrance"]) == 3
+        reference_remembrance = {
+            chunk_id: (chunk.times_saved, round(chunk.decay_multiplier, 6))
+            for chunk_id, chunk in reference.chunks.items()
+            if chunk.times_saved
+        }
+        native_remembrance = {
+            item["chunk_id"]: (item["times_saved"], round(item["new_decay"], 6))
+            for item in payload["remembrance"]
+            if item["saved"]
+        }
+        assert native_remembrance == reference_remembrance
+        reference_history = {
+            chunk_id: [list(item) for item in chunk.relevance_history]
+            for chunk_id, chunk in reference.chunks.items()
+            if chunk.relevance_history
+        }
+        assert payload["relevance_updates"] == reference_history
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
+def test_live_native_memory_comb_matches_python(tmp_path):
+    encoder = REPO / "rust" / "target" / "debug" / "hive-encoder"
+    if not encoder.is_file():
+        pytest.skip("hive-encoder is not built")
+    splinter = REPO / "splinter" / "splinter"
+    if str(splinter) not in sys.path:
+        sys.path.insert(0, str(splinter))
+    try:
+        from cortex.config import SplinterConfig
+        from cortex.splinter import Splinter
+        from sieve.ultra_small import UltraSmallDrone
+    except Exception as error:  # noqa: BLE001
+        pytest.skip(f"memory modules unavailable: {error}")
+
+    queries = [
+        "the order schema uses Alembic forward-only migrations",
+        "how do we migrate the order schema with Alembic?",
+        "the sandbox confines subprocesses with Landlock",
+        "quantization trades precision for memory bandwidth",
+        "the router escalates below the confidence threshold",
+        "what did we decide about Alembic migrations for the order schema?",
+    ]
+
+    def run(native: bool, comb_dir: Path, base_url: str = "") -> list[dict]:
+        if native:
+            os.environ["HIVE_MEMORY_BACKEND"] = "rust"
+            os.environ["HIVE_MEMORY_URL"] = base_url
+        else:
+            os.environ.pop("HIVE_MEMORY_BACKEND", None)
+            os.environ.pop("HIVE_MEMORY_URL", None)
+        config = SplinterConfig(
+            confidence_mode="off",
+            comb_enabled=True,
+            comb_dir=str(comb_dir),
+            max_chunks=3,
+            comb_top_k=3,
+            enable_medium=False,
+            gate_enabled=False,
+        )
+        splinter = Splinter(
+            config=config,
+            ultra=UltraSmallDrone(confidence_mode="off", vocab_boost=0.0),
+            backend=None,
+        )
+        rows = []
+        for query in queries:
+            result = splinter.process_turn(
+                query, conversation_id="comb-parity", record_exchange=True
+            )
+            assembled = result.assembled
+            rows.append(
+                {
+                    "ids": assembled.selected_chunk_ids if assembled else [],
+                    "content": assembled.content if assembled else "",
+                    "tokens": assembled.token_count if assembled else 0,
+                    "comb": dict(splinter.comb_stats),
+                }
+            )
+        return rows
+
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_MEMORY_BACKEND": "rust",
+                "HIVE_ENCODER_BIN": str(encoder),
+                "HIVE_ENCODER_PORT": str(_free_port()),
+            }
+        )
+        baseline = run(False, tmp_path / "python-comb")
+        native = run(True, tmp_path / "native-comb", f"http://127.0.0.1:{port}")
         assert native == baseline
     finally:
         if process is not None:

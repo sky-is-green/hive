@@ -31,7 +31,7 @@ from cortex.efficiency import EfficiencyScorer
 from cortex.health import PipelineHealthMonitor
 from cortex.hedges import is_hedge_reply
 from cortex.routing import DroneRouter, EscalationHandler, RoutingDecision
-from focal.assembly import AssembledContext, ContextAssembler
+from focal.assembly import AssembledContext, ContextAssembler, normalize_for_scoring
 from focal.budget import AdaptiveBudget
 from membrane.dedup import ContextDeduplicator
 from membrane.drift import TopicDriftDetector
@@ -118,6 +118,9 @@ class Splinter:
             self.native_memory = NativeMemoryClient(
                 os.environ.get("HIVE_MEMORY_URL", "http://127.0.0.1:8765")
             )
+            from memory_client import apply_memory_updates
+
+            self._apply_memory_updates = apply_memory_updates
         self._warned_reasoning_starve = False
         # S6 confirmation gate (opt-in; disabled == rule-based hedge filter,
         # the mechanism-attribution condition). The imprint provider is
@@ -216,21 +219,10 @@ class Splinter:
                 mode = "fifo_fallback"
             else:
                 t0 = time.perf_counter()
-                if self.native_memory is not None:
-                    assembled = self._native_assemble(query, conversation_id)
-                else:
-                    assembled = self.assembler.assemble(
-                        query=query, current_turn=self.turn, store=self.store,
-                    router=self.router, ultra_small=self.ultra, medium=self.medium,
-                    escalation=self.escalation, dedup=self.dedup,
-                    drift_detector=self.drift, budget=self.budget,
-                    max_context=self.config.max_context,
-                    skip_remembrance=self.degradation.should_skip_remembrance(),
-                    skip_dedup=self.degradation.should_skip_dedup(),
+                assembled = self._assemble_context(
+                    query,
+                    conversation_id,
                     payload_fingerprints=payload_fingerprints,
-                    dedup_against_payload=self.config.dedup_against_payload,
-                    stale_threshold=self.config.stale_threshold,
-                    stale_factor=self.config.stale_factor,
                     drift_prior=drift_prior,
                     drift_prior_factor=drift_prior_factor,
                 )
@@ -254,19 +246,11 @@ class Splinter:
                         query, k=self.config.comb_top_k
                     )
                     if comb_candidates:
-                        assembled = self.assembler.assemble(
-                            query=query, current_turn=self.turn, store=self.store,
-                            router=self.router, ultra_small=self.ultra,
-                            medium=self.medium, escalation=self.escalation,
-                            dedup=self.dedup, drift_detector=self.drift,
-                            budget=self.budget, max_context=self.config.max_context,
-                            skip_remembrance=self.degradation.should_skip_remembrance(),
-                            skip_dedup=self.degradation.should_skip_dedup(),
+                        assembled = self._assemble_context(
+                            query,
+                            conversation_id,
                             comb_candidates=comb_candidates,
                             payload_fingerprints=payload_fingerprints,
-                            dedup_against_payload=self.config.dedup_against_payload,
-                            stale_threshold=self.config.stale_threshold,
-                            stale_factor=self.config.stale_factor,
                             drift_prior=drift_prior,
                             drift_prior_factor=drift_prior_factor,
                         )
@@ -453,7 +437,52 @@ class Splinter:
         except Exception:  # noqa: BLE001 - assembly will fail loudly if it matters
             pass
 
-    def _native_assemble(self, query: str, conversation_id: Optional[str]):
+    def _assemble_context(
+        self,
+        query: str,
+        conversation_id: Optional[str],
+        *,
+        comb_candidates=None,
+        payload_fingerprints: Optional[set] = None,
+        drift_prior: str = "off",
+        drift_prior_factor: float = 0.5,
+    ):
+        if self.native_memory is not None:
+            return self._native_assemble(
+                query,
+                conversation_id,
+                comb_candidates=comb_candidates,
+                payload_fingerprints=payload_fingerprints,
+                drift_prior=drift_prior,
+                drift_prior_factor=drift_prior_factor,
+            )
+        return self.assembler.assemble(
+            query=query, current_turn=self.turn, store=self.store,
+            router=self.router, ultra_small=self.ultra, medium=self.medium,
+            escalation=self.escalation, dedup=self.dedup,
+            drift_detector=self.drift, budget=self.budget,
+            max_context=self.config.max_context,
+            skip_remembrance=self.degradation.should_skip_remembrance(),
+            skip_dedup=self.degradation.should_skip_dedup(),
+            comb_candidates=comb_candidates,
+            payload_fingerprints=payload_fingerprints,
+            dedup_against_payload=self.config.dedup_against_payload,
+            stale_threshold=self.config.stale_threshold,
+            stale_factor=self.config.stale_factor,
+            drift_prior=drift_prior,
+            drift_prior_factor=drift_prior_factor,
+        )
+
+    def _native_assemble(
+        self,
+        query: str,
+        conversation_id: Optional[str],
+        *,
+        comb_candidates=None,
+        payload_fingerprints: Optional[set] = None,
+        drift_prior: str = "off",
+        drift_prior_factor: float = 0.5,
+    ):
         conversation = conversation_id or "default"
         if self._native_conversation != conversation:
             self.native_memory.load(
@@ -465,17 +494,59 @@ class Splinter:
             )
             self._native_conversation = conversation
         routing = self.router.route(query, self.store.get_turns())
+        score_override = None
+        if routing.route_to != "ultra_small":
+            chunks = list(self.store.all_chunks()) + list(comb_candidates or [])
+            prefixes = self.store.ingest_block_prefixes
+            pairs = [
+                (chunk, normalize_for_scoring(chunk.content, prefixes))
+                for chunk in chunks
+            ]
+            pairs = [(chunk, text) for chunk, text in pairs if text]
+            scoring_query = normalize_for_scoring(query, prefixes)
+            texts = [text for _, text in pairs]
+            if routing.route_to == "escalation":
+                scores = self.escalation.process(
+                    scoring_query, texts, self.ultra, self.medium
+                )
+            elif routing.route_to == "medium":
+                scores = self.medium.score(scoring_query, texts)
+            else:
+                scores = self.ultra.score(scoring_query, texts)
+            score_override = {
+                chunk.id: float(score.relevance_score)
+                for (chunk, _), score in zip(pairs, scores)
+            }
         payload = self.native_memory.assemble(
             conversation,
             query,
             current_turn=self.turn,
             route=routing.route_to,
             max_context=self.config.max_context,
+            relevance_floor=0.25,
+            max_chunk_share=0.5,
+            drift_threshold=self.config.drift_threshold,
+            dedup_threshold=self.config.dedup_threshold,
+            stale_threshold=self.config.stale_threshold,
+            stale_factor=self.config.stale_factor,
+            skip_remembrance=self.degradation.should_skip_remembrance(),
+            skip_dedup=self.degradation.should_skip_dedup(),
+            comb_candidates=[
+                candidate.to_json() for candidate in (comb_candidates or [])
+            ],
+            payload_fingerprints=payload_fingerprints,
+            dedup_against_payload=self.config.dedup_against_payload,
+            drift_prior=drift_prior,
+            drift_prior_factor=drift_prior_factor,
+            vocab_boost=getattr(
+                self.ultra, "vocab_boost", self.config.vocab_boost
+            ),
+            score_override=score_override,
         )
+        self._apply_memory_updates(self.store, payload)
         raw_scores = {
             key: float(value) for key, value in (payload.get("raw_scores") or {}).items()
         }
-        top_chunk_id = max(raw_scores, key=raw_scores.get) if raw_scores else None
         return AssembledContext(
             content=str(payload.get("content") or ""),
             token_count=int(payload.get("token_count") or 0),
@@ -486,9 +557,10 @@ class Splinter:
             ),
             drift_detected=bool(payload.get("drift_detected")),
             selected_chunk_ids=list(payload.get("selected_ids") or []),
-            top_raw_score=max(raw_scores.values()) if raw_scores else 0.0,
-            top_chunk_id=top_chunk_id,
+            top_raw_score=float(payload.get("top_raw_score") or 0.0),
+            top_chunk_id=payload.get("top_chunk_id"),
             raw_scores=raw_scores,
+            payload_dedup_skipped=int(payload.get("payload_dedup_skipped") or 0),
         )
 
     def _fifo_context(self, query: str) -> str:

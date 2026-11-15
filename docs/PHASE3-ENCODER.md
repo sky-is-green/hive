@@ -84,25 +84,50 @@ exported and added to the parity corpus.
 - hygiene/codec repair (mojibake, boilerplate, secrets, length cap);
 - semantic dedup, topic drift, adaptive budget, remembrance, and the comb
   (JSONL surplus store with lexical recall);
-- native context assembly (without comb/remembrance wiring yet);
+- native context assembly with remembrance and comb candidates;
 - parity tests for store operations, hygiene/codec, dedup, drift, remembrance,
-  and assembly against Python.
+  assembly, and the comb/remembrance assembly path against Python.
 
 The daemon hosts the per-conversation memory API and the Python Splinter uses
 it by default whenever the managed native encoder is active
-(`HIVE_MEMORY_BACKEND=python` opts out). A five-turn conversation and a
-15-turn fixture replay match Python selection, content, and token counts.
+(`HIVE_MEMORY_BACKEND=python` opts out). A five-turn conversation, a 15-turn
+fixture replay, and the P1–P11 protocol replay match Python selection, content,
+and token counts. The replay statuses are identical; P1 differs only in timing
+and P10 by 0.2 points from ONNX embedding float noise.
 
-Still open: comb/remembrance integration in native assembly (P3-11), the full
-P1–P11 / 28-task protocol replay (P3-12), and loopback assembly latency
-(P3-13, ~66 ms vs ~3 ms cached Python for 71 chunks).
+Release assembly benchmark for 71 chunks (`experiments/bench_memory_assembly.py`):
+warm 3.55 ms native vs 2.98 ms cached in-process Python (1.19x); evolving turns
+with a new query and chunk 13.5 ms vs 12.0 ms (1.12x). The earlier 66 ms number
+was a debug build whose dedup matrix recomputed both vector norms per pair.
+
+### P1–P11 replay (P3-12)
+
+Routing was pinned to `ultra_small` and both runs used the real MiniLM drone, so
+the only difference was the assembly implementation. Every prediction status
+matches:
+
+| Prediction | Python | Native | Notes |
+|---|---|---|---|
+| P1 | PASS | PASS | 124.0 vs 124.1 turns/s (mock timing) |
+| P2 | FAIL | FAIL | identical precision/recall |
+| P3 | FAIL | FAIL | identical ratios |
+| P4 | PASS | PASS | identical decay sweep |
+| P6 | FAIL | FAIL | identical escalation metrics |
+| P8, P9 | PASS | PASS | identical |
+| P10 | FAIL | FAIL | 55.3 vs 55.1 points (embedding float noise) |
+| P11 | PASS | PASS | identical comb pressure/full recall |
+
+Run it with the daemon on `:8921` and
+`python -m experiments.run_p1_p10 --mock --memory-backend python|native
+--memory-encoder real --force-route ultra_small`.
+
 
 ## Torch-free install
 
 A fresh venv with only `.[studio]` and `splinter` (no torch/transformers/
 sentence-transformers) runs the daemon + native encoder + chat end-to-end;
 `test_live_torchfree_sidecar_chat` formalizes it when
-`HIVE_TORCHFREE_PYTHON` is set. The venv is **360 MB** versus **1.6 GB** for
+`HIVE_TORCHFREE_PYTHON` is set. The venv is **381 MB** versus **1.6 GB** for
 the full torch environment; the encoder adds a 27 MB binary plus a 66 MB model.
 
 `hive-encoder fetch --dir models/encoder` downloads the ONNX model and
@@ -110,9 +135,10 @@ tokenizer and verifies the model's SHA256 against the Hugging Face LFS oid.
 
 ## Still missing for G3
 
-- The remaining memory stages (hygiene/codec, comb, drift, dedup, assembly,
-  budget) are still Python.
-- A torch-free runtime venv has not been tested (P3-09).
-- P1–P11 / 28-task cascade replay has not been run against a native memory core.
-- Only MiniLM-L3-v2 is validated.
-- The native scorer fixes confidence at 1.0 (no MC-dropout) (P3-05).
+- Only MiniLM-L3-v2 is ONNX-validated; other `ultra_model` choices need their
+  own export and parity corpus (P3-07, deferred).
+- Native assembly supports the default ultra-small drone natively; medium and
+  escalation tiers are scored by the sidecar and passed as `score_override`.
+- The 28-task cascade is generation-only and has no memory path; it is out of
+  scope for the memory replay and remains covered by the Phase 2 cascade gate
+  (one-task live report, P2-36).

@@ -193,6 +193,17 @@ impl ContextStore {
         ordered.into_iter().take(self.chunks.len() - max).collect()
     }
 
+    /// Membrane-before-Retention refresh: a chunk merged with a fresher
+    /// duplicate inherits that duplicate's recency.
+    pub fn apply_refresh(&mut self, refresh: &BTreeMap<String, u32>) {
+        for (id, turn) in refresh {
+            if let Some(chunk) = self.chunks.iter_mut().find(|chunk| &chunk.id == id) {
+                chunk.last_referenced_turn =
+                    Some(chunk.last_referenced_turn.unwrap_or(0).max(*turn));
+            }
+        }
+    }
+
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
         let mut turn_index: BTreeMap<u32, Vec<String>> = BTreeMap::new();
         for chunk in &chunks {

@@ -11,6 +11,7 @@ pub struct RemembranceResult {
     pub relevance_score: f64,
     pub compressed_content: Option<String>,
     pub new_decay: Option<f64>,
+    pub times_saved: u32,
 }
 
 pub struct RemembrancePass<'a> {
@@ -33,30 +34,36 @@ impl<'a> RemembrancePass<'a> {
         let mut results = Vec::with_capacity(chunks.len());
         for chunk in chunks {
             let relevance = score(&chunk.content);
-            if relevance >= self.threshold {
-                let compressed = self.compress(&chunk.content);
-                let new_decay = chunk.decay_multiplier * decay_factor(chunk.times_saved);
-                chunk.times_saved += 1;
-                chunk.decay_multiplier = new_decay;
-                results.push(RemembranceResult {
-                    chunk_id: chunk.id.clone(),
-                    saved: true,
-                    relevance_score: relevance,
-                    compressed_content: Some(compressed),
-                    new_decay: Some(new_decay),
-                });
-            } else {
-                results.push(RemembranceResult {
-                    chunk_id: chunk.id.clone(),
-                    saved: false,
-                    relevance_score: relevance,
-                    compressed_content: None,
-                    new_decay: None,
-                });
-            }
+            results.push(self.process_one(chunk, relevance));
         }
         let _ = topic;
         results
+    }
+
+    pub fn process_one(&self, chunk: &mut Chunk, relevance: f64) -> RemembranceResult {
+        if relevance >= self.threshold {
+            let compressed = self.compress(&chunk.content);
+            let new_decay = chunk.decay_multiplier * decay_factor(chunk.times_saved);
+            chunk.times_saved += 1;
+            chunk.decay_multiplier = new_decay;
+            RemembranceResult {
+                chunk_id: chunk.id.clone(),
+                saved: true,
+                relevance_score: relevance,
+                compressed_content: Some(compressed),
+                new_decay: Some(new_decay),
+                times_saved: chunk.times_saved,
+            }
+        } else {
+            RemembranceResult {
+                chunk_id: chunk.id.clone(),
+                saved: false,
+                relevance_score: relevance,
+                compressed_content: None,
+                new_decay: None,
+                times_saved: chunk.times_saved,
+            }
+        }
     }
 
     pub fn compress(&self, content: &str) -> String {

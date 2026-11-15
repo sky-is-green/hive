@@ -5,18 +5,27 @@
 //! the managed `hive-encoder` service over loopback, so the daemon does not link
 //! ONNX Runtime itself.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
-use hive_memory::assemble::{AssembleOptions, Embedder, assemble};
+use hive_memory::assemble::{AssembleOptions, CombCandidate, Embedder, assemble};
 use hive_memory::vocab::Vocabulary;
 use hive_memory::{Chunk, ContextStore};
+use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::runtime::ApiError;
 
 struct Conversation {
     store: ContextStore,
+}
+
+#[derive(Deserialize)]
+struct CombInput {
+    #[serde(flatten)]
+    chunk: Chunk,
+    #[serde(default)]
+    embedding: Option<Vec<f32>>,
 }
 
 pub struct MemoryManager {
@@ -151,7 +160,102 @@ impl MemoryManager {
             .get("max_context")
             .and_then(Value::as_u64)
             .unwrap_or(8192) as u32;
-        let store = {
+        let max_chunk_share = body
+            .get("max_chunk_share")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.5);
+        let relevance_floor = body
+            .get("relevance_floor")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.25);
+        let drift_threshold = body
+            .get("drift_threshold")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.6);
+        let dedup_threshold = body
+            .get("dedup_threshold")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.92);
+        let stale_threshold = body
+            .get("stale_threshold")
+            .and_then(Value::as_u64)
+            .map(|value| value as u32);
+        let stale_factor = body.get("stale_factor").and_then(Value::as_f64);
+        let payload_fingerprints = body
+            .get("payload_fingerprints")
+            .and_then(Value::as_array)
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default();
+        let score_override: Option<BTreeMap<String, f64>> = body
+            .get("score_override")
+            .filter(|value| !value.is_null())
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|error| ApiError {
+                status: 400,
+                detail: format!("invalid score_override: {error}"),
+            })?;
+        let comb: Vec<CombInput> = body
+            .get("comb_candidates")
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|error| ApiError {
+                status: 400,
+                detail: format!("invalid comb_candidates: {error}"),
+            })?
+            .unwrap_or_default();
+        let options = AssembleOptions {
+            route: route.to_owned(),
+            current_turn,
+            max_context,
+            relevance_floor,
+            max_chunk_share,
+            drift_threshold,
+            dedup_threshold,
+            stale_threshold,
+            stale_factor,
+            skip_remembrance: body
+                .get("skip_remembrance")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            skip_dedup: body
+                .get("skip_dedup")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            dedup_against_payload: body
+                .get("dedup_against_payload")
+                .and_then(Value::as_bool)
+                .unwrap_or(true),
+            payload_fingerprints,
+            drift_prior: body
+                .get("drift_prior")
+                .and_then(Value::as_str)
+                .unwrap_or("off")
+                .to_owned(),
+            drift_prior_factor: body
+                .get("drift_prior_factor")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.5),
+            vocab_boost: body
+                .get("vocab_boost")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.15),
+            budget_override: body
+                .get("budget")
+                .and_then(Value::as_u64)
+                .map(|value| value as u32),
+            score_override,
+        };
+
+        let mut store = {
             let conversations = self
                 .conversations
                 .lock()
@@ -167,19 +271,45 @@ impl MemoryManager {
             url: encoder_url.clone(),
             cache: Arc::clone(&self.embeddings),
         };
-        let options = AssembleOptions {
-            route: route.to_owned(),
-            current_turn,
-            max_context,
-            ..Default::default()
-        };
-        let assembled =
-            assemble(&store, query, &mut embedder, &self.vocab, &options).map_err(|error| {
-                ApiError {
-                    status: 502,
-                    detail: format!("native assembly failed: {error}"),
-                }
-            })?;
+        let comb_candidates: Vec<CombCandidate> = comb
+            .into_iter()
+            .map(|input| CombCandidate {
+                chunk: input.chunk,
+                embedding: input.embedding,
+            })
+            .collect();
+        let assemble_started = std::time::Instant::now();
+        let assembled = assemble(
+            &mut store,
+            query,
+            &mut embedder,
+            &self.vocab,
+            &options,
+            &comb_candidates,
+        )
+        .map_err(|error| ApiError {
+            status: 502,
+            detail: format!("native assembly failed: {error}"),
+        })?;
+        if std::env::var_os("HIVE_MEMORY_TRACE").is_some() {
+            eprintln!(
+                "[memory] chunks={} assemble={:?}",
+                store.count(),
+                assemble_started.elapsed()
+            );
+        }
+
+        // Assembly mutates decay state, membrane refresh, and relevance
+        // history, so the updated store replaces the conversation entry.
+        if let Some(entry) = self
+            .conversations
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .get_mut(conversation)
+        {
+            entry.store = store;
+        }
+
         Ok(json!({
             "content": assembled.content,
             "token_count": assembled.token_count,
@@ -187,8 +317,21 @@ impl MemoryManager {
             "selected_ids": assembled.selected_ids,
             "drift_detected": assembled.drift_detected,
             "drift_score": assembled.drift_score,
+            "top_raw_score": assembled.top_raw_score,
+            "top_chunk_id": assembled.top_chunk_id,
             "raw_scores": assembled.raw_scores,
             "effective_scores": assembled.effective_scores,
+            "payload_dedup_skipped": assembled.payload_dedup_skipped,
+            "refresh": assembled.refresh,
+            "relevance_updates": assembled.relevance_updates,
+            "remembrance": assembled.remembrance.iter().map(|result| json!({
+                "chunk_id": result.chunk_id,
+                "saved": result.saved,
+                "relevance_score": result.relevance_score,
+                "compressed_content": result.compressed_content,
+                "new_decay": result.new_decay,
+                "times_saved": result.times_saved,
+            })).collect::<Vec<_>>(),
         }))
     }
 }
@@ -201,6 +344,7 @@ struct HttpEmbedder {
 
 impl Embedder for HttpEmbedder {
     fn encode(&mut self, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
+        let started = std::time::Instant::now();
         let missing: Vec<String> = {
             let cache = self.cache.lock().unwrap_or_else(|error| error.into_inner());
             texts
@@ -209,6 +353,7 @@ impl Embedder for HttpEmbedder {
                 .cloned()
                 .collect()
         };
+        let missing_count = missing.len();
         if !missing.is_empty() {
             let payload = serde_json::to_string(&json!({"texts": missing}))
                 .map_err(|error| error.to_string())?;
@@ -238,6 +383,14 @@ impl Embedder for HttpEmbedder {
                     .collect();
                 cache.insert(text.clone(), vector);
             }
+        }
+        if std::env::var_os("HIVE_MEMORY_TRACE").is_some() {
+            eprintln!(
+                "[memory] encode texts={} missing={} elapsed={:?}",
+                texts.len(),
+                missing_count,
+                started.elapsed()
+            );
         }
         let cache = self.cache.lock().unwrap_or_else(|error| error.into_inner());
         texts

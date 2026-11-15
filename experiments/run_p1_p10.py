@@ -31,7 +31,7 @@ from backend.lmstudio import LMStudioBackend
 from backend.sampling import parse_sampling
 from cortex.efficiency import EfficiencyScorer
 from cortex.splinter import Splinter
-from cortex.routing import DroneRouter, EscalationHandler
+from cortex.routing import DroneRouter, EscalationHandler, RoutingDecision
 from focal.assembly import ContextAssembler
 from focal.budget import AdaptiveBudget
 from membrane.dedup import ContextDeduplicator
@@ -39,6 +39,7 @@ from membrane.drift import TopicDriftDetector
 from auditor.auditor import Auditor
 from auditor.labeling import generate_all, generate_eviction_labels, generate_query_chunk_pairs, generate_routing_decision_labels
 from retention.store import ContextStore
+from memory_client import NativeAssembler, NativeMemoryClient
 from sieve.medium import MediumDrone
 from sieve.ultra_small import UltraSmallDrone
 from tests.fixtures.synthetic_conversations.generate import TOPICS
@@ -55,6 +56,16 @@ class PredictionResult:
     note: str = ""
 
 
+class _ForcedRouter:
+    """Pin routing so a replay isolates memory assembly from tier selection."""
+
+    def __init__(self, route: str = "ultra_small") -> None:
+        self.route_to = route
+
+    def route(self, _query, _history=None) -> RoutingDecision:
+        return RoutingDecision(self.route_to, 1.0, "forced")
+
+
 class _P4FixedBudget:
     """P4 decay sweep holds the budget fixed (1000 tokens, the ultra-small
     tier's floor). The adaptive budget's high-relevance feedback washes the
@@ -66,7 +77,8 @@ class _P4FixedBudget:
 
 class PredictionSuite:
     def __init__(self, backend, ultra, medium, conversations, labels, auditor,
-                 live=False, sampling: dict | None = None):
+                 live=False, sampling: dict | None = None, *,
+                 memory_url: str | None = None, force_route: str | None = None):
         self.backend = backend
         self.ultra = ultra
         self.medium = medium
@@ -76,6 +88,17 @@ class PredictionSuite:
         self.live = live
         self.sampling = sampling or {}
         self.assembler = ContextAssembler()
+        self.native_client = NativeMemoryClient(memory_url) if memory_url else None
+        self.router = _ForcedRouter(force_route) if force_route else DroneRouter()
+
+    def _new_assembler(self, conversation="protocol"):
+        if self.native_client is None:
+            return ContextAssembler()
+        return NativeAssembler(
+            self.native_client,
+            conversation=str(conversation),
+            vocab_boost=getattr(self.ultra, "vocab_boost", 0.15),
+        )
 
     # ------------------------------------------------------------------
     def run(self) -> list[PredictionResult]:
@@ -92,9 +115,9 @@ class PredictionSuite:
 
     # ------------------------------------------------------------------
     def _hive_context(self, query, turn, store):
-        return self.assembler.assemble(
+        return self._new_assembler().assemble(
             query=query, current_turn=turn, store=store,
-            router=DroneRouter(), ultra_small=self.ultra, medium=self.medium,
+            router=self.router, ultra_small=self.ultra, medium=self.medium,
             escalation=EscalationHandler(), dedup=ContextDeduplicator(),
             drift_detector=TopicDriftDetector(embed_fn=self.ultra.embed),
             budget=AdaptiveBudget(), max_context=8192,
@@ -438,9 +461,11 @@ class PredictionSuite:
                 if facts and facts <= prior_terms:
                     for c in store.chunks.values():
                         c.decay_multiplier = multiplier
-                    ctx = ContextAssembler().assemble(
+                    ctx = self._new_assembler(
+                        conv.get("conversation_id", "p4")
+                    ).assemble(
                         query=q, current_turn=turn, store=store,
-                        router=DroneRouter(), ultra_small=self.ultra,
+                        router=self.router, ultra_small=self.ultra,
                         medium=MediumDrone(score_pair_fn=lambda qq, cc: 0.5),
                         escalation=EscalationHandler(), dedup=ContextDeduplicator(),
                         drift_detector=TopicDriftDetector(embed_fn=self.ultra.embed),
@@ -750,9 +775,9 @@ class PredictionSuite:
                     store.add_chunk(turn, answer or "")
                     continue
                 # gate + assemble (mirrors Splinter.process_turn's comb wiring)
-                assembled = ContextAssembler().assemble(
+                assembled = self._new_assembler(cid).assemble(
                     query=q, current_turn=turn, store=store,
-                    router=DroneRouter(), ultra_small=self.ultra,
+                    router=self.router, ultra_small=self.ultra,
                     medium=MediumDrone(score_pair_fn=lambda qq, cc: 0.5),
                     escalation=EscalationHandler(), dedup=ContextDeduplicator(),
                     drift_detector=TopicDriftDetector(embed_fn=self.ultra.embed),
@@ -777,9 +802,9 @@ class PredictionSuite:
                     if gate_fires:
                         comb_candidates = comb.retrieve(q, k=8)
                         if comb_candidates:
-                            assembled = ContextAssembler().assemble(
+                            assembled = self._new_assembler(cid).assemble(
                                 query=q, current_turn=turn, store=store,
-                                router=DroneRouter(), ultra_small=self.ultra,
+                                router=self.router, ultra_small=self.ultra,
                                 medium=MediumDrone(score_pair_fn=lambda qq, cc: 0.5),
                                 escalation=EscalationHandler(),
                                 dedup=ContextDeduplicator(),
@@ -909,9 +934,11 @@ class PredictionSuite:
                     continue
                 if turns_since_switch <= 3:
                     drift = TopicDriftDetector(embed_fn=self.ultra.embed, threshold=threshold)
-                    ctx = ContextAssembler().assemble(
+                    ctx = self._new_assembler(
+                        conv.get("conversation_id", "p10")
+                    ).assemble(
                         query=q, current_turn=turn, store=store,
-                        router=DroneRouter(), ultra_small=self.ultra,
+                        router=self.router, ultra_small=self.ultra,
                         medium=MediumDrone(score_pair_fn=lambda qq, cc: 0.5),
                         escalation=EscalationHandler(), dedup=ContextDeduplicator(),
                         drift_detector=drift, budget=AdaptiveBudget(), max_context=8192,
@@ -961,6 +988,22 @@ def main(argv: list[str] | None = None) -> int:
              "'{\"temperature\":0.7}' (backend.sampling fields; applies to the "
              "P1 live-generation pass)",
     )
+    parser.add_argument(
+        "--memory-backend", choices=["python", "native"], default="python",
+        help="assemble with the Python reference or the daemon memory API",
+    )
+    parser.add_argument(
+        "--memory-url", default="http://127.0.0.1:8765",
+        help="daemon URL for --memory-backend native",
+    )
+    parser.add_argument(
+        "--memory-encoder", choices=["auto", "real", "fake"], default="auto",
+        help="real drone embeddings for both runs (required for parity)",
+    )
+    parser.add_argument(
+        "--force-route", default="",
+        help="pin routing (e.g. ultra_small) for a memory-only replay",
+    )
     args = parser.parse_args(argv)
 
     if args.provider:
@@ -982,8 +1025,15 @@ def main(argv: list[str] | None = None) -> int:
     conversations = load_conversations(args.conversations)
     labels = _load_labels(conversations)
 
+    use_real_encoder = args.memory_encoder == "real" or (
+        args.memory_encoder == "auto" and args.memory_backend == "native"
+    )
     if args.mock or not args.live:
-        ultra = FakeUltraSmall()
+        if use_real_encoder:
+            ultra = UltraSmallDrone()
+            ultra._ensure_loaded()
+        else:
+            ultra = FakeUltraSmall()
         backend = LMStudioBackend(base_url=args.base_url, model=args.model,
                                   api_key=pkw.get("api_key", "lm-studio"),
                                   extra_headers=pkw.get("extra_headers"),
@@ -1004,8 +1054,12 @@ def main(argv: list[str] | None = None) -> int:
     auditor = Auditor(generate_fn=lambda p: json.dumps({"sufficient": True, "used_pieces": [], "missing": [], "score": 4}))
     sampling = parse_sampling(args.sampling) if args.sampling else None
 
-    suite = PredictionSuite(backend, ultra, medium, conversations, labels,
-                            auditor, live=live, sampling=sampling)
+    suite = PredictionSuite(
+        backend, ultra, medium, conversations, labels, auditor,
+        live=live, sampling=sampling,
+        memory_url=args.memory_url if args.memory_backend == "native" else None,
+        force_route=args.force_route or None,
+    )
     results = suite.run()
 
     out = Path(args.output) if args.output else Path("logs") / "p1_p10_report.json"

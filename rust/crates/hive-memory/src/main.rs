@@ -253,17 +253,24 @@ fn run(args: Args) -> Result<(), String> {
             json: as_json,
         } => {
             let rows = read_chunks(&chunks)?;
-            let store = hive_memory::ContextStore::from_chunks(rows);
+            let mut store = hive_memory::ContextStore::from_chunks(rows);
             let mut encoder = Encoder::load()?;
             let vocab = vocab()?;
             let options = hive_memory::assemble::AssembleOptions {
                 route,
                 current_turn,
                 max_context,
+                vocab_boost: 0.0,
                 ..Default::default()
             };
-            let assembled =
-                hive_memory::assemble::assemble(&store, &query, &mut encoder, &vocab, &options)?;
+            let assembled = hive_memory::assemble::assemble(
+                &mut store,
+                &query,
+                &mut encoder,
+                &vocab,
+                &options,
+                &[],
+            )?;
             let payload = serde_json::json!({
                 "content": assembled.content,
                 "token_count": assembled.token_count,
@@ -273,6 +280,7 @@ fn run(args: Args) -> Result<(), String> {
                 "drift_score": assembled.drift_score,
                 "raw_scores": assembled.raw_scores,
                 "effective_scores": assembled.effective_scores,
+                "payload_dedup_skipped": assembled.payload_dedup_skipped,
             });
             if as_json {
                 print!("{}", hive_core::json::pretty(&payload));

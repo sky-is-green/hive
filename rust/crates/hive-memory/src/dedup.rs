@@ -73,16 +73,20 @@ impl<'a> ContextDeduplicator<'a> {
 
 fn cosine_matrix(rows: &[Vec<f32>]) -> Vec<Vec<f64>> {
     let count = rows.len();
+    let norms: Vec<f64> = rows.iter().map(|row| crate::norm(row)).collect();
     let mut out = vec![vec![0.0; count]; count];
     for i in 0..count {
-        for j in 0..count {
+        out[i][i] = 1.0;
+        for j in (i + 1)..count {
             let dot: f64 = rows[i]
                 .iter()
                 .zip(&rows[j])
                 .map(|(left, right)| *left as f64 * *right as f64)
                 .sum();
-            let denom = crate::norm(&rows[i]) * crate::norm(&rows[j]);
-            out[i][j] = if denom == 0.0 { 0.0 } else { dot / denom };
+            let denom = norms[i] * norms[j];
+            let value = if denom == 0.0 { 0.0 } else { dot / denom };
+            out[i][j] = value;
+            out[j][i] = value;
         }
     }
     out
