@@ -835,6 +835,20 @@ Remaining 4A work is operational polish: per-tier VRAM/queue metrics depend on
 what the selected llama-server build exposes, and stream TTFT is route-level
 rather than per-tier.
 
+### Phase 4B status (2026-11-15)
+
+- New `hive-sandbox` helper: Landlock filesystem confinement (read-only system
+  paths, read-write workspace/scratch), a seccomp deny-list for network and
+  privilege-escalation syscalls, rlimits, `PR_SET_NO_NEW_PRIVS`, a scrubbed
+  environment, and fatal exit when Landlock cannot be fully enforced.
+- Daemon API `/v1/sandbox/native/status` and `/v1/sandbox/native/exec`; timeout
+  kills the process group, output is capped, and the workspace must stay under
+  `HIVE_SANDBOX_WORKSPACE_ROOT`.
+- Tests cover inside/outside writes, network denial, environment scrubbing,
+  `/etc/shadow` denial, timeout kill, and the daemon route.
+- Next: route the existing `/v1/sandbox/*` policy through `mode=landlock|auto`
+  (making Docker an explicit fallback), then WASM verifier/tool plugins.
+
 ---
 
 ## 10. Work breakdown

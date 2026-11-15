@@ -1,0 +1,18 @@
+[package]
+name = "hive-sandbox"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "hive-sandbox"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+landlock = "0.4.7"
+libc.workspace = true
+seccompiler = "0.5.0"
+
+[dev-dependencies]
+tempfile.workspace = true

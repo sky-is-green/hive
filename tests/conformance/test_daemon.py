@@ -349,6 +349,8 @@ def _start_daemon(
                 f"http://127.0.0.1:{port}/health", timeout=0.5
             ) as response:
                 if response.status == 200:
+                    if sidecar_port is not None:
+                        _wait_health(port, managed=True)
                     return process, port
         except OSError:
             time.sleep(0.05)
@@ -2315,3 +2317,93 @@ def test_live_zero_downtime_server_swap(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=15)
+
+
+def test_native_landlock_sandbox_exec(tmp_path):
+    sandbox_bin = REPO / "rust" / "target" / "debug" / "hive-sandbox"
+    if not sandbox_bin.is_file():
+        pytest.skip("hive-sandbox is not built")
+    root = tmp_path / "workspaces"
+    workspace = root / "demo"
+    workspace.mkdir(parents=True)
+    process = None
+    try:
+        process, port = _start_daemon(
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_SANDBOX_BIN": str(sandbox_bin),
+                "HIVE_SANDBOX_WORKSPACE_ROOT": str(root),
+            }
+        )
+        status, _, info = _request(port, "/v1/sandbox/native/status")
+        assert status == 200, info
+        assert info["available"] is True, info
+        assert info["backend"] == "landlock"
+        assert info["landlock"] is True
+
+        status, _, payload = _request(
+            port,
+            "/v1/sandbox/native/exec",
+            method="POST",
+            body=json.dumps(
+                {
+                    "command": "echo hello > out.txt && cat out.txt",
+                    "workspace": str(workspace),
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["exit_code"] == 0, payload
+        assert payload["timed_out"] is False
+        assert payload["stdout"].strip() == "hello"
+        assert (workspace / "out.txt").read_text().strip() == "hello"
+        assert payload["backend"] == "landlock"
+
+        escape = tmp_path / "escape.txt"
+        status, _, payload = _request(
+            port,
+            "/v1/sandbox/native/exec",
+            method="POST",
+            body=json.dumps(
+                {
+                    "command": f"echo bad > {escape}",
+                    "workspace": str(workspace),
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["exit_code"] != 0
+        assert not escape.exists()
+
+        status, _, payload = _request(
+            port,
+            "/v1/sandbox/native/exec",
+            method="POST",
+            body=json.dumps(
+                {
+                    "command": "sleep 5",
+                    "workspace": str(workspace),
+                    "timeout": 1,
+                }
+            ).encode(),
+        )
+        assert status == 200, payload
+        assert payload["timed_out"] is True
+        assert payload["exit_code"] == 124
+
+        status, _, payload = _request(
+            port,
+            "/v1/sandbox/native/exec",
+            method="POST",
+            body=json.dumps(
+                {
+                    "command": "true",
+                    "workspace": str(tmp_path),
+                }
+            ).encode(),
+        )
+        assert status == 422
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)

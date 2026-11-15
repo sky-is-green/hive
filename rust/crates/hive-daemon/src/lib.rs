@@ -36,10 +36,12 @@ pub mod memory;
 pub mod metrics;
 pub mod openapi;
 pub mod runtime;
+pub mod sandbox;
 pub mod sidecar;
 use memory::MemoryManager;
 use metrics::{Metrics, ObservedStream, prefix_engine_sample, route_label};
 use runtime::{ApiError, Runtime};
+use sandbox::SandboxConfig;
 use sidecar::Sidecar;
 
 pub const OWNER_HEADER: &str = "x-hive-owner";
@@ -103,6 +105,7 @@ pub struct AppState {
     runtime: Arc<Runtime>,
     memory: Arc<MemoryManager>,
     metrics: Arc<Metrics>,
+    sandbox: Arc<SandboxConfig>,
 }
 
 impl AppState {
@@ -284,6 +287,7 @@ impl AppState {
         let runtime = Arc::new(Runtime::new(&config.paths));
         let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
         let metrics = Arc::new(Metrics::new());
+        let sandbox = Arc::new(SandboxConfig::discover(&config.paths));
         Self {
             config,
             client,
@@ -291,6 +295,7 @@ impl AppState {
             runtime,
             memory,
             metrics,
+            sandbox,
         }
     }
 }
@@ -332,6 +337,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/memory/{conversation}/assemble", post(memory_assemble))
         .route("/v1/memory/{conversation}/reset", post(memory_reset))
         .route("/v1/memory/{conversation}/status", get(memory_status))
+        .route("/v1/sandbox/native/status", get(native_sandbox_status))
+        .route("/v1/sandbox/native/exec", post(native_sandbox_exec))
         .route("/v1/models", get(served_models))
         .route(
             "/v1/models/local",
@@ -1360,6 +1367,17 @@ async fn memory_status(
     UrlPath(conversation): UrlPath<String>,
 ) -> Response {
     runtime_json(Ok(state.memory.status(&conversation)))
+}
+
+async fn native_sandbox_status(State(state): State<Arc<AppState>>) -> Response {
+    runtime_json(Ok(state.sandbox.status()))
+}
+
+async fn native_sandbox_exec(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Response {
+    runtime_json(state.sandbox.exec(&body).await)
 }
 
 async fn openapi_spec(State(state): State<Arc<AppState>>) -> Response {

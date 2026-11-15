@@ -127,6 +127,21 @@ pub fn document() -> Value {
     }
 
     add(
+        "/v1/sandbox/native/status",
+        &[(
+            "get",
+            operation("Native Landlock/seccomp availability", "sandbox"),
+        )],
+    );
+    add(
+        "/v1/sandbox/native/exec",
+        &[(
+            "post",
+            operation("Run one command under Landlock and seccomp", "sandbox"),
+        )],
+    );
+
+    add(
         "/v1/models/local",
         &[
             ("get", operation("List the local GGUF library", "models")),

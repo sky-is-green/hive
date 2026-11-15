@@ -10,6 +10,7 @@ members = [
     "crates/hive-encoder",
     "crates/hive-memory",
     "crates/hive-cli",
+    "crates/hive-sandbox",
 ]
 
 [workspace.package]
