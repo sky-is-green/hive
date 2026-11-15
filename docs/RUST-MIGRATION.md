@@ -540,8 +540,9 @@ The supervisor is the reason to do this in Rust. Requirements:
 - [x] TUI parity on Status/Models/Stacks/Runs (four tabs, same data and
       navigation; interactive stop/log/approvals still live on the Python
       dashboard).
-- [x] The Python CLI is available as `hive-py`; `hive` still points at Python
-      until the final switch.
+- [x] The Python CLI is available as `hive-py`; `scripts/install-rust.sh`
+      installs the Rust runtime as `hive`. `main` remains frozen until the
+      final rewrite gate.
 
 **If G1 fails:** keep the Rust binary as an optional tool and do not proceed to
 Phase 2. The Python cleanup still stands.
@@ -852,8 +853,10 @@ rather than per-tier.
   routes remain for explicit probes.
 - **WASM plugins:** new `hive-plugins` crate runs import-free modules through
   wasmtime with deterministic fuel, a memory cap, one instance/table/memory,
-  and a SHA256 pin. `GET /v1/plugins` and `POST /v1/plugins/{name}/run` expose
-  the host. Format and ABI: `docs/PLUGINS.md`.
+  and a SHA256 pin. Signed manifests (Ed25519) are required by default and
+  verified against a trusted-keys file; `scripts/sign_plugin.py` generates,
+  signs, and verifies them. `GET /v1/plugins` and `POST /v1/plugins/{name}/run`
+  expose the host. Format and ABI: `docs/PLUGINS.md`.
 - Release tooling: `scripts/release_manifest.py` emits a manifest,
   `SHA256SUMS`, and a CycloneDX 1.5 SBOM; `--verify` checks staged files and
   `--sign-key` delegates to minisign. `dist-workspace.toml` declares the Linux
@@ -865,8 +868,8 @@ rather than per-tier.
   `HIVE_CGROUP_STRICT=1`. Restart is covered by
   `test_live_restart_policy_replaces_a_crashed_engine`; cgroup enforcement needs
   a delegated host.
-- Next: signed plugin manifests, provision the release signing key, and run the
-  cgroup path on a delegated host.
+- Next: provision the release signing key and wire it into CI; the plugin trust
+  root is now signed by default.
 
 ---
 
@@ -953,8 +956,8 @@ Rust column and run it on the release candidate. Do not weaken it.
   `main` merge.
 - The Python implementation is not deleted until one release after the Rust
   default and a green release gate.
-- The Rust binary is additive until G2: users can run `hive-py` or the Python
-  module directly.
+- The Rust binary is installed as `hive` by `scripts/install-rust.sh`; the
+  Python reference remains `hive-py` and the module entry point.
 - State files are forward-compatible: Rust reads the Python schemas; any new
   field is optional and preserved.
 - If a phase fails, revert the integration merge and keep the tag. No data

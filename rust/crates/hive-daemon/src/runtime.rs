@@ -841,6 +841,9 @@ impl Runtime {
         tier.insert("ctx".into(), Value::from(ctx));
         tier.insert("ngl".into(), Value::from(ngl));
         tier.insert("backend".into(), Value::String(backend.clone()));
+        if let Some(cgroup) = body.get("cgroup") {
+            tier.insert("cgroup".into(), cgroup.clone());
+        }
         for source in ["cache_type_k", "cache_type_v", "mmproj"] {
             if let Some(value) = body.get(source).and_then(Value::as_str)
                 && !value.trim().is_empty()

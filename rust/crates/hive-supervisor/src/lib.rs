@@ -743,10 +743,11 @@ fn apply_cgroup(
     let Some(spec) = tier.get("cgroup").and_then(Value::as_object) else {
         return Ok(None);
     };
-    let directory = options
-        .cgroup_root
-        .join(cgroup_component(stack_name))
-        .join(cgroup_component(role));
+    let directory = options.cgroup_root.join(format!(
+        "{}-{}",
+        cgroup_component(stack_name),
+        cgroup_component(role)
+    ));
     let applied = (|| -> std::io::Result<()> {
         std::fs::create_dir_all(&directory)?;
         for (file, key) in [

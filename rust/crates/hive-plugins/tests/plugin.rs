@@ -1,6 +1,11 @@
 use std::path::Path;
 
-use hive_plugins::PluginHost;
+use std::collections::BTreeMap;
+
+use base64::Engine as _;
+use ed25519_dalek::Signer;
+use hive_plugins::{PluginHost, PluginManifest};
+use rand_core::OsRng;
 use sha2::{Digest, Sha256};
 
 fn install(root: &Path, name: &str, wat: &str, mutate: impl FnOnce(&mut serde_json::Value)) {
@@ -66,7 +71,7 @@ const GROW: &str = r#"
 fn a_plugin_round_trips_json_under_limits() {
     let root = tempfile::tempdir().unwrap();
     install(root.path(), "echo", ECHO, |_| {});
-    let host = PluginHost::new(root.path()).unwrap();
+    let host = PluginHost::new_unsigned(root.path()).unwrap();
     let plugin = host.load("echo").unwrap();
     let input = br#"{"verdict":"pass"}"#;
     let result = plugin.run(input).unwrap();
@@ -80,7 +85,7 @@ fn an_infinite_loop_runs_out_of_fuel() {
     install(root.path(), "spin", SPIN, |manifest| {
         manifest["fuel"] = serde_json::json!(1000);
     });
-    let host = PluginHost::new(root.path()).unwrap();
+    let host = PluginHost::new_unsigned(root.path()).unwrap();
     let plugin = host.load("spin").unwrap();
     let error = match plugin.run(b"{}") {
         Ok(_) => panic!("expected plugin error"),
@@ -98,7 +103,7 @@ fn memory_growth_is_bounded() {
     install(root.path(), "grow", GROW, |manifest| {
         manifest["memory_mb"] = serde_json::json!(1);
     });
-    let host = PluginHost::new(root.path()).unwrap();
+    let host = PluginHost::new_unsigned(root.path()).unwrap();
     let plugin = host.load("grow").unwrap();
     let error = match plugin.run(b"{}") {
         Ok(_) => panic!("expected plugin error"),
@@ -116,7 +121,7 @@ fn a_hash_mismatch_is_rejected() {
     install(root.path(), "echo", ECHO, |manifest| {
         manifest["sha256"] = serde_json::json!("00");
     });
-    let host = PluginHost::new(root.path()).unwrap();
+    let host = PluginHost::new_unsigned(root.path()).unwrap();
     let error = match host.load("echo") {
         Ok(_) => panic!("expected load error"),
         Err(error) => error,
@@ -128,9 +133,73 @@ fn a_hash_mismatch_is_rejected() {
 fn listing_reports_manifest_validity() {
     let root = tempfile::tempdir().unwrap();
     install(root.path(), "echo", ECHO, |_| {});
-    let host = PluginHost::new(root.path()).unwrap();
+    let host = PluginHost::new_unsigned(root.path()).unwrap();
     let rows = host.list();
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0]["name"], "echo");
     assert_eq!(rows[0]["valid"], true);
+}
+
+fn install_signed(root: &Path, name: &str, wat: &str, key_id: &str) -> ed25519_dalek::SigningKey {
+    let directory = root.join(name);
+    std::fs::create_dir_all(&directory).unwrap();
+    let wasm = wat::parse_str(wat).unwrap();
+    std::fs::write(directory.join("module.wasm"), &wasm).unwrap();
+    let digest = format!("{:x}", Sha256::digest(&wasm));
+    let mut manifest = serde_json::json!({
+        "name": name,
+        "version": "0.1.0",
+        "module": "module.wasm",
+        "sha256": digest,
+        "fuel": 1_000_000,
+        "memory_mb": 2,
+        "max_output_bytes": 65536,
+        "key_id": key_id,
+    });
+    let parsed: PluginManifest = serde_json::from_value(manifest.clone()).unwrap();
+    let payload = parsed.signing_payload(key_id).unwrap();
+    let key = ed25519_dalek::SigningKey::generate(&mut OsRng);
+    let signature = key.sign(&payload);
+    manifest["signature"] =
+        serde_json::json!(base64::engine::general_purpose::STANDARD.encode(signature.to_bytes()));
+    std::fs::write(
+        directory.join("plugin.json"),
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+    key
+}
+
+#[test]
+fn a_signed_plugin_verifies_and_a_tampered_signature_is_rejected() {
+    let root = tempfile::tempdir().unwrap();
+    let key = install_signed(root.path(), "signed", ECHO, "release-test");
+    let trusted = BTreeMap::from([("release-test".to_owned(), key.verifying_key())]);
+    let host = PluginHost::with_keys(root.path(), trusted, true).unwrap();
+    let plugin = host.load("signed").unwrap();
+    let result = plugin.run(br#"{"verdict":"pass"}"#).unwrap();
+    assert_eq!(result.output, br#"{"verdict":"pass"}"#);
+
+    let manifest_path = root.path().join("signed/plugin.json");
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    manifest["signature"] = serde_json::json!("AAAA");
+    std::fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    let error = match host.load("signed") {
+        Ok(_) => panic!("expected signature failure"),
+        Err(error) => error,
+    };
+    assert!(error.contains("signature"), "{error}");
+}
+
+#[test]
+fn a_signed_plugin_requires_a_trusted_key() {
+    let root = tempfile::tempdir().unwrap();
+    install_signed(root.path(), "signed", ECHO, "release-test");
+    let host = PluginHost::with_keys(root.path(), BTreeMap::new(), true).unwrap();
+    let error = match host.load("signed") {
+        Ok(_) => panic!("expected trust failure"),
+        Err(error) => error,
+    };
+    assert!(error.contains("not trusted"), "{error}");
 }

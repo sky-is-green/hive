@@ -55,6 +55,30 @@ daemon does not download or execute plugins from arbitrary paths.
 
 ## Signing
 
-The manifest currently pins SHA256, not a publisher signature. Signed manifests
-are part of the release work: sign `plugin.json` with the release key and verify
-it before installation, then keep the hash pin for the module bytes.
+Signed manifests are required by default. The daemon trusts keys listed in
+`$HIVE_STATE_DIR/plugins/trusted-keys.json` (or the file named by
+`HIVE_PLUGIN_TRUSTED_KEYS`):
+
+```json
+{"keys": {"release-2026": "<base64 32-byte Ed25519 public key>"}}
+```
+
+Create a key and sign a plugin:
+
+```sh
+python scripts/sign_plugin.py generate \
+  --key-file ~/.hive/keys/plugin.json --key-id release-2026 \
+  --trusted-file /path/to/state/plugins/trusted-keys.json
+
+python scripts/sign_plugin.py sign \
+  --plugin-dir /path/to/state/plugins/arithmetic \
+  --key-file ~/.hive/keys/plugin.json
+```
+
+The signature covers the canonical manifest payload (name, version, module,
+sha256, fuel, memory limits, key_id) and is base64 Ed25519. `sign_plugin.py
+verify` checks it without starting the daemon. The SHA256 module pin is still
+enforced independently.
+
+For local development only, `HIVE_PLUGIN_REQUIRE_SIGNATURE=0` allows unsigned
+manifests; production should leave it at the default (`1`).

@@ -2499,3 +2499,75 @@ def test_live_restart_policy_replaces_a_crashed_engine(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=15)
+
+
+def test_live_cgroup_budget_is_applied(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the cgroup test")
+    uid = os.getuid()
+    parent = Path(
+        f"/sys/fs/cgroup/user.slice/user-{uid}.slice/user@{uid}.service"
+    )
+    if not parent.is_dir() or not os.access(parent, os.W_OK):
+        pytest.skip("no writable delegated cgroup v2 root")
+    root = parent / f"hive-test-{os.getpid()}-{int(time.time())}"
+    root.mkdir()
+    try:
+        (root / "cgroup.subtree_control").write_text("+memory +cpu +pids")
+    except OSError as error:
+        root.rmdir()
+        pytest.skip(f"cannot enable cgroup controllers: {error}")
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+                "HIVE_CGROUP_ROOT": str(root),
+                "HIVE_CGROUP_STRICT": "1",
+            },
+        )
+        launch = {
+            "model": model,
+            "backend": "cpu",
+            "ngl": 0,
+            "ctx_size": 512,
+            "key": "cg",
+            "cgroup": {
+                "memory_max": "268435456",
+                "cpu_max": "200000 100000",
+                "pids_max": 128,
+            },
+        }
+        status, _, instance = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+        )
+        assert status == 200, instance
+        directory = root / "cg-face"
+        assert directory.is_dir(), list(root.iterdir())
+        assert (directory / "memory.max").read_text().strip() == "268435456"
+        assert (directory / "cpu.max").read_text().strip() == "200000 100000"
+        assert (directory / "pids.max").read_text().strip() == "128"
+        assert str(instance["pid"]) in (directory / "cgroup.procs").read_text()
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=cg", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+        deadline = time.time() + 10
+        while directory.exists() and time.time() < deadline:
+            time.sleep(0.1)
+        assert not directory.exists(), "cgroup directory was not cleaned up"
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)
+        try:
+            root.rmdir()
+        except OSError:
+            pass

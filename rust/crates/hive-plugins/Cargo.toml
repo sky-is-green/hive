@@ -5,11 +5,16 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+base64 = "0.22"
+ed25519-dalek = "2"
 serde.workspace = true
 serde_json.workspace = true
 sha2 = "0.10"
 wasmtime = { version = "51.0.0-rc.1", default-features = false, features = ["cranelift", "runtime", "std"] }
 
 [dev-dependencies]
+base64 = "0.22"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
 tempfile.workspace = true
 wat = "1"

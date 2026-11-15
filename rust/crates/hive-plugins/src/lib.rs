@@ -7,9 +7,12 @@
 //! fuel and a linear-memory cap, so a bad verifier cannot hang or exhaust the
 //! daemon.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use base64::Engine as _;
+use ed25519_dalek::{Signature, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use wasmtime::{
@@ -35,6 +38,38 @@ pub struct PluginManifest {
     pub memory_mb: usize,
     #[serde(default = "default_max_output")]
     pub max_output_bytes: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+}
+
+#[derive(Serialize)]
+struct SigningPayload<'a> {
+    name: &'a str,
+    version: &'a str,
+    module: &'a str,
+    sha256: &'a str,
+    fuel: u64,
+    memory_mb: usize,
+    max_output_bytes: usize,
+    key_id: &'a str,
+}
+
+impl PluginManifest {
+    pub fn signing_payload(&self, key_id: &str) -> Result<Vec<u8>, String> {
+        serde_json::to_vec(&SigningPayload {
+            name: &self.name,
+            version: &self.version,
+            module: &self.module,
+            sha256: &self.sha256,
+            fuel: self.fuel,
+            memory_mb: self.memory_mb,
+            max_output_bytes: self.max_output_bytes,
+            key_id,
+        })
+        .map_err(|error| format!("cannot encode plugin signing payload: {error}"))
+    }
 }
 
 fn default_fuel() -> u64 {
@@ -52,6 +87,8 @@ fn default_max_output() -> usize {
 pub struct PluginHost {
     directory: PathBuf,
     engine: Engine,
+    trusted_keys: BTreeMap<String, VerifyingKey>,
+    require_signature: bool,
 }
 
 pub struct Plugin {
@@ -68,7 +105,21 @@ pub struct PluginRun {
 }
 
 impl PluginHost {
-    pub fn new(directory: impl Into<PathBuf>) -> Result<Self, String> {
+    pub fn new(directory: impl Into<PathBuf>, require_signature: bool) -> Result<Self, String> {
+        let directory = directory.into();
+        let trusted_keys = load_trusted_keys(&directory)?;
+        Self::with_keys(directory, trusted_keys, require_signature)
+    }
+
+    pub fn new_unsigned(directory: impl Into<PathBuf>) -> Result<Self, String> {
+        Self::with_keys(directory.into(), BTreeMap::new(), false)
+    }
+
+    pub fn with_keys(
+        directory: impl Into<PathBuf>,
+        trusted_keys: BTreeMap<String, VerifyingKey>,
+        require_signature: bool,
+    ) -> Result<Self, String> {
         let mut config = Config::new();
         config.consume_fuel(true);
         let engine = Engine::new(&config)
@@ -76,6 +127,8 @@ impl PluginHost {
         Ok(Self {
             directory: directory.into(),
             engine,
+            trusted_keys,
+            require_signature,
         })
     }
 
@@ -104,6 +157,8 @@ impl PluginHost {
                     "module": manifest.module,
                     "fuel": manifest.fuel,
                     "memory_mb": manifest.memory_mb,
+                    "key_id": manifest.key_id,
+                    "signed": manifest.signature.is_some(),
                     "valid": valid,
                 }))
             })
@@ -130,6 +185,7 @@ impl PluginHost {
                 manifest.name
             ));
         }
+        self.verify_manifest(&manifest)?;
         let module_path = directory.join(&manifest.module);
         let canonical_dir = directory
             .canonicalize()
@@ -150,6 +206,30 @@ impl PluginHost {
             module,
             engine: self.engine.clone(),
         })
+    }
+
+    fn verify_manifest(&self, manifest: &PluginManifest) -> Result<(), String> {
+        if !self.require_signature && manifest.signature.is_none() {
+            return Ok(());
+        }
+        let key_id = manifest
+            .key_id
+            .as_deref()
+            .ok_or_else(|| "plugin manifest has no key_id".to_owned())?;
+        let Some(key) = self.trusted_keys.get(key_id) else {
+            return Err(format!("plugin signing key {key_id:?} is not trusted"));
+        };
+        let signature = manifest
+            .signature
+            .as_deref()
+            .ok_or_else(|| "plugin manifest has no signature".to_owned())?;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(signature)
+            .map_err(|error| format!("plugin signature is not valid base64: {error}"))?;
+        let signature = Signature::from_slice(&bytes)
+            .map_err(|error| format!("plugin signature is malformed: {error}"))?;
+        key.verify_strict(&manifest.signing_payload(key_id)?, &signature)
+            .map_err(|_| "plugin signature does not verify".to_owned())
     }
 
     fn hash_matches(&self, manifest: &PluginManifest, module: &Path) -> bool {
@@ -247,6 +327,36 @@ fn write_memory(
         .map_err(|error| format!("cannot write plugin input: {error}"))
 }
 
+fn load_trusted_keys(directory: &Path) -> Result<BTreeMap<String, VerifyingKey>, String> {
+    let path = std::env::var_os("HIVE_PLUGIN_TRUSTED_KEYS")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| directory.join("trusted-keys.json"));
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return Ok(BTreeMap::new());
+    };
+    let data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|error| format!("invalid trusted plugin keys: {error}"))?;
+    let mut keys = BTreeMap::new();
+    let Some(entries) = data.get("keys").and_then(serde_json::Value::as_object) else {
+        return Ok(keys);
+    };
+    for (id, value) in entries {
+        let encoded = value
+            .as_str()
+            .ok_or_else(|| format!("trusted plugin key {id:?} is not a string"))?;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .map_err(|error| format!("trusted plugin key {id:?} is not base64: {error}"))?;
+        let bytes: [u8; 32] = bytes
+            .try_into()
+            .map_err(|_| format!("trusted plugin key {id:?} is not 32 bytes"))?;
+        let key = VerifyingKey::from_bytes(&bytes)
+            .map_err(|error| format!("trusted plugin key {id:?} is invalid: {error}"))?;
+        keys.insert(id.clone(), key);
+    }
+    Ok(keys)
+}
+
 fn validate_name(name: &str) -> Result<(), String> {
     if name.is_empty()
         || name.len() > 128
@@ -262,6 +372,26 @@ fn validate_name(name: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn signing_payload_matches_the_documented_contract() {
+        let manifest = PluginManifest {
+            name: "demo".into(),
+            version: "0.1.0".into(),
+            module: "module.wasm".into(),
+            sha256: "abc".into(),
+            fuel: 1000,
+            memory_mb: 1,
+            max_output_bytes: 65536,
+            key_id: None,
+            signature: None,
+        };
+        let payload = manifest.signing_payload("release-test").unwrap();
+        assert_eq!(
+            String::from_utf8(payload).unwrap(),
+            r#"{"name":"demo","version":"0.1.0","module":"module.wasm","sha256":"abc","fuel":1000,"memory_mb":1,"max_output_bytes":65536,"key_id":"release-test"}"#
+        );
+    }
 
     #[test]
     fn plugin_names_are_bounded() {

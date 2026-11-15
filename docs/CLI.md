@@ -45,9 +45,9 @@ suite's model downloads are not required.  An installed wheel keeps mutable
 state under `HIVE_HOME` (default `~/.hive`) instead of site-packages; a source
 checkout uses the repo.  `hive doctor` tells you what is missing.
 
-`hive-py` is the same Python entry point.  Phase 1 adds it now so the Rust
-binary can take the `hive` name at the final switch without breaking the
-Python CLI for one release.
+`hive-py` is the Python reference entry point. The Rust runtime takes the
+`hive` name through `scripts/install-rust.sh`, so both CLIs coexist for one
+release. See `docs/INSTALL.md`.
 
 ## Rust Phase 1 binary
 

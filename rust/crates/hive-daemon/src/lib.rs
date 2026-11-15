@@ -66,6 +66,8 @@ pub struct DaemonConfig {
     pub encoder_url: Option<String>,
     /// `harness/webui` root; `None` disables static console serving.
     pub webui: Option<PathBuf>,
+    /// Require signed WASM plugin manifests by default.
+    pub plugin_require_signature: bool,
     pub token: Option<String>,
     pub paths: Paths,
 }
@@ -88,6 +90,14 @@ impl DaemonConfig {
             sidecar_env: Vec::new(),
             encoder_url: None,
             webui,
+            plugin_require_signature: std::env::var("HIVE_PLUGIN_REQUIRE_SIGNATURE")
+                .map(|value| {
+                    !matches!(
+                        value.trim().to_ascii_lowercase().as_str(),
+                        "0" | "false" | "no"
+                    )
+                })
+                .unwrap_or(true),
             token,
             paths,
         }
@@ -291,9 +301,12 @@ impl AppState {
         let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
         let metrics = Arc::new(Metrics::new());
         let sandbox = Arc::new(SandboxConfig::discover(&config.paths));
-        let plugins = PluginHost::new(config.paths.state_dir.join("plugins"))
-            .ok()
-            .map(Arc::new);
+        let plugins = PluginHost::new(
+            config.paths.state_dir.join("plugins"),
+            config.plugin_require_signature,
+        )
+        .ok()
+        .map(Arc::new);
         Self {
             config,
             client,
@@ -1973,6 +1986,7 @@ mod tests {
         );
         let mut config = DaemonConfig::new("127.0.0.1", 0, None);
         config.paths.state_dir = state_dir;
+        config.plugin_require_signature = false;
         let app = router(config);
 
         let response = app
