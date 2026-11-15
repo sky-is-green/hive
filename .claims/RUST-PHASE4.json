@@ -1,0 +1,25 @@
+{
+  "task_id": "RUST-PHASE4",
+  "worker": "opencode @ /run/media/penis/cbfa1404-241a-484e-9136-de07ee2fa8ad/work/worktrees/hive-rust-phase0",
+  "coordination_doc": "docs/RUST-MIGRATION.md",
+  "provider": "local-opencode",
+  "target_files": [
+    ".claims/**",
+    "docs/**",
+    "rust/**",
+    "tests/conformance/**",
+    "tests/unit/**",
+    "harness/**",
+    "splinter/**",
+    "experiments/**",
+    "scripts/**",
+    "README.md",
+    ".github/**",
+    "dist-workspace.toml",
+    "rust/Cargo.lock",
+    "pyproject.toml"
+  ],
+  "beacon": "Phase 4: zero-downtime swaps, native observability, sandbox/WASM, fleet/release",
+  "updated": "2026-11-15T16:49:51Z",
+  "lease": "24h"
+}

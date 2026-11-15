@@ -62,7 +62,8 @@ all = [
 ]
 
 [project.scripts]
-hive = "harness.cli:main"
+# The Rust installer owns `hive`; the Python wheel keeps the reference CLI
+# under `hive-py` so both can coexist for one release.
 hive-py = "harness.cli:main"
 hivebench = "experiments.generate_data:main"
 hivebench-protocol = "experiments.run_p1_p10:main"
