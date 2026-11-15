@@ -960,6 +960,57 @@ impl Runtime {
         self.stop_server(Some(key)).await
     }
 
+    /// Poll until *key* is present and healthy, or the deadline expires.
+    pub async fn wait_healthy(
+        self: &Arc<Self>,
+        key: &str,
+        timeout: Duration,
+    ) -> Result<Value, ApiError> {
+        let deadline = Instant::now() + timeout;
+        loop {
+            let runtime = Arc::clone(self);
+            let status = tokio::task::spawn_blocking(move || runtime.server_status())
+                .await
+                .map_err(|error| ApiError::new(500, format!("status worker failed: {error}")))?;
+            if let Some(instance) =
+                status
+                    .get("instances")
+                    .and_then(Value::as_array)
+                    .and_then(|instances| {
+                        instances.iter().find(|instance| {
+                            instance.get("key").and_then(Value::as_str) == Some(key)
+                        })
+                    })
+                && instance.get("healthy").and_then(Value::as_bool) == Some(true)
+            {
+                return Ok(instance.clone());
+            }
+            if Instant::now() >= deadline {
+                return Err(ApiError::new(
+                    504,
+                    format!("engine {key:?} did not become healthy"),
+                ));
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+
+    /// Rename a loaded tier key in place.
+    pub fn rename_key(&self, from: &str, to: &str) -> bool {
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        for applied in &mut state.fleet {
+            for tier in &mut applied.tiers {
+                if tier.get("key").and_then(Value::as_str) == Some(from) {
+                    if let Some(object) = tier.as_object_mut() {
+                        object.insert("key".into(), Value::String(to.to_owned()));
+                    }
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     pub async fn unload_loaded(&self) -> Value {
         let (all, keys) = {
             let _guard = self.apply_lock.lock().await;

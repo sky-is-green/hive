@@ -2193,3 +2193,125 @@ def test_live_native_memory_comb_matches_python(tmp_path):
             process.wait(timeout=10)
         os.environ.pop("HIVE_MEMORY_BACKEND", None)
         os.environ.pop("HIVE_MEMORY_URL", None)
+
+
+def test_daemon_prometheus_metrics_and_readiness(tmp_path):
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        status, _, health = _request(port, "/health")
+        assert status == 200
+        status, _, ready = _request(port, "/ready")
+        assert status == 200, ready
+        assert ready["ready"] is True
+        assert ready["sidecar"] is True
+        assert ready["engine"] is True
+        assert ready["instances"] == 0
+
+        status, _, body = _raw_request(port, "/metrics")
+        assert status == 200
+        text = body.decode() if isinstance(body, bytes) else str(body)
+        assert "hive_up 1" in text
+        assert "hive_uptime_seconds " in text
+        assert "hive_process_resident_memory_bytes " in text
+        assert (
+            'hive_http_requests_total{method="GET",route="/health",status="200"}'
+            in text
+        )
+        assert "hive_http_request_duration_seconds_count " in text
+        assert "hive_stream_ttft_seconds_count 0" in text
+        assert "hive_engine_up{" not in text
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
+def test_live_zero_downtime_server_swap(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the swap test")
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+            },
+        )
+        launch = {
+            "model": model,
+            "backend": "cpu",
+            "ngl": 0,
+            "ctx_size": 512,
+            "key": "swap",
+        }
+        status, _, first = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+        )
+        assert status == 200, first
+        old_port = first["port"]
+        old_pid = first["pid"]
+
+        status, _, payload = _request(
+            port,
+            "/v1/server/swap",
+            method="POST",
+            body=json.dumps(dict(launch, replace="swap")).encode(),
+        )
+        assert status == 200, payload
+        assert payload["key"] == "swap"
+        assert payload["replaced"] == "swap"
+        assert payload["old_port"] == old_port
+        swapped = payload["instance"]
+        assert swapped["port"] != old_port
+        assert swapped["pid"] != old_pid
+
+        status, _, server = _request(port, "/v1/server/status")
+        assert status == 200
+        assert server["running"] is True
+        assert {row["key"] for row in server["loaded"]} == {"swap"}
+        assert server["loaded"][0]["port"] == swapped["port"]
+
+        status, _, providers = _request(port, "/v1/provider/config")
+        assert status == 200
+        assert providers["default"] == "local-swap"
+        active = {
+            provider["name"]: provider for provider in providers["providers"]
+        }["local-swap"]
+        assert active["base_url"] == f"http://127.0.0.1:{swapped['port']}"
+
+        status, _, engines = _request(port, "/v1/engines")
+        assert engines["default"] == "local-swap"
+        engine = {row["name"]: row for row in engines["engines"]}["local-swap"]
+        assert engine["base_url"] == f"http://127.0.0.1:{swapped['port']}"
+
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                with urllib.request.urlopen(
+                    f"http://127.0.0.1:{old_port}/v1/models", timeout=0.5
+                ) as response:
+                    if response.status != 200:
+                        break
+            except OSError:
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail(f"old engine on port {old_port} is still serving")
+
+        status, _, payload = _request(
+            port, "/v1/server/swap", method="POST",
+            body=json.dumps(dict(launch, replace="missing")).encode(),
+        )
+        assert status == 404
+        status, _, server = _request(port, "/v1/server/status")
+        assert {row["key"] for row in server["loaded"]} == {"swap"}
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)

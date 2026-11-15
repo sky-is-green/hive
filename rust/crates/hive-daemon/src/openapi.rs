@@ -115,6 +115,10 @@ pub fn document() -> Value {
     }
     for (path, summary) in [
         ("/v1/server/start", "Start a one-tier model server"),
+        (
+            "/v1/server/swap",
+            "Start a replacement, health-gate it, then drain the old engine",
+        ),
         ("/v1/server/stop", "Stop one instance or the whole fleet"),
         ("/v1/server/unload", "Unload one instance"),
         ("/v1/server/unload-loaded", "Unload every loaded model"),

@@ -33,10 +33,12 @@ use tower_http::trace::TraceLayer;
 
 pub mod encoder;
 pub mod memory;
+pub mod metrics;
 pub mod openapi;
 pub mod runtime;
 pub mod sidecar;
 use memory::MemoryManager;
+use metrics::{Metrics, ObservedStream, prefix_engine_sample, route_label};
 use runtime::{ApiError, Runtime};
 use sidecar::Sidecar;
 
@@ -100,6 +102,7 @@ pub struct AppState {
     managed: Option<Arc<Sidecar>>,
     runtime: Arc<Runtime>,
     memory: Arc<MemoryManager>,
+    metrics: Arc<Metrics>,
 }
 
 impl AppState {
@@ -280,12 +283,14 @@ impl AppState {
         let client = reqwest::Client::builder().build().unwrap_or_default();
         let runtime = Arc::new(Runtime::new(&config.paths));
         let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
+        let metrics = Arc::new(Metrics::new());
         Self {
             config,
             client,
             managed,
             runtime,
             memory,
+            metrics,
         }
     }
 }
@@ -298,6 +303,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
     let state = Arc::new(AppState::with_sidecar(config, managed));
     Router::new()
         .route("/health", get(health))
+        .route("/ready", get(ready))
+        .route("/metrics", get(prometheus_metrics))
         .route("/v1/setup/status", get(setup_status))
         .route("/v1/version", get(version_route))
         .route("/v1/config", get(config_route))
@@ -316,6 +323,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/server/metrics", get(server_metrics))
         .route("/v1/server/fit", get(server_fit))
         .route("/v1/server/start", post(server_start))
+        .route("/v1/server/swap", post(server_swap))
         .route("/v1/server/stop", post(server_stop))
         .route("/v1/server/unload", post(server_unload))
         .route("/v1/server/unload-loaded", post(server_unload_loaded))
@@ -353,7 +361,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .fallback(dispatch)
         .layer(middleware::from_fn_with_state(state.clone(), token_guard))
         .layer(middleware::from_fn(request_id))
-        .layer(middleware::from_fn(access_log))
+        .layer(middleware::from_fn_with_state(state.clone(), access_log))
         .layer(cors_layer())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -498,11 +506,17 @@ fn cors_layer() -> CorsLayer {
         .allow_headers(Any)
 }
 
-async fn access_log(request: Request, next: Next) -> Response {
+async fn access_log(State(state): State<Arc<AppState>>, request: Request, next: Next) -> Response {
     let method = request.method().clone();
     let path = request.uri().path().to_owned();
     let started = std::time::Instant::now();
     let response = next.run(request).await;
+    state.metrics.observe_request(
+        method.as_str(),
+        &route_label(&path),
+        response.status().as_u16(),
+        started.elapsed(),
+    );
     let request_id = response
         .headers()
         .get(REQUEST_ID_HEADER)
@@ -595,6 +609,120 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
         payload.insert("error".into(), Value::String(error));
     }
     owned(StatusCode::OK, Json(Value::Object(payload)).into_response())
+}
+
+async fn ready(State(state): State<Arc<AppState>>) -> Response {
+    let sidecar_ok = if state.config.sidecar_url.is_some() {
+        sidecar_health(&state).await.is_ok()
+    } else {
+        true
+    };
+    let runtime = Arc::clone(&state.runtime);
+    let status = match tokio::task::spawn_blocking(move || runtime.server_status()).await {
+        Ok(status) => status,
+        Err(error) => {
+            return owned(
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "ready": false,
+                    "detail": format!("status worker failed: {error}")
+                }))
+                .into_response(),
+            );
+        }
+    };
+    let instances = status
+        .get("instances")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let engine_expected = !instances.is_empty();
+    let engine_ok = !engine_expected
+        || status
+            .get("running")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+    let ready = sidecar_ok && engine_ok;
+    let status_code = if ready {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    owned(
+        status_code,
+        Json(serde_json::json!({
+            "ready": ready,
+            "sidecar": sidecar_ok,
+            "engine": engine_ok,
+            "instances": instances.len(),
+        }))
+        .into_response(),
+    )
+}
+
+async fn prometheus_metrics(State(state): State<Arc<AppState>>) -> Response {
+    let runtime = Arc::clone(&state.runtime);
+    let status = match tokio::task::spawn_blocking(move || runtime.server_status()).await {
+        Ok(status) => status,
+        Err(error) => {
+            return owned(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "detail": format!("status worker failed: {error}")
+                }))
+                .into_response(),
+            );
+        }
+    };
+    let instances = status
+        .get("instances")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut engine_samples = Vec::new();
+    for instance in &instances {
+        if instance.get("healthy").and_then(Value::as_bool) != Some(true) {
+            continue;
+        }
+        let port = instance.get("port").and_then(Value::as_u64).unwrap_or(0);
+        if port == 0 || port > u16::MAX as u64 {
+            continue;
+        }
+        let tier = instance
+            .get("key")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .or_else(|| instance.get("role").and_then(Value::as_str))
+            .unwrap_or("");
+        let model = instance.get("model").and_then(Value::as_str).unwrap_or("");
+        let Ok(response) = state
+            .client
+            .get(format!("http://127.0.0.1:{port}/metrics"))
+            .timeout(Duration::from_secs(1))
+            .send()
+            .await
+        else {
+            continue;
+        };
+        if !response.status().is_success() {
+            continue;
+        }
+        let text = response.text().await.unwrap_or_default();
+        for line in text.lines() {
+            if let Some(sample) = prefix_engine_sample(line, tier, model, port as u16) {
+                engine_samples.push(sample);
+            }
+        }
+    }
+    let body = state.metrics.render(&engine_samples, &instances);
+    (
+        [
+            (CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8"),
+            (CACHE_CONTROL, "no-store"),
+        ],
+        body,
+    )
+        .into_response()
 }
 
 async fn sidecar_health(state: &AppState) -> Result<u64, String> {
@@ -835,6 +963,123 @@ async fn server_start(State(state): State<Arc<AppState>>, Json(body): Json<Value
         }
         Err(error) => runtime_error(error),
     }
+}
+
+async fn server_swap(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let old_key = body
+        .get("replace")
+        .or_else(|| body.get("old_key"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|key| !key.is_empty());
+    let Some(old_key) = old_key else {
+        return runtime_error(ApiError {
+            status: 422,
+            detail: "swap needs replace=<loaded key>".into(),
+        });
+    };
+    let final_key = body
+        .get("key")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|key| !key.is_empty())
+        .unwrap_or(old_key)
+        .to_owned();
+    let launch_key = if final_key == old_key {
+        format!("{old_key}-swap")
+    } else {
+        final_key.clone()
+    };
+
+    let runtime = Arc::clone(&state.runtime);
+    let status = match tokio::task::spawn_blocking(move || runtime.server_status()).await {
+        Ok(status) => status,
+        Err(error) => {
+            return runtime_error(ApiError {
+                status: 500,
+                detail: format!("status worker failed: {error}"),
+            });
+        }
+    };
+    let old_instance = status
+        .get("instances")
+        .and_then(Value::as_array)
+        .and_then(|instances| {
+            instances
+                .iter()
+                .find(|instance| instance.get("key").and_then(Value::as_str) == Some(old_key))
+        })
+        .cloned();
+    let Some(old_instance) = old_instance else {
+        return runtime_error(ApiError {
+            status: 404,
+            detail: format!("no such loaded instance: {old_key}"),
+        });
+    };
+
+    let mut launch = body.clone();
+    launch["key"] = Value::String(launch_key.clone());
+    let instance = match state.runtime.start_server(&launch).await {
+        Ok(instance) => instance,
+        Err(error) => return runtime_error(error),
+    };
+    let health_timeout = body
+        .get("health_timeout_s")
+        .and_then(Value::as_f64)
+        .unwrap_or(60.0)
+        .max(1.0);
+    let new_instance = match state
+        .runtime
+        .wait_healthy(&launch_key, Duration::from_secs_f64(health_timeout))
+        .await
+    {
+        Ok(instance) => instance,
+        Err(error) => {
+            let _ = state.runtime.stop_server(Some(&launch_key)).await;
+            return runtime_error(error);
+        }
+    };
+
+    // Flip new requests first; only then drain/stop the old engine.
+    state.mirror_provider_add(&new_instance).await;
+    state.mirror_engine_add(&new_instance).await;
+
+    if let Err(error) = state.runtime.stop_server(Some(old_key)).await {
+        return runtime_error(error);
+    }
+    state.mirror_provider_remove(&[old_key.to_owned()]).await;
+    state.mirror_engine_remove(&[old_key.to_owned()]).await;
+
+    let mut final_instance = new_instance;
+    if launch_key != final_key {
+        let renamed = state.runtime.rename_key(&launch_key, &final_key);
+        if let Some(object) = final_instance.as_object_mut() {
+            object.insert("key".into(), Value::String(final_key.clone()));
+        }
+        state.mirror_provider_add(&final_instance).await;
+        state.mirror_engine_add(&final_instance).await;
+        state
+            .mirror_provider_remove(std::slice::from_ref(&launch_key))
+            .await;
+        state
+            .mirror_engine_remove(std::slice::from_ref(&launch_key))
+            .await;
+        if !renamed {
+            return runtime_error(ApiError {
+                status: 500,
+                detail: format!("swapped engine {launch_key:?} vanished before rename"),
+            });
+        }
+    }
+
+    runtime_json(Ok(serde_json::json!({
+        "ok": true,
+        "key": final_key,
+        "replaced": old_key,
+        "old_port": old_instance.get("port").cloned().unwrap_or(Value::Null),
+        "instance": final_instance,
+        "started": instance.get("port").cloned().unwrap_or(Value::Null),
+    })))
 }
 
 async fn server_stop(
@@ -1415,10 +1660,17 @@ async fn proxy_to_base(
         HeaderName::from_static(OWNER_HEADER),
         HeaderValue::from_static("python"),
     );
-    let stream = upstream.bytes_stream();
+    let body = if path.contains("/stream") {
+        Body::from_stream(ObservedStream::new(
+            upstream.bytes_stream(),
+            Arc::clone(&state.metrics),
+        ))
+    } else {
+        Body::from_stream(upstream.bytes_stream())
+    };
     Response::builder()
         .status(status)
-        .body(Body::from_stream(stream))
+        .body(body)
         .map(|mut response| {
             *response.headers_mut() = headers;
             response

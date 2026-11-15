@@ -206,9 +206,17 @@ Severity:
 | P3-09 | No torch-free environment test yet; the encoder path avoids loading sentence-transformers, but the sidecar install still carries torch for other surfaces. | blocker | fixed — torch-free venv runs chat | A minimal runtime venv without torch/transformers runs chat and memory end-to-end. |
 | P3-10 | Daemon-managed encoder starts only for a managed sidecar (`HARNESS_EMBEDDING_BACKEND=rust`); an external `--sidecar-url` must be pointed at `hive-encoder` manually. | minor | fixed — documented external-sidecar step | External-sidecar mode accepts an encoder URL or documents the manual step. |
 
-## Phase 4 — optional differentiators
+## Phase 4 — differentiators
 
-No caveats recorded yet.
+| ID | Caveat | Severity | Status | Close when |
+|---|---|---|---|---|
+| P4-01 | `/metrics` exposes daemon request/latency counters, stream TTFT/delta events, process RSS/threads, per-engine up/pid gauges, and healthy llama-server samples. VRAM/queue/tok-s labels only appear if the engine build exposes them. `/ready` gates on sidecar and expected engines. | should | fixed — native Prometheus metrics + readiness | The operational metrics contract is native and tested. |
+| P4-02 | Zero-downtime swaps start the replacement first, health-gate it, flip the sidecar provider/engine default, then drain the old engine; the original key is preserved. | should | fixed — `/v1/server/swap` + live test | A live swap leaves the old port closed and the same key serving on the new port. |
+| P4-03 | The default sandbox is still Docker; the Python `SandboxPolicy` remains the policy oracle and local fallback requires explicit approval. | blocker | open | Landlock/seccomp confinement runs tools natively with no Docker requirement. |
+| P4-04 | WASM verifier/tool plugins are not implemented; verifier selection is still in-process Python/Rust code. | should | open | Plugins run under wasmtime with fuel and memory limits and a signed manifest. |
+| P4-05 | Releases are not signed and there is no SBOM or auto-update path. | should | open | Release artifacts carry signatures/checksums plus an SBOM, and update verification is documented. |
+| P4-06 | Multi-stack supervision has no cgroup budgets or restart policies; a stack is all-or-nothing. | should | open | Stacks run under cgroup limits and restart with bounded backoff. |
+| P4-07 | Stream TTFT and delta counts are route-level, and delta counts are approximate SSE event counts rather than tokenizer tokens. | minor | open | Per-tier TTFT/token metrics come from engine usage data. |
 
 ---
 

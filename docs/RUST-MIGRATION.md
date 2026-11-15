@@ -98,7 +98,7 @@ Bloat is localized, not pervasive:
   image/digest, optional gVisor, workspace confinement, and audited fallback.
 - Memory core and encoder, only if Phase 3 passes its gate.
 - A native Landlock/seccomp sandbox backend, WASM plugins and observability
-  (Phase 4, optional).
+  (Phase 4, staged as 4A operations, 4B execution isolation, 4C fleet/release).
 
 ### Out of scope
 
@@ -806,16 +806,34 @@ The encoder slice is in `rust/crates/hive-encoder`:
 
 ---
 
-## 9. Phase 4 — optional differentiators
+## 9. Phase 4 — differentiators (committed)
 
-Only after G3, and only if they serve the product:
+Phase 4 is part of the rewrite, staged after G3:
 
-- **Zero-downtime engine swaps:** blue/green ports, health-gated cutover.
-- **Native sandbox by default:** Landlock/seccomp, no Docker requirement.
-- **WASM verifier/tool plugins:** `wasmtime`, fuel and memory limits.
-- **Per-tier observability:** tok/s, TTFT, VRAM, queue depth, Prometheus.
-- **Auto-update and signed releases:** `cargo-dist`, checksums, SBOM.
-- **Multi-stack supervision:** cgroup budgets, restart policies.
+- **4A — runtime operations:** native Prometheus metrics, readiness probes,
+  zero-downtime engine swaps.
+- **4B — execution isolation:** Landlock/seccomp sandbox by default, WASM
+  verifier/tool plugins with fuel and memory limits.
+- **4C — fleet and release:** multi-stack cgroup budgets/restart policies,
+  signed releases, SBOM, auto-update.
+
+### Phase 4A status (2026-11-15)
+
+- `/metrics` renders the Prometheus text contract: request counters and
+  latency histograms, stream time-to-first-token and delta events, process
+  RSS/threads, per-engine `up`/`pid` gauges, and healthy llama-server samples
+  prefixed with `hive_` plus tier/model/port labels.
+- `/ready` returns 503 until the sidecar and any expected engines are healthy;
+  `/health` remains the liveness probe.
+- `/v1/server/swap` starts the replacement on a new port, waits for it to be
+  healthy, flips the sidecar provider/engine default, then drains and stops the
+  old engine. The public key is preserved. Covered by
+  `test_live_zero_downtime_server_swap`.
+- The old `/v1/server/metrics` JSON route remains for the console.
+
+Remaining 4A work is operational polish: per-tier VRAM/queue metrics depend on
+what the selected llama-server build exposes, and stream TTFT is route-level
+rather than per-tier.
 
 ---
 
@@ -829,7 +847,7 @@ Only after G3, and only if they serve the product:
 | 2a | Rust daemon + lifecycle/stacks/models routes | 6–10 weeks | — |
 | 2b | remaining API + gateway + sidecar | 8–14 weeks | G2 |
 | 3 | ONNX encoder + memory core | 8–16 weeks | G3 |
-| 4 | sandbox/WASM/observability | as needed | — |
+| 4 | operations + sandbox/WASM + fleet/release | as needed | — |
 
 Estimates assume one experienced engineer with the existing test suite as the
 oracle. Agent-assisted work can compress the coding but not the review, live

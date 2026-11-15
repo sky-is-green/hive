@@ -896,8 +896,10 @@ name = "hive-daemon"
 version = "0.2.0"
 dependencies = [
  "axum",
+ "bytes",
  "chrono",
  "clap",
+ "futures-util",
  "hive-core",
  "hive-memory",
  "hive-models",
