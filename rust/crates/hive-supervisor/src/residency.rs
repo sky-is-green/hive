@@ -51,22 +51,7 @@ pub struct Plan {
 
 /// Cards the plan may place on, honouring `HIP_VISIBLE_DEVICES` indices.
 pub fn visible_devices() -> Vec<Device> {
-    let mut devices = hardware::amd_devices().unwrap_or_default();
-    if let Some(raw) = std::env::var_os("HIP_VISIBLE_DEVICES") {
-        let text = raw.to_string_lossy();
-        if !text.trim().is_empty() {
-            let indices: Option<Vec<i64>> = text
-                .split(',')
-                .map(str::trim)
-                .filter(|token| !token.is_empty())
-                .map(|token| token.parse::<i64>().ok())
-                .collect();
-            if let Some(indices) = indices {
-                devices.retain(|device| indices.contains(&(device.index as i64)));
-            }
-        }
-    }
-    devices
+    hardware::devices()
 }
 
 /// Build the residency plan. No devices means the check is skipped with a
@@ -209,6 +194,10 @@ fn charge_tier(
         warnings.push(format!("tier {role}: cannot size {}", path.display()));
         return (false, false);
     };
+    if tier.get("ngl").and_then(Value::as_i64) == Some(0) {
+        warnings.push(format!("tier {role}: ngl=0, CPU-only; no VRAM charged"));
+        return (true, true);
+    }
 
     let estimate = hive_models::kv::estimate_path(&path);
     let ctx = tier.get("ctx").and_then(Value::as_i64).unwrap_or(0);
@@ -526,6 +515,29 @@ mod tests {
             plan.warnings
                 .iter()
                 .any(|warning| warning.contains("desktop cost"))
+        );
+    }
+
+    #[test]
+    fn a_cpu_only_tier_does_not_require_vram() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("cpu.gguf"), vec![0u8; 1024 * 1024]).unwrap();
+        let stack = json!({
+            "name": "cpu",
+            "tiers": [{
+                "role": "face",
+                "repo": "local",
+                "file": "cpu.gguf",
+                "ctx": 2048,
+                "ngl": 0
+            }]
+        });
+        let plan = plan(&stack, dir.path(), &[device(0, true, 20.0, 20.0)]);
+        assert!(plan.ok, "{:?}", plan.warnings);
+        assert!(
+            plan.warnings
+                .iter()
+                .any(|warning| warning.contains("CPU-only"))
         );
     }
 

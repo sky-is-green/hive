@@ -152,8 +152,10 @@ def _ensure_hf_model(model: str, file: str, models_dir: str | None) -> None:
 def _stack_from_model(*, model: str, file: str, devices: list[dict], ctx: int,
                       backend: str | None, role: str,
                       name: str | None) -> tuple[dict, list[str]]:
+    gpu = bool(devices) and (backend or "").lower() != "cpu"
     tier: dict[str, Any] = {
-        "role": role, "repo": model, "file": file, "ctx": ctx, "ngl": 99,
+        "role": role, "repo": model, "file": file, "ctx": ctx,
+        "ngl": 99 if gpu else 0,
         "cache_k": "q8_0", "cache_v": "q8_0",
     }
     if backend:

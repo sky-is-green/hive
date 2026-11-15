@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::io::{BufRead, BufReader, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use hive_core::backends::Manifest;
@@ -512,29 +514,21 @@ fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
         Err(error) => add("fail", "backends", format!("backend manifest: {error}")),
     }
 
-    let devices = match hardware::amd_devices() {
-        Ok(devices) => {
-            if devices.is_empty() {
-                add("warn", "cards", "no amdgpu cards found via sysfs".into());
-            } else {
-                let detail = devices
-                    .iter()
-                    .map(|device| device.detail())
-                    .collect::<Vec<_>>()
-                    .join("; ");
-                add("ok", "cards", detail);
-            }
-            devices
-        }
-        Err(error) => {
-            add(
-                "warn",
-                "cards",
-                format!("cannot read amdgpu sysfs: {error}"),
-            );
-            Vec::new()
-        }
-    };
+    let devices = hardware::devices();
+    if devices.is_empty() {
+        add(
+            "warn",
+            "cards",
+            "no AMD/NVIDIA cards found (sysfs/nvidia-smi)".into(),
+        );
+    } else {
+        let detail = devices
+            .iter()
+            .map(|device| device.detail())
+            .collect::<Vec<_>>()
+            .join("; ");
+        add("ok", "cards", detail);
+    }
 
     if let Some((available, total)) = hardware::memory_gib() {
         let mut detail = format!("{available:.1}/{total:.1} GiB free");
@@ -771,23 +765,25 @@ fn cmd_status(paths: &Paths, as_json: bool, no_probe: bool, prune: bool) -> Cmd 
         if !endpoints.is_empty() {
             let timeout = Duration::from_millis(800);
             let mut results: Vec<(String, Value)> = Vec::new();
-            std::thread::scope(|scope| {
-                let handles: Vec<_> = endpoints
-                    .iter()
-                    .map(|endpoint| {
-                        let endpoint = endpoint.clone();
-                        scope.spawn(move || {
-                            let answer = probe(&endpoint, timeout);
-                            (endpoint, answer)
+            for chunk in endpoints.chunks(8) {
+                std::thread::scope(|scope| {
+                    let handles: Vec<_> = chunk
+                        .iter()
+                        .map(|endpoint| {
+                            let endpoint = endpoint.clone();
+                            scope.spawn(move || {
+                                let answer = probe(&endpoint, timeout);
+                                (endpoint, answer)
+                            })
                         })
-                    })
-                    .collect();
-                for handle in handles {
-                    if let Ok(result) = handle.join() {
-                        results.push(result);
+                        .collect();
+                    for handle in handles {
+                        if let Ok(result) = handle.join() {
+                            results.push(result);
+                        }
                     }
-                }
-            });
+                });
+            }
             let probes: std::collections::BTreeMap<String, Value> = results.into_iter().collect();
             for view in &mut views {
                 if view.get("state").and_then(Value::as_str) != Some("running") {
@@ -1111,11 +1107,24 @@ fn cmd_logs(
     };
     let _ = handle.seek(SeekFrom::End(0));
     let pid = record.get("pid").and_then(Value::as_i64).unwrap_or(0);
+    let interrupted = Arc::new(AtomicBool::new(false));
+    {
+        let interrupted = Arc::clone(&interrupted);
+        let _ = ctrlc::set_handler(move || {
+            interrupted.store(true, Ordering::SeqCst);
+        });
+    }
     let mut reader = BufReader::new(handle);
     loop {
+        if interrupted.load(Ordering::SeqCst) {
+            break;
+        }
         let mut line = String::new();
         match reader.read_line(&mut line) {
             Ok(0) => {
+                if interrupted.load(Ordering::SeqCst) {
+                    break;
+                }
                 if !hive_state::pid_alive(pid) {
                     eprintln!("-- the serve has stopped --");
                     break;
@@ -1125,6 +1134,12 @@ fn cmd_logs(
             Ok(_) => {
                 print!("{line}");
                 let _ = std::io::stdout().flush();
+            }
+            Err(error)
+                if interrupted.load(Ordering::SeqCst)
+                    || error.kind() == std::io::ErrorKind::Interrupted =>
+            {
+                break;
             }
             Err(error) => {
                 eprintln!("hive logs: cannot follow {}: {error}", path.display());

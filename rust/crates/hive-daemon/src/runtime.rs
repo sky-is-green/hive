@@ -2093,7 +2093,7 @@ fn process_memory() -> Option<(f64, u64)> {
 }
 
 fn hardware_summary(paths: &Paths) -> Value {
-    let devices = hardware::amd_devices().unwrap_or_default();
+    let devices = hardware::devices();
     let (available_ram_gb, total_ram_gb) = hardware::memory_gib().unwrap_or((8.0, 8.0));
     let (vram_total, vram_free) = devices.iter().fold((0.0, 0.0), |(total, free), device| {
         (

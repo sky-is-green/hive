@@ -13,7 +13,7 @@ pub mod residency;
 mod launch;
 
 use std::collections::HashSet;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -250,7 +250,18 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
         .and_then(Value::as_str)
         .unwrap_or("stack")
         .to_owned();
-    let preflight = residency::preflight(stack, options)?;
+    let preflight = if std::env::var("HARNESS_MEMORY_GUARD")
+        .map(|value| value.trim() == "0")
+        .unwrap_or(false)
+    {
+        residency::Plan {
+            ok: true,
+            warnings: vec!["memory guard disabled by HARNESS_MEMORY_GUARD=0".into()],
+            ..Default::default()
+        }
+    } else {
+        residency::preflight(stack, options)?
+    };
     let per_card: Vec<Value> = preflight
         .per_card
         .iter()
@@ -682,16 +693,17 @@ fn spawn_local(
             if let Some((name, value)) = pin.split_once('=') {
                 command.env(name.trim(), value.trim());
             } else {
-                command.env("HIP_VISIBLE_DEVICES", pin);
+                let variable = if backend == "cuda" {
+                    "CUDA_VISIBLE_DEVICES"
+                } else {
+                    "HIP_VISIBLE_DEVICES"
+                };
+                command.env(variable, pin);
             }
         }
     }
 
-    let log = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&log_path)
-        .map_err(|error| format!("cannot open {}: {error}", log_path.display()))?;
+    let log = open_log(&log_path)?;
     let stderr = log
         .try_clone()
         .map_err(|error| format!("cannot clone the log handle: {error}"))?;
@@ -964,10 +976,45 @@ fn signal(pid: u32, sig: libc::c_int) {
     }
 }
 
+/// Open an append log, rotating it once it passes the size cap.
+pub(crate) fn open_log(path: &Path) -> Result<std::fs::File, String> {
+    const MAX_BYTES: u64 = 16 * 1024 * 1024;
+    if let Ok(metadata) = fs::metadata(path)
+        && metadata.len() > MAX_BYTES
+    {
+        let rotated = path.with_extension("log.1");
+        let _ = fs::remove_file(&rotated);
+        let _ = fs::rename(path, &rotated);
+    }
+    OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|error| format!("cannot open {}: {error}", path.display()))
+}
+
 pub(crate) fn log_tail(path: &Path, count: usize) -> String {
     let Ok(text) = std::fs::read_to_string(path) else {
         return String::new();
     };
     let lines: Vec<&str> = text.lines().collect();
     lines[lines.len().saturating_sub(count)..].join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_oversized_log_is_rotated_once() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("engine.log");
+        let file = std::fs::File::create(&path).unwrap();
+        file.set_len(17 * 1024 * 1024).unwrap();
+        drop(file);
+        let handle = open_log(&path).unwrap();
+        drop(handle);
+        assert!(path.is_file());
+        assert!(path.with_extension("log.1").is_file());
+    }
 }

@@ -209,3 +209,109 @@ pub fn has_hf_token() -> bool {
     })
     .unwrap_or(false)
 }
+
+/// Enumerate NVIDIA GPUs through `nvidia-smi`, when it is available.
+pub fn nvidia_devices() -> std::io::Result<Vec<Device>> {
+    let output = std::process::Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=index,name,memory.total,memory.used,utilization.gpu,display_active",
+            "--format=csv,noheader,nounits",
+        ])
+        .output();
+    let Ok(output) = output else {
+        return Ok(Vec::new());
+    };
+    if !output.status.success() {
+        return Ok(Vec::new());
+    }
+    let text = String::from_utf8_lossy(&output.stdout);
+    Ok(parse_nvidia_smi(&text))
+}
+
+fn parse_nvidia_smi(text: &str) -> Vec<Device> {
+    let mut devices = Vec::new();
+    for line in text.lines() {
+        let fields: Vec<&str> = line.split(',').map(str::trim).collect();
+        if fields.len() < 6 {
+            continue;
+        }
+        let Ok(index) = fields[0].parse::<usize>() else {
+            continue;
+        };
+        let total = fields[2].parse::<f64>().ok();
+        let used = fields[3].parse::<f64>().ok();
+        let util = fields[4].parse::<i64>().ok();
+        let memory_gb = total.map(|value| round2(value / 1024.0));
+        let used_gb = used.map(|value| round2(value / 1024.0));
+        devices.push(Device {
+            card: format!("nvidia{index}"),
+            bdf: None,
+            driver: Some("nvidia".into()),
+            vendor: Some("nvidia".into()),
+            device: Some(fields[1].to_owned()),
+            memory_gb,
+            used_gb,
+            free_gb: match (memory_gb, used_gb) {
+                (Some(total), Some(used)) => Some(round2((total - used).max(0.0))),
+                _ => None,
+            },
+            gtt_total_gb: None,
+            gtt_used_gb: None,
+            util_pct: util,
+            display: fields[5].eq_ignore_ascii_case("Enabled"),
+            index,
+        });
+    }
+    devices
+}
+
+/// AMD and NVIDIA cards with visibility filters applied, reindexed in order.
+pub fn devices() -> Vec<Device> {
+    let mut amd = amd_devices().unwrap_or_default();
+    let mut nvidia = nvidia_devices().unwrap_or_default();
+    filter_visible(&mut amd, "HIP_VISIBLE_DEVICES");
+    filter_visible(&mut nvidia, "CUDA_VISIBLE_DEVICES");
+    let mut all = amd;
+    all.extend(nvidia);
+    for (index, device) in all.iter_mut().enumerate() {
+        device.index = index;
+    }
+    all
+}
+
+fn filter_visible(devices: &mut Vec<Device>, variable: &str) {
+    let Some(raw) = std::env::var_os(variable) else {
+        return;
+    };
+    let text = raw.to_string_lossy();
+    if text.trim().is_empty() {
+        return;
+    }
+    let indices: Option<Vec<i64>> = text
+        .split(',')
+        .map(str::trim)
+        .filter(|token| !token.is_empty())
+        .map(|token| token.parse::<i64>().ok())
+        .collect();
+    if let Some(indices) = indices {
+        devices.retain(|device| indices.contains(&(device.index as i64)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nvidia_smi_rows_are_parsed() {
+        let devices = parse_nvidia_smi(
+            "0, NVIDIA GeForce RTX 4090, 24564, 1024, 7, Disabled\n\
+             1, NVIDIA GeForce RTX 4090, 24564, 2048, 0, Enabled\n",
+        );
+        assert_eq!(devices.len(), 2);
+        assert_eq!(devices[0].index, 0);
+        assert_eq!(devices[0].memory_gb, Some(23.99));
+        assert_eq!(devices[0].used_gb, Some(1.0));
+        assert!(devices[1].display);
+    }
+}

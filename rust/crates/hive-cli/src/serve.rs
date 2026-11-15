@@ -119,14 +119,7 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
     }
 
     if options.detach && !options.child {
-        let Some(target) = target.as_deref() else {
-            eprintln!(
-                "hive serve: --model --detach needs --save so the background \
-                 process can reload the generated stack"
-            );
-            return Ok(2);
-        };
-        return detach(paths, &options, target, &name, &stack);
+        return detach(paths, &options, target.as_deref(), &name, &stack);
     }
 
     let run_options = hive_supervisor::Options {
@@ -380,10 +373,20 @@ fn build_record(
     record
 }
 
+struct TempStack(Option<PathBuf>);
+
+impl Drop for TempStack {
+    fn drop(&mut self) {
+        if let Some(path) = &self.0 {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
 fn detach(
     paths: &Paths,
     options: &Options,
-    target: &str,
+    target: Option<&str>,
     name: &str,
     stack: &Value,
 ) -> Result<u8, String> {
@@ -394,6 +397,20 @@ fn detach(
         );
         return Ok(1);
     }
+    let (target, _temporary) = match target {
+        Some(target) => (target.to_owned(), TempStack(None)),
+        None => {
+            let path = paths.serve_dir.join(format!(".{name}.detach.json"));
+            std::fs::write(
+                &path,
+                serde_json::to_vec_pretty(stack).map_err(|error| {
+                    format!("hive serve: cannot encode the generated stack: {error}")
+                })?,
+            )
+            .map_err(|error| format!("hive serve: cannot write {}: {error}", path.display()))?;
+            (path.to_string_lossy().into_owned(), TempStack(Some(path)))
+        }
+    };
     let log = hive_state::log_path(&paths.serve_dir, name)
         .map_err(|error| format!("hive serve: {error}"))?;
     let handle = OpenOptions::new()
@@ -410,7 +427,7 @@ fn detach(
     let mut command = Command::new(exe);
     command
         .arg("serve")
-        .arg(target)
+        .arg(&target)
         .arg("--name")
         .arg(name)
         .arg("--host")
@@ -426,6 +443,8 @@ fn detach(
         command.arg("--log-dir").arg(log_dir);
     }
     if let Some(binary) = &options.llama_server {
+        command.arg("--llama-server").arg(binary);
+    } else if let Ok(binary) = std::env::var("HIVE_LLAMA_SERVER") {
         command.arg("--llama-server").arg(binary);
     }
     if let Some(backend) = &options.backend {
@@ -746,7 +765,9 @@ fn generate_stack(
         Value::String(model_path.to_string_lossy().into_owned()),
     );
     tier.insert("ctx".into(), Value::from(options.ctx));
-    tier.insert("ngl".into(), Value::from(99));
+    let backend_name = backend.clone().unwrap_or_default();
+    let gpu = !devices.is_empty() && !backend_name.eq_ignore_ascii_case("cpu");
+    tier.insert("ngl".into(), Value::from(if gpu { 99 } else { 0 }));
     if let Some(backend) = backend {
         tier.insert("backend".into(), Value::String(backend));
     }

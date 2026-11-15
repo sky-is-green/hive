@@ -144,3 +144,40 @@ def test_live_detached_chat_and_stop(rust_bin, cli_env, tmp_path):
     assert not (state / "serve" / "live.json").exists()
     with pytest.raises(OSError):
         socket.create_connection(("127.0.0.1", port), timeout=0.5)
+
+
+def test_live_detached_model_without_save(rust_bin, cli_env, tmp_path):
+    env, state = cli_env
+    result = run_rust(
+        rust_bin,
+        [
+            "serve",
+            "--model",
+            str(Path(MODEL).expanduser().resolve()),
+            "--backend",
+            "cpu",
+            "--detach",
+            "--json",
+            "--name",
+            "model-detach",
+            "--llama-server",
+            str(LLAMA),
+        ],
+        env,
+    )
+    assert result.returncode == 0, result.stderr
+    record = parse_json(result)
+    port = record["tiers"][0]["port"]
+    try:
+        assert record["name"] == "model-detach"
+        status = run_rust(rust_bin, ["status", "--json"], env)
+        assert status.returncode == 0
+        view = parse_json(status)["serves"][0]
+        assert view["state"] == "running"
+        assert view["tiers"][0]["probe"]["up"] is True
+        assert not list((state / "serve").glob(".*.detach.json"))
+    finally:
+        stop = run_rust(rust_bin, ["stop", "model-detach", "--json"], env)
+        assert stop.returncode == 0, stop.stderr
+    with pytest.raises(OSError):
+        socket.create_connection(("127.0.0.1", port), timeout=0.5)

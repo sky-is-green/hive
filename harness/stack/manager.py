@@ -139,7 +139,9 @@ def tier_env(tier: Tier) -> dict[str, str]:
         name, _, value = text.partition("=")
         if name.strip():
             return {name.strip(): value.strip()}
-    return {"HIP_VISIBLE_DEVICES": text}
+    backend = str(_tier_field(tier, "backend", "") or "").lower()
+    variable = "CUDA_VISIBLE_DEVICES" if backend == "cuda" else "HIP_VISIBLE_DEVICES"
+    return {variable: text}
 
 
 def tier_extra_args(tier: Tier) -> list[str]:

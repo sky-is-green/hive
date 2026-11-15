@@ -527,7 +527,8 @@ fn resources() -> String {
     if let Some((available, total)) = hardware::memory_gib() {
         parts.push(format!("RAM {available:.1}/{total:.1} GiB free"));
     }
-    if let Ok(devices) = hardware::amd_devices() {
+    let devices = hardware::devices();
+    if !devices.is_empty() {
         let free: f64 = devices.iter().filter_map(|device| device.free_gb).sum();
         let total: f64 = devices.iter().filter_map(|device| device.memory_gb).sum();
         if total > 0.0 {

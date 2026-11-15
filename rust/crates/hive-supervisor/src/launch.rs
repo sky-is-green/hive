@@ -5,7 +5,7 @@
 //! and config generation. The engine itself stays its own process; the
 //! supervisor owns that process and stops it on unload.
 
-use std::fs::{self, OpenOptions};
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -68,11 +68,7 @@ pub(crate) fn start(
     let log_path = options
         .log_dir
         .join(format!("{}_{}.log", resolved.kind, resolved.port));
-    let log = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&log_path)
-        .map_err(|error| format!("cannot open {}: {error}", log_path.display()))?;
+    let log = crate::open_log(&log_path)?;
     let stderr = log
         .try_clone()
         .map_err(|error| format!("cannot clone the log handle: {error}"))?;
