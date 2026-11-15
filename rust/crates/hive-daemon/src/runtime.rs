@@ -1517,6 +1517,7 @@ impl Runtime {
     }
 
     async fn restart_candidate(self: &Arc<Self>, candidate: RestartCandidate) {
+        let _guard = self.apply_lock.lock().await;
         let temp_name = format!("{}-restart-{}", candidate.name, candidate.attempts);
         match self
             .launch_value(candidate.stack.clone(), temp_name, None)

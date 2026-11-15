@@ -139,7 +139,11 @@ fn apply_landlock(
         "/dev/zero",
         "/dev/random",
         "/dev/urandom",
-        "/proc",
+        "/proc/self",
+        "/proc/thread-self",
+        "/proc/cpuinfo",
+        "/proc/meminfo",
+        "/proc/stat",
     ]
     .into_iter()
     .map(PathBuf::from)
