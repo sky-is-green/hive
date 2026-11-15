@@ -487,6 +487,8 @@ mod tests {
             log_dir: PathBuf::from("/tmp"),
             startup_timeout: 1.0,
             drain_timeout: 1.0,
+            cgroup_root: PathBuf::from("/tmp/hive-cgroup-test"),
+            cgroup_strict: false,
         }
     }
 

@@ -854,7 +854,19 @@ rather than per-tier.
   wasmtime with deterministic fuel, a memory cap, one instance/table/memory,
   and a SHA256 pin. `GET /v1/plugins` and `POST /v1/plugins/{name}/run` expose
   the host. Format and ABI: `docs/PLUGINS.md`.
-- Next: signed plugin manifests, then release/SBOM and fleet supervision.
+- Release tooling: `scripts/release_manifest.py` emits a manifest,
+  `SHA256SUMS`, and a CycloneDX 1.5 SBOM; `--verify` checks staged files and
+  `--sign-key` delegates to minisign. `dist-workspace.toml` declares the Linux
+  cargo-dist targets. See `docs/RELEASES.md`.
+- Fleet supervision: stacks accept `restart: never|on-failure|always` with
+  exponential backoff; a crashed engine is replaced by a fresh healthy process
+  under the same public key. Tier `cgroup` budgets (`memory_max`, `cpu_max`,
+  `pids_max`) are applied when cgroup v2 is delegated, best-effort unless
+  `HIVE_CGROUP_STRICT=1`. Restart is covered by
+  `test_live_restart_policy_replaces_a_crashed_engine`; cgroup enforcement needs
+  a delegated host.
+- Next: signed plugin manifests, provision the release signing key, and run the
+  cgroup path on a delegated host.
 
 ---
 

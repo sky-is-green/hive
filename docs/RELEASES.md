@@ -1,0 +1,48 @@
+# Releases, checksums, and SBOM
+
+The release manifest is generated offline from the built binaries:
+
+```sh
+cargo build --release --manifest-path rust/Cargo.toml
+python scripts/release_manifest.py \
+  --bin-dir rust/target/release \
+  --out dist
+```
+
+It writes:
+
+- `dist/release-manifest.json` — version, commit, target, file hashes/sizes;
+- `dist/SHA256SUMS` — `sha256sum -c` compatible checksums;
+- `dist/sbom.cdx.json` — CycloneDX 1.5 SBOM (binaries plus Cargo components).
+
+Verify a staged release (the binaries must sit next to `SHA256SUMS`):
+
+```sh
+python scripts/release_manifest.py --verify dist
+```
+
+## Signing
+
+Signing is delegated to `minisign` so the private key never lives in the repo:
+
+```sh
+minisign -G -p hive.pub -s hive.key
+python scripts/release_manifest.py --out dist --sign-key hive.key
+minisign -Vm dist/release-manifest.json -p hive.pub
+minisign -Vm dist/SHA256SUMS -p hive.pub
+```
+
+`cosign sign-blob` is an acceptable alternative; publish the public key and the
+`.minisig`/`.sig` files next to the manifest. A release is publishable only
+when both the checksums and the manifest signature verify.
+
+## Cargo-dist
+
+`dist-workspace.toml` declares the Linux targets and shell installer. Cargo-dist
+owns tarball/installer generation; the manifest script remains the source of
+truth for hashes, the SBOM, and signing.
+
+## Gate
+
+Do not tag `main` or publish a release until the final rewrite gate in
+`docs/RUST-MIGRATION.md` passes. `rust-migration` is the integration branch.

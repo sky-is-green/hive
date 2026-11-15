@@ -142,6 +142,12 @@ pub fn run(paths: &Paths, options: Options) -> Result<u8, String> {
             .unwrap_or_else(|| paths.log_dir.clone()),
         startup_timeout: options.timeout,
         drain_timeout: 120.0,
+        cgroup_root: std::env::var_os("HIVE_CGROUP_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("/sys/fs/cgroup/hive")),
+        cgroup_strict: std::env::var("HIVE_CGROUP_STRICT")
+            .map(|value| value.trim() == "1" || value.trim().eq_ignore_ascii_case("true"))
+            .unwrap_or(false),
     };
     let mut applied = match hive_supervisor::apply(&stack, &run_options) {
         Ok(applied) => applied,

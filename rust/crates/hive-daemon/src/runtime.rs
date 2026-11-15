@@ -32,10 +32,15 @@ impl ApiError {
 
 struct AppliedStack {
     name: String,
+    stack: Value,
     tiers: Vec<Value>,
     warnings: Vec<String>,
     engines: Vec<EngineInfo>,
     started_at: String,
+    restart: String,
+    restart_backoff_s: f64,
+    restart_count: u32,
+    last_restart: Option<Instant>,
     applied: Applied,
 }
 
@@ -45,6 +50,54 @@ struct State {
     stack: Option<AppliedStack>,
     /// Models started through `/v1/server/start`, keyed by their tier key.
     fleet: Vec<AppliedStack>,
+}
+
+struct RestartCandidate {
+    name: String,
+    tier_key: Option<String>,
+    stack: Value,
+    target: ApplyTarget,
+    attempts: u32,
+}
+
+fn dead_candidate(
+    applied: &mut AppliedStack,
+    target: ApplyTarget,
+    now: Instant,
+) -> Option<RestartCandidate> {
+    if applied.restart.eq_ignore_ascii_case("never") || applied.engines.is_empty() {
+        return None;
+    }
+    let backoff = applied.restart_backoff_s
+        * 2f64
+            .powi(applied.restart_count.saturating_sub(1) as i32)
+            .min(300.0);
+    if let Some(last) = applied.last_restart
+        && now.duration_since(last).as_secs_f64() < backoff
+    {
+        return None;
+    }
+    let alive = applied
+        .engines
+        .iter()
+        .any(|engine| pid_alive(engine.pid) && engine_alive(engine.port));
+    if alive {
+        return None;
+    }
+    applied.last_restart = Some(now);
+    applied.restart_count = applied.restart_count.saturating_add(1);
+    Some(RestartCandidate {
+        name: applied.name.clone(),
+        tier_key: applied
+            .tiers
+            .first()
+            .and_then(|tier| tier.get("key"))
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+        stack: applied.stack.clone(),
+        target,
+        attempts: applied.restart_count,
+    })
 }
 
 impl State {
@@ -94,6 +147,12 @@ impl Runtime {
                 .ok()
                 .and_then(|text| text.parse::<f64>().ok())
                 .unwrap_or(120.0),
+            cgroup_root: std::env::var_os("HIVE_CGROUP_ROOT")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("/sys/fs/cgroup/hive")),
+            cgroup_strict: std::env::var("HIVE_CGROUP_STRICT")
+                .map(|value| value.trim() == "1" || value.trim().eq_ignore_ascii_case("true"))
+                .unwrap_or(false),
         };
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(20))
@@ -846,12 +905,20 @@ impl Runtime {
                 Value::Array(extra.into_iter().map(Value::String).collect()),
             );
         }
-        let stack = serde_json::json!({
+        let mut stack = serde_json::json!({
             "name": stack_name,
             "version": 1,
             "tiers": [Value::Object(tier)],
             "routing": {},
         });
+        for (field, target) in [
+            ("restart", "restart"),
+            ("restart_backoff_s", "restart_backoff_s"),
+        ] {
+            if let Some(value) = body.get(field) {
+                stack[target] = value.clone();
+            }
+        }
         let stack = stacks::parse_stack(&stack)
             .map_err(|error| ApiError::new(422, format!("invalid server launch: {error}")))?;
         let base_port = body
@@ -874,7 +941,7 @@ impl Runtime {
 
     pub async fn stop_server(&self, key: Option<&str>) -> Result<Value, ApiError> {
         enum StopAction {
-            One(AppliedStack),
+            One(Box<AppliedStack>),
             All(Vec<AppliedStack>),
             Missing,
         }
@@ -922,7 +989,7 @@ impl Runtime {
                     .iter()
                     .position(|applied| stack_matches(applied, key))
                 {
-                    StopAction::One(state.fleet.remove(index))
+                    StopAction::One(Box::new(state.fleet.remove(index)))
                 } else {
                     StopAction::Missing
                 }
@@ -938,7 +1005,7 @@ impl Runtime {
                 format!("no such loaded instance: {}", key.unwrap_or("")),
             )),
             StopAction::One(instance) => {
-                let drained = unload(instance).await;
+                let drained = unload(*instance).await;
                 Ok(serde_json::json!({
                     "ok": true,
                     "unloaded": key,
@@ -995,17 +1062,32 @@ impl Runtime {
         }
     }
 
-    /// Rename a loaded tier key in place.
+    /// Rename a loaded tier key in place, including the stored launch stack so
+    /// a later restart preserves the public key.
     pub fn rename_key(&self, from: &str, to: &str) -> bool {
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         for applied in &mut state.fleet {
+            let mut found = false;
             for tier in &mut applied.tiers {
                 if tier.get("key").and_then(Value::as_str) == Some(from) {
                     if let Some(object) = tier.as_object_mut() {
                         object.insert("key".into(), Value::String(to.to_owned()));
                     }
-                    return true;
+                    found = true;
+                    break;
                 }
+            }
+            if found {
+                if let Some(tier) = applied
+                    .stack
+                    .get_mut("tiers")
+                    .and_then(Value::as_array_mut)
+                    .and_then(|tiers| tiers.first_mut())
+                    && let Some(object) = tier.as_object_mut()
+                {
+                    object.insert("key".into(), Value::String(to.to_owned()));
+                }
+                return true;
             }
         }
         false
@@ -1326,10 +1408,38 @@ impl Runtime {
         if let Some(previous) = previous {
             unload(previous).await;
         }
+        let applied = self.launch_value(stack, name, base_port).await?;
+        let rows = apply_rows(&applied.tiers);
+        {
+            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            match target {
+                ApplyTarget::Stack => state.stack = Some(applied),
+                ApplyTarget::Fleet => state.fleet.push(applied),
+            }
+        }
+        Ok(serde_json::json!({"ok": true, "tiers": rows}))
+    }
+
+    async fn launch_value(
+        &self,
+        stack: Value,
+        name: String,
+        base_port: Option<u16>,
+    ) -> Result<AppliedStack, ApiError> {
         let mut options = self.options.clone();
         if let Some(port) = base_port {
             options.base_port = port;
         }
+        let restart = stack
+            .get("restart")
+            .and_then(Value::as_str)
+            .unwrap_or("never")
+            .to_owned();
+        let restart_backoff_s = stack
+            .get("restart_backoff_s")
+            .and_then(Value::as_f64)
+            .unwrap_or(5.0)
+            .clamp(1.0, 300.0);
         let stack_for_apply = stack.clone();
         let applied =
             tokio::task::spawn_blocking(move || hive_supervisor::apply(&stack_for_apply, &options))
@@ -1339,24 +1449,135 @@ impl Runtime {
         let tiers = applied.tiers.clone();
         let warnings = applied.warnings.clone();
         let engines = applied.engines();
-        let rows = apply_rows(&tiers);
         let started_at = timestamp();
-        let applied = AppliedStack {
+        Ok(AppliedStack {
             name,
+            stack,
             tiers,
             warnings,
             engines,
             started_at,
+            restart,
+            restart_backoff_s,
+            restart_count: 0,
+            last_restart: None,
             applied,
+        })
+    }
+
+    /// Start the background restart supervisor. A zero interval disables it.
+    pub fn start_reaper(self: &Arc<Self>) {
+        let seconds = std::env::var("HIVE_RESTART_POLL_S")
+            .ok()
+            .and_then(|text| text.parse::<f64>().ok())
+            .unwrap_or(5.0);
+        if seconds <= 0.0 {
+            return;
+        }
+        let runtime = Arc::clone(self);
+        let Ok(handle) = tokio::runtime::Handle::try_current() else {
+            return;
         };
+        handle.spawn(async move {
+            let interval = Duration::from_secs_f64(seconds.max(1.0));
+            loop {
+                tokio::time::sleep(interval).await;
+                let candidates = {
+                    let runtime = Arc::clone(&runtime);
+                    match tokio::task::spawn_blocking(move || runtime.dead_candidates()).await {
+                        Ok(candidates) => candidates,
+                        Err(error) => {
+                            tracing::warn!("restart scan failed: {error}");
+                            continue;
+                        }
+                    }
+                };
+                for candidate in candidates {
+                    runtime.restart_candidate(candidate).await;
+                }
+            }
+        });
+    }
+
+    fn dead_candidates(&self) -> Vec<RestartCandidate> {
+        let now = Instant::now();
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let mut out = Vec::new();
+        if let Some(applied) = state.stack.as_mut()
+            && let Some(candidate) = dead_candidate(applied, ApplyTarget::Stack, now)
         {
-            let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-            match target {
-                ApplyTarget::Stack => state.stack = Some(applied),
-                ApplyTarget::Fleet => state.fleet.push(applied),
+            out.push(candidate);
+        }
+        for applied in &mut state.fleet {
+            if let Some(candidate) = dead_candidate(applied, ApplyTarget::Fleet, now) {
+                out.push(candidate);
             }
         }
-        Ok(serde_json::json!({"ok": true, "tiers": rows}))
+        out
+    }
+
+    async fn restart_candidate(self: &Arc<Self>, candidate: RestartCandidate) {
+        let temp_name = format!("{}-restart-{}", candidate.name, candidate.attempts);
+        match self
+            .launch_value(candidate.stack.clone(), temp_name, None)
+            .await
+        {
+            Ok(mut replacement) => {
+                replacement.name = candidate.name.clone();
+                replacement.restart_count = candidate.attempts;
+                replacement.last_restart = Some(Instant::now());
+                if let Some(key) = &candidate.tier_key {
+                    if let Some(tier) = replacement.tiers.first_mut()
+                        && let Some(object) = tier.as_object_mut()
+                    {
+                        object.insert("key".into(), Value::String(key.clone()));
+                    }
+                    if let Some(tier) = replacement
+                        .stack
+                        .get_mut("tiers")
+                        .and_then(Value::as_array_mut)
+                        .and_then(|tiers| tiers.first_mut())
+                        && let Some(object) = tier.as_object_mut()
+                    {
+                        object.insert("key".into(), Value::String(key.clone()));
+                    }
+                }
+                let previous = {
+                    let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                    match candidate.target {
+                        ApplyTarget::Stack => state.stack.take(),
+                        ApplyTarget::Fleet => state
+                            .fleet
+                            .iter()
+                            .position(|applied| applied.name == candidate.name)
+                            .map(|index| state.fleet.remove(index)),
+                    }
+                };
+                if let Some(previous) = previous {
+                    unload(previous).await;
+                }
+                {
+                    let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                    match candidate.target {
+                        ApplyTarget::Stack => state.stack = Some(replacement),
+                        ApplyTarget::Fleet => state.fleet.push(replacement),
+                    }
+                }
+                tracing::info!(
+                    name = %candidate.name,
+                    attempts = candidate.attempts,
+                    "restarted crashed engine stack"
+                );
+            }
+            Err(error) => {
+                tracing::warn!(
+                    name = %candidate.name,
+                    attempts = candidate.attempts,
+                    "engine restart failed: {}",
+                    error.detail
+                );
+            }
+        }
     }
 
     fn engines_snapshot(&self) -> Vec<EngineInfo> {
@@ -1378,13 +1599,21 @@ impl Runtime {
 
     fn rename_last_tier(&self, key: &str) {
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        if let Some(tier) = state
-            .fleet
-            .last_mut()
-            .and_then(|applied| applied.tiers.first_mut())
-            && let Some(object) = tier.as_object_mut()
-        {
-            object.insert("key".into(), Value::String(key.to_owned()));
+        if let Some(applied) = state.fleet.last_mut() {
+            if let Some(tier) = applied.tiers.first_mut()
+                && let Some(object) = tier.as_object_mut()
+            {
+                object.insert("key".into(), Value::String(key.to_owned()));
+            }
+            if let Some(tier) = applied
+                .stack
+                .get_mut("tiers")
+                .and_then(Value::as_array_mut)
+                .and_then(|tiers| tiers.first_mut())
+                && let Some(object) = tier.as_object_mut()
+            {
+                object.insert("key".into(), Value::String(key.to_owned()));
+            }
         }
     }
 

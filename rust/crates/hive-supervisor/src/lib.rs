@@ -34,6 +34,9 @@ pub struct Options {
     pub startup_timeout: f64,
     /// Seconds to wait for `/slots` to report idle before SIGTERM.
     pub drain_timeout: f64,
+    /// cgroup v2 root for per-tier budgets (best-effort unless strict).
+    pub cgroup_root: PathBuf,
+    pub cgroup_strict: bool,
 }
 
 /// A successfully applied stack.
@@ -53,6 +56,8 @@ struct Engine {
     child: Child,
     /// Local llama-server processes expose `/slots`; launch-tier engines do not.
     drain: bool,
+    /// cgroup v2 directory owned by this engine, when budgets were applied.
+    cgroup: Option<PathBuf>,
 }
 
 /// One engine this process started, without its child handle.
@@ -340,13 +345,14 @@ pub fn apply(stack: &Value, options: &Options) -> Result<Applied, String> {
                         log: launched.log,
                         child: launched.child,
                         drain: false,
+                        cgroup: None,
                     });
                 }
             }
             continue;
         }
 
-        let result = spawn_local(tier, options, &busy, &mut offset);
+        let result = spawn_local(tier, options, &busy, &mut offset, &stack_name);
         let engine = match result {
             Ok(engine) => engine,
             Err(error) => {
@@ -580,6 +586,7 @@ fn spawn_local(
     options: &Options,
     busy: &HashSet<u16>,
     offset: &mut u16,
+    stack_name: &str,
 ) -> Result<Engine, String> {
     let role = tier.get("role").and_then(Value::as_str).unwrap_or("?");
     let file = tier.get("file").and_then(Value::as_str).unwrap_or("");
@@ -707,6 +714,7 @@ fn spawn_local(
         .spawn()
         .map_err(|error| format!("cannot start {}: {error}", binary.display()))?;
     let pid = child.id();
+    let cgroup = apply_cgroup(pid, stack_name, role, tier, options)?;
     let mut engine = Engine {
         role: role.to_owned(),
         pid,
@@ -714,9 +722,76 @@ fn spawn_local(
         log: log_path.clone(),
         child,
         drain: true,
+        cgroup,
     };
-    wait_healthy(&mut engine, options.startup_timeout)?;
+    if let Err(error) = wait_healthy(&mut engine, options.startup_timeout) {
+        if let Some(directory) = &engine.cgroup {
+            let _ = std::fs::remove_dir(directory);
+        }
+        return Err(error);
+    }
     Ok(engine)
+}
+
+fn apply_cgroup(
+    pid: u32,
+    stack_name: &str,
+    role: &str,
+    tier: &Value,
+    options: &Options,
+) -> Result<Option<PathBuf>, String> {
+    let Some(spec) = tier.get("cgroup").and_then(Value::as_object) else {
+        return Ok(None);
+    };
+    let directory = options
+        .cgroup_root
+        .join(cgroup_component(stack_name))
+        .join(cgroup_component(role));
+    let applied = (|| -> std::io::Result<()> {
+        std::fs::create_dir_all(&directory)?;
+        for (file, key) in [
+            ("memory.max", "memory_max"),
+            ("cpu.max", "cpu_max"),
+            ("pids.max", "pids_max"),
+        ] {
+            if let Some(value) = spec.get(key) {
+                let text = value
+                    .as_str()
+                    .map(str::to_owned)
+                    .unwrap_or_else(|| value.to_string());
+                std::fs::write(directory.join(file), format!("{text}\n"))?;
+            }
+        }
+        std::fs::write(directory.join("cgroup.procs"), format!("{pid}\n"))?;
+        Ok(())
+    })();
+    match applied {
+        Ok(()) => Ok(Some(directory)),
+        Err(error) if options.cgroup_strict => Err(format!(
+            "cannot apply cgroup budget at {}: {error}",
+            directory.display()
+        )),
+        Err(error) => {
+            eprintln!(
+                "hive-supervisor: cgroup budget unavailable at {}: {error}",
+                directory.display()
+            );
+            Ok(None)
+        }
+    }
+}
+
+fn cgroup_component(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.') {
+                character
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 /// Wait until the engine's slots report idle, bounded by `deadline`.
@@ -862,6 +937,11 @@ fn terminate_all(children: &mut Vec<Engine>) {
         if matches!(engine.child.try_wait(), Ok(None)) {
             signal(engine.pid, libc::SIGKILL);
             let _ = engine.child.wait();
+        }
+    }
+    for engine in children.iter() {
+        if let Some(directory) = &engine.cgroup {
+            let _ = std::fs::remove_dir(directory);
         }
     }
     children.clear();

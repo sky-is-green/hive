@@ -1,0 +1,12 @@
+# cargo-dist release configuration.
+#
+# The release manifest/SBOM script remains the source of truth for checksums
+# and CycloneDX output; cargo-dist handles tarballs and installers.
+[dist]
+cargo-dist-version = "0.30.0"
+ci = "github"
+installers = ["shell"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+]

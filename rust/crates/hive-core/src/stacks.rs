@@ -13,7 +13,14 @@ use serde_json::{Map, Value};
 
 use crate::error::Result;
 
-const STACK_FIELDS: &[&str] = &["name", "version", "tiers", "routing"];
+const STACK_FIELDS: &[&str] = &[
+    "name",
+    "version",
+    "tiers",
+    "routing",
+    "restart",
+    "restart_backoff_s",
+];
 const TIER_FIELDS: &[&str] = &[
     "role",
     "repo",
@@ -32,6 +39,7 @@ const TIER_FIELDS: &[&str] = &[
     "caps",
     "launch",
     "expect_model",
+    "cgroup",
 ];
 const ROLES: &[&str] = &["face", "worker", "agency", "mechanics"];
 
@@ -156,6 +164,23 @@ pub fn parse_stack(data: &Value) -> Result<Value> {
         && !routing.is_object()
     {
         return Err(crate::HiveError::invalid("stack routing must be an object"));
+    }
+    if let Some(restart) = object.get("restart") {
+        let policy = restart
+            .as_str()
+            .ok_or_else(|| crate::HiveError::invalid("stack restart must be a string"))?;
+        if !matches!(policy, "never" | "on-failure" | "always") {
+            return Err(crate::HiveError::invalid(
+                "stack restart must be one of never, on-failure, always",
+            ));
+        }
+    }
+    if let Some(backoff) = object.get("restart_backoff_s")
+        && !backoff.as_f64().is_some_and(|value| value > 0.0)
+    {
+        return Err(crate::HiveError::invalid(
+            "stack restart_backoff_s must be a positive number",
+        ));
     }
     let mut out = object.clone();
     out.insert("name".into(), Value::String(name));

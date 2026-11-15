@@ -2442,3 +2442,60 @@ def test_sandbox_policy_can_force_docker_fallback(tmp_path):
         if process is not None:
             process.terminate()
             process.wait(timeout=10)
+
+
+def test_live_restart_policy_replaces_a_crashed_engine(tmp_path):
+    llama = os.environ.get("HIVE_LLAMA_SERVER")
+    model = os.environ.get("HIVE_LIVE_MODEL")
+    if not llama or not model or not Path(llama).is_file() or not Path(model).is_file():
+        pytest.skip("set HIVE_LLAMA_SERVER and HIVE_LIVE_MODEL for the restart test")
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_port=0,
+            env_extra={
+                **_home(tmp_path),
+                "HIVE_PYTHON": sys.executable,
+                "HIVE_LLAMA_SERVER": llama,
+                "HARNESS_LLAMA_SERVER": llama,
+                "HIVE_RESTART_POLL_S": "1",
+            },
+        )
+        launch = {
+            "model": model,
+            "backend": "cpu",
+            "ngl": 0,
+            "ctx_size": 512,
+            "key": "restart",
+            "restart": "always",
+            "restart_backoff_s": 1,
+        }
+        status, _, first = _request(
+            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+        )
+        assert status == 200, first
+        old_pid = first["pid"]
+        os.kill(old_pid, 9)
+
+        deadline = time.time() + 45
+        replacement = None
+        while time.time() < deadline:
+            status, _, server = _request(port, "/v1/server/status")
+            instances = {row["key"]: row for row in server.get("instances", [])}
+            row = instances.get("restart")
+            if row and row.get("pid") not in (None, old_pid):
+                replacement = row
+                break
+            time.sleep(0.5)
+        assert replacement is not None, "engine was not restarted"
+        assert replacement["pid"] != old_pid
+        assert replacement["healthy"] is True
+
+        status, _, payload = _request(
+            port, "/v1/server/stop?key=restart", method="POST", body=b"{}"
+        )
+        assert status == 200, payload
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=15)

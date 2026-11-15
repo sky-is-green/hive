@@ -287,6 +287,7 @@ impl AppState {
     fn with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> Self {
         let client = reqwest::Client::builder().build().unwrap_or_default();
         let runtime = Arc::new(Runtime::new(&config.paths));
+        runtime.start_reaper();
         let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
         let metrics = Arc::new(Metrics::new());
         let sandbox = Arc::new(SandboxConfig::discover(&config.paths));
