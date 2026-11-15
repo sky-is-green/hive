@@ -866,8 +866,9 @@ rather than per-tier.
   under the same public key. Tier `cgroup` budgets (`memory_max`, `cpu_max`,
   `pids_max`) are applied when cgroup v2 is delegated, best-effort unless
   `HIVE_CGROUP_STRICT=1`. Restart is covered by
-  `test_live_restart_policy_replaces_a_crashed_engine`; cgroup enforcement needs
-  a delegated host.
+  `test_live_restart_policy_replaces_a_crashed_engine`; real budgets were
+  validated by `test_live_cgroup_budget_is_applied` under the user systemd
+  cgroup.
 - Next: provision the release signing key and wire it into CI; the plugin trust
   root is now signed by default.
 
