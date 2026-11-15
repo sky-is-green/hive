@@ -22,7 +22,10 @@ from harness.state_store import AuditLog, JsonStore, StatePaths
 
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": 1,
-    "mode": "docker",
+    # auto: the Rust daemon uses the native Landlock/seccomp helper when
+    # available and falls back to the Docker path otherwise. landlock: native
+    # only (fail closed). docker: Docker only.
+    "mode": "auto",
     "docker_image": "hive-sandbox:1",
     "image_digest": "",
     "network": "none",
@@ -37,6 +40,7 @@ DEFAULT_POLICY: dict[str, Any] = {
     "updated_at": None,
 }
 FALLBACK_MODES = ("approval", "allow", "deny")
+SANDBOX_MODES = ("auto", "landlock", "docker")
 #: The only host tree a child sandbox may mount.  The endpoint resolves the
 #: requested path and rejects a root, parent, symlink escape, or Docker-hostile
 #: injection before the container starts.
@@ -67,6 +71,8 @@ class SandboxPolicy:
         data = {**DEFAULT_POLICY, **self.store.read()}
         if data.get("local_fallback") not in FALLBACK_MODES:
             data["local_fallback"] = "approval"
+        if data.get("mode") not in SANDBOX_MODES:
+            data["mode"] = "auto"
         return data
 
     def update(self, **fields: Any) -> dict[str, Any]:
@@ -77,6 +83,9 @@ class SandboxPolicy:
         if data["local_fallback"] not in FALLBACK_MODES:
             raise SandboxError(
                 f"local_fallback must be one of {', '.join(FALLBACK_MODES)}")
+        if data.get("mode") not in SANDBOX_MODES:
+            raise SandboxError(
+                f"mode must be one of {', '.join(SANDBOX_MODES)}")
         if data.get("network") not in _NETWORKS:
             raise SandboxError(
                 f"network must be one of {', '.join(_NETWORKS)}")

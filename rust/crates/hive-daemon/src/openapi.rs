@@ -127,6 +127,21 @@ pub fn document() -> Value {
     }
 
     add(
+        "/v1/sandbox/status",
+        &[(
+            "get",
+            operation("Sandbox backend, policy, and availability", "sandbox"),
+        )],
+    );
+    add(
+        "/v1/sandbox/exec",
+        &[(
+            "post",
+            operation("Run one command in the selected sandbox backend", "sandbox"),
+        )],
+    );
+
+    add(
         "/v1/sandbox/native/status",
         &[(
             "get",

@@ -17,6 +17,70 @@ use crate::runtime::ApiError;
 
 const OUTPUT_CAP: usize = 10_000;
 
+#[derive(Debug, Clone)]
+struct Policy {
+    mode: String,
+    memory_mb: u64,
+    pids: u64,
+    nofile: u64,
+    timeout_s: u64,
+    allow_network: bool,
+    raw: Value,
+}
+
+impl Policy {
+    fn load(state_dir: &Path) -> Self {
+        let path = state_dir.join("settings/sandbox.json");
+        let raw = std::fs::read_to_string(&path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .unwrap_or_else(|| json!({}));
+        let mode = raw
+            .get("mode")
+            .and_then(Value::as_str)
+            .unwrap_or("auto")
+            .to_owned();
+        let memory_mb = raw
+            .get("memory_mb")
+            .and_then(Value::as_u64)
+            .or_else(|| {
+                raw.get("memory")
+                    .and_then(Value::as_str)
+                    .and_then(|memory| memory.trim_end_matches('m').parse::<u64>().ok())
+            })
+            .unwrap_or(512)
+            .clamp(16, 8192);
+        let timeout_s = raw
+            .get("timeout_s")
+            .and_then(Value::as_u64)
+            .unwrap_or(60)
+            .clamp(1, 120);
+        let pids = raw
+            .get("pids_limit")
+            .and_then(Value::as_u64)
+            .unwrap_or(256)
+            .clamp(1, 4096);
+        let nofile = raw
+            .get("nofile")
+            .and_then(Value::as_u64)
+            .unwrap_or(256)
+            .clamp(16, 4096);
+        let allow_network = raw
+            .get("allow_network")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        Self {
+            mode,
+            memory_mb,
+            pids,
+            nofile,
+            timeout_s,
+            allow_network,
+            raw,
+        }
+    }
+}
+
 pub struct SandboxConfig {
     binary: Option<PathBuf>,
     workspace_root: PathBuf,
@@ -53,18 +117,52 @@ impl SandboxConfig {
     }
 
     pub fn status(&self) -> Value {
+        let policy = self.policy();
         let lsm = std::fs::read_to_string("/sys/kernel/security/lsm").unwrap_or_default();
         let landlock = lsm.split(',').any(|name| name.trim() == "landlock");
         let seccomp = Path::new("/proc/sys/kernel/seccomp/actions_avail").is_file();
+        let available = self.binary.is_some() && landlock && seccomp;
         json!({
-            "available": self.binary.is_some() && landlock && seccomp,
-            "backend": "landlock",
+            "installed": available,
+            "daemon": available,
             "binary": self.binary.as_ref().map(|path| path.to_string_lossy().into_owned()),
+            "detail": if available { "native Landlock/seccomp sandbox" } else { "native sandbox unavailable" },
+            "host": "",
+            "rootless": false,
+            "backend": "landlock",
+            "available": available,
             "landlock": landlock,
             "seccomp": seccomp,
             "workspace_root": self.workspace_root.to_string_lossy(),
             "workspace_root_exists": self.workspace_root.is_dir(),
+            "policy": policy.raw,
+            "mode": policy.mode,
+            "pinned": true,
+            "pin_error": "",
+            "fallback_requires_approval": false,
+            "fallback": if available { "native sandbox" } else { "native sandbox unavailable" },
+            "docker_installed": false,
+            "docker_daemon": false,
         })
+    }
+
+    pub fn native_selected(&self) -> bool {
+        !self.policy().mode.eq_ignore_ascii_case("docker")
+    }
+
+    pub fn available(&self) -> bool {
+        let lsm = std::fs::read_to_string("/sys/kernel/security/lsm").unwrap_or_default();
+        let landlock = lsm.split(',').any(|name| name.trim() == "landlock");
+        let seccomp = Path::new("/proc/sys/kernel/seccomp/actions_avail").is_file();
+        self.binary.is_some() && landlock && seccomp
+    }
+
+    pub fn strict_native(&self) -> bool {
+        self.policy().mode.eq_ignore_ascii_case("landlock")
+    }
+
+    fn policy(&self) -> Policy {
+        Policy::load(&self.state_dir)
     }
 
     pub async fn exec(&self, body: &Value) -> Result<Value, ApiError> {
@@ -89,15 +187,16 @@ impl SandboxConfig {
                 detail: "command is too long".into(),
             });
         }
+        let policy = self.policy();
         let timeout = body
             .get("timeout")
             .and_then(Value::as_u64)
-            .unwrap_or(30)
+            .unwrap_or(policy.timeout_s)
             .clamp(1, 120);
         let memory_mb = body
             .get("memory_mb")
             .and_then(Value::as_u64)
-            .unwrap_or(512)
+            .unwrap_or(policy.memory_mb)
             .clamp(16, 8192);
         let cpu_seconds = body
             .get("cpu_seconds")
@@ -107,17 +206,17 @@ impl SandboxConfig {
         let pids = body
             .get("pids")
             .and_then(Value::as_u64)
-            .unwrap_or(256)
+            .unwrap_or(policy.pids)
             .clamp(1, 4096);
         let nofile = body
             .get("nofile")
             .and_then(Value::as_u64)
-            .unwrap_or(256)
+            .unwrap_or(policy.nofile)
             .clamp(16, 4096);
         let allow_network = body
             .get("allow_network")
             .and_then(Value::as_bool)
-            .unwrap_or(false);
+            .unwrap_or(policy.allow_network);
 
         let workspace = match body.get("workspace").and_then(Value::as_str) {
             Some(raw) if !raw.trim().is_empty() => {

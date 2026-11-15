@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-use axum::body::Body;
+use axum::body::{Body, to_bytes};
 use axum::extract::{DefaultBodyLimit, Multipart, Path as UrlPath, Query, Request, State};
 use axum::http::header::{
     CACHE_CONTROL, CONNECTION, CONTENT_TYPE, HOST, HeaderMap, HeaderName, HeaderValue,
@@ -337,6 +337,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/memory/{conversation}/assemble", post(memory_assemble))
         .route("/v1/memory/{conversation}/reset", post(memory_reset))
         .route("/v1/memory/{conversation}/status", get(memory_status))
+        .route("/v1/sandbox/status", get(sandbox_status_route))
+        .route("/v1/sandbox/exec", post(sandbox_exec_route))
         .route("/v1/sandbox/native/status", get(native_sandbox_status))
         .route("/v1/sandbox/native/exec", post(native_sandbox_exec))
         .route("/v1/models", get(served_models))
@@ -1367,6 +1369,57 @@ async fn memory_status(
     UrlPath(conversation): UrlPath<String>,
 ) -> Response {
     runtime_json(Ok(state.memory.status(&conversation)))
+}
+
+async fn sandbox_status_route(State(state): State<Arc<AppState>>) -> Response {
+    if state.sandbox.native_selected() && state.sandbox.available() {
+        return runtime_json(Ok(state.sandbox.status()));
+    }
+    if state.sandbox.strict_native() {
+        return runtime_error(ApiError {
+            status: 503,
+            detail: "native Landlock/seccomp sandbox is unavailable".into(),
+        });
+    }
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/v1/sandbox/status")
+        .body(Body::empty())
+        .unwrap_or_default();
+    proxy(State(state), request).await
+}
+
+async fn sandbox_exec_route(State(state): State<Arc<AppState>>, request: Request) -> Response {
+    let (parts, body) = request.into_parts();
+    let bytes = match to_bytes(body, 1024 * 1024).await {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            return runtime_error(ApiError {
+                status: 413,
+                detail: format!("sandbox request is too large: {error}"),
+            });
+        }
+    };
+    if state.sandbox.native_selected() && state.sandbox.available() {
+        let payload: Value = match serde_json::from_slice(&bytes) {
+            Ok(payload) => payload,
+            Err(error) => {
+                return runtime_error(ApiError {
+                    status: 422,
+                    detail: format!("invalid sandbox request: {error}"),
+                });
+            }
+        };
+        return runtime_json(state.sandbox.exec(&payload).await);
+    }
+    if state.sandbox.strict_native() {
+        return runtime_error(ApiError {
+            status: 503,
+            detail: "native Landlock/seccomp sandbox is unavailable".into(),
+        });
+    }
+    let request = Request::from_parts(parts, Body::from(bytes));
+    proxy(State(state), request).await
 }
 
 async fn native_sandbox_status(State(state): State<Arc<AppState>>) -> Response {

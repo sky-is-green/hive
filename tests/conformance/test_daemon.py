@@ -550,12 +550,19 @@ def test_managed_sidecar_starts_proxies_restarts_and_stops():
             "/v1/activity?limit=1",
             "/v1/tools/pending",
             "/v1/agent/status",
-            "/v1/sandbox/status",
         ):
             status, headers, payload = _request(port, path)
             assert status == 200, (path, payload)
             assert headers["x-hive-owner"] == "python", path
             assert isinstance(payload, dict), path
+
+        # The sandbox status owner depends on whether the native helper is
+        # built: auto prefers Landlock, and falls back to the Python/Docker
+        # policy oracle when it is not available.
+        status, headers, payload = _request(port, "/v1/sandbox/status")
+        assert status == 200, payload
+        assert headers["x-hive-owner"] in {"rust", "python"}
+        assert isinstance(payload, dict)
 
         # Kill the sidecar; the supervisor must bring up a replacement.
         os.kill(first_pid, 9)
@@ -2341,9 +2348,14 @@ def test_native_landlock_sandbox_exec(tmp_path):
         assert info["backend"] == "landlock"
         assert info["landlock"] is True
 
-        status, _, payload = _request(
+        status, headers, payload = _request(port, "/v1/sandbox/status")
+        assert status == 200, payload
+        assert headers["x-hive-owner"] == "rust"
+        assert payload["backend"] == "landlock"
+
+        status, headers, payload = _request(
             port,
-            "/v1/sandbox/native/exec",
+            "/v1/sandbox/exec",
             method="POST",
             body=json.dumps(
                 {
@@ -2353,6 +2365,7 @@ def test_native_landlock_sandbox_exec(tmp_path):
             ).encode(),
         )
         assert status == 200, payload
+        assert headers["x-hive-owner"] == "rust"
         assert payload["exit_code"] == 0, payload
         assert payload["timed_out"] is False
         assert payload["stdout"].strip() == "hello"
@@ -2403,6 +2416,28 @@ def test_native_landlock_sandbox_exec(tmp_path):
             ).encode(),
         )
         assert status == 422
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
+def test_sandbox_policy_can_force_docker_fallback(tmp_path):
+    home = tmp_path / "home"
+    policy_dir = home / "harness_state" / "settings"
+    policy_dir.mkdir(parents=True)
+    (policy_dir / "sandbox.json").write_text(json.dumps({"mode": "docker"}))
+    sidecar = _Sidecar()
+    process = None
+    try:
+        process, port = _start_daemon(
+            sidecar_url=f"http://127.0.0.1:{sidecar.port}",
+            env_extra={"HIVE_HOME": str(home)},
+        )
+        status, headers, payload = _request(port, "/v1/sandbox/status")
+        assert headers["x-hive-owner"] == "python"
+        assert status in (200, 404), payload
+        assert isinstance(payload, dict)
     finally:
         if process is not None:
             process.terminate()

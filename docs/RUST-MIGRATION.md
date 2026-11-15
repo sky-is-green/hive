@@ -846,8 +846,11 @@ rather than per-tier.
   `HIVE_SANDBOX_WORKSPACE_ROOT`.
 - Tests cover inside/outside writes, network denial, environment scrubbing,
   `/etc/shadow` denial, timeout kill, and the daemon route.
-- Next: route the existing `/v1/sandbox/*` policy through `mode=landlock|auto`
-  (making Docker an explicit fallback), then WASM verifier/tool plugins.
+- `/v1/sandbox/exec` and `/v1/sandbox/status` now prefer the native backend
+  under `mode=auto` (the policy default); `mode=landlock` fails closed and
+  `mode=docker` forces the Docker/Python path. The old `/v1/sandbox/native/*`
+  routes remain for explicit probes.
+- Next: WASM verifier/tool plugins with fuel and memory limits.
 
 ---
 

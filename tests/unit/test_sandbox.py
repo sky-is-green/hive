@@ -44,7 +44,7 @@ def test_docker_host_reports_rootless_separation(monkeypatch):
 def test_default_policy_is_docker_and_not_pinned(state):
     policy = sandbox.SandboxPolicy(state)
     data = policy.read()
-    assert data["mode"] == "docker"
+    assert data["mode"] == "auto"
     assert data["local_fallback"] == "approval"
     with pytest.raises(sandbox.SandboxError, match="not pinned"):
         policy.image_ref()
