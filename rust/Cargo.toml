@@ -11,6 +11,7 @@ members = [
     "crates/hive-memory",
     "crates/hive-cli",
     "crates/hive-sandbox",
+    "crates/hive-plugins",
 ]
 
 [workspace.package]

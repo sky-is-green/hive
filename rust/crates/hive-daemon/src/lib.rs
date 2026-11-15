@@ -26,6 +26,7 @@ use axum::{Json, Router};
 use hive_core::backends::Manifest;
 use hive_core::paths::Paths;
 use hive_core::{platform_display, python, version};
+use hive_plugins::PluginHost;
 use percent_encoding::percent_decode_str;
 use serde_json::{Map, Value};
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
@@ -106,6 +107,7 @@ pub struct AppState {
     memory: Arc<MemoryManager>,
     metrics: Arc<Metrics>,
     sandbox: Arc<SandboxConfig>,
+    plugins: Option<Arc<PluginHost>>,
 }
 
 impl AppState {
@@ -288,6 +290,9 @@ impl AppState {
         let memory = Arc::new(MemoryManager::new(config.encoder_url.clone()));
         let metrics = Arc::new(Metrics::new());
         let sandbox = Arc::new(SandboxConfig::discover(&config.paths));
+        let plugins = PluginHost::new(config.paths.state_dir.join("plugins"))
+            .ok()
+            .map(Arc::new);
         Self {
             config,
             client,
@@ -296,6 +301,7 @@ impl AppState {
             memory,
             metrics,
             sandbox,
+            plugins,
         }
     }
 }
@@ -341,6 +347,8 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/sandbox/exec", post(sandbox_exec_route))
         .route("/v1/sandbox/native/status", get(native_sandbox_status))
         .route("/v1/sandbox/native/exec", post(native_sandbox_exec))
+        .route("/v1/plugins", get(list_plugins))
+        .route("/v1/plugins/{name}/run", post(run_plugin))
         .route("/v1/models", get(served_models))
         .route(
             "/v1/models/local",
@@ -1433,6 +1441,73 @@ async fn native_sandbox_exec(
     runtime_json(state.sandbox.exec(&body).await)
 }
 
+async fn list_plugins(State(state): State<Arc<AppState>>) -> Response {
+    let Some(host) = &state.plugins else {
+        return runtime_error(ApiError {
+            status: 503,
+            detail: "WASM plugin host is unavailable".into(),
+        });
+    };
+    runtime_json(Ok(serde_json::json!({
+        "directory": host.directory().to_string_lossy(),
+        "plugins": host.list(),
+    })))
+}
+
+async fn run_plugin(
+    State(state): State<Arc<AppState>>,
+    UrlPath(name): UrlPath<String>,
+    Json(body): Json<Value>,
+) -> Response {
+    let Some(host) = state.plugins.clone() else {
+        return runtime_error(ApiError {
+            status: 503,
+            detail: "WASM plugin host is unavailable".into(),
+        });
+    };
+    let input = body
+        .get("input")
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!({}));
+    let input_bytes = match serde_json::to_vec(&input) {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            return runtime_error(ApiError {
+                status: 422,
+                detail: format!("invalid plugin input: {error}"),
+            });
+        }
+    };
+    let plugin_name = name.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        let plugin = host.load(&plugin_name)?;
+        plugin.run(&input_bytes)
+    })
+    .await;
+    match result {
+        Ok(Ok(run)) => match serde_json::from_slice::<Value>(&run.output) {
+            Ok(output) => runtime_json(Ok(serde_json::json!({
+                "plugin": name,
+                "output": output,
+                "fuel_used": run.fuel_used,
+                "elapsed_ms": run.elapsed_ms,
+            }))),
+            Err(error) => runtime_error(ApiError {
+                status: 502,
+                detail: format!("plugin returned invalid JSON: {error}"),
+            }),
+        },
+        Ok(Err(error)) => runtime_error(ApiError {
+            status: 502,
+            detail: format!("plugin {name:?} failed: {error}"),
+        }),
+        Err(error) => runtime_error(ApiError {
+            status: 500,
+            detail: format!("plugin worker failed: {error}"),
+        }),
+    }
+}
+
 async fn openapi_spec(State(state): State<Arc<AppState>>) -> Response {
     let mut document = openapi::document();
     if let Some(base) = &state.config.sidecar_url {
@@ -1836,6 +1911,123 @@ mod tests {
                 "{path}"
             );
         }
+    }
+
+    const ECHO_PLUGIN: &str = r#"
+    (module
+      (memory (export "memory") 2)
+      (global $heap (mut i32) (i32.const 1024))
+      (func (export "alloc") (param $size i32) (result i32)
+        (local $ptr i32)
+        (local.set $ptr (global.get $heap))
+        (global.set $heap (i32.add (global.get $heap) (local.get $size)))
+        (local.get $ptr))
+      (func (export "run") (param $ptr i32) (param $len i32) (result i32)
+        (local $out i32)
+        (local.set $out (i32.const 8192))
+        (i32.store (local.get $out) (local.get $len))
+        (memory.copy (i32.add (local.get $out) (i32.const 4)) (local.get $ptr) (local.get $len))
+        (local.get $out)))
+    "#;
+
+    fn install_plugin(root: &std::path::Path, name: &str, source: &str, fuel: u64) {
+        use sha2::{Digest, Sha256};
+        let directory = root.join(name);
+        std::fs::create_dir_all(&directory).unwrap();
+        let wasm = wat::parse_str(source).unwrap();
+        std::fs::write(directory.join("module.wasm"), &wasm).unwrap();
+        let manifest = serde_json::json!({
+            "name": name,
+            "version": "0.1.0",
+            "module": "module.wasm",
+            "sha256": format!("{:x}", Sha256::digest(&wasm)),
+            "fuel": fuel,
+            "memory_mb": 2,
+        });
+        std::fs::write(
+            directory.join("plugin.json"),
+            serde_json::to_vec(&manifest).unwrap(),
+        )
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn wasm_plugin_route_round_trips_and_bounds_fuel() {
+        let directory = tempfile::tempdir().unwrap();
+        let state_dir = directory.path().join("state");
+        let plugins = state_dir.join("plugins");
+        install_plugin(&plugins, "echo", ECHO_PLUGIN, 1_000_000);
+        install_plugin(
+            &plugins,
+            "spin",
+            r#"
+            (module
+              (memory (export "memory") 1)
+              (func (export "alloc") (param i32) (result i32) (i32.const 1024))
+              (func (export "run") (param i32 i32) (result i32)
+                (loop $forever (br $forever))
+                (i32.const 0)))
+            "#,
+            1_000,
+        );
+        let mut config = DaemonConfig::new("127.0.0.1", 0, None);
+        config.paths.state_dir = state_dir;
+        let app = router(config);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/v1/plugins/echo/run")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"input":{"verdict":"pass"}}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let payload: Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(payload["output"]["verdict"], "pass");
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/v1/plugins/spin/run")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"input":{}}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let payload: Value = serde_json::from_slice(&body).unwrap();
+        assert!(
+            payload["detail"].as_str().unwrap_or("").contains("fuel")
+                || payload["detail"]
+                    .as_str()
+                    .unwrap_or("")
+                    .contains("run failed")
+        );
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/plugins")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]

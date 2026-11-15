@@ -850,7 +850,11 @@ rather than per-tier.
   under `mode=auto` (the policy default); `mode=landlock` fails closed and
   `mode=docker` forces the Docker/Python path. The old `/v1/sandbox/native/*`
   routes remain for explicit probes.
-- Next: WASM verifier/tool plugins with fuel and memory limits.
+- **WASM plugins:** new `hive-plugins` crate runs import-free modules through
+  wasmtime with deterministic fuel, a memory cap, one instance/table/memory,
+  and a SHA256 pin. `GET /v1/plugins` and `POST /v1/plugins/{name}/run` expose
+  the host. Format and ABI: `docs/PLUGINS.md`.
+- Next: signed plugin manifests, then release/SBOM and fleet supervision.
 
 ---
 

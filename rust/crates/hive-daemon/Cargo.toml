@@ -17,6 +17,7 @@ clap = { workspace = true, features = ["env"] }
 hive-core = { path = "../hive-core" }
 hive-memory = { path = "../hive-memory", default-features = false }
 hive-models = { path = "../hive-models" }
+hive-plugins = { path = "../hive-plugins" }
 hive-supervisor = { path = "../hive-supervisor" }
 http = "1"
 libc.workspace = true
@@ -32,4 +33,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
+sha2 = "0.10"
+tempfile.workspace = true
 tower = { version = "0.5", features = ["util"] }
+wat = "1"

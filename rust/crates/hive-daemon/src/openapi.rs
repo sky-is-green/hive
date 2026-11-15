@@ -157,6 +157,18 @@ pub fn document() -> Value {
     );
 
     add(
+        "/v1/plugins",
+        &[("get", operation("List installed WASM plugins", "plugins"))],
+    );
+    add(
+        "/v1/plugins/{name}/run",
+        &[(
+            "post",
+            operation("Run a WASM plugin with fuel and memory limits", "plugins"),
+        )],
+    );
+
+    add(
         "/v1/models/local",
         &[
             ("get", operation("List the local GGUF library", "models")),
