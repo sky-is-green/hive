@@ -1,7 +1,7 @@
 # Pre-approval review
 
-**Status:** main frozen at `008d758`; `rust-migration` is the review candidate.
-No merge until the owner signs off.
+**Status:** merged to `main` at `01d90ed` (tag `rust-g4`) on 2026-11-23.
+`rust-migration` remains the historical integration branch.
 
 **Exhaustive gate (2026-11-23, candidate `dbd8be5`):** `scripts/full-gate.sh` passed **24/24**
 steps on the post-walkthrough tree: Rust fmt/build/clippy/tests, Python
@@ -85,9 +85,14 @@ The exhaustive gate also fixed two real usability/performance bugs:
 - `serve --model` generated `ngl=99` even for CPU backends; generated stacks
   now use `ngl=0` when there is no GPU or the backend is CPU.
 
-The caveat pass and UX walkthrough are complete. The remaining approval step
-is the owner sign-off, then the `main` merge gate. The walkthrough fixed the
-clean-install manifest/shadow issue, Studio lifecycle routing, canonical chat
-path, Bearer auth, native-encoder onboarding, sandbox workspace fallback, and
-the responsive/deep-link console; details and evidence are in
+The caveat pass, UX walkthrough, owner sign-off, and final gate are complete;
+the rewrite is merged to `main` at `01d90ed` and tagged `rust-g4`. The
+walkthrough fixed the clean-install manifest/shadow issue, Studio lifecycle
+routing, canonical chat path, Bearer auth, native-encoder onboarding, sandbox
+workspace fallback, responsive/deep-link console, TUI actions, multi-daemon
+status, and per-stack doctor ports; details and evidence are in
 [UX-WALKTHROUGH.md](UX-WALKTHROUGH.md).
+
+Post-merge work: production release key/CI and the auto-updater (P4-05),
+Windows validation, the separate Studio layout pass, and C++/SIMD only if a
+measurement justifies it.

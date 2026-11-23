@@ -67,12 +67,12 @@ Severity:
   daemon health/ready/metrics/swap, Studio Load/chat/Splinter/Inspector/
   Lifecycle/Models/Sandbox at 388px, explicit failure states, and
   reinstall/uninstall/`hive-py` rollback.
-- Remaining approval item: owner sign-off, then the `main` merge gate.
+- Owner approved and the rewrite merged to `main` at `01d90ed`; tag `rust-g4`.
 
 ## Merge-blocker shortlist
 
-- `P1-01` Rust is not the default `hive` yet.
-- `P1-05` No installable Rust release/package yet.
+- `P1-01` Fixed on `main` at `01d90ed` (tag `rust-g4`): Rust is the default `hive`.
+- `P1-05` Fixed on `main`: the Rust runtime has an install path; production release key/CI remains P4-05.
 
 ---
 

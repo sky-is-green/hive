@@ -83,3 +83,5 @@ Rust fmt/build/clippy/tests, Python unit/integration, non-live conformance,
 every live daemon/llama test, install/uninstall layout, and release
 manifest/signing. Evidence:
 `/tmp/opencode/hive-gate/20261123T183103Z/`.
+
+The rewrite was merged to `main` at `01d90ed` (tag `rust-g4`).
