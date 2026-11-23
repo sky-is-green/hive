@@ -3,10 +3,12 @@
 **Status:** main frozen at `008d758`; `rust-migration` is the review candidate.
 No merge until the owner signs off.
 
-**Exhaustive gate (2026-11-15):** `scripts/full-gate.sh` passed **24/24**
-steps: Rust fmt/build/clippy/tests, Python unit/integration, non-live
-conformance, all live daemon and llama tests, install/uninstall, and release
-manifest/signing. See `/tmp/opencode/hive-gate/20261115T174410Z/`.
+**Exhaustive gate (2026-11-23):** `scripts/full-gate.sh` passed **24/24**
+steps on the post-walkthrough tree: Rust fmt/build/clippy/tests, Python
+unit/integration, non-live conformance, all live daemon and llama tests,
+install/uninstall, and release manifest/signing. See
+`/tmp/opencode/hive-gate/20261123T164752Z/` and
+[UX-WALKTHROUGH.md](UX-WALKTHROUGH.md).
 
 The goal is maximum performance with maximum usability, not Rust everywhere.
 Each component is reviewed on four axes: measured benefit, operational
@@ -83,5 +85,9 @@ The exhaustive gate also fixed two real usability/performance bugs:
 - `serve --model` generated `ngl=99` even for CPU backends; generated stacks
   now use `ngl=0` when there is no GPU or the backend is CPU.
 
-The caveat pass is complete; the remaining approval step is the owner UX
-walkthrough (install, CLI, TUI, Studio, failure states, rollback).
+The caveat pass and UX walkthrough are complete. The remaining approval step
+is the owner sign-off, then the `main` merge gate. The walkthrough fixed the
+clean-install manifest/shadow issue, Studio lifecycle routing, canonical chat
+path, Bearer auth, native-encoder onboarding, sandbox workspace fallback, and
+the responsive/deep-link console; details and evidence are in
+[UX-WALKTHROUGH.md](UX-WALKTHROUGH.md).

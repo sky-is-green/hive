@@ -289,7 +289,8 @@ fn home(paths: &Paths) -> Cmd {
     let stale = records.len().saturating_sub(running);
     let models = Library::new(&paths.models_dir);
     let model_count = models.count();
-    let stack_count = stacks::list_summaries(&paths.stacks_dir).len();
+    let stack_list = stacks::list_summaries(&paths.stacks_dir);
+    let stack_count = stack_list.len();
     let installed = Manifest::load(paths.manifest.as_deref(), &paths.home)
         .map(|manifest| manifest.installed().len())
         .unwrap_or(0);
@@ -308,7 +309,18 @@ fn home(paths: &Paths) -> Cmd {
     println!("  backends {installed}");
     println!();
     println!("  hive doctor");
-    println!("  hive serve peer-2tier --detach");
+    if let Some(stack) = stack_list.first() {
+        println!("  hive serve {} --detach", stack.name);
+    } else if let Some(model) = models
+        .rows()
+        .first()
+        .and_then(|row| row.get("file"))
+        .and_then(Value::as_str)
+    {
+        println!("  hive serve --model {model} --cards 1");
+    } else {
+        println!("  hive models download <repo>[:<file>]");
+    }
     println!("  hive status");
     println!("  hive models list");
     Ok(0)
@@ -446,6 +458,35 @@ fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
     add("ok", "hive", version().to_owned());
     add("ok", "platform", platform_display());
 
+    match std::process::Command::new(&python_path)
+        .args(["-c", "import harness, backend.providers, splinter.server"])
+        .output()
+    {
+        Ok(output) if output.status.success() => {
+            add("ok", "sidecar", "Python Studio imports".into())
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let detail = stderr.lines().last().unwrap_or("import failed");
+            add(
+                "warn",
+                "sidecar",
+                format!(
+                    "{detail}; install `splinter[serve]` and `.[studio]` in {python}",
+                    python = python_path.display()
+                ),
+            )
+        }
+        Err(error) => add(
+            "warn",
+            "sidecar",
+            format!(
+                "cannot probe {python}: {error}",
+                python = python_path.display()
+            ),
+        ),
+    }
+
     let models_dir = &paths.models_dir;
     let _ = paths.ensure_models_dir();
     if writable(models_dir) {
@@ -512,6 +553,21 @@ fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
             }
         }
         Err(error) => add("fail", "backends", format!("backend manifest: {error}")),
+    }
+
+    let encoder_dir = paths.home.join("models/encoder");
+    if encoder_dir.join("onnx/model.onnx").is_file() && encoder_dir.join("tokenizer.json").is_file()
+    {
+        add("ok", "encoder", encoder_dir.display().to_string());
+    } else {
+        add(
+            "warn",
+            "encoder",
+            format!(
+                "not installed; run `hive-encoder fetch --dir {}` for Studio memory",
+                encoder_dir.display()
+            ),
+        );
     }
 
     let devices = hardware::devices();

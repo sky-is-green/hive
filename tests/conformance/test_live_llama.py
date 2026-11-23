@@ -131,6 +131,7 @@ def test_live_detached_chat_and_stop(rust_bin, cli_env, tmp_path):
     try:
         models = _wait_models(port)
         assert models.get("data")
+        assert models["data"][0]["id"] == Path(MODEL).stem, models
         answer = _chat(port)
         assert answer.get("choices"), answer
         status = run_rust(rust_bin, ["status", "--json"], env)

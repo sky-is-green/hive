@@ -19,7 +19,11 @@ pub struct EncoderService {
 }
 
 impl EncoderService {
-    pub async fn start(log_dir: &std::path::Path, port: u16) -> Result<Self, String> {
+    pub async fn start(
+        log_dir: &std::path::Path,
+        port: u16,
+        encoder_dir: Option<&std::path::Path>,
+    ) -> Result<Self, String> {
         let binary = binary()?;
         if let Some(parent) = log_path(log_dir).parent() {
             std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -31,6 +35,9 @@ impl EncoderService {
             .map_err(|error| format!("cannot open the encoder log: {error}"))?;
         let stderr = log.try_clone().map_err(|error| error.to_string())?;
         let mut command = Command::new(&binary);
+        if let Some(directory) = encoder_dir {
+            command.env("HIVE_ENCODER_DIR", directory);
+        }
         command
             .arg("serve")
             .arg("--host")

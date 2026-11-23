@@ -642,6 +642,32 @@ fn spawn_local(
         .arg(ngl.to_string())
         .arg("-c")
         .arg(ctx.to_string());
+    let alias = tier
+        .get("alias")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|alias| !alias.is_empty())
+        .map(str::to_owned)
+        .or_else(|| {
+            model
+                .file_stem()
+                .map(|stem| stem.to_string_lossy().into_owned())
+                .filter(|stem| !stem.is_empty())
+        });
+    let alias_already_set = tier
+        .get("engine_args")
+        .and_then(Value::as_array)
+        .map(|args| {
+            args.iter()
+                .filter_map(Value::as_str)
+                .any(|arg| arg == "--alias")
+        })
+        .unwrap_or(false);
+    if let Some(alias) = alias
+        && !alias_already_set
+    {
+        command.arg("--alias").arg(alias);
+    }
     if let Some(cache_k) = tier.get("cache_k").and_then(Value::as_str)
         && !cache_k.is_empty()
     {

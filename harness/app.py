@@ -1606,7 +1606,17 @@ def create_app(
         # thread pool, and letting PyTorch OpenMP spawn 16 more exhausts
         # the sandbox pids cap (EAGAIN -> silent worker death). One
         # thread is still ~5ms for a 384-dim embedding.
-        import torch
+        try:
+            import torch
+        except ImportError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "memory encoder unavailable: install the native encoder "
+                    "(`hive-encoder fetch`) or the Python encoder extras "
+                    "(`splinter[encoders]`)"
+                ),
+            ) from exc
 
         torch.set_num_threads(1)
         return UltraSmallDrone(
@@ -1635,6 +1645,10 @@ def create_app(
         required = _required_token()
         if required and request.url.path.startswith("/v1/"):
             supplied = request.headers.get("x-splinter-token", "")
+            if not supplied:
+                auth = request.headers.get("authorization", "")
+                if auth.lower().startswith("bearer "):
+                    supplied = auth[7:]
             if supplied != required:
                 from fastapi.responses import JSONResponse
 

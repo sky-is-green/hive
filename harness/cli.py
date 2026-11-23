@@ -1008,6 +1008,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     add("ok", "platform", f"{platform.system()} {platform.machine()}")
 
     try:
+        import backend.providers  # noqa: F401
+        import splinter.server  # noqa: F401
+
+        add("ok", "sidecar", "Python Studio imports")
+    except Exception as exc:  # noqa: BLE001 - a missing extra is a warning
+        add("warn", "sidecar",
+            f"{type(exc).__name__}: {exc}; install `splinter[serve]` and `.[studio]`")
+
+    try:
         manager = _models_manager(args)
         models_dir = manager.models_dir
         writable = os.access(models_dir, os.W_OK)
@@ -1040,6 +1049,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 "(or see `hive backends`)")
     except (OSError, ValueError) as exc:
         add("fail", "backends", f"backend manifest: {exc}")
+
+    encoder_root = Path(os.environ.get("HIVE_HOME") or Path(__file__).resolve().parents[1])
+    encoder_dir = encoder_root / "models/encoder"
+    if ((encoder_dir / "onnx/model.onnx").is_file()
+            and (encoder_dir / "tokenizer.json").is_file()):
+        add("ok", "encoder", str(encoder_dir))
+    else:
+        add("warn", "encoder",
+            f"not installed; run `hive-encoder fetch --dir {encoder_dir}` "
+            "for Studio memory")
 
     try:
         devices = linux_amd_devices()

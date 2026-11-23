@@ -47,6 +47,25 @@ Severity:
   startup/RSS/process safety or the torch-free runtime wins; Python remains for
   research/Studio breadth; C++ is only a benchmark-driven hotspot candidate.
 
+## UX walkthrough 2026-11-23
+
+- Full pre-approval gate on the updated tree: **24/24 steps passed**
+  (`scripts/full-gate.sh`), including every live daemon/llama test, install
+  layout, and release signing. Evidence:
+  `/tmp/opencode/hive-gate/20261123T164752Z/`.
+- Walkthrough stopped at the first hard failures and fixed them in place:
+  clean-install manifest/package shadowing (P2-33), Studio `/api/v1` lifecycle
+  routing (P2-34), canonical chat mock + model IDs (P2-35), Bearer auth
+  (P2-36), native encoder onboarding (P2-37), sandbox workspace fallback
+  (P2-38), responsive/deep-link console (P2-39), and Python sidecar install
+  docs (P2-40). CPU-only/display warnings and the first-run hint are P1-53/P1-54.
+- Verified: clean install and `hive setup`, first-run `hive`/`doctor`/`config`/
+  `status`, model search/download/import/remove, stack validate/serve/logs/stop,
+  daemon health/ready/metrics/swap, Studio Load/chat/Splinter/Inspector/
+  Lifecycle/Models/Sandbox at 388px, explicit failure states, and
+  reinstall/uninstall/`hive-py` rollback.
+- Remaining approval item: owner sign-off, then the `main` merge gate.
+
 ## Merge-blocker shortlist
 
 - `P1-01` Rust is not the default `hive` yet.
@@ -164,6 +183,8 @@ Severity:
 | P1-50 | `status` spawns one thread per unique endpoint; Python caps at 8. | minor | fixed — max 8 concurrent probes | A bounded pool is used or accepted. |
 | P1-51 | Probe failure text differs from Python. | minor | accepted — JSON/error text contract | Error text is normalized or accepted. |
 | P1-52 | CPU-only launches (`ngl=0`) were still charged against VRAM, and `serve --model` generated `ngl=99` even for CPU backends. Residency now skips VRAM for `ngl=0` and generated stacks use `ngl=0` when no GPU/backend is selected. | should | fixed — CPU-only residency + generated ngl | CPU-only tiers do not require VRAM, and generated CPU stacks set `ngl=0`. |
+| P1-53 | CPU-only stacks still printed per-card display warnings, and `hive serve --model <library.gguf>` did not resolve a bare file name from the model library. Residency now suppresses display warnings for uncharged cards, and `serve` checks the library after the local path. | minor | fixed — UX walkthrough 2026-11-23 | CPU-only plans have no GPU warnings and library model names resolve. |
+| P1-54 | The bare `hive` dashboard always suggested `hive serve peer-2tier`, even on a clean home with no such stack. It now suggests the first saved stack, a library model, or `hive models download`. | minor | fixed — UX walkthrough 2026-11-23 | The first-run hint is valid for the current home. |
 
 ---
 
@@ -208,6 +229,14 @@ Severity:
 | P2-30 | `/v1/runs` and `/v1/report/*` are native, but the rendered `/view/*` and `/runs` HTML pages still proxy to Python's report renderer. | should | accepted — report renderer stays Python | The report renderer is native, or those pages are accepted as Python-only until the report group moves. |
 | P2-31 | `hive ui web` serves the console on the API port; `--console-port` is accepted for Python CLI parity but ignored. `--detach` writes `logs/daemon.pid`; there is no `hive ui stop` verb. | minor | accepted — console shares API port; --detach documented | The console can bind its historical port, or the divergence is documented and accepted. |
 | P2-32 | Python-only verbs are proxied through `python -m harness.cli`; they still need the Python reference install and do not appear in `hive help --json` native topics. | intentional | accepted — Python-only verbs proxied | The verbs move native in their phases; until then the proxy is the supported path. |
+| P2-33 | The clean installer did not copy `tools/backends/manifest.json`, and an earlier copy under `$HIVE_HOME/harness/data` shadowed the Python `harness` package when the sidecar ran with cwd `$HIVE_HOME`. The manifest now installs under `$HIVE_HOME/tools/backends` and `$PREFIX/share/hive`; the installer removes the old shadow copy. | blocker | fixed — UX walkthrough 2026-11-23 | Clean installs can run `hive setup`/`doctor` outside the checkout and the sidecar imports. |
+| P2-34 | The Studio shell's `/api/v1` lifecycle calls were proxied to the Python sidecar, so Load failed and Lifecycle showed no loaded engines even when the Rust daemon owned them. Native server/stack routes now also answer `/api/v1/*`. | blocker | fixed — UX walkthrough 2026-11-23 | Studio Load/Lifecycle use the Rust runtime state. |
+| P2-35 | The canonical `/v1/chat/completions` returned the sidecar's model-free mock response, and engine model IDs were absolute GGUF paths. The route now forwards to the curated OpenAI passthrough, and llama tiers default to a `--alias` from the model file name. | should | fixed — UX walkthrough 2026-11-23 | OpenAI clients get real replies and stable model IDs. |
+| P2-36 | `HARNESS_TOKEN` accepted only `x-splinter-token`; standard OpenAI clients send `Authorization: Bearer`. Both forms are accepted in the daemon and the sidecar. | should | fixed — UX walkthrough 2026-11-23 | Bearer-authenticated OpenAI clients can use a protected daemon. |
+| P2-37 | A clean home without the native encoder model and without torch returned a 500 and could take the sidecar down. The daemon now auto-detects `$HIVE_HOME/models/encoder`, `hive setup` fetches it, and the sidecar returns a 503 with the install command. | blocker | fixed — UX walkthrough 2026-11-23 | Studio memory works from a clean install or fails with a clear 503. |
+| P2-38 | The native sandbox defaulted to `/srv/hive-ai/workspaces`, which is not writable for a normal user, so every native exec failed. It now falls back to `$HIVE_HOME/harness_state/workspaces`. | should | fixed — UX walkthrough 2026-11-23 | Sandbox exec works in a user install; AI-user deployments keep `/srv/hive-ai`. |
+| P2-39 | At narrow widths the rail/nav forced horizontal overflow and hash links did not switch pages. The responsive CSS constrains the nav and the console listens for `hashchange`. | minor | fixed — UX walkthrough 2026-11-23 | Narrow viewport has no horizontal scroll and deep links work. |
+| P2-40 | The documented Python reference install omitted `splinter[serve]`, so `python -m harness` failed with `ModuleNotFoundError`. `docs/INSTALL.md`, the installer output, and `hive doctor` now name the package. | blocker | fixed — UX walkthrough 2026-11-23 | A clean sidecar install is documented and diagnosed. |
 
 
 ## Phase 3 — memory and encoder

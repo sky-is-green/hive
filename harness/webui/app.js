@@ -98,7 +98,7 @@ async function loadOverview() {
   $("#rail-status").textContent = hiveOk ? "Hive online" : "Hive offline";
 
   const svc = [
-    ["Hive", hiveOk, "127.0.0.1:8765"],
+    ["Hive", hiveOk, location.host],
     ["DS4.1", ds41.status === "fulfilled" && ds41.value, "127.0.0.1:8150"],
     ["LFM3 1.7B", lfm3.status === "fulfilled" && lfm3.value, "127.0.0.1:8155"],
   ];
@@ -2112,7 +2112,12 @@ setInterval(() => {
   if (state.page === "risk") loadRisk();
 }, 10000);
 
+const pageNames = ["overview","chat","roles","bench","routing","judge","risk","activity","engines","providers","lifecycle","training","models"];
 const start = location.hash.slice(1) || "overview";
-show(["overview","chat","roles","bench","routing","judge","risk","activity","engines","providers","lifecycle","training","models"].includes(start) ? start : "overview");
+show(pageNames.includes(start) ? start : "overview");
+window.addEventListener("hashchange", () => {
+  const page = location.hash.slice(1) || "overview";
+  if (pageNames.includes(page) && page !== state.page) show(page);
+});
 setInterval(() => { $("#clock").textContent = new Date().toLocaleString(); }, 1000);
 $("#clock").textContent = new Date().toLocaleString();

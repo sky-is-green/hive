@@ -135,7 +135,13 @@ pub fn plan(stack: &Value, models_dir: &Path, devices: &[Device]) -> Plan {
     let mut per_card = Vec::new();
     for device in devices {
         let index = device.index;
-        let budget = budget(device, &resident[&index], &mut warnings);
+        let charged = weights[&index] + kv[&index] > 0.0;
+        let mut unused = Vec::new();
+        let budget = budget(
+            device,
+            &resident[&index],
+            if charged { &mut warnings } else { &mut unused },
+        );
         per_card.push(CardPlan {
             card: index,
             weights: weights[&index],
@@ -538,6 +544,14 @@ mod tests {
             plan.warnings
                 .iter()
                 .any(|warning| warning.contains("CPU-only"))
+        );
+        assert!(
+            !plan
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("drives a display")),
+            "{:?}",
+            plan.warnings
         );
     }
 

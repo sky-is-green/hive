@@ -51,15 +51,15 @@ impl Paths {
         };
         let log_dir = home.join("logs");
         let manifest = {
-            let checkout = repo.join("tools/backends/manifest.json");
-            let packaged = repo.join("harness/data/backends-manifest.json");
-            if checkout.is_file() {
-                Some(checkout)
-            } else if packaged.is_file() {
-                Some(packaged)
-            } else {
-                None
+            let mut candidates = vec![
+                repo.join("tools/backends/manifest.json"),
+                repo.join("harness/data/backends-manifest.json"),
+            ];
+            if let Some(share) = install_share() {
+                candidates.push(share.join("tools/backends/manifest.json"));
+                candidates.push(share.join("harness/data/backends-manifest.json"));
             }
+            candidates.into_iter().find(|path| path.is_file())
         };
 
         Self {
@@ -83,6 +83,14 @@ impl Paths {
     pub fn ensure_serve_dir(&self) -> std::io::Result<()> {
         std::fs::create_dir_all(&self.serve_dir)
     }
+}
+
+/// `$PREFIX/share/hive`, where the installer keeps the console and manifest.
+fn install_share() -> Option<PathBuf> {
+    let executable = std::env::current_exe().ok()?;
+    let prefix = executable.parent()?.parent()?;
+    let share = prefix.join("share/hive");
+    share.is_dir().then_some(share)
 }
 
 /// Walk up from the executable (then the cwd) looking for a checkout.

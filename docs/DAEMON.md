@@ -24,8 +24,10 @@ RUST_LOG=hive_daemon=debug
 
 # Native encoder (Phase 3): the daemon starts hive-encoder serve and points
 # the sidecar at it; no torch/sentence-transformers is loaded on this path.
-HARNESS_EMBEDDING_BACKEND=rust
-HIVE_ENCODER_DIR=/srv/hive/models/encoder   # onnx/model.onnx + tokenizer.json
+# `hive setup` installs the model under $HIVE_HOME/models/encoder, and the
+# daemon auto-detects it; these overrides are only for non-default layouts.
+# HARNESS_EMBEDDING_BACKEND=rust
+# HIVE_ENCODER_DIR=/srv/hive/models/encoder   # onnx/model.onnx + tokenizer.json
 # HIVE_ENCODER_PORT=8172
 # HIVE_ENCODER_BIN=/srv/hive/bin/hive-encoder
 ```
@@ -65,6 +67,14 @@ hive ui status
 The console is served same-origin on the API port. `hive ui web --detach`
 uses `~/.hive/logs/daemon.log` and `~/.hive/logs/daemon.pid` when running
 outside systemd.
+
+## OpenAI clients
+
+Point an OpenAI client at `http://127.0.0.1:8765/v1`; the model list and
+`chat/completions` are served by the loaded engine with Splinter context. If
+`HARNESS_TOKEN` is set, use `Authorization: Bearer <token>` (the legacy
+`x-splinter-token` header still works). The curated wire is also available at
+`/v1/openai/chat/completions`.
 
 ## Operations
 

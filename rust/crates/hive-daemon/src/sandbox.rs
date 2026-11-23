@@ -87,6 +87,37 @@ pub struct SandboxConfig {
     state_dir: PathBuf,
 }
 
+/// The AI-user deployment owns `/srv/hive-ai/workspaces`; a normal user
+/// install cannot write there. Use a writable state-directory workspace when
+/// the deployment root is absent or read-only.
+fn default_workspace_root(paths: &Paths) -> PathBuf {
+    let deployment = PathBuf::from("/srv/hive-ai/workspaces");
+    if writable_directory(&deployment) {
+        return deployment;
+    }
+    let fallback = paths.state_dir.join("workspaces");
+    let _ = std::fs::create_dir_all(&fallback);
+    fallback
+}
+
+fn writable_directory(path: &Path) -> bool {
+    if !path.is_dir() {
+        return false;
+    }
+    let probe = path.join(format!(".hive-write-probe-{}", std::process::id()));
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe)
+    {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
 impl SandboxConfig {
     pub fn discover(paths: &Paths) -> Self {
         let binary = std::env::var_os("HIVE_SANDBOX_BIN")
@@ -108,7 +139,7 @@ impl SandboxConfig {
             });
         let workspace_root = std::env::var_os("HIVE_SANDBOX_WORKSPACE_ROOT")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("/srv/hive-ai/workspaces"));
+            .unwrap_or_else(|| default_workspace_root(paths));
         Self {
             binary,
             workspace_root,

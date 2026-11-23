@@ -662,15 +662,25 @@ fn generate_stack(
             .split_once(':')
             .map(|(repo, file)| !file.is_empty() && repo.contains('/'))
             .unwrap_or(false);
-    let model_path = if candidate.is_file() {
+    let library_candidate = paths.models_dir.join(&candidate);
+    let model_path = if candidate.is_file() || library_candidate.is_file() {
         if options.file.is_some() {
             return Err("--file is only for a HuggingFace repo, not a local path".into());
         }
-        candidate
+        let existing = if candidate.is_file() {
+            candidate
+        } else {
+            library_candidate
+        };
+        existing
             .canonicalize()
-            .map_err(|error| format!("cannot resolve {}: {error}", candidate.display()))?
+            .map_err(|error| format!("cannot resolve {}: {error}", existing.display()))?
     } else if !remote_ref {
-        return Err(format!("no such GGUF file: {}", candidate.display()));
+        return Err(format!(
+            "no such GGUF file: {} (looked in {} too; see `hive models list`)",
+            candidate.display(),
+            paths.models_dir.display()
+        ));
     } else {
         let (repo, file) = match options.file.as_deref() {
             Some(file) => (model.to_owned(), file.to_owned()),

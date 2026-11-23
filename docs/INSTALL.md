@@ -18,6 +18,11 @@ This builds `hive`, `hive-daemon`, `hive-encoder`, `hive-memory`, and
 prebuilt binaries, `--no-systemd` to skip the unit, or `--uninstall` to roll
 back to the Python reference.
 
+Then run `hive setup`. With no flags it installs a portable engine and the
+native memory encoder (`hive-encoder fetch`). The daemon auto-detects the
+encoder under `$HIVE_HOME/models/encoder`; `hive setup --no-fetch` skips both
+downloads.
+
 The sidecar interpreter is explicit:
 
 ```sh
@@ -31,9 +36,15 @@ user service. `hive doctor` reports missing runtime pieces.
 
 ```sh
 python -m venv .venv
+.venv/bin/pip install -e "splinter[serve]"
 .venv/bin/pip install -e ".[studio]"
 .venv/bin/hive-py version --json
 ```
+
+`splinter[serve]` provides the sidecar's memory backend (`backend`, `cortex`,
+`splinter.server`); `.[studio]` provides the console routes. The `[encoders]`
+extra is only needed when using the Python encoder; the Rust runtime uses the
+native `hive-encoder` and does not import torch.
 
 The Python install does **not** provide `hive`; that name belongs to the Rust
 runtime. Existing virtualenvs that still contain the old `hive` script should be

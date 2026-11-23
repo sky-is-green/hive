@@ -21,6 +21,6 @@
     "rust-toolchain.toml"
   ],
   "beacon": "Phase 4: zero-downtime swaps, native observability, sandbox/WASM, fleet/release",
-  "updated": "2026-11-15T16:49:51Z",
+  "updated": "2026-11-23T16:55:00Z",
   "lease": "24h"
 }

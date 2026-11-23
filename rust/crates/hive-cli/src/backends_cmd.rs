@@ -3,12 +3,14 @@
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 
 use flate2::read::GzDecoder;
 use hive_core::backends::Manifest;
 use hive_core::json;
 use hive_core::paths::Paths;
+use hive_core::python;
 use serde_json::{Map, Value};
 
 type Cmd = Result<u8, String>;
@@ -508,6 +510,57 @@ fn verify(binary: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn encoder_binary() -> Option<PathBuf> {
+    if let Some(raw) = std::env::var_os("HIVE_ENCODER_BIN") {
+        let path = PathBuf::from(raw);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    let sibling = std::env::current_exe()
+        .ok()
+        .map(|path| path.with_file_name("hive-encoder"))
+        .filter(|path| path.is_file());
+    sibling.or_else(|| python::which("hive-encoder"))
+}
+
+fn ensure_encoder(paths: &Paths, no_fetch: bool) -> (bool, String) {
+    let directory = paths.home.join("models/encoder");
+    let model = directory.join("onnx/model.onnx");
+    let tokenizer = directory.join("tokenizer.json");
+    if model.is_file() && tokenizer.is_file() {
+        return (true, directory.display().to_string());
+    }
+    if no_fetch {
+        return (
+            false,
+            "not installed; run `hive-encoder fetch` (Studio memory uses it)".into(),
+        );
+    }
+    let Some(binary) = encoder_binary() else {
+        return (
+            false,
+            "hive-encoder is not installed; reinstall the Rust runtime".into(),
+        );
+    };
+    match Command::new(&binary)
+        .arg("fetch")
+        .arg("--dir")
+        .arg(&directory)
+        .output()
+    {
+        Ok(output) if output.status.success() && model.is_file() && tokenizer.is_file() => {
+            (true, directory.display().to_string())
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let detail = stderr.lines().last().unwrap_or("fetch failed");
+            (false, format!("fetch failed ({detail})"))
+        }
+        Err(error) => (false, format!("cannot run {}: {error}", binary.display())),
+    }
+}
+
 pub fn setup(paths: &Paths, no_fetch: bool, as_json: bool) -> Cmd {
     let mut manifest = Manifest::load(paths.manifest.as_deref(), &paths.home)
         .map_err(|error| format!("hive setup: {error}"))?;
@@ -560,6 +613,7 @@ pub fn setup(paths: &Paths, no_fetch: bool, as_json: bool) -> Cmd {
     paths
         .ensure_serve_dir()
         .map_err(|error| format!("hive setup: {error}"))?;
+    let (encoder_ready, encoder_detail) = ensure_encoder(paths, no_fetch);
     let payload = {
         let mut object = Map::new();
         object.insert("ok".into(), Value::Bool(true));
@@ -567,6 +621,14 @@ pub fn setup(paths: &Paths, no_fetch: bool, as_json: bool) -> Cmd {
         object.insert(
             "backends".into(),
             Value::Array(installed.iter().cloned().map(Value::String).collect()),
+        );
+        object.insert(
+            "encoder".into(),
+            serde_json::json!({
+                "installed": encoder_ready,
+                "path": paths.home.join("models/encoder").to_string_lossy(),
+                "detail": encoder_detail,
+            }),
         );
         object.insert(
             "models_dir".into(),
@@ -593,6 +655,14 @@ pub fn setup(paths: &Paths, no_fetch: bool, as_json: bool) -> Cmd {
             "none".to_owned()
         } else {
             installed.join(", ")
+        }
+    );
+    println!(
+        "  encoder {}",
+        if encoder_ready {
+            encoder_detail.clone()
+        } else {
+            format!("! {encoder_detail}")
         }
     );
     println!("  models  {}", paths.models_dir.display());

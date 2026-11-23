@@ -380,6 +380,33 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/v1/models/hub/downloads", get(hub_downloads))
         .route("/v1/runs", get(runs_index))
         .route("/v1/report/{*run_dir}", get(run_report))
+        // The console shell uses the Python Studio's `/api/v1` prefix. Route
+        // the lifecycle paths to the Rust owners instead of proxying them to
+        // the sidecar, which has a separate (and usually empty) runtime view.
+        .route("/api/v1/chat/completions", post(curated_chat))
+        .route("/api/v1/setup/status", get(setup_status))
+        .route("/api/v1/version", get(version_route))
+        .route("/api/v1/config", get(config_route))
+        .route("/api/v1/stacks", get(list_stacks))
+        .route("/api/v1/stacks/status", get(stack_status))
+        .route(
+            "/api/v1/stacks/{name}",
+            get(get_stack).put(put_stack).delete(delete_stack),
+        )
+        .route("/api/v1/stacks/{name}/validate", post(validate_stack))
+        .route("/api/v1/stacks/{name}/apply", post(apply_stack))
+        .route("/api/v1/stacks/{name}/unload", post(unload_stack))
+        .route("/api/v1/server/status", get(server_status))
+        .route("/api/v1/server/log", get(server_log))
+        .route("/api/v1/server/memory", get(server_memory))
+        .route("/api/v1/server/metrics", get(server_metrics))
+        .route("/api/v1/server/fit", get(server_fit))
+        .route("/api/v1/server/start", post(server_start))
+        .route("/api/v1/server/swap", post(server_swap))
+        .route("/api/v1/server/stop", post(server_stop))
+        .route("/api/v1/server/unload", post(server_unload))
+        .route("/api/v1/server/unload-loaded", post(server_unload_loaded))
+        .route("/v1/chat/completions", post(curated_chat))
         .route(
             "/api/routing/traces",
             get(routing_traces).post(routing_trace_post),
@@ -405,12 +432,22 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
 
     let mut encoder = None;
-    let embedding_rust = std::env::var("HARNESS_EMBEDDING_BACKEND")
-        .map(|value| value.trim().eq_ignore_ascii_case("rust"))
-        .unwrap_or(false);
+    let encoder_dir = config.paths.home.join("models/encoder");
+    let encoder_available = encoder_dir.join("onnx/model.onnx").is_file()
+        && encoder_dir.join("tokenizer.json").is_file();
     let memory_setting = std::env::var("HIVE_MEMORY_BACKEND")
         .map(|value| value.trim().to_ascii_lowercase())
         .unwrap_or_default();
+    let embedding_setting = std::env::var("HARNESS_EMBEDDING_BACKEND")
+        .ok()
+        .map(|value| value.trim().to_ascii_lowercase());
+    // A clean `hive setup` installs the native encoder model. Use it
+    // automatically unless the operator explicitly chose another backend.
+    let embedding_rust = match embedding_setting.as_deref() {
+        Some("rust") => true,
+        Some(_) => false,
+        None => encoder_available && memory_setting != "python",
+    };
     // The native runtime uses native memory by default whenever the managed
     // encoder is active; `HIVE_MEMORY_BACKEND=python` opts back out.
     let memory_backend = memory_setting != "python" && (memory_setting == "rust" || embedding_rust);
@@ -426,7 +463,12 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
             .and_then(|text| text.parse::<u16>().ok())
             .filter(|port| *port > 0)
             .unwrap_or(8172);
-        let service = encoder::EncoderService::start(&config.paths.log_dir, port).await?;
+        let service = encoder::EncoderService::start(
+            &config.paths.log_dir,
+            port,
+            encoder_available.then_some(encoder_dir.as_path()),
+        )
+        .await?;
         config
             .sidecar_env
             .push(("HARNESS_EMBEDDING_BACKEND".into(), "rust".into()));
@@ -586,15 +628,28 @@ async fn request_id(request: Request, next: Next) -> Response {
 
 async fn token_guard(State(state): State<Arc<AppState>>, request: Request, next: Next) -> Response {
     let required = state.config.token.as_deref();
+    let path = request.uri().path();
     if let Some(required) = required
-        && request.uri().path().starts_with("/v1/")
+        && (path.starts_with("/v1/") || path.starts_with("/api/v1/"))
     {
-        let supplied = request
+        let legacy = request
             .headers()
             .get("x-splinter-token")
+            .and_then(|value| value.to_str().ok());
+        let bearer = request
+            .headers()
+            .get("authorization")
             .and_then(|value| value.to_str().ok())
-            .unwrap_or("");
-        if !token_matches(supplied, required) {
+            .and_then(|value| {
+                value
+                    .strip_prefix("Bearer ")
+                    .or_else(|| value.strip_prefix("bearer "))
+            });
+        if !legacy
+            .into_iter()
+            .chain(bearer)
+            .any(|supplied| token_matches(supplied, required))
+        {
             return owned(
                 StatusCode::UNAUTHORIZED,
                 Json(serde_json::json!({"detail": "invalid or missing token"})).into_response(),
@@ -1746,6 +1801,13 @@ fn not_found(detail: &str) -> Response {
         StatusCode::NOT_FOUND,
         Json(serde_json::json!({ "detail": detail })).into_response(),
     )
+}
+
+/// The canonical OpenAI chat path is the curated passthrough, not the
+/// sidecar's model-free mock route. External clients point at `/v1` and get
+/// the loaded model plus Splinter's context.
+async fn curated_chat(State(state): State<Arc<AppState>>, request: Request) -> Response {
+    proxy_to(state, request, "/v1/openai/chat/completions".to_owned()).await
 }
 
 async fn proxy(State(state): State<Arc<AppState>>, request: Request) -> Response {

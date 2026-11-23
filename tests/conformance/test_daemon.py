@@ -160,10 +160,14 @@ def _request(
     method: str = "GET",
     body: bytes | None = None,
     token: str | None = None,
+    bearer: bool = False,
 ) -> tuple[int, dict, dict]:
     headers = {"content-type": "application/json"}
     if token:
-        headers["x-splinter-token"] = token
+        if bearer:
+            headers["authorization"] = f"Bearer {token}"
+        else:
+            headers["x-splinter-token"] = token
     request = urllib.request.Request(
         f"http://127.0.0.1:{port}{path}",
         data=body,
@@ -488,6 +492,19 @@ def test_token_guard_and_sidecar_health():
         assert payload == {"detail": "invalid or missing token"}
 
         status, _, _ = _request(port, "/v1/version", token="required")
+        assert status == 200
+
+        status, _, _ = _request(
+            port, "/v1/version", token="required", bearer=True
+        )
+        assert status == 200, "OpenAI clients authenticate with Bearer"
+        status, _, _ = _request(port, "/v1/version", token="wrong", bearer=True)
+        assert status == 401
+        status, _, _ = _request(port, "/api/v1/version")
+        assert status == 401
+        status, _, _ = _request(
+            port, "/api/v1/version", token="required", bearer=True
+        )
         assert status == 200
 
         status, _, payload = _request(
@@ -1284,9 +1301,29 @@ def test_live_studio_chat_through_the_daemon(tmp_path):
             "key": "studio",
         }
         status, _, instance = _request(
-            port, "/v1/server/start", method="POST", body=json.dumps(launch).encode()
+            port, "/api/v1/server/start", method="POST", body=json.dumps(launch).encode()
         )
         assert status == 200, instance
+        status, _, server = _request(port, "/api/v1/server/status")
+        assert status == 200
+        assert {row["key"] for row in server["loaded"]} == {"studio"}
+
+        status, _, chat = _request(
+            port,
+            "/v1/chat/completions",
+            method="POST",
+            body=json.dumps(
+                {
+                    "model": instance["model"],
+                    "messages": [{"role": "user", "content": "Say hi."}],
+                    "max_tokens": 16,
+                    "temperature": 0,
+                }
+            ).encode(),
+        )
+        assert status == 200, chat
+        content = chat["choices"][0]["message"]["content"]
+        assert "[splinter-mock]" not in content, chat
 
         status, headers, body = _raw_request(
             port,

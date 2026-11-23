@@ -76,6 +76,20 @@ mkdir -p "$PREFIX/bin" "$SHARE"
 for name in "${BINARIES[@]}"; do
   install -Dm755 "$BIN_DIR/$name" "$PREFIX/bin/$name"
 done
+# The installed binary resolves the backend manifest under HIVE_HOME.
+HIVE_ROOT="${HIVE_HOME:-$HOME/.hive}"
+if [[ -f "$REPO/tools/backends/manifest.json" ]]; then
+  mkdir -p "$HIVE_ROOT/tools/backends" "$SHARE/tools/backends"
+  cp "$REPO/tools/backends/manifest.json" "$HIVE_ROOT/tools/backends/manifest.json"
+  cp "$REPO/tools/backends/manifest.json" "$SHARE/tools/backends/manifest.json"
+fi
+# An earlier installer copied the manifest to $HIVE_HOME/harness/data, which
+# shadows the real Python `harness` package when the sidecar cwd is $HIVE_HOME.
+if [[ -f "$HIVE_ROOT/harness/data/backends-manifest.json" ]]; then
+  rm -f "$HIVE_ROOT/harness/data/backends-manifest.json"
+  rmdir "$HIVE_ROOT/harness/data" 2>/dev/null || true
+  rmdir "$HIVE_ROOT/harness" 2>/dev/null || true
+fi
 if [[ -d "$REPO/harness/webui" ]]; then
   rm -rf "$SHARE/webui"
   cp -a "$REPO/harness/webui" "$SHARE/webui"
@@ -93,5 +107,5 @@ printf '{"name":"hive","version":"%s","prefix":"%s","source":"%s","installed_at"
 
 echo "installed Rust runtime into $PREFIX/bin"
 echo "  $("$PREFIX/bin/hive" --version 2>/dev/null || echo 'hive (version check failed)')"
-echo "  Python reference: hive-py (pip install -e '.[studio]')"
+echo "  Python sidecar: pip install -e 'splinter[serve]' -e '.[studio]'"
 echo "  sidecar interpreter: export HIVE_PYTHON=/path/to/venv/bin/python"
