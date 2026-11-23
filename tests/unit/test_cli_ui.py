@@ -7,9 +7,9 @@ import json
 from harness import cli
 
 
-def test_ui_status_reports_both_surfaces_without_starting_one(capsys):
+def test_ui_status_reports_both_surfaces_without_starting_one(tmp_path, capsys):
     assert cli.main(["ui", "status", "--port", "9", "--console-port", "9",
-                     "--json"]) == 0
+                     "--state-dir", str(tmp_path), "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["web"]["running"] is False
     assert payload["api"]["running"] is False
