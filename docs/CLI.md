@@ -339,19 +339,21 @@ scripts; `fetch` is the portable path a new user needs.
 The two working surfaces share the same state:
 
 ```bash
-hive ui status              # console + API URLs and whether each is running
+hive ui status              # actual URL/port and whether it is running
 hive ui terminal            # the curses dashboard
-hive ui web                 # Studio console in the foreground (:8170)
+hive ui web                 # Rust daemon + console in the foreground (:8765)
 hive ui web --detach        # Studio in the background, opens a browser
 hive ui web --mock          # model-free Studio fixture
 ```
 
-`hive ui` never starts a second web server. The JSON API and the web console
-are separate ports in the same process: `--port` sets the API (default `8765`)
-and `--console-port` sets the console (default `8170`). `hive ui terminal` is
-the same dashboard as `hive tui`; the TUI's `w` key opens a **running**
-console in the browser and tells you to run `hive ui web` if it is not
-running. Press `a` in
+`hive ui` never starts a second web server. The Rust daemon serves the console
+same-origin on `--port` (default `8765`); `--console-port` is accepted for the
+Python reference. The daemon writes `$HIVE_HOME/harness_state/daemon.json`;
+`ui status` reads it, checks the recorded PID, and probes `/health`, so a
+daemon on a non-default port is reported at that port. With no descriptor it
+falls back to `--host`/`--port`. `hive ui terminal` is the same dashboard as
+`hive tui`; the TUI's `w` key opens a **running** console in the browser and
+tells you to run `hive ui web` if it is not running. Press `a` in
 the TUI to open pending tool approvals: `o` allows once, `s` allows the
 session, `g` allows always (global), `d` denies, and `r` refreshes.
 `hive ui status` reports both surfaces and the switch commands. The pros and

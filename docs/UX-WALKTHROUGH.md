@@ -53,19 +53,18 @@ browser tool; evidence is DOM/JSON plus measured layout instead.
   `hashchange` listener were added.
 - P2-40 — the Python install docs omitted `splinter[serve]`; docs, installer
   output, and `hive doctor` now name it.
+- P2-41 — the Overview hardcoded DS4.1/LFM3 role endpoints and showed them as
+  down; it now shows the daemon plus only the engines it actually owns.
+- P2-42 — `hive ui status` assumed `:8765`; the daemon writes a runtime
+  descriptor and status reports the live URL/port, or off when absent.
 - P1-53 — CPU-only display warnings and bare library names in `serve`.
 - P1-54 — the first-run hint now names a real stack/model.
 
 ## Accepted observations (not merge blockers)
 
-- The Overview role cards still show the default DS4.1/LFM3 endpoints as down on
-  a clean home; they are role presets, not installed engines.
-- `hive ui status` checks the default `:8765`; a daemon on a deliberately
-  different port is reported as not running. The daemon's own `/health` and
-  `/ready` are authoritative.
 - The wide Studio layout was not visually re-checked because the browser pane
   stayed at 388 CSS px; the narrow layout is verified and the wide CSS is
-  unchanged.
+  unchanged. A layout pass is planned separately from this functionality pass.
 
 ## Gate
 

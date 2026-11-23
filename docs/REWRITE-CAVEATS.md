@@ -57,8 +57,9 @@ Severity:
   clean-install manifest/package shadowing (P2-33), Studio `/api/v1` lifecycle
   routing (P2-34), canonical chat mock + model IDs (P2-35), Bearer auth
   (P2-36), native encoder onboarding (P2-37), sandbox workspace fallback
-  (P2-38), responsive/deep-link console (P2-39), and Python sidecar install
-  docs (P2-40). CPU-only/display warnings and the first-run hint are P1-53/P1-54.
+  (P2-38), responsive/deep-link console (P2-39), Python sidecar install
+  docs (P2-40), live Overview cards (P2-41), and descriptor-based `ui status`
+  (P2-42). CPU-only/display warnings and the first-run hint are P1-53/P1-54.
 - Verified: clean install and `hive setup`, first-run `hive`/`doctor`/`config`/
   `status`, model search/download/import/remove, stack validate/serve/logs/stop,
   daemon health/ready/metrics/swap, Studio Load/chat/Splinter/Inspector/
@@ -237,6 +238,8 @@ Severity:
 | P2-38 | The native sandbox defaulted to `/srv/hive-ai/workspaces`, which is not writable for a normal user, so every native exec failed. It now falls back to `$HIVE_HOME/harness_state/workspaces`. | should | fixed — UX walkthrough 2026-11-23 | Sandbox exec works in a user install; AI-user deployments keep `/srv/hive-ai`. |
 | P2-39 | At narrow widths the rail/nav forced horizontal overflow and hash links did not switch pages. The responsive CSS constrains the nav and the console listens for `hashchange`. | minor | fixed — UX walkthrough 2026-11-23 | Narrow viewport has no horizontal scroll and deep links work. |
 | P2-40 | The documented Python reference install omitted `splinter[serve]`, so `python -m harness` failed with `ModuleNotFoundError`. `docs/INSTALL.md`, the installer output, and `hive doctor` now name the package. | blocker | fixed — UX walkthrough 2026-11-23 | A clean sidecar install is documented and diagnosed. |
+| P2-41 | The Overview hardcoded the DS4.1/LFM3 role endpoints and showed them as down on a clean home. It now reports the daemon and only the engines it actually owns. | minor | fixed — UX walkthrough 2026-11-23 | Overview cards reflect live state, with no role presets. |
+| P2-42 | `hive ui status` assumed `127.0.0.1:8765`, so a daemon on any other port looked stopped. The daemon writes `$HIVE_HOME/harness_state/daemon.json`; status reads it, checks the PID, and probes the recorded URL. `hive-py` reads the same descriptor. | should | fixed — UX walkthrough 2026-11-23 | Status reports the live port or off. |
 
 
 ## Phase 3 — memory and encoder

@@ -430,6 +430,15 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
     let listener = tokio::net::TcpListener::bind(&bind)
         .await
         .map_err(|error| format!("cannot bind {bind}: {error}"))?;
+    let bound = listener
+        .local_addr()
+        .map_err(|error| format!("cannot read the bound address: {error}"))?;
+    let status_host = match config.host.as_str() {
+        "0.0.0.0" | "::" => "127.0.0.1",
+        host => host,
+    };
+    let descriptor_dir = config.paths.state_dir.clone();
+    write_daemon_descriptor(&descriptor_dir, status_host, bound.port());
 
     let mut encoder = None;
     let encoder_dir = config.paths.home.join("models/encoder");
@@ -526,7 +535,47 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
     if let Some(encoder) = &mut encoder {
         encoder.stop().await;
     }
+    remove_daemon_descriptor(&descriptor_dir);
     result
+}
+
+fn daemon_descriptor_path(state_dir: &std::path::Path) -> std::path::PathBuf {
+    state_dir.join("daemon.json")
+}
+
+fn write_daemon_descriptor(state_dir: &std::path::Path, host: &str, port: u16) {
+    let Ok(()) = std::fs::create_dir_all(state_dir) else {
+        return;
+    };
+    let path = daemon_descriptor_path(state_dir);
+    let payload = serde_json::json!({
+        "pid": std::process::id(),
+        "host": host,
+        "port": port,
+        "api_url": format!("http://{host}:{port}"),
+        "web_url": format!("http://{host}:{port}"),
+    });
+    let Ok(text) = serde_json::to_vec_pretty(&payload) else {
+        return;
+    };
+    let temporary = state_dir.join(format!(".daemon.json.{}", std::process::id()));
+    if std::fs::write(&temporary, text).is_ok() {
+        let _ = std::fs::rename(temporary, path);
+    }
+}
+
+fn remove_daemon_descriptor(state_dir: &std::path::Path) {
+    let path = daemon_descriptor_path(state_dir);
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    let Ok(payload) = serde_json::from_str::<serde_json::Value>(&text) else {
+        let _ = std::fs::remove_file(path);
+        return;
+    };
+    if payload.get("pid").and_then(serde_json::Value::as_u64) == Some(std::process::id() as u64) {
+        let _ = std::fs::remove_file(path);
+    }
 }
 
 async fn shutdown_signal() {

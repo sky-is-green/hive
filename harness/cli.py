@@ -1117,7 +1117,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     add("ok" if token else "warn", "hf-token",
         "set" if token else "not set (only needed for gated/private repos)")
 
-    for port in (1234, 8150):
+    for port in (1234,):
         add("ok" if _port_free("127.0.0.1", port) else "warn", f"port {port}",
             "free" if _port_free("127.0.0.1", port) else "in use (a serve may be running)")
 
@@ -1550,6 +1550,18 @@ def cmd_ui(args: argparse.Namespace) -> int:
         env["HIVE_CONSOLE_URL"] = console_url
         return subprocess.call(argv, cwd=str(REPO_ROOT), env=env)
 
+    state_dir = Path(getattr(args, "state_dir", None)
+                     or serve_state.state_dir())
+    descriptor_path = state_dir / "daemon.json"
+    descriptor: dict = {}
+    try:
+        descriptor = json.loads(descriptor_path.read_text())
+    except (OSError, ValueError, TypeError):
+        descriptor = {}
+    api_url = str(descriptor.get("api_url") or api_url)
+    console_url = str(descriptor.get("web_url") or console_url)
+    pid = descriptor.get("pid")
+
     def _alive(url: str, path: str) -> bool:
         try:
             with urllib.request.urlopen(f"{url}{path}", timeout=0.8) as response:
@@ -1558,13 +1570,21 @@ def cmd_ui(args: argparse.Namespace) -> int:
             return False
 
     # status: show both surfaces and how to switch without starting one
-    api_alive = _alive(api_url, "/health")
-    console_alive = _alive(console_url, "/")
+    process_alive = True
+    if isinstance(pid, int):
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            process_alive = False
+    api_alive = process_alive and _alive(api_url, "/health")
+    console_alive = process_alive and _alive(console_url, "/")
     payload = {
         "web": {"running": console_alive, "url": console_url},
         "api": {"running": api_alive, "url": api_url},
         "terminal": {"command": "hive ui terminal"},
         "switch": {"web": "hive ui web", "terminal": "hive ui terminal"},
+        "pid": pid,
+        "descriptor": str(descriptor_path),
     }
     if args.as_json:
         _json(payload)

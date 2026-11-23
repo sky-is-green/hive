@@ -74,6 +74,27 @@ def _spawn_detached(child_argv: list[str], log_path: Path) -> int:
     return proc.pid
 
 
+def _descriptor_path(state_dir: str) -> Path | None:
+    return Path(state_dir) / "daemon.json" if state_dir else None
+
+
+def _write_descriptor(path: Path, host: str, port: int, web_url: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "pid": os.getpid(),
+        "host": host,
+        "port": port,
+        "api_url": f"http://{host}:{port}",
+        "web_url": web_url,
+        "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }))
+
+
+def _remove_descriptor(path: Path | None) -> None:
+    if path is not None:
+        path.unlink(missing_ok=True)
+
+
 def _stop(pidfile: Path) -> int:
     """Kill the detached instance recorded by --detach, plus every managed
     llama-server child (taskkill /T misses them once the parent detaches)."""
@@ -226,9 +247,12 @@ def main(argv: list[str] | None = None) -> int:
     url = f"http://{args.host}:{args.port}"
     open_url = (f"http://{args.host}:{args.console_port}"
                 if args.console and args.console_port != args.port else url)
+    descriptor = _descriptor_path(args.state_dir)
 
     if args.stop:
-        return _stop(pidfile)
+        code = _stop(pidfile)
+        _remove_descriptor(descriptor)
+        return code
 
     if args.detach:
         raw = sys.argv[1:] if argv is None else list(argv)
@@ -304,7 +328,13 @@ def main(argv: list[str] | None = None) -> int:
     if not args.no_open:
         threading.Thread(target=_wait_and_open, args=(open_url,), daemon=True).start()
 
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info", reload=args.reload)
+    if descriptor is not None:
+        _write_descriptor(descriptor, args.host, args.port, open_url)
+    try:
+        uvicorn.run(app, host=args.host, port=args.port,
+                    log_level="info", reload=args.reload)
+    finally:
+        _remove_descriptor(descriptor)
     return 0
 
 

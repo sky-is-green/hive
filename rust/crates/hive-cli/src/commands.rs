@@ -622,16 +622,15 @@ fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
         );
     }
 
-    for port in [1234u16, 8150u16] {
-        if hardware::port_free(port) {
-            add("ok", &format!("port {port}"), "free".into());
-        } else {
-            add(
-                "warn",
-                &format!("port {port}"),
-                "in use (a serve may be running)".into(),
-            );
-        }
+    let port = 1234u16;
+    if hardware::port_free(port) {
+        add("ok", &format!("port {port}"), "free".into());
+    } else {
+        add(
+            "warn",
+            &format!("port {port}"),
+            "in use (a serve may be running)".into(),
+        );
     }
 
     let failures = checks

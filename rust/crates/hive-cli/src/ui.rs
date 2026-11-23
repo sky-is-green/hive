@@ -39,17 +39,38 @@ pub fn run(paths: &Paths, options: Options) -> Cmd {
             }
         },
         "web" => web(paths, &options),
-        _ => status(&options),
+        _ => status(paths, &options),
     }
 }
 
-fn status(options: &Options) -> Cmd {
-    let api_url = format!("http://{}:{}", options.host, options.port);
-    // The Rust daemon serves the shell on the API port; Python used a second
-    // console port. Report the real surface, not the historical default.
-    let web_url = api_url.clone();
-    let api_alive = alive(&api_url, "/health");
-    let web_alive = alive(&web_url, "/");
+fn status(paths: &Paths, options: &Options) -> Cmd {
+    let fallback_api = format!("http://{}:{}", options.host, options.port);
+    let state_dir = options
+        .state_dir
+        .clone()
+        .unwrap_or_else(|| paths.state_dir.clone());
+    let descriptor_path = state_dir.join("daemon.json");
+    let descriptor = std::fs::read_to_string(&descriptor_path)
+        .ok()
+        .and_then(|text| serde_json::from_str::<Value>(&text).ok());
+    let text = |key: &str| {
+        descriptor
+            .as_ref()
+            .and_then(|value| value.get(key))
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+    };
+    let api_url = text("api_url").unwrap_or_else(|| fallback_api.clone());
+    let web_url = text("web_url").unwrap_or_else(|| api_url.clone());
+    let pid = descriptor
+        .as_ref()
+        .and_then(|value| value.get("pid"))
+        .and_then(Value::as_u64);
+    let process_alive = pid
+        .map(|pid| hive_state::pid_alive(pid as i64))
+        .unwrap_or(true);
+    let api_alive = process_alive && alive(&api_url, "/health");
+    let web_alive = process_alive && alive(&web_url, "/");
     let mut payload = Map::new();
     payload.insert(
         "web".into(),
@@ -67,22 +88,24 @@ fn status(options: &Options) -> Cmd {
         "switch".into(),
         serde_json::json!({"web": "hive ui web", "terminal": "hive ui terminal"}),
     );
+    payload.insert("pid".into(), pid.map(Value::from).unwrap_or(Value::Null));
+    payload.insert(
+        "descriptor".into(),
+        Value::String(descriptor_path.to_string_lossy().into_owned()),
+    );
     let payload = Value::Object(payload);
     if options.as_json {
         print!("{}", hive_core::json::pretty(&payload));
         return Ok(0);
     }
+    let suffix = |running: bool| match (running, pid) {
+        (true, Some(pid)) => format!("running · pid {pid}"),
+        (true, None) => "running".to_owned(),
+        _ => "not running".to_owned(),
+    };
     println!("interfaces");
-    println!(
-        "  web    {} · {}",
-        web_url,
-        if web_alive { "running" } else { "not running" }
-    );
-    println!(
-        "  api    {} · {}",
-        api_url,
-        if api_alive { "running" } else { "not running" }
-    );
+    println!("  web    {} · {}", web_url, suffix(web_alive));
+    println!("  api    {} · {}", api_url, suffix(api_alive));
     println!("  terminal  hive ui terminal");
     println!("  start web hive ui web");
     Ok(0)

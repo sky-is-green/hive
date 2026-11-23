@@ -64,9 +64,11 @@ curl -s http://127.0.0.1:8765/health
 hive ui status
 ```
 
-The console is served same-origin on the API port. `hive ui web --detach`
-uses `~/.hive/logs/daemon.log` and `~/.hive/logs/daemon.pid` when running
-outside systemd.
+The console is served same-origin on the API port. The daemon writes
+`$HIVE_HOME/harness_state/daemon.json` with its PID and URLs; `hive ui status`
+reads that descriptor and reports the live port, including non-default ports.
+`hive ui web --detach` uses `~/.hive/logs/daemon.log` and
+`~/.hive/logs/daemon.pid` when running outside systemd.
 
 ## OpenAI clients
 

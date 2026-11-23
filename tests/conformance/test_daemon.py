@@ -704,6 +704,32 @@ def _home(tmp_path) -> dict[str, str]:
     return {"HIVE_HOME": str(tmp_path / "home")}
 
 
+def test_ui_status_uses_the_daemon_descriptor(tmp_path, rust_bin):
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        env = dict(os.environ, **_home(tmp_path))
+        env.pop("HIVE_STATE_DIR", None)
+        result = subprocess.run(
+            [str(rust_bin), "ui", "status", "--json"],
+            cwd=REPO,
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=20,
+        )
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["api"]["running"] is True
+        assert payload["api"]["url"] == f"http://127.0.0.1:{port}"
+        assert payload["pid"] == process.pid
+        assert payload["descriptor"].endswith("harness_state/daemon.json")
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
 def test_stack_crud_and_validate(tmp_path):
     process = None
     try:

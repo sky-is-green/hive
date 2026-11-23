@@ -84,11 +84,10 @@ async function loadGlobal() {
 }
 
 async function loadOverview() {
-  const [statusR, pendingR, activityR, ds41, lfm3] = await Promise.allSettled([
+  const [statusR, pendingR, activityR] = await Promise.allSettled([
     getJSON("/api/v1/server/status"),
     getJSON("/api/v1/tools/pending"),
     getJSON("/api/v1/activity?limit=8"),
-    probe(8150), probe(8155),
   ]);
   const status = statusR.status === "fulfilled" ? statusR.value : null;
   state.status = status;
@@ -97,10 +96,16 @@ async function loadOverview() {
   $("#rail-dot").className = "dot " + (hiveOk ? "ok" : "bad");
   $("#rail-status").textContent = hiveOk ? "Hive online" : "Hive offline";
 
+  // Only report the daemon and engines it actually owns. Role presets are
+  // configuration, not services; they must not look like dead defaults.
+  const loaded = Array.isArray(status?.loaded) ? status.loaded : [];
   const svc = [
     ["Hive", hiveOk, location.host],
-    ["DS4.1", ds41.status === "fulfilled" && ds41.value, "127.0.0.1:8150"],
-    ["LFM3 1.7B", lfm3.status === "fulfilled" && lfm3.value, "127.0.0.1:8155"],
+    ...loaded.map(row => [
+      row.key || row.model || "engine",
+      row.healthy !== false,
+      `127.0.0.1:${row.port}`,
+    ]),
   ];
   $("#service-cards").innerHTML = svc.map(([name, ok, addr]) => `
     <div class="card ${ok ? "ok" : "bad"}">
