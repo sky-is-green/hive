@@ -3,11 +3,11 @@
 **Status:** main frozen at `008d758`; `rust-migration` is the review candidate.
 No merge until the owner signs off.
 
-**Exhaustive gate (2026-11-23):** `scripts/full-gate.sh` passed **24/24**
+**Exhaustive gate (2026-11-23, candidate `51f78e3`):** `scripts/full-gate.sh` passed **24/24**
 steps on the post-walkthrough tree: Rust fmt/build/clippy/tests, Python
 unit/integration, non-live conformance, all live daemon and llama tests,
 install/uninstall, and release manifest/signing. See
-`/tmp/opencode/hive-gate/20261123T164752Z/` and
+`/tmp/opencode/hive-gate/20261123T165924Z/` and
 [UX-WALKTHROUGH.md](UX-WALKTHROUGH.md).
 
 The goal is maximum performance with maximum usability, not Rust everywhere.
