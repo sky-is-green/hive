@@ -14,7 +14,7 @@ was re-run afterwards.
 | engine | fetched CPU llama.cpp (`hive backends fetch cpu`) |
 | model | `SmolLM2-135M-Instruct-Q3_K_M.gguf` (89 MiB) |
 | live engine | `$PWD/tools/backends/cpu/llama-server` |
-| evidence | `/tmp/opencode/hive-gate/20261123T173747Z/` |
+| evidence | `/tmp/opencode/hive-gate/20261123T180415Z/` |
 
 Screenshots were not available because the Review pane was not visible to the
 browser tool; evidence is DOM/JSON plus measured layout instead.
@@ -72,8 +72,8 @@ browser tool; evidence is DOM/JSON plus measured layout instead.
 
 ## Gate
 
-`scripts/full-gate.sh` passed on commit `fbcfd8e`: **24/24** steps on the updated tree, including
+`scripts/full-gate.sh` passed on commit `5a48e0b`: **24/24** steps on the updated tree, including
 Rust fmt/build/clippy/tests, Python unit/integration, non-live conformance,
 every live daemon/llama test, install/uninstall layout, and release
 manifest/signing. Evidence:
-`/tmp/opencode/hive-gate/20261123T173747Z/`.
+`/tmp/opencode/hive-gate/20261123T180415Z/`.
