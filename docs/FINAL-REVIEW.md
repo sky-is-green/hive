@@ -1,6 +1,6 @@
 # Pre-approval review
 
-**Status:** merged to `main` at `01d90ed` (tag `rust-g4`) on 2026-11-23.
+**Status:** merged to `main` at `db03f56` (tag `v0.2.0`) on 2026-11-23.
 `rust-migration` remains the historical integration branch.
 
 **Exhaustive gate (2026-11-23, candidate `dbd8be5`):** `scripts/full-gate.sh` passed **24/24**
@@ -86,7 +86,7 @@ The exhaustive gate also fixed two real usability/performance bugs:
   now use `ngl=0` when there is no GPU or the backend is CPU.
 
 The caveat pass, UX walkthrough, owner sign-off, and final gate are complete;
-the rewrite is merged to `main` at `01d90ed` and tagged `rust-g4`. The
+the rewrite is merged to `main` at `db03f56` and released as `v0.2.0`. The
 walkthrough fixed the clean-install manifest/shadow issue, Studio lifecycle
 routing, canonical chat path, Bearer auth, native-encoder onboarding, sandbox
 workspace fallback, responsive/deep-link console, TUI actions, multi-daemon

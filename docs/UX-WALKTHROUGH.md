@@ -84,4 +84,4 @@ every live daemon/llama test, install/uninstall layout, and release
 manifest/signing. Evidence:
 `/tmp/opencode/hive-gate/20261123T183103Z/`.
 
-The rewrite was merged to `main` at `01d90ed` (tag `rust-g4`).
+The rewrite was merged to `main` at `db03f56` (tag `v0.2.0`).
