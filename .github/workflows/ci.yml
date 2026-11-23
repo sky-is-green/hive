@@ -171,10 +171,28 @@ jobs:
           cargo test --manifest-path rust/Cargo.toml
           cargo build --manifest-path rust/Cargo.toml
 
+      # The native encoder is ONNX, not the PyTorch cache used by the Python
+      # reference. CI needs both: torch for the Python path, ONNX for
+      # hive-encoder/hive-memory. Cache the small ONNX model across runs.
+      - name: Cache native encoder model
+        if: runner.os == 'Linux'
+        uses: actions/cache@v6
+        with:
+          path: models/encoder
+          key: hive-native-encoder-minilm-l3-v2-v1
+
+      - name: Fetch native encoder model
+        if: runner.os == 'Linux'
+        run: |
+          if [ ! -f models/encoder/onnx/model.onnx ]; then
+            ./rust/target/debug/hive-encoder fetch --dir models/encoder
+          fi
+
       - name: Run Rust CLI conformance (Linux)
         if: runner.os == 'Linux'
         env:
           HIVE_RUST_BIN: ${{ github.workspace }}/rust/target/debug/hive
+          HIVE_ENCODER_DIR: ${{ github.workspace }}/models/encoder
         run: python -m pytest tests/conformance -q
 
       - name: Disk headroom

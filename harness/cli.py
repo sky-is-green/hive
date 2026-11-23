@@ -1094,7 +1094,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             detail = "; ".join(_card(d) for d in devices)
             add("ok", "cards", detail)
         elif platform.system() == "Linux":
-            add("warn", "cards", "no amdgpu cards found via sysfs")
+            add("warn", "cards", "no AMD/NVIDIA cards found (sysfs/nvidia-smi)")
         else:
             add("warn", "cards", "GPU probing is Linux-only")
 
