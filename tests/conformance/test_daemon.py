@@ -704,6 +704,19 @@ def _home(tmp_path) -> dict[str, str]:
     return {"HIVE_HOME": str(tmp_path / "home")}
 
 
+def test_dead_probe_returns_a_quiet_down_response(tmp_path):
+    process = None
+    try:
+        process, port = _start_daemon(env_extra=_home(tmp_path))
+        status, _, payload = _request(port, "/probe/1/health")
+        assert status == 200
+        assert payload == {"status": "down"}
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=10)
+
+
 def test_ui_status_uses_the_daemon_descriptor(tmp_path, rust_bin):
     process = None
     try:

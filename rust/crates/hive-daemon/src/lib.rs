@@ -407,6 +407,7 @@ fn router_with_sidecar(config: DaemonConfig, managed: Option<Arc<Sidecar>>) -> R
         .route("/api/v1/server/unload", post(server_unload))
         .route("/api/v1/server/unload-loaded", post(server_unload_loaded))
         .route("/v1/chat/completions", post(curated_chat))
+        .route("/probe/{port}/health", get(probe_health))
         .route(
             "/api/routing/traces",
             get(routing_traces).post(routing_trace_post),
@@ -719,6 +720,29 @@ fn token_matches(supplied: &str, required: &str) -> bool {
         difference |= left ^ right;
     }
     difference == 0
+}
+
+/// The console probes role endpoints on page load. Answer a dead endpoint
+/// with a small 200 `{"status":"down"}` body so one expected miss does not
+/// fill the browser console with 502s.
+async fn probe_health(State(state): State<Arc<AppState>>, UrlPath(port): UrlPath<u16>) -> Response {
+    let url = format!("http://127.0.0.1:{port}/health");
+    match state
+        .client
+        .get(&url)
+        .timeout(Duration::from_millis(800))
+        .send()
+        .await
+    {
+        Ok(response) if response.status().is_success() => {
+            let body = response.text().await.unwrap_or_default();
+            match serde_json::from_str::<Value>(&body) {
+                Ok(value) => Json(value).into_response(),
+                Err(_) => Json(serde_json::json!({"status": "ok"})).into_response(),
+            }
+        }
+        _ => Json(serde_json::json!({"status": "down"})).into_response(),
+    }
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

@@ -52,14 +52,14 @@ const MODEL_WEIGHTS = {
   dispatcher17: 1.1, toolmanager17: 1.1,
   guards: 0, "drone-heuristic": 0, ds41: null, "d1-2b": 1.72,
 };
-const LIB = { models: [], instances: [], ts: 0, error: "" };
+const LIB = { models: [], instances: [], liveEndpoints: new Set(), ts: 0, error: "" };
 
 async function probe(port) {
   try {
     const r = await fetch(`/probe/${port}/health`, { cache: "no-store" });
     if (!r.ok) return false;
     const d = await r.json();
-    return d.status === "ok" || d.loaded === true;
+    return d.status === "ok" || d.loaded === true || d.ok === true;
   } catch { return false; }
 }
 
@@ -230,16 +230,16 @@ async function loadModels() {
 }
 
 const MODELS = {
-  lfm3: { label: "LFM3 1.7B", base: "/model/lfm3", model: "lfm3", note: "8155 · 1.7B · long-context worker" },
-  ds41: { label: "DS4.1", base: "/model/ds41", model: "deepseek-v4.1-flash-gsq", note: "8150 · frontier escalation" },
-  lfm3vl: { label: "LFM3-VL-2B", base: "/model/lfm3vl", model: "LFM3-VL-2B-Q8_0", note: "8160 · vision", vision: true },
-  scion35: { label: "Scion-35B-A3B", base: "/model/scion35", model: "scion-35b-a3b-pq2_0-corr", note: "8082 · controller" },
-  scion176: { label: "Scion-FlashNext-176B", base: "/model/scion176", model: "scion-flashnext-176b-a6b-q2_0", note: "8081 · planner (heavy)" },
-  controller17: { label: "Hive Conductor 1.7B", base: "/model/controller17", model: "conductor-1.7b", note: "8156 · controller + planner" },
-  reader17: { label: "Hive Reader 1.7B", base: "/model/reader17", model: "reader-1.7b", note: "8159 · mechanics + RAG" },
-  auditor17: { label: "Hive Auditor 1.7B", base: "/model/auditor17", model: "auditor-1.7b", note: "8162 · placement + critic" },
-  dispatcher17: { label: "Hive Dispatcher 1.7B", base: "/model/dispatcher17", model: "dispatcher-1.7b", note: "8163 · dispatcher" },
-  toolmanager17: { label: "Hive Tool Manager 1.7B", base: "/model/toolmanager17", model: "tool-manager-1.7b", note: "8164 · agency" },
+  lfm3: { label: "LFM3 1.7B", base: "/model/lfm3", model: "lfm3", port: 8155, note: "8155 · 1.7B · long-context worker" },
+  ds41: { label: "DS4.1", base: "/model/ds41", model: "deepseek-v4.1-flash-gsq", port: 8150, note: "8150 · frontier escalation" },
+  lfm3vl: { label: "LFM3-VL-2B", base: "/model/lfm3vl", model: "LFM3-VL-2B-Q8_0", port: 8160, note: "8160 · vision", vision: true },
+  scion35: { label: "Scion-35B-A3B", base: "/model/scion35", model: "scion-35b-a3b-pq2_0-corr", port: 8082, note: "8082 · controller" },
+  scion176: { label: "Scion-FlashNext-176B", base: "/model/scion176", model: "scion-flashnext-176b-a6b-q2_0", port: 8081, note: "8081 · planner (heavy)" },
+  controller17: { label: "Hive Conductor 1.7B", base: "/model/controller17", model: "conductor-1.7b", port: 8156, note: "8156 · controller + planner" },
+  reader17: { label: "Hive Reader 1.7B", base: "/model/reader17", model: "reader-1.7b", port: 8159, note: "8159 · mechanics + RAG" },
+  auditor17: { label: "Hive Auditor 1.7B", base: "/model/auditor17", model: "auditor-1.7b", port: 8162, note: "8162 · placement + critic" },
+  dispatcher17: { label: "Hive Dispatcher 1.7B", base: "/model/dispatcher17", model: "dispatcher-1.7b", port: 8163, note: "8163 · dispatcher" },
+  toolmanager17: { label: "Hive Tool Manager 1.7B", base: "/model/toolmanager17", model: "tool-manager-1.7b", port: 8164, note: "8164 · agency" },
 };
 const DEFAULT_ROLES = {
   planner: "scion35",
@@ -722,7 +722,8 @@ function renderChatRoles() {
     .map(([key, meta]) => {
       const model = rolesState[key];
       const info = resolvedRoles[key] || {};
-      const chat = info.chat !== false && !!MODELS[model];
+      const chat = info.chat !== false && !!MODELS[model]
+        && LIB.liveEndpoints.has(model);
       return chat ? { key, label: `${meta[0]} · ${MODELS[model].label}` } : null;
     })
     .filter(Boolean);
@@ -913,7 +914,10 @@ function resolveModel(id) {
 }
 
 function modelOptionGroups() {
+  // Serving endpoints are configurations, not guarantees. Show only the ones
+  // that answer right now; the library group is always available.
   const endpoints = Object.entries(MODELS)
+    .filter(([id]) => LIB.liveEndpoints.has(id))
     .map(([id, m]) => `<option value="${esc(id)}">${esc(m.label)}</option>`).join("");
   const library = (LIB.models || []).filter(m => {
     const file = String(m.file || m.name || "").toLowerCase();
@@ -927,7 +931,7 @@ function modelOptionGroups() {
     const size = Number.isFinite(Number(m.size_gb)) ? ` · ${Number(m.size_gb).toFixed(1)} GB` : "";
     return `<option value="lib:${esc(file)}">${esc(m.name || libraryStem(file))}${size}${loaded ? " · loaded" : ""}</option>`;
   }).join("");
-  return `<optgroup label="Serving endpoints">${endpoints}</optgroup>` +
+  return (endpoints ? `<optgroup label="Serving endpoints">${endpoints}</optgroup>` : "") +
     (library ? `<optgroup label="Library — load before use">${library}</optgroup>` : "");
 }
 
@@ -936,12 +940,13 @@ function renderModelOptions() {
   const chat = $("#chat-model"), a = $("#ab-a"), b = $("#ab-b");
   const prevChat = chat.value, prevA = a.value, prevB = b.value;
   chat.innerHTML = html; a.innerHTML = html; b.innerHTML = html;
+  const first = [...chat.options][0]?.value || "";
   const pick = (el, prev, fallback) => {
     el.value = [...el.options].some(o => o.value === prev) ? prev : fallback;
   };
-  pick(chat, prevChat, "lfm3");
-  pick(a, prevA, "lfm3");
-  pick(b, prevB, "scion35");
+  pick(chat, prevChat, first);
+  pick(a, prevA, first);
+  pick(b, prevB, first);
   updateChatModelState();
 }
 
@@ -954,12 +959,17 @@ async function populateChatModels() {
     ]);
     LIB.models = Array.isArray(local.models) ? local.models : [];
     LIB.instances = Array.isArray(status.instances) ? status.instances : [];
+    const probes = await Promise.all(Object.entries(MODELS).map(async ([id, cfg]) => {
+      return [id, await probe(cfg.port)];
+    }));
+    LIB.liveEndpoints = new Set(probes.filter(([, up]) => up).map(([id]) => id));
     LIB.ts = Date.now();
     LIB.error = "";
   } catch (err) {
     LIB.error = err.message;
   }
   renderModelOptions();
+  renderChatRoles();
 }
 
 function updateChatModelState() {

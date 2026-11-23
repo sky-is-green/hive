@@ -57,6 +57,10 @@ browser tool; evidence is DOM/JSON plus measured layout instead.
   down; it now shows the daemon plus only the engines it actually owns.
 - P2-42 — `hive ui status` assumed `:8765`; the daemon writes a runtime
   descriptor and status reports the live URL/port, or off when absent.
+- P2-43 — Chat/role pickers listed dead serving endpoints; they now show only
+  endpoints that answer, and dead probes return a quiet 200.
+- P2-44 — the managed Python sidecar overwrote the public `daemon.json`; it is
+  now marked as private and leaves the public descriptor alone.
 - P1-53 — CPU-only display warnings and bare library names in `serve`.
 - P1-54 — the first-run hint now names a real stack/model.
 

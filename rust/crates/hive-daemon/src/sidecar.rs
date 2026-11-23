@@ -215,6 +215,8 @@ fn spawn_child(spec: &SidecarSpec) -> Result<Child, String> {
         .current_dir(&spec.repo)
         .stdin(Stdio::null())
         .env("PYTHONUNBUFFERED", "1")
+        // The sidecar is private; only the public daemon owns daemon.json.
+        .env("HIVE_MANAGED_SIDECAR", "1")
         .kill_on_drop(false);
     #[cfg(unix)]
     {

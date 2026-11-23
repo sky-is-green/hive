@@ -247,7 +247,8 @@ def main(argv: list[str] | None = None) -> int:
     url = f"http://{args.host}:{args.port}"
     open_url = (f"http://{args.host}:{args.console_port}"
                 if args.console and args.console_port != args.port else url)
-    descriptor = _descriptor_path(args.state_dir)
+    descriptor = (None if os.environ.get("HIVE_MANAGED_SIDECAR") == "1"
+                  else _descriptor_path(args.state_dir))
 
     if args.stop:
         code = _stop(pidfile)
