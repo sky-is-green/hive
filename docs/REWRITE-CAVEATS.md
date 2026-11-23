@@ -49,10 +49,10 @@ Severity:
 
 ## UX walkthrough 2026-11-23
 
-- Full pre-approval gate on commit `5a48e0b`: **24/24 steps passed**
+- Full pre-approval gate on commit `dbd8be5`: **24/24 steps passed**
   (`scripts/full-gate.sh`), including every live daemon/llama test, install
   layout, and release signing. Evidence:
-  `/tmp/opencode/hive-gate/20261123T180415Z/`.
+  `/tmp/opencode/hive-gate/20261123T183103Z/`.
 - Walkthrough stopped at the first hard failures and fixed them in place:
   clean-install manifest/package shadowing (P2-33), Studio `/api/v1` lifecycle
   routing (P2-34), canonical chat mock + model IDs (P2-35), Bearer auth
