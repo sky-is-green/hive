@@ -6,6 +6,7 @@
 
 use std::io::{self, IsTerminal};
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -80,6 +81,8 @@ struct App<'a> {
     rows: Vec<RowData>,
     resources: String,
     message: String,
+    pending_stop: Option<String>,
+    log_view: Option<(String, String)>,
     last_refresh: Instant,
 }
 
@@ -92,6 +95,8 @@ impl<'a> App<'a> {
             rows: Vec::new(),
             resources: String::new(),
             message: String::new(),
+            pending_stop: None,
+            log_view: None,
             last_refresh: Instant::now(),
         }
     }
@@ -115,13 +120,38 @@ impl<'a> App<'a> {
                     _ => {}
                 }
             }
-            if self.last_refresh.elapsed() >= Duration::from_secs(2) {
+            if self.pending_stop.is_none() && self.last_refresh.elapsed() >= Duration::from_secs(2)
+            {
                 self.refresh(false);
             }
         }
     }
 
     fn handle(&mut self, code: KeyCode) -> bool {
+        if self.log_view.is_some() {
+            match code {
+                KeyCode::Esc | KeyCode::Char('l') => self.log_view = None,
+                KeyCode::Char('q') => return false,
+                _ => {}
+            }
+            return true;
+        }
+        if let Some(name) = self.pending_stop.clone() {
+            match code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    self.pending_stop = None;
+                    self.stop_serve(&name);
+                }
+                KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                    self.pending_stop = None;
+                    self.message = format!("stop {name} cancelled");
+                }
+                KeyCode::Char('q') => return false,
+                _ => self.message = format!("stop {name}? y/N"),
+            }
+            return true;
+        }
+
         let previous_tab = self.tab;
         match code {
             KeyCode::Char('q') | KeyCode::Esc => return false,
@@ -134,6 +164,22 @@ impl<'a> App<'a> {
             KeyCode::Down | KeyCode::Char('j') => self.move_selection(1),
             KeyCode::Up | KeyCode::Char('k') => self.move_selection(-1),
             KeyCode::Char('r') => self.refresh(false),
+            KeyCode::Char('l') => {
+                self.open_log();
+                return true;
+            }
+            KeyCode::Char('x') => {
+                self.request_stop();
+                return true;
+            }
+            KeyCode::Char('a') => {
+                self.open_web("#risk");
+                return true;
+            }
+            KeyCode::Char('w') => {
+                self.open_web("");
+                return true;
+            }
             _ => {}
         }
         if self.tab != previous_tab {
@@ -145,6 +191,113 @@ impl<'a> App<'a> {
             self.refresh(false);
         }
         true
+    }
+
+    fn selected_serve(&self) -> Option<String> {
+        if self.tab != 0 {
+            return None;
+        }
+        self.rows
+            .get(self.selected)
+            .filter(|row| row.selectable)
+            .and_then(|row| row.cells.first())
+            .map(|name| name.trim().to_owned())
+    }
+
+    fn request_stop(&mut self) {
+        let Some(name) = self.selected_serve() else {
+            self.message = "select a running serve on the Status tab first".into();
+            return;
+        };
+        self.pending_stop = Some(name.clone());
+        self.message = format!("stop {name}? y/N");
+    }
+
+    fn stop_serve(&mut self, name: &str) {
+        let message = match std::env::current_exe() {
+            Ok(executable) => match Command::new(executable).args(["stop", name]).output() {
+                Ok(output) if output.status.success() => format!("stopped {name}"),
+                Ok(output) => {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    format!(
+                        "stop {name} failed: {}",
+                        stderr.lines().last().unwrap_or("unknown error")
+                    )
+                }
+                Err(error) => format!("cannot stop {name}: {error}"),
+            },
+            Err(error) => format!("cannot find hive: {error}"),
+        };
+        self.refresh(false);
+        self.message = message;
+    }
+
+    fn open_log(&mut self) {
+        let Some(name) = self.selected_serve() else {
+            self.message = "select a serve on the Status tab first".into();
+            return;
+        };
+        let path = match hive_state::log_path(&self.paths.serve_dir, &name) {
+            Ok(path) => path,
+            Err(error) => {
+                self.message = error;
+                return;
+            }
+        };
+        let text = match std::fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(error) => {
+                self.message = format!("cannot read {}: {error}", path.display());
+                return;
+            }
+        };
+        let lines: Vec<&str> = text.lines().collect();
+        let tail = lines[lines.len().saturating_sub(200)..].join("\n");
+        self.log_view = Some((
+            name,
+            if tail.is_empty() {
+                "(log is empty)".into()
+            } else {
+                tail
+            },
+        ));
+    }
+
+    fn open_web(&mut self, hash: &str) {
+        let descriptor = self.paths.state_dir.join("daemon.json");
+        let base = std::fs::read_to_string(descriptor)
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .and_then(|value| {
+                value
+                    .get("web_url")
+                    .or_else(|| value.get("api_url"))
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+            });
+        let Some(base) = base else {
+            self.message = "no running Studio; start it with: hive ui web".into();
+            return;
+        };
+        let target = if hash.is_empty() {
+            base.clone()
+        } else {
+            format!("{}/{}", base.trim_end_matches('/'), hash)
+        };
+        for opener in ["xdg-open", "open"] {
+            if Command::new(opener)
+                .arg(&target)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .is_ok()
+            {
+                self.message = format!("opened {target}");
+                return;
+            }
+        }
+        self.message = format!("open {target}");
     }
 
     fn move_selection(&mut self, delta: isize) {
@@ -394,15 +547,11 @@ impl<'a> App<'a> {
         self.draw_table(frame, body[0]);
         self.draw_detail(frame, body[1]);
 
-        let footer = if let Some(row) = self.rows.get(self.selected) {
-            let detail_hint = if row.selectable {
-                "enter/space details"
-            } else {
-                ""
-            };
-            format!(" q quit · Tab switch · ↑↓ move · r refresh · {detail_hint} ")
+        let footer = if let Some(_row) = self.rows.get(self.selected) {
+            " q quit · Tab switch · ↑↓ move · r refresh · l log · x stop · a approvals · w web "
+                .to_owned()
         } else {
-            " q quit · Tab switch · r refresh ".to_owned()
+            " q quit · Tab switch · r refresh · a approvals · w web ".to_owned()
         };
         frame.render_widget(
             Paragraph::new(self.message.clone())
@@ -483,6 +632,20 @@ impl<'a> App<'a> {
     }
 
     fn draw_detail(&self, frame: &mut Frame, area: Rect) {
+        if let Some((name, text)) = &self.log_view {
+            frame.render_widget(
+                Paragraph::new(text.as_str())
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title(format!(" log {name} ")),
+                    )
+                    .style(Style::default().fg(Color::White))
+                    .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
         let title = self
             .rows
             .get(self.selected)
@@ -573,5 +736,45 @@ mod tests {
             tier_endpoint(&json!({"port": 1234}), "127.0.0.1"),
             "http://127.0.0.1:1234/v1"
         );
+    }
+
+    fn paths(root: &Path) -> Paths {
+        Paths {
+            source_root: None,
+            repo: root.to_path_buf(),
+            home: root.to_path_buf(),
+            state_dir: root.join("state"),
+            serve_dir: root.join("state/serve"),
+            stacks_dir: root.join("stacks"),
+            models_dir: root.join("models"),
+            log_dir: root.join("logs"),
+            manifest: None,
+        }
+    }
+
+    #[test]
+    fn status_actions_target_the_selected_serve() {
+        let temp = tempfile::tempdir().unwrap();
+        let paths = paths(temp.path());
+        std::fs::create_dir_all(&paths.serve_dir).unwrap();
+        std::fs::write(paths.serve_dir.join("demo.log"), "hello log").unwrap();
+        let mut app = App::new(&paths);
+        app.tab = 0;
+        app.rows = vec![RowData {
+            cells: vec!["demo".into()],
+            detail: String::new(),
+            selectable: true,
+        }];
+        app.selected = 0;
+
+        assert_eq!(app.selected_serve().as_deref(), Some("demo"));
+        app.open_log();
+        assert!(app.log_view.as_ref().unwrap().1.contains("hello log"));
+        app.log_view = None;
+        app.request_stop();
+        assert_eq!(app.pending_stop.as_deref(), Some("demo"));
+        app.pending_stop = None;
+        app.open_web("");
+        assert!(app.message.contains("no running Studio"));
     }
 }

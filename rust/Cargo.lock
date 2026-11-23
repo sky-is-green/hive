@@ -1405,6 +1405,7 @@ dependencies = [
  "hive-state",
  "ratatui",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

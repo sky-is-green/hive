@@ -1031,6 +1031,19 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     stack_count = len(list(stacks_dir.glob("*.json"))) if stacks_dir.is_dir() else 0
     add("ok" if stacks_dir.is_dir() else "warn", "stacks",
         f"{stacks_dir} · {stack_count} stack(s)")
+    tier_slots = 1
+    for stack_path in sorted(stacks_dir.glob("*.json")):
+        try:
+            stack = json.loads(stack_path.read_text())
+        except (OSError, ValueError, TypeError):
+            continue
+        tiers = stack.get("tiers") if isinstance(stack, dict) else None
+        if not isinstance(tiers, list):
+            continue
+        local = sum(1 for tier in tiers
+                    if isinstance(tier, dict)
+                    and not str(tier.get("endpoint") or "").strip())
+        tier_slots = max(tier_slots, local or 1)
 
     try:
         state = serve_state.serve_dir()
@@ -1117,7 +1130,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     add("ok" if token else "warn", "hf-token",
         "set" if token else "not set (only needed for gated/private repos)")
 
-    for port in (1234,):
+    for port in range(1234, 1234 + tier_slots):
         add("ok" if _port_free("127.0.0.1", port) else "warn", f"port {port}",
             "free" if _port_free("127.0.0.1", port) else "in use (a serve may be running)")
 
@@ -1553,14 +1566,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
     state_dir = Path(getattr(args, "state_dir", None)
                      or serve_state.state_dir())
     descriptor_path = state_dir / "daemon.json"
-    descriptor: dict = {}
-    try:
-        descriptor = json.loads(descriptor_path.read_text())
-    except (OSError, ValueError, TypeError):
-        descriptor = {}
-    api_url = str(descriptor.get("api_url") or api_url)
-    console_url = str(descriptor.get("web_url") or console_url)
-    pid = descriptor.get("pid")
+    default_api = api_url
+    default_console = console_url
 
     def _alive(url: str, path: str) -> bool:
         try:
@@ -1569,15 +1576,64 @@ def cmd_ui(args: argparse.Namespace) -> int:
         except Exception:  # noqa: BLE001 - "not running" is the useful answer
             return False
 
-    # status: show both surfaces and how to switch without starting one
-    process_alive = True
-    if isinstance(pid, int):
+    def _process_alive(pid: object) -> bool:
+        if not isinstance(pid, int):
+            return True
         try:
             os.kill(pid, 0)
         except OSError:
-            process_alive = False
-    api_alive = process_alive and _alive(api_url, "/health")
-    console_alive = process_alive and _alive(console_url, "/")
+            return False
+        return True
+
+    descriptors: list[tuple[Path, dict]] = []
+    for path in sorted((state_dir / "daemons").glob("*.json")):
+        try:
+            descriptors.append((path, json.loads(path.read_text())))
+        except (OSError, ValueError, TypeError):
+            pass
+    try:
+        single = json.loads(descriptor_path.read_text())
+    except (OSError, ValueError, TypeError):
+        single = None
+    if single is not None and not any(
+        row.get("pid") == single.get("pid")
+        and row.get("api_url") == single.get("api_url")
+        for _, row in descriptors
+    ):
+        descriptors.append((descriptor_path, single))
+
+    daemons: list[dict] = []
+    primary: dict | None = None
+    for path, descriptor in descriptors:
+        api = str(descriptor.get("api_url") or default_api)
+        web = str(descriptor.get("web_url") or api)
+        pid = descriptor.get("pid")
+        process_alive = _process_alive(pid)
+        api_alive = process_alive and _alive(api, "/health")
+        web_alive = process_alive and _alive(web, "/")
+        entry = {
+            "pid": pid,
+            "url": web,
+            "web_url": web,
+            "api_url": api,
+            "running": api_alive or web_alive,
+            "descriptor": str(path),
+        }
+        daemons.append(entry)
+        if primary is None or (entry["running"] and not primary["running"]):
+            primary = entry
+
+    if primary is not None:
+        api_url = primary["api_url"]
+        console_url = primary["web_url"]
+        pid = primary["pid"]
+        api_alive = _process_alive(pid) and _alive(api_url, "/health")
+        console_alive = _process_alive(pid) and _alive(console_url, "/")
+    else:
+        pid = None
+        api_alive = _alive(default_api, "/health")
+        console_alive = _alive(default_console, "/")
+
     payload = {
         "web": {"running": console_alive, "url": console_url},
         "api": {"running": api_alive, "url": api_url},
@@ -1585,9 +1641,17 @@ def cmd_ui(args: argparse.Namespace) -> int:
         "switch": {"web": "hive ui web", "terminal": "hive ui terminal"},
         "pid": pid,
         "descriptor": str(descriptor_path),
+        "daemons": daemons,
     }
     if args.as_json:
         _json(payload)
+    elif len(daemons) > 1:
+        termui.header("daemons")
+        for entry in daemons:
+            state = "running" if entry["running"] else "not running"
+            suffix = f" · pid {entry['pid']}" if entry["running"] and entry["pid"] else ""
+            termui.kv([("daemon", f"{entry['url']} · {state}{suffix}")])
+        print(f"  {termui.dim('terminal: hive ui terminal')}")
     else:
         termui.header("interfaces")
         termui.kv([

@@ -535,6 +535,35 @@ def test_doctor_checks_and_stable_details_match(
             )
 
 
+def test_doctor_checks_a_port_for_each_local_stack_tier(
+    rust_bin, cli_env, tmp_path
+):
+    stacks = tmp_path / "stacks"
+    stacks.mkdir()
+    (stacks / "two.json").write_text(json.dumps({
+        "name": "two",
+        "version": 1,
+        "tiers": [
+            {"role": "face", "repo": "local", "file": "a.gguf",
+             "ctx": 2048, "ngl": 0, "backend": "cpu"},
+            {"role": "worker", "repo": "local", "file": "b.gguf",
+             "ctx": 2048, "ngl": 0, "backend": "cpu"},
+            {"role": "remote", "endpoint": "http://127.0.0.1:9/v1"},
+        ],
+    }))
+    env, _ = cli_env
+    args = ["doctor", "--json", "--stacks-dir", str(stacks),
+            "--models-dir", str(tmp_path / "models")]
+    py, rs = run_both(rust_bin, args, env)
+    assert py.returncode == rs.returncode
+    py_names = [row["name"] for row in parse_json(py)["checks"]]
+    rs_names = [row["name"] for row in parse_json(rs)["checks"]]
+    assert rs_names == py_names
+    assert "port 1234" in rs_names
+    assert "port 1235" in rs_names
+    assert "port 1236" not in rs_names
+
+
 def test_serve_list_matches(rust_bin, cli_env, fixture_stacks):
     env, _ = cli_env
     args = ["serve", "--list", "--stacks-dir", str(fixture_stacks), "--json"]

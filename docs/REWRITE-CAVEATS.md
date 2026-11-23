@@ -59,8 +59,9 @@ Severity:
   (P2-36), native encoder onboarding (P2-37), sandbox workspace fallback
   (P2-38), responsive/deep-link console (P2-39), Python sidecar install
   docs (P2-40), live Overview cards (P2-41), and descriptor-based `ui status`
-  (P2-42), live endpoint/role pickers (P2-43), and the managed-sidecar
-  descriptor collision (P2-44). CPU-only/display warnings and the first-run hint are P1-53/P1-54.
+  (P2-42), live endpoint/role pickers (P2-43), the managed-sidecar
+  descriptor collision (P2-44), multi-daemon status (P2-45), and per-stack
+  doctor ports (P2-46). TUI actions are P1-40. CPU-only/display warnings and the first-run hint are P1-53/P1-54.
 - Verified: clean install and `hive setup`, first-run `hive`/`doctor`/`config`/
   `status`, model search/download/import/remove, stack validate/serve/logs/stop,
   daemon health/ready/metrics/swap, Studio Load/chat/Splinter/Inspector/
@@ -162,7 +163,7 @@ Severity:
 
 | ID | Caveat | Severity | Status | Close when |
 |---|---|---|---|---|
-| P1-40 | Rust TUI is read-only: no stop, log, approvals, or open-web actions. | should | accepted — TUI read-only; actions in CLI/Studio | Actions are ported or explicitly accepted as Python-only. |
+| P1-40 | Rust TUI was read-only: no stop, log, approvals, or open-web actions. | should | fixed — TUI log/stop/Studio approvals/web shortcuts | Actions are ported or explicitly accepted as Python-only. |
 | P1-41 | No help overlay, mouse support, or scrollable detail pane; long JSON is clipped. | minor | accepted — basic TUI; UX review follow-up | Basic help/scroll is added or accepted. |
 | P1-42 | TUI is Linux-terminal only. | deferred | deferred — Linux terminal | Windows/other terminal support resumes. |
 
@@ -243,6 +244,8 @@ Severity:
 | P2-42 | `hive ui status` assumed `127.0.0.1:8765`, so a daemon on any other port looked stopped. The daemon writes `$HIVE_HOME/harness_state/daemon.json`; status reads it, checks the PID, and probes the recorded URL. `hive-py` reads the same descriptor. | should | fixed — UX walkthrough 2026-11-23 | Status reports the live port or off. |
 | P2-43 | The Chat model picker and role picker listed hardcoded serving endpoints even when they were down, and dead probes filled the browser console with 502s. The pickers now probe endpoints and show only live ones; `/probe/{port}/health` answers a quiet 200 `{"status":"down"}`. | minor | fixed — UX walkthrough 2026-11-23 | Only reachable endpoints are selectable; dead probes are quiet. |
 | P2-44 | A managed Python sidecar wrote the same `daemon.json` as the public daemon, replacing the public URL with the private sidecar port. Managed sidecars now set `HIVE_MANAGED_SIDECAR=1` and do not write the descriptor. | should | fixed — UX walkthrough 2026-11-23 | `ui status` always reports the public daemon port. |
+| P2-45 | The daemon descriptor was a single `daemon.json`, so two daemons sharing one `HIVE_HOME` overwrote one another and `ui status` showed only the last. Each daemon now writes `daemons/<port>.json`; status lists all of them, with the primary descriptor kept for compatibility. | should | fixed — UX walkthrough 2026-11-23 | Multiple daemons in one state are all reported. |
+| P2-46 | `hive doctor` checked only port 1234, ignoring a saved stack with multiple local tiers. It now checks one engine port per local tier in the largest saved stack (endpoint tiers excluded). | minor | fixed — UX walkthrough 2026-11-23 | Doctor checks the ports a stack will actually need. |
 
 
 ## Phase 3 — memory and encoder

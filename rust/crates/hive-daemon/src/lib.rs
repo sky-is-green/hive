@@ -439,7 +439,8 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
         host => host,
     };
     let descriptor_dir = config.paths.state_dir.clone();
-    write_daemon_descriptor(&descriptor_dir, status_host, bound.port());
+    let descriptor_port = bound.port();
+    write_daemon_descriptor(&descriptor_dir, status_host, descriptor_port);
 
     let mut encoder = None;
     let encoder_dir = config.paths.home.join("models/encoder");
@@ -536,7 +537,7 @@ pub async fn run(mut config: DaemonConfig) -> Result<(), String> {
     if let Some(encoder) = &mut encoder {
         encoder.stop().await;
     }
-    remove_daemon_descriptor(&descriptor_dir);
+    remove_daemon_descriptor(&descriptor_dir, descriptor_port);
     result
 }
 
@@ -544,11 +545,30 @@ fn daemon_descriptor_path(state_dir: &std::path::Path) -> std::path::PathBuf {
     state_dir.join("daemon.json")
 }
 
-fn write_daemon_descriptor(state_dir: &std::path::Path, host: &str, port: u16) {
-    let Ok(()) = std::fs::create_dir_all(state_dir) else {
+fn daemon_registry_dir(state_dir: &std::path::Path) -> std::path::PathBuf {
+    state_dir.join("daemons")
+}
+
+fn write_json_atomic(path: &std::path::Path, text: &[u8]) {
+    let Some(parent) = path.parent() else {
         return;
     };
-    let path = daemon_descriptor_path(state_dir);
+    if std::fs::create_dir_all(parent).is_err() {
+        return;
+    }
+    let temporary = parent.join(format!(
+        ".{}.{}.tmp",
+        path.file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "daemon".into()),
+        std::process::id()
+    ));
+    if std::fs::write(&temporary, text).is_ok() {
+        let _ = std::fs::rename(temporary, path);
+    }
+}
+
+fn write_daemon_descriptor(state_dir: &std::path::Path, host: &str, port: u16) {
     let payload = serde_json::json!({
         "pid": std::process::id(),
         "host": host,
@@ -559,23 +579,32 @@ fn write_daemon_descriptor(state_dir: &std::path::Path, host: &str, port: u16) {
     let Ok(text) = serde_json::to_vec_pretty(&payload) else {
         return;
     };
-    let temporary = state_dir.join(format!(".daemon.json.{}", std::process::id()));
-    if std::fs::write(&temporary, text).is_ok() {
-        let _ = std::fs::rename(temporary, path);
-    }
+    // One file per daemon gives `hive ui status` a multi-daemon view; the
+    // single daemon.json remains the primary/backward-compatible descriptor.
+    write_json_atomic(
+        &daemon_registry_dir(state_dir).join(format!("{port}.json")),
+        &text,
+    );
+    write_json_atomic(&daemon_descriptor_path(state_dir), &text);
 }
 
-fn remove_daemon_descriptor(state_dir: &std::path::Path) {
-    let path = daemon_descriptor_path(state_dir);
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        return;
-    };
-    let Ok(payload) = serde_json::from_str::<serde_json::Value>(&text) else {
-        let _ = std::fs::remove_file(path);
-        return;
-    };
-    if payload.get("pid").and_then(serde_json::Value::as_u64) == Some(std::process::id() as u64) {
-        let _ = std::fs::remove_file(path);
+fn remove_daemon_descriptor(state_dir: &std::path::Path, port: u16) {
+    let paths = [
+        daemon_registry_dir(state_dir).join(format!("{port}.json")),
+        daemon_descriptor_path(state_dir),
+    ];
+    for path in paths {
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(payload) = serde_json::from_str::<serde_json::Value>(&text) else {
+            let _ = std::fs::remove_file(path);
+            continue;
+        };
+        if payload.get("pid").and_then(serde_json::Value::as_u64) == Some(std::process::id() as u64)
+        {
+            let _ = std::fs::remove_file(path);
+        }
     }
 }
 

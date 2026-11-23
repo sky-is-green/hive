@@ -70,7 +70,7 @@ No component is kept merely because it was ported. Criteria:
 | Memory core | Rust | 1.12–1.19x cached Python, native default | measure again on real conversations; Python fallback stays |
 | Sandbox | Rust helper | real Landlock/seccomp, real cgroup budgets | keep |
 | WASM plugins | Rust + wasmtime | fuel/memory limits, signed manifests | keep (wasmtime is Rust) |
-| TUI | Rust | four tabs at parity; some dashboard flows remain Python | UX review before keep/revert |
+| TUI | Rust | four tabs; in-place log view, stop confirmation, Studio approvals/web shortcuts | keep; advanced overlays remain Studio |
 | Studio/eval/cascade/tools/browser | Python | breadth and research coupling | keep |
 | Report rendering | Python | report HTML still proxied | keep until a measured UX need |
 | Memory hot loops | Rust scalar | no SIMD benchmark yet | C++/SIMD candidate only if measured |

@@ -96,19 +96,17 @@ explicit `hive tui`.  It is a real navigation surface, not a printed page:
 |---|---|
 | `1`–`4`, `←`/`→`, `Tab` | Status, Models, Stacks, Runs |
 | `↑`/`↓`, `j`/`k` | move the selection |
-| `Enter` | details for the selected serve/model/stack; run summary for a cascade run |
-| `l` | supervisor log (Status) |
-| `x` | stop the selected serve; press `y` or Enter to confirm (Status) |
+| `l` | open the selected serve's supervisor log in the detail pane; `Esc` closes it |
+| `x` | stop the selected serve; press `y` to confirm (Status) |
+| `a` | open the Studio's Risk & Approvals page |
+| `w` | open the running Studio in the browser |
 | `r` | refresh the header and active tab |
-| `?` | key help |
-| `q` | quit, or back out of an overlay |
+| `q` | quit, or close a log/confirmation overlay |
 
-It opens on a short splash with the ASCII wordmark (skip it with
-`HIVE_NO_SPLASH=1`).  The Status tab shows the same records as `hive status`,
-with per-tier `up` / `down`; Models, Stacks and Runs mirror their subcommands.
-The dashboard is
-read-mostly: details, logs and stopping are available in place; starting a
-stack and downloading a model stay explicit CLI actions.  The Runs tab shows
+The Status tab shows the same records as `hive status`, with per-tier `up` /
+`down`; Models, Stacks and Runs mirror their subcommands. The dashboard is
+operational for logs, stopping, approvals and opening the browser; starting a
+stack and downloading a model stay explicit CLI actions. The Runs tab shows
 the run summary; the full artifact stays available through
 `hive cascade report <run>` (or the Studio report page).
 
@@ -349,9 +347,10 @@ hive ui web --mock          # model-free Studio fixture
 `hive ui` never starts a second web server. The Rust daemon serves the console
 same-origin on `--port` (default `8765`); `--console-port` is accepted for the
 Python reference. The daemon writes `$HIVE_HOME/harness_state/daemon.json`;
-`ui status` reads it, checks the recorded PID, and probes `/health`, so a
-daemon on a non-default port is reported at that port. With no descriptor it
-falls back to `--host`/`--port`. `hive ui terminal` is the same dashboard as
+`ui status` reads the per-daemon descriptors under
+`$HIVE_HOME/harness_state/daemons/` (plus the primary `daemon.json`), checks
+the recorded PIDs, and probes `/health`, so multiple daemons and non-default
+ports are all reported. With no descriptor it falls back to `--host`/`--port`. `hive ui terminal` is the same dashboard as
 `hive tui`; the TUI's `w` key opens a **running** console in the browser and
 tells you to run `hive ui web` if it is not running. Press `a` in
 the TUI to open pending tool approvals: `o` allows once, `s` allows the

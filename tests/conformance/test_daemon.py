@@ -704,6 +704,34 @@ def _home(tmp_path) -> dict[str, str]:
     return {"HIVE_HOME": str(tmp_path / "home")}
 
 
+def test_ui_status_lists_multiple_daemons_in_one_state(tmp_path, rust_bin):
+    processes = []
+    try:
+        first, first_port = _start_daemon(env_extra=_home(tmp_path))
+        processes.append(first)
+        second, second_port = _start_daemon(env_extra=_home(tmp_path))
+        processes.append(second)
+        env = dict(os.environ, **_home(tmp_path))
+        env.pop("HIVE_STATE_DIR", None)
+        result = subprocess.run(
+            [str(rust_bin), "ui", "status", "--json"],
+            cwd=REPO,
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=20,
+        )
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        urls = {row["url"] for row in payload["daemons"]}
+        assert f"http://127.0.0.1:{first_port}" in urls
+        assert f"http://127.0.0.1:{second_port}" in urls
+    finally:
+        for process in processes:
+            process.terminate()
+            process.wait(timeout=10)
+
+
 def test_dead_probe_returns_a_quiet_down_response(tmp_path):
     process = None
     try:

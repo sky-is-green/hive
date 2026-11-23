@@ -61,6 +61,12 @@ browser tool; evidence is DOM/JSON plus measured layout instead.
   endpoints that answer, and dead probes return a quiet 200.
 - P2-44 — the managed Python sidecar overwrote the public `daemon.json`; it is
   now marked as private and leaves the public descriptor alone.
+- P2-45 — multiple daemons sharing one state overwrote the single descriptor;
+  each now writes `daemons/<port>.json` and status lists them all.
+- P2-46 — `doctor` checked only port 1234; it now checks one port per local
+  tier in the largest saved stack.
+- P1-40 — the TUI now has in-place logs, stop confirmation, and shortcuts to
+  Studio approvals/web instead of being read-only.
 - P1-53 — CPU-only display warnings and bare library names in `serve`.
 - P1-54 — the first-run hint now names a real stack/model.
 

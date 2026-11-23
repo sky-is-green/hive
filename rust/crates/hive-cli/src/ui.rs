@@ -43,6 +43,34 @@ pub fn run(paths: &Paths, options: Options) -> Cmd {
     }
 }
 
+fn read_descriptors(state_dir: &std::path::Path) -> Vec<(PathBuf, Value)> {
+    let mut rows = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(state_dir.join("daemons")) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().is_none_or(|ext| ext != "json") {
+                continue;
+            }
+            if let Ok(text) = std::fs::read_to_string(&path)
+                && let Ok(value) = serde_json::from_str::<Value>(&text)
+            {
+                rows.push((path, value));
+            }
+        }
+    }
+    let single = state_dir.join("daemon.json");
+    if let Ok(text) = std::fs::read_to_string(&single)
+        && let Ok(value) = serde_json::from_str::<Value>(&text)
+        && !rows.iter().any(|(_, row)| {
+            row.get("pid") == value.get("pid") && row.get("api_url") == value.get("api_url")
+        })
+    {
+        rows.push((single, value));
+    }
+    rows.sort_by_key(|(_, value)| value.get("port").and_then(Value::as_u64).unwrap_or(0));
+    rows
+}
+
 fn status(paths: &Paths, options: &Options) -> Cmd {
     let fallback_api = format!("http://{}:{}", options.host, options.port);
     let state_dir = options
@@ -50,27 +78,61 @@ fn status(paths: &Paths, options: &Options) -> Cmd {
         .clone()
         .unwrap_or_else(|| paths.state_dir.clone());
     let descriptor_path = state_dir.join("daemon.json");
-    let descriptor = std::fs::read_to_string(&descriptor_path)
-        .ok()
-        .and_then(|text| serde_json::from_str::<Value>(&text).ok());
-    let text = |key: &str| {
-        descriptor
-            .as_ref()
-            .and_then(|value| value.get(key))
+    let descriptors = read_descriptors(&state_dir);
+
+    let mut daemons = Vec::new();
+    let mut primary: Option<(String, String, Option<u64>, bool, bool)> = None;
+    for (path, value) in &descriptors {
+        let api_url = value
+            .get("api_url")
             .and_then(Value::as_str)
             .map(str::to_owned)
-    };
-    let api_url = text("api_url").unwrap_or_else(|| fallback_api.clone());
-    let web_url = text("web_url").unwrap_or_else(|| api_url.clone());
-    let pid = descriptor
-        .as_ref()
-        .and_then(|value| value.get("pid"))
-        .and_then(Value::as_u64);
-    let process_alive = pid
-        .map(|pid| hive_state::pid_alive(pid as i64))
-        .unwrap_or(true);
-    let api_alive = process_alive && alive(&api_url, "/health");
-    let web_alive = process_alive && alive(&web_url, "/");
+            .unwrap_or_else(|| fallback_api.clone());
+        let web_url = value
+            .get("web_url")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+            .unwrap_or_else(|| api_url.clone());
+        let pid = value.get("pid").and_then(Value::as_u64);
+        let process_alive = pid
+            .map(|pid| hive_state::pid_alive(pid as i64))
+            .unwrap_or(true);
+        let api_alive = process_alive && alive(&api_url, "/health");
+        let web_alive = process_alive && alive(&web_url, "/");
+        let running = api_alive || web_alive;
+        let entry = serde_json::json!({
+            "pid": pid,
+            "url": web_url,
+            "web_url": web_url,
+            "api_url": api_url,
+            "running": running,
+            "descriptor": path.to_string_lossy(),
+        });
+        daemons.push(entry);
+        if primary.is_none() || (running && !primary.as_ref().map(|row| row.3).unwrap_or(false)) {
+            primary = Some((web_url, api_url, pid, running, web_alive));
+        }
+    }
+
+    let (web_url, api_url, pid, api_alive, web_alive) =
+        if let Some((web_url, api_url, pid, _running, web_alive)) = primary {
+            let api_alive = pid
+                .map(|pid| hive_state::pid_alive(pid as i64))
+                .unwrap_or(true)
+                && alive(&api_url, "/health");
+            (web_url, api_url, pid, api_alive, web_alive)
+        } else {
+            let api_alive = alive(&fallback_api, "/health");
+            let web_alive = alive(&fallback_api, "/");
+            (
+                fallback_api.clone(),
+                fallback_api,
+                None,
+                api_alive,
+                web_alive,
+            )
+        };
+
     let mut payload = Map::new();
     payload.insert(
         "web".into(),
@@ -93,24 +155,40 @@ fn status(paths: &Paths, options: &Options) -> Cmd {
         "descriptor".into(),
         Value::String(descriptor_path.to_string_lossy().into_owned()),
     );
+    payload.insert("daemons".into(), Value::Array(daemons));
     let payload = Value::Object(payload);
     if options.as_json {
         print!("{}", hive_core::json::pretty(&payload));
         return Ok(0);
     }
-    let suffix = |running: bool| match (running, pid) {
+    let suffix = |running: bool, pid: Option<u64>| match (running, pid) {
         (true, Some(pid)) => format!("running · pid {pid}"),
         (true, None) => "running".to_owned(),
         _ => "not running".to_owned(),
     };
+    if let Some(entries) = payload.get("daemons").and_then(Value::as_array)
+        && entries.len() > 1
+    {
+        println!("daemons");
+        for entry in entries {
+            let url = entry.get("url").and_then(Value::as_str).unwrap_or("?");
+            let running = entry
+                .get("running")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let pid = entry.get("pid").and_then(Value::as_u64);
+            println!("  {url} · {}", suffix(running, pid));
+        }
+        println!("  terminal  hive ui terminal");
+        return Ok(0);
+    }
     println!("interfaces");
-    println!("  web    {} · {}", web_url, suffix(web_alive));
-    println!("  api    {} · {}", api_url, suffix(api_alive));
+    println!("  web    {} · {}", web_url, suffix(web_alive, pid));
+    println!("  api    {} · {}", api_url, suffix(api_alive, pid));
     println!("  terminal  hive ui terminal");
     println!("  start web hive ui web");
     Ok(0)
 }
-
 fn web(paths: &Paths, options: &Options) -> Cmd {
     let daemon = daemon_binary()?;
     let log_dir = &paths.log_dir;

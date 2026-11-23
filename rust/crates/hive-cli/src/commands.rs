@@ -434,6 +434,44 @@ fn cmd_config(paths: &Paths, as_json: bool) -> Cmd {
     Ok(0)
 }
 
+/// The largest saved stack's local-tier count; each tier takes one engine port
+/// starting at 1234. Endpoint tiers do not need a local engine port.
+fn stack_local_tiers(directory: &Path) -> usize {
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return 1;
+    };
+    let mut largest = 1;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_none_or(|ext| ext != "json") {
+            continue;
+        }
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(stack) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        let local = stack
+            .get("tiers")
+            .and_then(Value::as_array)
+            .map(|tiers| {
+                tiers
+                    .iter()
+                    .filter(|tier| {
+                        tier.get("endpoint")
+                            .and_then(Value::as_str)
+                            .map(|endpoint| endpoint.trim().is_empty())
+                            .unwrap_or(true)
+                    })
+                    .count()
+            })
+            .unwrap_or(0);
+        largest = largest.max(local.max(1));
+    }
+    largest
+}
+
 fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
     let mut checks: Vec<Value> = Vec::new();
     let mut add = |status: &str, name: &str, detail: String| {
@@ -622,15 +660,18 @@ fn cmd_doctor(paths: &Paths, strict: bool, as_json: bool) -> Cmd {
         );
     }
 
-    let port = 1234u16;
-    if hardware::port_free(port) {
-        add("ok", &format!("port {port}"), "free".into());
-    } else {
-        add(
-            "warn",
-            &format!("port {port}"),
-            "in use (a serve may be running)".into(),
-        );
+    let slots = stack_local_tiers(&paths.stacks_dir).max(1) as u16;
+    for offset in 0..slots {
+        let port = 1234u16 + offset;
+        if hardware::port_free(port) {
+            add("ok", &format!("port {port}"), "free".into());
+        } else {
+            add(
+                "warn",
+                &format!("port {port}"),
+                "in use (a serve may be running)".into(),
+            );
+        }
     }
 
     let failures = checks
