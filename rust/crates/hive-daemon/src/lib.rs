@@ -736,12 +736,14 @@ async fn probe_health(State(state): State<Arc<AppState>>, UrlPath(port): UrlPath
     {
         Ok(response) if response.status().is_success() => {
             let body = response.text().await.unwrap_or_default();
-            match serde_json::from_str::<Value>(&body) {
-                Ok(value) => Json(value).into_response(),
-                Err(_) => Json(serde_json::json!({"status": "ok"})).into_response(),
-            }
+            let payload = serde_json::from_str::<Value>(&body)
+                .unwrap_or_else(|_| serde_json::json!({"status": "ok"}));
+            owned(StatusCode::OK, Json(payload).into_response())
         }
-        _ => Json(serde_json::json!({"status": "down"})).into_response(),
+        _ => owned(
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "down"})).into_response(),
+        ),
     }
 }
 

@@ -1487,7 +1487,7 @@ def test_probe_prefix_targets_the_requested_port():
         process, port = _start_daemon(sidecar_url=f"http://127.0.0.1:{sidecar.port}")
         status, headers, payload = _request(port, f"/probe/{sidecar.port}/health")
         assert status == 200
-        assert headers["x-hive-owner"] == "python"
+        assert headers["x-hive-owner"] == "rust"
         assert payload["conversations"] == 7
     finally:
         if process is not None:
