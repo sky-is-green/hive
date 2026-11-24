@@ -119,8 +119,10 @@ shell. The full reference is
 | [`splinter/`](splinter/README.md) | the memory system, its white paper, the encoder notes and figures |
 | [`cascade/`](cascade/README.md) | the cascade paper, the pilot, the controller contract and the prior-art survey |
 | [`hivebench/`](hivebench/README.md) | the evaluation suite and Studio sidecar docs |
-| [`docs/`](docs/) | the shared record: [status](docs/STATUS.md), [A/B results](docs/AB-RESULTS.md), failures, engine notes |
+| [`docs/`](docs/README.md) | the documentation index: install/ops, research, safety, and the rewrite record |
+| [`rust/`](rust/) | the Rust runtime: CLI, daemon, encoder, memory, sandbox, supervisor, TUI |
 | `harness/`, `experiments/`, `tests/`, `testing/` | the implementation that runs the suite |
+| `experiments/*/results/` | tracked evidence only; see [`experiments/README.md`](experiments/README.md) |
 
 The paper and the implementation live side by side; the papers are written to
 be re-run, not just read.

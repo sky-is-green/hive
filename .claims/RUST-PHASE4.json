@@ -18,9 +18,10 @@
     "dist-workspace.toml",
     "rust/Cargo.lock",
     "pyproject.toml",
-    "rust-toolchain.toml"
+    "rust-toolchain.toml",
+    "artifacts/**"
   ],
   "beacon": "Phase 4: zero-downtime swaps, native observability, sandbox/WASM, fleet/release",
-  "updated": "2026-11-23T18:35:00Z",
+  "updated": "2026-11-24T16:20:00Z",
   "lease": "24h"
 }

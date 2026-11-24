@@ -101,8 +101,6 @@ Thumbs.db
 transcripts/
 dep_scan.py
 
-# TBR ternary artifacts (HIVE-PLAN.md §3: GGUFs, run logs, oracle JSON)
-artifacts/ternary/
 
 # cascade capture traces (regenerable; manifests + MODEL-CARDs are tracked)
 # the trained encoder checkpoints are build artifacts (the weights are
